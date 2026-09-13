@@ -97,21 +97,28 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
     const parsedQuery = libraryQuerySchema.safeParse(req.query ?? {});
     if (!parsedQuery.success) return reply.code(400).send({ error: 'bad-query' });
     const q = parsedQuery.data;
-    const rows = db
-      .prepare(`SELECT * FROM books WHERE scan_state != 'missing' ORDER BY title COLLATE NOCASE`)
-      .all() as Record<string, unknown>[];
-    let books = rows.map((r) => bookRowToSummary(ctx, req.user!.id, r));
-
-    if (q.query) {
-      const needle = q.query.toLowerCase();
-      books = books.filter(
-        (b) =>
-          b.title.toLowerCase().includes(needle) ||
-          (b.author ?? '').toLowerCase().includes(needle) ||
-          (b.series ?? '').toLowerCase().includes(needle),
-      );
+    // Narrowed in SQL, not afterwards. Building a summary costs several
+    // queries and a stat() per book, so a search that matches three titles in
+    // a library of a thousand used to pay for all thousand before discarding
+    // 997 of them. Everything below this point works on a short list.
+    const where: string[] = ["scan_state != 'missing'"];
+    const args: string[] = [];
+    if (q.kind === 'ebook' || q.kind === 'audio') {
+      where.push('kind = ?');
+      args.push(q.kind);
     }
-    if (q.kind === 'ebook' || q.kind === 'audio') books = books.filter((b) => b.kind === q.kind);
+    if (q.query) {
+      where.push(
+        "(title LIKE ? COLLATE NOCASE OR COALESCE(author, '') LIKE ? COLLATE NOCASE" +
+          " OR COALESCE(series, '') LIKE ? COLLATE NOCASE)",
+      );
+      const like = `%${q.query.replace(/[%_\\]/g, (c) => `\\${c}`)}%`;
+      args.push(like, like, like);
+    }
+    const rows = db
+      .prepare(`SELECT * FROM books WHERE ${where.join(' AND ')} ORDER BY title COLLATE NOCASE`)
+      .all(...args) as Record<string, unknown>[];
+    let books = rows.map((r) => bookRowToSummary(ctx, req.user!.id, r));
     if (q.filter === 'paired') books = books.filter((b) => b.pair && b.pair.status !== 'candidate');
     if (q.filter === 'in-progress')
       books = books.filter((b) => b.progress && !b.progress.finished && b.progress.pct > 0.001);

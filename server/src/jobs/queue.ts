@@ -300,3 +300,22 @@ export function recoverStaleJobs(db: DB): number {
     .run(now);
   return Number(res.changes);
 }
+
+/**
+ * Drop long-finished jobs.
+ *
+ * The table was append-only, and the pairing page scans it with a LIKE on the
+ * payload for every pair on a three-second poll — so a server that has been
+ * running for months pays for every alignment it ever ran, on every poll. A
+ * week is enough history for the processing view, which only ever shows what
+ * is live plus a short tail.
+ */
+export function pruneFinishedJobs(db: DB, keepDays = 7): number {
+  const cutoff = new Date(Date.now() - keepDays * 86_400_000).toISOString();
+  const res = db
+    .prepare(
+      "DELETE FROM jobs WHERE state IN ('done', 'cancelled') AND finished_at IS NOT NULL AND finished_at < ?",
+    )
+    .run(cutoff);
+  return Number(res.changes);
+}

@@ -426,4 +426,20 @@ CREATE TABLE user_prefs (
 ALTER TABLE books ADD COLUMN facets_rev INTEGER NOT NULL DEFAULT 0;
 `,
   },
+  {
+    version: 11,
+    sql: `
+-- Walking an alignment in reading order.
+--
+-- Resolving a switch asks for the nearest segment before or after a position,
+-- which without this is a scan and a sort of every segment in the book —
+-- fifteen thousand rows for one aligned title, and an offline package asks
+-- thousands of times.
+CREATE INDEX idx_alignseg_ord ON alignment_segments(alignment_id, spine_idx, sentence_ord);
+
+-- Every book summary asks which pair a book belongs to, from both sides.
+CREATE INDEX idx_pairs_ebook ON pairs(ebook_id);
+CREATE INDEX idx_pairs_audio ON pairs(audio_id);
+`,
+  },
 ];

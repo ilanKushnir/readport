@@ -13,6 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@fastify/compress": "^9.2.0",
     "@fastify/cookie": "11.1.2",
     "@fastify/static": "10.1.3",
     "@readport/shared": "0.9.0",
