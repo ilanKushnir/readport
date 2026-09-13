@@ -32,8 +32,15 @@ export interface ModelSpec {
   note: string;
 }
 
+/**
+ * Pinned to a commit, not to a branch.
+ *
+ * `resolve/main` is whatever the upstream repository points at today, and the
+ * only integrity check on the download is its size — so a changed upstream is
+ * a changed model with no signal at all. A revision cannot move underneath us.
+ */
 const MMS_BASE =
-  'https://huggingface.co/onnx-community/mms-300m-1130-forced-aligner-ONNX/resolve/main';
+  'https://huggingface.co/onnx-community/mms-300m-1130-forced-aligner-ONNX/resolve/2100fb247d8e43962eef24491597fbeb8b469531';
 
 export const ALIGNER_MODEL_ID = 'alignment-model';
 

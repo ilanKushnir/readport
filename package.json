@@ -6,7 +6,7 @@
   "description": "Self-hosted tandem reading: a non-destructive reader/player overlay for existing ebook and audiobook libraries.",
   "type": "module",
   "engines": {
-    "node": ">=22.5.0"
+    "node": ">=24.0.0"
   },
   "workspaces": [
     "shared",

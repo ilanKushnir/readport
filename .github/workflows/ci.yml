@@ -8,11 +8,16 @@ on:
 jobs:
   checks:
     runs-on: ubuntu-latest
+    strategy:
+      # Both ends of the supported range, so the floor in package.json is a
+      # number that has actually been run rather than a hope.
+      matrix:
+        node: [24, 26]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 26
+          node-version: ${{ matrix.node }}
           cache: npm
       - name: Install ffmpeg (audio probing in integration tests)
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg

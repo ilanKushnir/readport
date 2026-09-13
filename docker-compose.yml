@@ -11,7 +11,7 @@
 services:
   readport:
     build: .
-    # Or, when published: image: ghcr.io/OWNER/readport:latest
+    # Or, when published: image: ghcr.io/ilankushnir/readport:latest
     container_name: readport
     restart: unless-stopped
     ports:
@@ -47,6 +47,8 @@ services:
       # the dedicated worker service below.
       RP_INLINE_WORKER: ${RP_INLINE_WORKER:-1}
       RP_JOB_CONCURRENCY: ${RP_JOB_CONCURRENCY:-2}
+      # ONNX intra-op threads for alignment — the knob worth tuning first.
+      RP_ALIGN_THREADS: ${RP_ALIGN_THREADS:-4}
     volumes:
       # ReadPort-owned writable state. SQLite lives in rp-data: keep it on
       # a local disk volume, never on SMB/NFS.
@@ -63,7 +65,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1g
+          # Alignment runs here unless a separate worker is enabled, and that
+          # worker budgets 2g for exactly the same job.
+          memory: 2g
     security_opt:
       - no-new-privileges:true
 
@@ -84,6 +88,8 @@ services:
       RP_AUDIOBOOK_DIRS: /library/audiobooks
       RP_ALIGNMENT_DIRS: /library/alignments
       RP_JOB_CONCURRENCY: ${RP_JOB_CONCURRENCY:-2}
+      # ONNX intra-op threads for alignment — the knob worth tuning first.
+      RP_ALIGN_THREADS: ${RP_ALIGN_THREADS:-4}
     healthcheck:
       test: ['CMD', 'pgrep', '-f', 'worker-entry']
       interval: 30s

@@ -134,7 +134,8 @@ loss-resistant progress.)
 
 Docker, your existing library folders, and enough CPU to be patient with.
 The image carries ffmpeg and the alignment runtime; the stock compose file
-caps the app at 1 GB of memory and the optional dedicated worker at 2 GB.
+caps the app and the optional dedicated worker at 2 GB each — alignment is
+the memory-hungry part, and it runs in whichever of the two is doing the work.
 Alignment is the only heavy thing here: give it as many threads as the
 container really has (`RP_ALIGN_THREADS`, default 4) and 317 MB of disk for
 the model. Reading and listening need none of that — a library with no model
@@ -168,7 +169,7 @@ install, backups, upgrades, PUID/PGID, troubleshooting).
 
 ## From source
 
-Node ≥ 22.5 and ffmpeg:
+Node ≥ 24 and ffmpeg:
 
 ```bash
 npm ci && npm run build
