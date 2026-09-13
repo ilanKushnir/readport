@@ -1,4 +1,6 @@
 import { useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { formatInviteCode, isInviteCode, normalizeInviteCode } from '@readport/shared';
 import { api, ApiError } from '../api/client';
 import { useSession, type User } from '../state/session';
 import { ReadPortMark } from '../components/icons';
@@ -109,6 +111,62 @@ export function LoginPage() {
           onChange={(e) => setPassword(e.target.value)}
         />
       </div>
+      <RedeemCode />
     </AuthCard>
+  );
+}
+
+/**
+ * "I was given a code."
+ *
+ * An invitation arrives as a link or as a code read out loud, and the second
+ * one had nowhere to go: someone holding ABCD-EFGH-JKMN and looking at a
+ * sign-in form has no way in. Tucked under the form rather than beside it -
+ * most people arriving here have an account.
+ */
+function RedeemCode() {
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [code, setCode] = useState('');
+  const ok = isInviteCode(code);
+
+  if (!open) {
+    return (
+      <button type="button" className="auth-card__aside" onClick={() => setOpen(true)}>
+        I have an invitation code
+      </button>
+    );
+  }
+  return (
+    <div className="field">
+      <label htmlFor="li-code">Invitation code</label>
+      <div className="folders__add">
+        <input
+          id="li-code"
+          className="input"
+          placeholder="ABCD-EFGH-JKMN"
+          autoCapitalize="characters"
+          autoCorrect="off"
+          spellCheck={false}
+          value={code}
+          onChange={(e) => setCode(formatInviteCode(e.target.value))}
+          onKeyDown={(e) => {
+            // Enter here must not submit the sign-in form behind it.
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+            if (ok) navigate(`/join/${normalizeInviteCode(code)}`);
+          }}
+        />
+        <button
+          type="button"
+          className="btn btn--secondary"
+          disabled={!ok}
+          onClick={() => navigate(`/join/${normalizeInviteCode(code)}`)}
+        >
+          Continue
+        </button>
+      </div>
+      <span className="hint">Twelve characters, in three groups. Case does not matter.</span>
+    </div>
   );
 }

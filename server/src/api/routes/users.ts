@@ -9,11 +9,14 @@ import {
   type InviteDto,
   type Role,
   type UserDto,
+  makeInviteCode,
+  normalizeInviteCode,
 } from '@readport/shared';
 import { type AppContext } from '../../context.js';
 import { hashPassword, verifyPassword } from '../../auth/passwords.js';
 import { createSession, destroyUserSessions, LoginThrottle } from '../../auth/sessions.js';
 import { requireRole } from '../../auth/roles.js';
+import { resolveSettings } from '../../domain/settings.js';
 import { UNUSABLE_PASSWORD } from '../../auth/proxyAuth.js';
 import { newId } from '../../util/ids.js';
 import { nowIso } from '../../db/index.js';
@@ -59,7 +62,15 @@ export function toUserDto(r: UserRow): UserDto {
   };
 }
 
-const hashInvite = (token: string) => createHash('sha256').update(token).digest('hex');
+/**
+ * Invite codes are hashed, so they are normalised FIRST.
+ *
+ * Otherwise `abcd-efgh-jkmn` and `ABCDEFGHJKMN` are different secrets and
+ * only one of them works - which is the half of "type in your code" that
+ * silently fails.
+ */
+const hashInvite = (token: string) =>
+  createHash('sha256').update(normalizeInviteCode(token)).digest('hex');
 
 /**
  * People management. Accounts are only ever created by an admin (directly,
@@ -254,7 +265,8 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
         .get(parsed.data.username);
       if (taken) return reply.code(409).send({ error: 'username-taken' });
     }
-    const token = randomBytes(24).toString('base64url');
+    // A code, not a blob: someone will read this down the phone.
+    const token = makeInviteCode((n) => new Uint8Array(randomBytes(n)));
     const id = newId('inv');
     const expiresAt = new Date(Date.now() + parsed.data.expiresInDays * 86_400_000).toISOString();
     db.prepare(
@@ -271,11 +283,19 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
       nowIso(),
       expiresAt,
     );
-    // The raw token is returned exactly once; the client builds the link.
+    // Returned exactly once. The URL is built here rather than in the
+    // browser, because the browser only knows the address the ADMIN is on -
+    // often a LAN name the recipient cannot resolve. `publicUrl` is what the
+    // server has been told it is called from outside; without it the client
+    // falls back to its own origin, which is right for a local-only library.
+    const base = resolveSettings(db, config).values.publicUrl.replace(/\/+$/, '');
     return reply.code(201).send({
       invite: { id, role: parsed.data.role, expiresAt },
+      // The code IS the credential; the link just carries it.
+      code: token,
       token,
-      path: `/join/${token}`,
+      path: `/join/${encodeURIComponent(token)}`,
+      url: base ? `${base}/join/${encodeURIComponent(token)}` : null,
     });
   });
 

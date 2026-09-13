@@ -145,6 +145,9 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
       if (body.data.defaultLanguage && !config.envPinned.includes('defaultLanguage')) {
         patch.defaultLanguage = body.data.defaultLanguage;
       }
+      // The admin creating the account is also the person who knows the
+      // address their friends will use.
+      if (body.data.publicUrl !== undefined) patch.publicUrl = body.data.publicUrl;
       if (body.data.autoAlign !== undefined) patch.autoAlign = body.data.autoAlign;
       if (body.data.importSavedAlignments !== undefined) {
         patch.importSavedAlignments = body.data.importSavedAlignments;
