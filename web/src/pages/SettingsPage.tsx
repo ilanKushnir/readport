@@ -1,3 +1,4 @@
+import { stateLabel, typeLabel } from '../components/Processing';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { type Job, type Settings } from '@readport/shared';
 import { api, ApiError, actionFailed } from '../api/client';
@@ -332,7 +333,7 @@ export function SettingsPage() {
                   <IconCheck size={15} style={{ opacity: j.state === 'done' ? 1 : 0.4 }} />
                 )}
                 <span className="grow" style={{ whiteSpace: 'normal' }}>
-                  <span style={{ fontWeight: 600 }}>{jobLabel(j.type)}</span>
+                  <span style={{ fontWeight: 600 }}>{typeLabel(j.type)}</span>
                   {j.detail ? ` — ${j.detail}` : ''}
                   {j.error ? (
                     <span style={{ display: 'block', color: 'var(--rp-danger)', fontSize: 13 }}>
@@ -341,7 +342,7 @@ export function SettingsPage() {
                   ) : null}
                 </span>
                 <span className="soft">
-                  {j.state} · {formatDate(j.createdAt)}
+                  {stateLabel(j.state)} · {formatDate(j.createdAt)}
                 </span>
               </div>
             ))}
@@ -707,25 +708,6 @@ function DashCard({
       {body}
     </Link>
   );
-}
-
-function jobLabel(type: string): string {
-  switch (type) {
-    case 'scan':
-      return 'Library scan';
-    case 'index-ebook':
-      return 'Index ebook';
-    case 'index-audio':
-      return 'Index audiobook';
-    case 'pair-scan':
-      return 'Find pairs';
-    case 'align':
-      return 'Align to the text';
-    case 'model-download':
-      return 'Download model';
-    default:
-      return type;
-  }
 }
 
 /* ---------------------------------------------------- alignment engine */
