@@ -4,6 +4,42 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.9.6 - 2026-09-13
+
+### Added
+
+- **Save a copy of a book.** Separate from "download for offline", which keeps
+  a book inside the app: this hands over the original file. It is a capability
+  an admin grants to a person - not a role - set when they are invited and
+  changed later, off by default. Admins always may. Revoking it takes effect
+  immediately rather than whenever a session expires.
+- **Read-only API keys, for agents.** A key lets an assistant see your
+  library, lists and progress and can never change anything, take the book
+  files, or manage keys. The secret is shown once and only a hash is kept.
+  See `docs/api.md`.
+
+### Changed
+
+- **The book page leads with what you can do**, not a card announcing that a
+  paired edition exists. "Sync ready" is gone: it was a word this app invented,
+  followed by an admission that most sentences do not switch exactly.
+- **Em dashes are gone from the whole project**, and a test keeps them out.
+- **Covers resolve out of the book's own colour** instead of snapping in.
+- **Reading settings are ordered**, and page turns are a choice: Slide, Fade
+  or Instant.
+
+### Fixed
+
+- **A changed file loses its pairing and its alignment.** Both describe the
+  content; replace the file and they are not stale, they are wrong. A book
+  that merely goes missing keeps them, so a NAS that fails to mount does not
+  cost hours of computed timings.
+- The library filter clipped "Audiobooks" while the control had room to spare.
+- The read-along pace marker hung at a stale position while you scrolled, and
+  "Back to the voice" blinked as following turned itself back on.
+- Auto-scroll now holds the marker still and moves the text under it, with
+  manual scrolling disabled and the toggle lit while it runs.
+
 ## 0.9.5 - 2026-09-13
 
 ### Changed
