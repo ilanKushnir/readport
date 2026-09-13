@@ -95,6 +95,11 @@
   overscroll-behavior: contain;
 }
 .reader-content {
+  /* The chapter body is arbitrary publisher XHTML. A bare URL or a code
+     block is wider than the column, and the scroller's overflow-x computes
+     to auto — so one long token used to let the whole chapter be dragged
+     sideways (and in paginated mode simply cut the words off). */
+  overflow-wrap: break-word;
   font-family: var(--rd-font, var(--rp-font-reading));
   font-size: var(--rd-size, 19px);
   font-weight: var(--rd-weight, 420);
@@ -394,20 +399,24 @@
 .tapzone--next {
   inset-inline-end: 0;
 }
-/* With a mouse, a drag across the page is a text selection, so nothing may
-   sit on top of the words — a button there swallows the drag and the reader
-   ends up "selecting" the page-turn zone instead of the sentence. On a fine
-   pointer the zones drop behind the page box and still catch clicks in the
-   gutter beside it; ReaderPage also treats a plain click near either edge of
-   the column as a page turn, so nothing is lost. On touch they stay on top:
-   tapping is how a page is turned there, and text is selected by long-press. */
-@media (pointer: fine) {
-  .tapzone {
-    z-index: 0;
-  }
-  .reader-pages {
-    z-index: 1;
-  }
+/* Nothing may sit on top of the words, whatever the pointer.
+
+   A button over the text swallows the drag that would otherwise be a
+   selection, so the reader "selects" the page-turn zone instead of the
+   sentence. That was fixed for the mouse first, but it is worse on a phone:
+   a long-press-and-drag to highlight is the ONLY way to mark a passage
+   there, and the outer 18% of both edges — where the start of every line
+   on the left page lives — would not take one.
+
+   The zones drop behind the page box and still catch taps in the gutter
+   beside it. Nothing is lost: ReaderPage's pointerup handler treats a plain
+   tap near either edge of the column as a page turn (`edgeTap`), for every
+   pointer type, and it runs only after a selection has been ruled out. */
+.tapzone {
+  z-index: 0;
+}
+.reader-pages {
+  z-index: 1;
 }
 
 .slider {
@@ -515,6 +524,11 @@
   position: absolute;
   z-index: 30;
   max-width: min(340px, calc(100vw - 32px));
+  /* A long quote plus a note can be taller than the screen; the popover
+     scrolls itself rather than running off a reader that cannot scroll. */
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: var(--sp-3);
   border-radius: var(--radius-card);
   background: var(--rp-surface-raised);
@@ -1454,4 +1468,61 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+}
+
+/* ------------------------------------------------- touch target sizing
+   Same rule as base.css: raise the reader and player controls to a finger's
+   size only where the pointer is coarse. */
+@media (pointer: coarse) {
+  /* The selection menu appears under a finger that has just selected text,
+     and its buttons sat 2px apart — Highlight and Note were one pixel of
+     travel from each other. */
+  .selection-menu {
+    gap: 6px;
+  }
+  .selection-menu button {
+    min-height: 44px;
+    padding-inline: 14px;
+  }
+  /* Colour swatches: 22px circles are a mouse target. Bigger, and further
+     from the Remove button they used to sit beside. */
+  .swatch {
+    width: 32px;
+    height: 32px;
+  }
+  .swatches {
+    gap: 10px;
+  }
+  .readalong__speeds {
+    grid-template-columns: repeat(2, 64px);
+    gap: 6px;
+  }
+  .readalong__speeds button,
+  .readalong__resume {
+    min-height: 44px;
+  }
+  /* A missed grab on a scrubber seeks instead of dragging, which loses your
+     place — so the bar itself is the target, not just the thumb. */
+  .reader-slider,
+  .player-scrubber,
+  input[type='range'] {
+    min-height: 44px;
+  }
+}
+
+/* Publisher content that is legitimately wide scrolls inside itself rather
+   than taking the chapter with it. */
+.reader-content pre {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  max-width: 100%;
+}
+.reader-content code {
+  overflow-wrap: break-word;
+}
+.reader-content table {
+  display: block;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  max-width: 100%;
 }

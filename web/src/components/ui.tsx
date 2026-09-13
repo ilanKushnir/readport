@@ -52,6 +52,42 @@ export function trapTabFocus(
  * the control that opened it gets focus back. Shared by the Sheet and the
  * Drawer rather than copied, so the two can never drift apart.
  */
+/**
+ * Stop the page behind a dialog from scrolling.
+ *
+ * Without this, a flick anywhere on a sheet that is not itself scrollable
+ * scrolls the library underneath it — so closing the sheet drops you
+ * somewhere else entirely. Counted, because a sheet can open another one and
+ * the first to close must not unlock the page for the second.
+ */
+let scrollLocks = 0;
+let restoreOverflow = '';
+let restorePaddingRight = '';
+
+export function useScrollLock(active = true): void {
+  useEffect(() => {
+    if (!active) return;
+    if (scrollLocks === 0) {
+      const body = document.body;
+      restoreOverflow = body.style.overflow;
+      restorePaddingRight = body.style.paddingRight;
+      // Removing the scrollbar shifts the layout under the dialog; hold the
+      // width. Zero on the phones this mostly matters for, harmless anywhere.
+      const gap = window.innerWidth - document.documentElement.clientWidth;
+      if (gap > 0) body.style.paddingRight = `${gap}px`;
+      body.style.overflow = 'hidden';
+    }
+    scrollLocks += 1;
+    return () => {
+      scrollLocks -= 1;
+      if (scrollLocks === 0) {
+        document.body.style.overflow = restoreOverflow;
+        document.body.style.paddingRight = restorePaddingRight;
+      }
+    };
+  }, [active]);
+}
+
 export function useFocusTrap(ref: { current: HTMLElement | null }, onClose: () => void): void {
   // The latest onClose lives in a ref so a parent re-render (the player
   // re-renders on every timeupdate) never re-runs the focus effect and
@@ -94,6 +130,7 @@ export function Sheet({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   useFocusTrap(ref, onClose);
+  useScrollLock();
   return createPortal(
     <>
       <div className="sheet-backdrop" onClick={onClose} aria-hidden="true" />
@@ -135,6 +172,7 @@ export function Drawer({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   useFocusTrap(ref, onClose);
+  useScrollLock();
   return createPortal(
     <>
       <div className="sheet-backdrop" onClick={onClose} aria-hidden="true" />

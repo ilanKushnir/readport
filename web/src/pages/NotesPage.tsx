@@ -24,7 +24,9 @@ type Marked = Annotation & { bookTitle: string; bookAuthor: string | null };
 type KindFilter = 'all' | 'note' | 'highlight' | 'bookmark';
 
 const KINDS: [KindFilter, string][] = [
-  ['all', 'Everything'],
+  // "All", not "Everything": four labels have to share a phone's width, and
+  // this is the word the library filter already uses for the same idea.
+  ['all', 'All'],
   ['note', 'Notes'],
   ['highlight', 'Highlights'],
   ['bookmark', 'Bookmarks'],

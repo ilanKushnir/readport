@@ -395,6 +395,11 @@ export function SetupWizard({
                 id="wz-token"
                 className="input"
                 autoComplete="off"
+                // iOS capitalises and autocorrects a text field by default,
+                // and the token is case-sensitive — it arrives as "Abc…"
+                // when the log said "abc…", and setup refuses it.
+                autoCapitalize="none"
+                autoCorrect="off"
                 required
                 autoFocus
                 value={token}
@@ -438,6 +443,8 @@ export function SetupWizard({
                 id="wz-user"
                 className="input"
                 autoComplete="username"
+                autoCapitalize="none"
+                autoCorrect="off"
                 required
                 minLength={3}
                 pattern="[a-zA-Z0-9._\-]+"

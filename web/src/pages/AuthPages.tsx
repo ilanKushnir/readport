@@ -90,6 +90,8 @@ export function LoginPage() {
           id="li-user"
           className="input"
           autoComplete="username"
+          autoCapitalize="none"
+          autoCorrect="off"
           required
           value={username}
           onChange={(e) => setUsername(e.target.value)}

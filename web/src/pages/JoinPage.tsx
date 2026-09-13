@@ -131,6 +131,8 @@ export function JoinPage({ token }: { token: string }) {
                 id="jn-user"
                 className="input"
                 autoComplete="username"
+                autoCapitalize="none"
+                autoCorrect="off"
                 required
                 minLength={3}
                 pattern="[a-zA-Z0-9._\-]+"
