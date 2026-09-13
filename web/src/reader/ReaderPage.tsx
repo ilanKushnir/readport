@@ -117,6 +117,20 @@ export function ReaderPage() {
   const [contentsTab, setContentsTab] = useState<'toc' | 'marks'>('toc');
   /** Read-along: the narration playing over the page the reader is on. */
   const [readAlong, setReadAlong] = useState(false);
+  /**
+   * The two chrome bars, measured rather than guessed at.
+   *
+   * The page reserves room for them in its own padding, and the numbers used
+   * to be constants — 72 at the top, 64 at the bottom. The bottom bar is 96px
+   * with the shipped defaults and 165px once the read-along transport is in
+   * it, so the last line of every page sat behind an opaque bar, and with
+   * read-along on it was three lines. A constant cannot track a bar whose
+   * contents change with a preference.
+   */
+  const topChromeRef = useRef<HTMLDivElement>(null);
+  const bottomChromeRef = useRef<HTMLDivElement>(null);
+  const [chromeInset, setChromeInset] = useState({ top: 72, bottom: 64 });
+
   /** Whether the page still moves itself to keep up with the voice. */
   const [following, setFollowing] = useState(true);
   /** The passage a search jumped to: landed on, marked, and then let go. */
@@ -540,6 +554,42 @@ export function ReaderPage() {
     [prefs.mode, dirFactor, pageForOffset, applyPagination],
   );
 
+  /**
+   * Keep the page's reserved space equal to the chrome that actually covers it.
+   *
+   * Watched rather than computed: the bottom bar grows when read-along mounts
+   * its transport, shrinks when the progress bar is set to compact or hidden,
+   * and changes again with the safe-area inset on a phone that rotates. A
+   * change in height changes how many lines fit, so the columns are re-laid
+   * out and the reader is put back on the line they were on.
+   */
+  useEffect(() => {
+    const top = topChromeRef.current;
+    const bottom = bottomChromeRef.current;
+    if (!top || !bottom) return;
+    const measure = () => {
+      const next = {
+        top: Math.round(top.getBoundingClientRect().height),
+        bottom: Math.round(bottom.getBoundingClientRect().height),
+      };
+      setChromeInset((prev) =>
+        prev.top === next.top && prev.bottom === next.bottom ? prev : next,
+      );
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(top);
+    ro.observe(bottom);
+    return () => ro.disconnect();
+  }, [prefs.progressBar, readAlong, html]);
+
+  // A different reserve means a different column height, so the chapter has a
+  // different number of pages. Re-lay it out and stay on the same sentence.
+  useEffect(() => {
+    if (prefs.mode !== 'paginated') return;
+    restoreOffset(currentOffsetRef.current);
+  }, [chromeInset.top, chromeInset.bottom, prefs.mode, restoreOffset]);
+
   // Resize/orientation re-pagination: keep the reader on the sentence they
   // were on. Never page-zero, never a progress write.
   useEffect(() => {
@@ -834,7 +884,16 @@ export function ReaderPage() {
         scroller.scrollTop += r.top - base.top - base.height * 0.34;
       }
     }
-  }, [readAlong, narration.cue, following, prefs.mode, page, goToPage, pageForOffset]);
+  }, [
+    readAlong,
+    narration.cue,
+    following,
+    prefs.mode,
+    page,
+    goToPage,
+    pageForOffset,
+    chromeInset.bottom,
+  ]);
 
   /**
    * Land on a search hit, verifiably, and mark it.
@@ -1292,10 +1351,15 @@ export function ReaderPage() {
           '--rd-measure': margins.measure,
           '--rd-align': prefs.align,
           '--rd-hyphens': prefs.hyphens ? 'auto' : 'manual',
+          // Measured, so scroll mode and the chapter-end button reserve the
+          // room the bars actually take rather than a constant that was
+          // already wrong before read-along made it worse.
+          '--rd-chrome-top': `${chromeInset.top}px`,
+          '--rd-chrome-bottom': `${chromeInset.bottom}px`,
         } as React.CSSProperties
       }
     >
-      <div className="immersive-chrome immersive-chrome--top">
+      <div className="immersive-chrome immersive-chrome--top" ref={topChromeRef}>
         <button
           className="icon-btn"
           onClick={() => navigate(`/book/${id}`)}
@@ -1371,7 +1435,7 @@ export function ReaderPage() {
                 className="reader-content reader-content--paginated"
                 style={{
                   transition: 'transform 200ms var(--rp-ease)',
-                  padding: `calc(72px + var(--rp-safe-top)) ${margins.padding}px calc(64px + var(--rp-safe-bottom))`,
+                  padding: `${chromeInset.top + 8}px ${margins.padding}px ${chromeInset.bottom + 8}px`,
                 }}
                 onPointerDown={(e) => {
                   swipeRef.current = { x: e.clientX, y: e.clientY, t: Date.now() };
@@ -1565,6 +1629,7 @@ export function ReaderPage() {
 
       <div
         className={`immersive-chrome immersive-chrome--bottom immersive-chrome--bar-${prefs.progressBar}`}
+        ref={bottomChromeRef}
       >
         {/* The transport sits inside the bottom chrome so it can never land on
             top of it, and the chrome refuses to hide while it is here: you

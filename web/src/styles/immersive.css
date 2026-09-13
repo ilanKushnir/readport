@@ -101,7 +101,8 @@
   line-height: var(--rd-leading, 1.62);
   max-width: var(--rd-measure, 38em);
   margin-inline: auto;
-  padding: calc(72px + var(--rp-safe-top)) var(--rd-margin, 24px) 120px;
+  padding: calc(var(--rd-chrome-top, 72px) + 8px) var(--rd-margin, 24px)
+    calc(var(--rd-chrome-bottom, 120px) + 24px);
 }
 .reader-pages {
   /* Centred page box (≤ MAX_PAGE_WIDTH); clips the neighbouring pages that
@@ -311,7 +312,9 @@
 .reader-chapter-end {
   display: flex;
   justify-content: center;
-  padding: var(--sp-6) var(--sp-4) calc(120px + var(--rp-safe-bottom));
+  /* Clears the bottom bar, whose height depends on the progress-bar
+     setting and on whether the read-along transport is mounted. */
+  padding: var(--sp-6) var(--sp-4) calc(var(--rd-chrome-bottom, 120px) + 32px);
 }
 .reader-chapter-end .btn {
   color: var(--rd-link);
