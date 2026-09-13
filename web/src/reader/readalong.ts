@@ -34,6 +34,12 @@ export interface Cue {
   /** Book-absolute milliseconds — what the audio element is seeked to. */
   startMs: number;
   endMs: number;
+  /**
+   * How far off this timing may be, in ms — carried through from the aligner.
+   * A cue the aligner is sure of can be shown to the reader as a fact; one it
+   * is guessing at should only ever move a pace marker.
+   */
+  uncertaintyMs: number;
 }
 
 /**
@@ -70,6 +76,11 @@ export function buildCues(sentences: SentenceIndexEntry[], segments: AlignedSegm
       // A zero-length or inverted cue can never be "current", so give it the
       // smallest span that can be.
       endMs: Math.max(seg.endMs, seg.startMs + 1),
+      // No stated uncertainty means the aligner did not measure one, which is
+      // not the same as being certain — treat it as unknown, not as zero.
+      uncertaintyMs: Number.isFinite(seg.uncertaintyMs)
+        ? Math.max(0, seg.uncertaintyMs!)
+        : Number.POSITIVE_INFINITY,
     });
   }
   cues.sort((a, b) => a.startMs - b.startMs);
@@ -223,4 +234,60 @@ export function locateInTracks(
     }
   }
   return { trackIdx: 0, positionMs: 0 };
+}
+
+/**
+ * A timing tight enough to show the reader as a fact.
+ *
+ * Anything looser moves the pace marker and nothing else. Half a second is
+ * about one spoken clause: inside that, pointing at a word is genuinely
+ * pointing at the word being said; outside it, a highlight would be a
+ * confident-looking lie, and a wrong highlight is worse than none because the
+ * reader's eye follows it.
+ */
+export const CONFIDENT_MS = 500;
+
+export function isConfident(cue: Cue | null): boolean {
+  return !!cue && cue.uncertaintyMs <= CONFIDENT_MS;
+}
+
+/**
+ * Where the narration has got to, as a character offset — including between
+ * sentences.
+ *
+ * The pace marker needs a position at every instant, not once a sentence. A
+ * cue gives a span of text and a span of time, so inside a cue the offset is
+ * that span read at a constant rate; between two cues it carries on across
+ * the gap at the rate the gap implies. It is an estimate and is drawn as one:
+ * a marker beside the text, never a mark on it.
+ *
+ * Returns null when there is nothing to estimate from — before the first cue,
+ * after the last, or in a stretch with no timings at all.
+ */
+export function paceOffset(cues: Cue[], bookMs: number): number | null {
+  if (cues.length === 0) return null;
+  const { cue, state, index } = cueAt(cues, bookMs);
+
+  if (state === 'on' && cue) {
+    const span = cue.endMs - cue.startMs;
+    const through = span > 0 ? (bookMs - cue.startMs) / span : 0;
+    return cue.charStart + (cue.charEnd - cue.charStart) * clamp01(through);
+  }
+
+  // Holding between two sentences: walk from the end of the one just spoken
+  // towards the start of the next, so the marker keeps moving through a
+  // breath instead of stalling and then jumping.
+  if (state === 'hold' && cue) {
+    const next = cues[index + 1];
+    if (!next) return cue.charEnd;
+    const span = next.startMs - cue.endMs;
+    const through = span > 0 ? (bookMs - cue.endMs) / span : 1;
+    return cue.charEnd + (next.charStart - cue.charEnd) * clamp01(through);
+  }
+
+  return null;
+}
+
+function clamp01(n: number): number {
+  return n < 0 ? 0 : n > 1 ? 1 : n;
 }
