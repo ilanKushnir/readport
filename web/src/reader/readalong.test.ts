@@ -36,7 +36,16 @@ const CUES = buildCues(SENTENCES, SEGMENTS);
 describe('buildCues', () => {
   it('joins a sentence to its timing by id', () => {
     expect(CUES).toHaveLength(3);
-    expect(CUES[0]).toEqual({ id: 's1', charStart: 0, charEnd: 40, startMs: 1_000, endMs: 4_000 });
+    expect(CUES[0]).toEqual({
+      id: 's1',
+      charStart: 0,
+      charEnd: 40,
+      startMs: 1_000,
+      endMs: 4_000,
+      // No stated uncertainty is unknown, not certain: the pace marker still
+      // moves through it, but the text is never marked as a fact.
+      uncertaintyMs: Number.POSITIVE_INFINITY,
+    });
   });
 
   it('drops a sentence the aligner never timed rather than inventing one', () => {

@@ -48,7 +48,7 @@ import {
   type HighlightColor,
 } from './marks';
 import { NarrationBar, useNarration } from './Narration';
-import { shouldFollow } from './readalong';
+import { isConfident, paceOffset, shouldFollow } from './readalong';
 import { liveCheckpointOffset } from './liveOffset';
 import {
   computePageLayout,
@@ -79,6 +79,14 @@ const THEME_BG: Record<ReturnType<typeof effectiveTheme>, string> = {
   contrast: '#000000',
 };
 
+/**
+ * How long a confident anchor stays lit.
+ *
+ * Long enough for the eye to catch it, short enough that the page is never
+ * left looking marked up — which is what a permanent wash did.
+ */
+const FLASH_MS = 900;
+
 export function ReaderPage() {
   const { id = '' } = useParams();
   const [searchParams] = useSearchParams();
@@ -108,6 +116,12 @@ export function ReaderPage() {
   const [pageCount, setPageCount] = useState(1);
   /** Last count actually applied, for the post-load re-measure to compare. */
   const lastCountRef = useRef(1);
+  /** Timer clearing the last confident flash, so flashes never stack up. */
+  const flashTimerRef = useRef<number | null>(null);
+  /** Where the narration is, as a fraction down the visible text. */
+  const [paceTop, setPaceTop] = useState<number | null>(null);
+  /** Keep the pace marker centred and scroll the page under it. */
+  const [autoScroll, setAutoScroll] = useState(false);
   /**
    * This chapter would not divide into pages, so it scrolls instead.
    * Per-chapter, not a preference: the next chapter gets a fresh chance.
@@ -966,7 +980,22 @@ export function ReaderPage() {
       return;
     }
     const cue = narration.cue;
-    paintSpeaking(map, cue ? { start: cue.charStart, end: cue.charEnd } : null);
+    // Only where the aligner is sure. A wash that sits on every sentence is a
+    // confident-looking guess, and the reader's eye follows it to the wrong
+    // line; worse, an inaccurate one leaves the page looking marked up. The
+    // pace marker in the margin carries the continuous signal instead, and
+    // the text itself is only touched to re-anchor the eye — briefly — when
+    // the timing is tight enough to be a fact.
+    if (flashTimerRef.current !== null) window.clearTimeout(flashTimerRef.current);
+    if (isConfident(cue)) {
+      paintSpeaking(map, { start: cue!.charStart, end: cue!.charEnd });
+      flashTimerRef.current = window.setTimeout(
+        () => paintSpeaking(textMapRef.current, null),
+        FLASH_MS,
+      );
+    } else {
+      paintSpeaking(map, null);
+    }
     if (!cue || !map) return;
     const onScreen = spanOnScreen(
       map,
@@ -1053,8 +1082,75 @@ export function ReaderPage() {
     return () => clearTimeout(t);
   }, [found]);
 
+  /**
+   * The pace marker: where the narration has got to, beside the text.
+   *
+   * Highlighting every sentence made two promises the alignment cannot keep —
+   * that this exact sentence is being spoken, and that the marks left behind
+   * mean something. A marker in the margin makes the honest promise instead:
+   * roughly here, moving at the pace the narrator is reading. It is drawn
+   * beside the words, never on them, so nothing is ever left marked up.
+   *
+   * Positioned from the interpolated character offset, which keeps moving
+   * between sentences rather than stalling and jumping.
+   */
+  useEffect(() => {
+    if (!readAlong || !narration.playing) {
+      setPaceTop(null);
+      return;
+    }
+    const map = textMapRef.current;
+    const at = paceOffset(narration.cues, narration.bookMs);
+    if (at === null || !map) {
+      setPaceTop(null);
+      return;
+    }
+    const offset = Math.round(at);
+    const range = rangeForSpan(map, offset, offset + 1);
+    const box = (prefs.mode === 'paginated' ? pagesRef.current : scrollerRef.current) ?? null;
+    if (!range || !box) {
+      setPaceTop(null);
+      return;
+    }
+    const r = range.getBoundingClientRect();
+    const b = box.getBoundingClientRect();
+    // Off the current page or scrolled out of view: nothing to point at.
+    if (r.height === 0 || r.bottom < b.top || r.top > b.bottom) {
+      setPaceTop(null);
+      return;
+    }
+    setPaceTop(r.top - b.top + r.height / 2);
+  }, [readAlong, narration.playing, narration.bookMs, narration.cues, prefs.mode, page]);
+
+  /**
+   * Auto-scroll: hold the pace marker at the middle of the screen.
+   *
+   * Scrolling mode only — in paginated mode the page already turns itself when
+   * the voice reaches the next one. The scroll is eased rather than snapped so
+   * the line you are reading does not jump out from under you, and it is
+   * skipped entirely while the reader is dragging the page themselves.
+   */
+  useEffect(() => {
+    if (!autoScroll || !readAlong || !narration.playing) return;
+    if (prefs.mode === 'paginated') return;
+    const scroller = scrollerRef.current;
+    if (scroller === null || paceTop === null) return;
+    const middle = scroller.clientHeight / 2;
+    const drift = paceTop - middle;
+    // A few pixels either way is the marker breathing, not the page needing
+    // to move; scrolling for that would never settle.
+    if (Math.abs(drift) < 24) return;
+    scroller.scrollBy({ top: drift, behavior: 'smooth' });
+  }, [autoScroll, readAlong, narration.playing, paceTop, prefs.mode]);
+
   // Leaving the reader stops the voice; so does closing the tab.
-  useEffect(() => () => paintSpeaking(null, null), []);
+  useEffect(
+    () => () => {
+      if (flashTimerRef.current !== null) window.clearTimeout(flashTimerRef.current);
+      paintSpeaking(null, null);
+    },
+    [],
+  );
 
   /**
    * A tap while reading along. On a timed sentence it moves the voice there —
@@ -1621,6 +1717,15 @@ export function ReaderPage() {
             <path d="M0 0h22v34l-11-8-11 8z" fill="currentColor" />
           </svg>
         )}
+        {paceTop !== null && (
+          // Beside the text, never on it: an estimate drawn as one.
+          <span
+            className="pace-marker"
+            style={{ top: paceTop }}
+            aria-hidden="true"
+            data-auto={autoScroll ? 'on' : undefined}
+          />
+        )}
         {prefs.mode === 'paginated' ? (
           <>
             <button
@@ -1880,6 +1985,8 @@ export function ReaderPage() {
               }
             }}
             onClose={() => setReadAlong(false)}
+            autoScroll={prefs.mode === 'paginated' ? null : autoScroll}
+            onAutoScroll={setAutoScroll}
           />
         )}
         {prefs.progressBar === 'full' && (

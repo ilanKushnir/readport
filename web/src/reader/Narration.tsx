@@ -12,6 +12,7 @@ import {
   IconSkipBack,
   IconSpeed,
   IconTarget,
+  IconAutoScroll,
 } from '../components/icons';
 import {
   type AlignedSegment,
@@ -51,6 +52,8 @@ export interface NarrationApi {
   playing: boolean;
   /** The sentence being spoken, when there is one to point at. */
   cue: Cue | null;
+  /** This chapter's timed sentences — what the pace marker interpolates over. */
+  cues: Cue[];
   state: FollowState;
   bookMs: number;
   speed: number;
@@ -430,6 +433,7 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
     },
     playing,
     cue: lookup.cue,
+    cues,
     state: lookup.state,
     bookMs,
     speed,
@@ -456,11 +460,16 @@ export function NarrationBar({
   following,
   onResume,
   onClose,
+  autoScroll,
+  onAutoScroll,
 }: {
   n: NarrationApi;
   following: boolean;
   onResume: () => void;
   onClose: () => void;
+  /** Null when the page turns itself — auto-scroll is a scrolling idea. */
+  autoScroll: boolean | null;
+  onAutoScroll: (on: boolean) => void;
 }) {
   const [speedOpen, setSpeedOpen] = useState(false);
 
@@ -518,6 +527,20 @@ export function NarrationBar({
         <button className="readalong__resume" onClick={onResume}>
           <IconTarget size={15} />
           <span>Back to the voice</span>
+        </button>
+      )}
+
+      {/* Follow the voice down the page by itself. Offered only where it
+          means something: in paginated mode the page already turns itself. */}
+      {autoScroll !== null && (
+        <button
+          className="readalong__btn"
+          aria-pressed={autoScroll}
+          onClick={() => onAutoScroll(!autoScroll)}
+          aria-label={autoScroll ? 'Stop scrolling with the voice' : 'Scroll with the voice'}
+          title={autoScroll ? 'Stop scrolling with the voice' : 'Scroll with the voice'}
+        >
+          <IconAutoScroll size={18} />
         </button>
       )}
 

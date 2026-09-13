@@ -145,6 +145,44 @@
   transform: none !important;
 }
 
+/* The pace marker.
+   Where the narration has got to, beside the text rather than on it. A wash
+   over the words claims "this exact sentence, right now", which the alignment
+   cannot always keep and which leaves the page looking marked up when it is
+   wrong. A marker in the margin claims what is true: roughly here, moving at
+   the pace it is being read. */
+.pace-marker {
+  position: absolute;
+  inset-inline-start: max(4px, var(--rp-safe-left));
+  width: 3px;
+  height: 22px;
+  margin-block-start: -11px;
+  border-radius: 2px;
+  background: var(--rd-link);
+  opacity: 0.55;
+  z-index: 3;
+  pointer-events: none;
+  /* Eased, so it glides with the voice instead of ticking. */
+  transition:
+    top 320ms linear,
+    opacity var(--rp-duration-quick) var(--rp-ease);
+}
+/* Following by itself: brighter, so it is clear what is driving the page. */
+.pace-marker[data-auto='on'] {
+  opacity: 0.95;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rd-link) 18%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .pace-marker {
+    transition: none;
+  }
+}
+
+/* A confident anchor: lit briefly, then gone. Fades rather than blinks. */
+::highlight(rp-speaking) {
+  transition: background-color 200ms ease;
+}
+
 .reader-ribbon {
   position: absolute;
   /* Hangs from under the top chrome; from the page edge once the chrome hides. */

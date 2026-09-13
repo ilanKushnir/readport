@@ -327,6 +327,13 @@ export const IconListPlus = (p: P) => (
     <path d="M18 14.5v6M15 17.5h6" />
   </I>
 );
+/** Follow the voice down the page: lines with a caret tracking down them. */
+export const IconAutoScroll = (p: P) => (
+  <I {...p}>
+    <path d="M8.5 5h11M8.5 9.5h11M8.5 14h8M8.5 18.5h5" />
+    <path d="M4 8.5 L4 15.5 M2 13.5 L4 15.8 L6 13.5" />
+  </I>
+);
 export const IconPlus = (p: P) => (
   <I {...p}>
     <path d="M12 5.5v13M5.5 12h13" />
