@@ -463,4 +463,30 @@ ALTER TABLE users ADD COLUMN can_export INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE invites ADD COLUMN can_export INTEGER NOT NULL DEFAULT 0;
 `,
   },
+  {
+    version: 13,
+    sql: `
+-- Read-only keys, for agents.
+--
+-- A person's assistant should be able to see what they are reading without
+-- being able to change it, and without being handed the password to an
+-- account that can. So: a key belongs to one user, carries that user's view
+-- of the library, and can only ever perform a GET.
+--
+-- The secret is never stored. 'prefix' is the public half of the key, kept
+-- so a lookup is an indexed hit rather than a scan of every hash, and so the
+-- key can be shown as rp_a1b2c3d4... in a list without revealing anything.
+CREATE TABLE api_keys (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  prefix TEXT NOT NULL UNIQUE,
+  key_hash TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  last_used_at TEXT,
+  revoked_at TEXT
+);
+CREATE INDEX idx_api_keys_user ON api_keys(user_id);
+`,
+  },
 ];

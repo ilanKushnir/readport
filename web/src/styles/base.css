@@ -3963,6 +3963,38 @@ select.input {
   }
 }
 
+/* Agent access: keys read, and nothing else. */
+.apikey {
+  display: block;
+  margin-block-start: var(--sp-2);
+  padding: var(--sp-2);
+  border-radius: var(--radius-control);
+  background: var(--rp-surface);
+  border: 1px solid var(--rp-border);
+  font-family: var(--rp-font-mono, ui-monospace, monospace);
+  font-size: 12.5px;
+  /* A key is one long token; it must wrap rather than widen the page. */
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+.keylist {
+  list-style: none;
+  margin: var(--sp-3) 0;
+  padding: 0;
+  display: grid;
+  gap: var(--sp-2);
+}
+.keylist__row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 44px;
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--rp-border);
+  border-radius: var(--radius-control);
+  background: var(--rp-surface-raised);
+}
+
 /* ------------------------------------------------- touch target sizing
    A fingertip needs ~44px. These controls are sized for a mouse, and the
    phone is where most of this app is used - so the sizes are raised only
