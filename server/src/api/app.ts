@@ -67,6 +67,8 @@ export interface BuildAppOptions {
   webDist?: string;
 }
 
+let warnedProxy = false;
+
 export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyInstance {
   const app = Fastify({
     logger: { level: ctx.config.logLevel },
@@ -101,6 +103,18 @@ export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyIn
     if (!(decodedPathname(req.url) ?? '').startsWith('/api/books/')) {
       // Book chapter fragments/assets carry their own stricter handling.
       reply.header('content-security-policy', CSP);
+    }
+    // Said once, at the moment it is demonstrably wrong: a forwarded header
+    // arrived and we are not configured to trust anything, so every client
+    // looks like the proxy and the per-address login limits are really one
+    // bucket for the whole server.
+    if (!warnedProxy && req.headers['x-forwarded-for'] && ctx.config.trustProxy === false) {
+      warnedProxy = true;
+      ctx.log.warn(
+        'Requests carry X-Forwarded-For but RP_TRUST_PROXY is unset, so every client looks ' +
+          "like the proxy and sign-in rate limits apply server-wide. Set it to the proxy's " +
+          'address or CIDR.',
+      );
     }
     attachUser(ctx, req, reply);
     const pathname = decodedPathname(req.url);

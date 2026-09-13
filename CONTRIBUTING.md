@@ -41,7 +41,7 @@ docs/     the reference docs; this file is the one at the repo root
 
 ## Development
 
-Requirements: Node ≥ 22.5 (for `node:sqlite`; CI and the image run 26),
+Requirements: Node ≥ 24 (for `node:sqlite`; CI and the image run 26),
 ffmpeg/ffprobe on PATH. There is one native dependency, `onnxruntime-node`,
 and it ships prebuilt binaries for macOS, Linux and Windows inside the
 package itself, so `npm ci` needs no compiler and nothing platform-specific.

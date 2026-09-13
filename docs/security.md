@@ -324,7 +324,10 @@ Both are accepted V1 limitations of trusting a folder the operator chose.
 
 - `RP_SESSION_SECRET` supports `_FILE` (Docker secrets). If unset, a random
   secret is generated once and stored with mode 0600 in the data dir.
-- Tokens are never logged; session cookies never reach client-side
+- No token is logged except the one-time first-run setup token, which is
+  printed once on an instance that has no accounts and stops working the moment
+  the admin account exists — set `RP_SETUP_TOKEN` (or `RP_SETUP_TOKEN_FILE`) to
+  keep it out of the log entirely. Otherwise tokens are never logged; session cookies never reach client-side
   JavaScript (`HttpOnly`); the web bundle contains no secrets.
 - API error responses never carry internal messages: a global error
   handler logs 5xx details server-side and answers `{ "error": "internal" }`;

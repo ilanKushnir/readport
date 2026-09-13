@@ -10,7 +10,7 @@ creates lives in its own volumes.
 ## Quick start (Docker Compose)
 
 ```bash
-git clone https://github.com/YOUR_ORG/readport && cd readport
+git clone https://github.com/ilanKushnir/readport && cd readport
 cp .env.example .env
 # Required: set a session secret
 sed -i "s/^RP_SESSION_SECRET=.*/RP_SESSION_SECRET=$(openssl rand -hex 32)/" .env
@@ -140,8 +140,18 @@ is used, and `no-new-privileges` is enabled in the compose file.
 ## Reverse proxy and HTTPS (required for the PWA)
 
 Installable PWAs and service workers require HTTPS (or `localhost`). Put any
-TLS-terminating proxy in front and set `RP_TRUST_HTTPS=1` so session cookies
-are marked `Secure`.
+TLS-terminating proxy in front and set **both**:
+
+- `RP_TRUST_HTTPS=1` so session cookies are marked `Secure`;
+- `RP_TRUST_PROXY` to your proxy's address or CIDR (or `1` when the proxy is
+  the only thing that can reach the port).
+
+The second one matters more than it looks. Without it every request appears to
+come from the proxy, so the per-address limit on failed sign-ins becomes a
+single server-wide bucket — and a stranger guessing at one account can lock
+everybody out. With it set, `X-Forwarded-For` is honoured only from the
+addresses you name, so a client hitting the port directly still cannot forge
+one.
 
 Caddy example:
 
@@ -229,7 +239,7 @@ recompute anything after losing both.
 ## Upgrades and migrations
 
 ```bash
-git pull            # or: docker pull ghcr.io/OWNER/readport:latest
+git pull            # or: docker pull ghcr.io/ilankushnir/readport:latest
 docker compose up -d --build
 ```
 

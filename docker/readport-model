@@ -7,7 +7,7 @@
 #   docker compose exec readport readport-model status
 set -eu
 MODELS_DIR="${RP_MODELS_DIR:-/models}"
-BASE="https://huggingface.co/onnx-community/mms-300m-1130-forced-aligner-ONNX/resolve/main"
+BASE="https://huggingface.co/onnx-community/mms-300m-1130-forced-aligner-ONNX/resolve/2100fb247d8e43962eef24491597fbeb8b469531"
 
 # path inside the models volume | url
 FILES="mms-fa/model_int8.onnx|$BASE/onnx/model_int8.onnx
@@ -17,14 +17,20 @@ mms-fa/config.json|$BASE/config.json"
 case "${1:-install}" in
   status)
     missing=0
-    echo "$FILES" | while IFS='|' read -r rel _url; do
+    # A here-document, not a pipe: a piped loop runs in a subshell, so the
+    # `missing` it sets is discarded and `status` reported success even with
+    # no model on disk — which is exactly what a health check would ask.
+    while IFS='|' read -r rel _url; do
+      [ -n "$rel" ] || continue
       if [ -s "$MODELS_DIR/$rel" ]; then
         echo "present  $rel  ($(wc -c <"$MODELS_DIR/$rel") bytes)"
       else
         echo "MISSING  $rel"
         missing=1
       fi
-    done
+    done <<EOF
+$FILES
+EOF
     exit $missing
     ;;
   install)
