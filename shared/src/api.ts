@@ -262,8 +262,14 @@ export const acceptInviteSchema = z.object({
   password: passwordSchema,
   displayName: displayNameSchema.optional(),
 });
+/**
+ * `currentPassword` is optional because an account provisioned by a reverse
+ * proxy has no password to prove: it is omitted when FIRST setting one, and
+ * required in every other case. The server decides which case it is - the
+ * client cannot skip the check by leaving the field out.
+ */
 export const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1).max(1024),
+  currentPassword: z.string().min(1).max(1024).optional(),
   newPassword: passwordSchema,
 });
 

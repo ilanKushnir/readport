@@ -3,7 +3,7 @@ import { type FastifyRequest } from 'fastify';
 import { type AppContext } from '../context.js';
 import { type SessionUser } from './sessions.js';
 import { newId } from '../util/ids.js';
-import { nowIso } from '../db/index.js';
+import { nowIso, type DB } from '../db/index.js';
 
 /**
  * Reverse-proxy single sign-on (Authentik / Authelia / oauth2-proxy style).
@@ -127,4 +127,17 @@ export function proxyAuthUser(
     if (again) return again;
     throw err;
   }
+}
+
+/**
+ * Whether this account can sign in without the proxy.
+ *
+ * A proxy-provisioned account carries UNUSABLE_PASSWORD until its owner sets
+ * one. Settings asks so it can offer to - and so an operator can see, before
+ * taking the gate off, whether anyone would be locked out by it.
+ */
+export function hasUsablePassword(db: DB, userId: string): boolean {
+  const row = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(userId) as
+    { password_hash: string } | undefined;
+  return !!row && row.password_hash !== UNUSABLE_PASSWORD;
 }

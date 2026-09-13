@@ -12,6 +12,7 @@ import { enqueueJob } from '../../jobs/queue.js';
 import { alignmentRoots, libraryRoots, saveSettings } from '../../domain/settings.js';
 import { browseDirectories, checkLibraryPath } from '../../setup/paths.js';
 import { mayExport, hasRole } from '../../auth/roles.js';
+import { hasUsablePassword } from '../../auth/proxyAuth.js';
 
 const ATTEMPT_LIMIT = 10;
 const IP_ATTEMPT_LIMIT = 30;
@@ -254,6 +255,11 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
       // capability takes effect on the next page load rather than in a month.
       user: { ...req.user, canExport: mayExport(db, req.user) },
       via: req.authVia ?? 'session',
+      // Whether this account can sign in WITHOUT the proxy. Not the same
+      // question as `via`: someone can arrive through their identity
+      // provider on an account that also has a password, and someone
+      // provisioned by the proxy has none until they set one.
+      hasPassword: hasUsablePassword(db, req.user.id),
       // An admin who has not pointed the server at any library yet still has
       // setup to finish. This is the normal path behind reverse-proxy SSO,
       // where the first user is provisioned automatically and never sees the
