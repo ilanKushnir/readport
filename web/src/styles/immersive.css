@@ -381,12 +381,20 @@
   background: transparent;
 }
 
+/* When this block follows the text, IT owns the clearance under the chapter -
+   the text does not need to reserve the bottom bar as well. Reserving it
+   twice put ~300px of nothing between the last line and the button, which on
+   a short front-matter section (a title page, a dedication) left the button
+   floating alone in the middle of a blank screen. */
+.reader-scroller .reader-content {
+  padding-block-end: var(--sp-4);
+}
 .reader-chapter-end {
   display: flex;
   justify-content: center;
   /* Clears the bottom bar, whose height depends on the progress-bar
      setting and on whether the read-along transport is mounted. */
-  padding: var(--sp-6) var(--sp-4) calc(var(--rd-chrome-bottom, 120px) + 32px);
+  padding: var(--sp-5) var(--sp-4) calc(var(--rd-chrome-bottom, 120px) + 32px);
 }
 .reader-chapter-end .btn {
   color: var(--rd-link);

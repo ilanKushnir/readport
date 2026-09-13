@@ -527,12 +527,21 @@ export function ReaderPage() {
       content.style.transform = `translateX(${dirFactor * clamped * layoutRef.current.stride}px)`;
       setPage(clamped);
     } else if (map) {
-      const range = rangeForSpan(map, charOffset, charOffset + 1);
       const scroller = scrollerRef.current;
-      if (range && scroller) {
-        const r = range.getBoundingClientRect();
-        const base = scroller.getBoundingClientRect();
-        scroller.scrollTop += r.top - base.top - 96;
+      if (charOffset <= 0) {
+        // Opening a chapter at its start. Say so absolutely: the relative
+        // nudge below starts from wherever the PREVIOUS chapter was scrolled
+        // to, and if anything about the measurement is off by a little the
+        // reader lands somewhere in the middle of the new chapter with no
+        // idea why.
+        if (scroller) scroller.scrollTop = 0;
+      } else {
+        const range = rangeForSpan(map, charOffset, charOffset + 1);
+        if (range && scroller) {
+          const r = range.getBoundingClientRect();
+          const base = scroller.getBoundingClientRect();
+          scroller.scrollTop += r.top - base.top - 96;
+        }
       }
     }
 
@@ -1544,6 +1553,54 @@ export function ReaderPage() {
   }, [markPop, chromeInset.bottom]);
 
   /**
+   * Put the reader back where they asked to be, once the chapter settles.
+   *
+   * Scroll mode has the same problem paginated mode had: the landing is
+   * computed the instant the HTML is injected, before its images have any
+   * height, so a chapter with a figure near the top slides out from under the
+   * reader as the images arrive. Opening a chapter at its start would leave
+   * them somewhere in the middle of it.
+   */
+  useEffect(() => {
+    if (prefs.mode === 'paginated' || !html) return;
+    const scroller = scrollerRef.current;
+    const content = contentRef.current;
+    if (!scroller || !content) return;
+    // Only while they have not moved themselves: re-landing someone who has
+    // started reading is worse than the drift.
+    const landing = currentOffsetRef.current;
+    let alive = true;
+    const settle = () => {
+      if (!alive || scrollerRef.current !== scroller) return;
+      if (Math.abs(currentOffsetRef.current - landing) > 40) return;
+      if (landing <= 0) {
+        scroller.scrollTop = 0;
+        return;
+      }
+      const map = textMapRef.current;
+      const range = map && rangeForSpan(map, landing, landing + 1);
+      if (!range) return;
+      const r = range.getBoundingClientRect();
+      const base = scroller.getBoundingClientRect();
+      scroller.scrollTop += r.top - base.top - 96;
+    };
+    const pending = Array.from(content.querySelectorAll('img')).filter((i) => !i.complete);
+    for (const img of pending) {
+      img.addEventListener('load', settle);
+      img.addEventListener('error', settle);
+    }
+    const timers = [120, 600, 1600].map((ms) => window.setTimeout(settle, ms));
+    return () => {
+      alive = false;
+      for (const t of timers) window.clearTimeout(t);
+      for (const img of pending) {
+        img.removeEventListener('load', settle);
+        img.removeEventListener('error', settle);
+      }
+    };
+  }, [loadSeq, html, prefs.mode]);
+
+  /**
    * Tell the toast how tall this page's chrome is.
    *
    * The toast is pinned 96px up - the height of the bottom bar without
@@ -1941,7 +1998,14 @@ export function ReaderPage() {
                     className="btn btn--secondary"
                     onClick={() => gotoChapter(spineIdx + 1, 0)}
                   >
-                    Next: {manifest.chapters[spineIdx + 1]?.title ?? `Chapter ${spineIdx + 2}`}
+                    {/* Spine items are files, not chapters: a cover, a title
+                        page and a dedication are each one, and only some are
+                        named by the book's own contents. Numbering the rest
+                        "Chapter 2, 3, 4" called them something they are not,
+                        with numbers that matched nothing in the book. */}
+                    {manifest.chapters[spineIdx + 1]?.title
+                      ? `Next: ${manifest.chapters[spineIdx + 1]!.title}`
+                      : 'Continue'}
                   </button>
                 ) : (
                   <button className="btn btn--secondary" onClick={finishBook}>
