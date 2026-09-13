@@ -260,7 +260,7 @@ export function BookPage() {
     } catch (err) {
       toast.show(
         (err as Error).message.includes('Cache Storage')
-          ? 'Offline downloads need HTTPS (or localhost) — see docs/self-hosting.md.'
+          ? 'Offline downloads need HTTPS (or localhost). See the self-hosting guide in the ReadPort README.'
           : `Download failed: ${(err as Error).message}`,
       );
     } finally {
@@ -765,7 +765,11 @@ function OfflineSheet({
           )}
           {dl?.status === 'error' && (
             <div className="banner banner--error" role="alert">
-              <IconAlert size={15} /> Last attempt failed: {dl.error ?? 'unknown error'}
+              <IconAlert size={15} />
+              <span>
+                The download was interrupted — starting again continues from where it stopped.
+                {dl.error && <small className="hint"> {dl.error}</small>}
+              </span>
             </div>
           )}
           <div className="sheet__actions">

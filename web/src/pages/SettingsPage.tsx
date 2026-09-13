@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { type Job, type Settings } from '@readport/shared';
-import { api, ApiError } from '../api/client';
+import { api, ApiError, actionFailed } from '../api/client';
 import { useSession } from '../state/session';
 import { useToast } from '../components/ui';
 import { IconAlert, IconCheck, IconDownload, IconTrash } from '../components/icons';
@@ -106,8 +106,8 @@ export function SettingsPage() {
       setData((d) => (d ? { ...d, settings: res.settings } : d));
       if (!patch) setDraft({});
       toast.show('Settings saved');
-    } catch {
-      toast.show('Saving failed (admin only)');
+    } catch (err) {
+      toast.show(actionFailed(err, 'Could not save those settings.'));
     } finally {
       setSaving(false);
     }
@@ -405,8 +405,8 @@ function LibrariesEditor({
     try {
       await api(`/api/alignments/${what}`, { method: 'POST' });
       toast.show(what === 'import' ? 'Looking for saved alignments' : 'Saving alignments');
-    } catch {
-      toast.show('Could not start that (admin only)');
+    } catch (err) {
+      toast.show(actionFailed(err, 'Could not start that.'));
     } finally {
       setBusy(null);
     }
@@ -415,9 +415,9 @@ function LibrariesEditor({
     setImportSaved(next);
     try {
       await api('/api/settings', { method: 'PUT', body: { importSavedAlignments: next } });
-    } catch {
+    } catch (err) {
       setImportSaved(!next);
-      toast.show('Could not save that (admin only)');
+      toast.show(actionFailed(err, 'Could not save that.'));
     }
   };
   const save = async () => {
@@ -789,8 +789,8 @@ function AlignmentSection({
       await api(`/api/models/${model.id}/download`, { method: 'POST' });
       toast.show('Downloading');
       await reload();
-    } catch {
-      toast.show('Could not start the download (admin only)');
+    } catch (err) {
+      toast.show(actionFailed(err, 'Could not start the download.'));
     }
   };
   const remove = async () => {
@@ -799,8 +799,8 @@ function AlignmentSection({
       await api(`/api/models/${model.id}`, { method: 'DELETE' });
       toast.show('Removed');
       await reload();
-    } catch {
-      toast.show('Could not remove it (admin only)');
+    } catch (err) {
+      toast.show(actionFailed(err, 'Could not remove it.'));
     }
   };
 

@@ -138,3 +138,17 @@ export async function api<T>(
 export const isOffline = (err: unknown): boolean => err instanceof ApiError && err.status === 0;
 export const isUnauthorized = (err: unknown): boolean =>
   err instanceof ApiError && err.status === 401;
+
+/**
+ * What to tell someone when an action did not go through.
+ *
+ * Call sites used to append "(admin only)" to every failure, which is only
+ * ever read by an admin — the one person for whom it is never the reason. The
+ * two causes worth naming are being offline and not being allowed; everything
+ * else is the caller's own sentence.
+ */
+export function actionFailed(err: unknown, fallback: string): string {
+  if (isOffline(err)) return 'You appear to be offline.';
+  if (err instanceof ApiError && err.status === 403) return 'You do not have permission for that.';
+  return fallback;
+}

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LANGUAGES, languageLabel } from '@readport/shared';
-import { api } from '../api/client';
+import { api, actionFailed } from '../api/client';
 import { type BookSummary, type PairDto, type ProcessingSummary } from '../lib/types';
 import { Cover, EmptyState, Sheet, useToast } from '../components/ui';
 import { useSession } from '../state/session';
@@ -95,8 +95,8 @@ export function PairsPage() {
         language ? `Narration language set to ${languageLabel(language)}` : 'Language reset',
       );
       await load();
-    } catch {
-      toast.show('Could not change the language (admin only)');
+    } catch (err) {
+      toast.show(actionFailed(err, 'Could not change the language.'));
     }
   };
 
@@ -111,8 +111,8 @@ export function PairsPage() {
         },
       });
       await load();
-    } catch {
-      toast.show('Could not start the download (admin only)');
+    } catch (err) {
+      toast.show(actionFailed(err, 'Could not start the download.'));
     }
   };
 
@@ -618,7 +618,10 @@ function PairCard({
       {job?.state === 'failed' && !job.modelMissing && pair.status !== 'rejected' && (
         <div className="banner banner--error" role="alert">
           <IconAlert size={15} />
-          <span className="grow">Alignment failed: {job.error}</span>
+          <span className="grow">
+            Alignment failed. Try again, or check the server log.
+            {job.error && <small className="hint"> {job.error}</small>}
+          </span>
           {isAdmin && (
             <button
               className="btn btn--ghost"

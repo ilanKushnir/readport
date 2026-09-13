@@ -301,7 +301,7 @@ function JobRow({
           </button>
         )}
         {modelMissing && (
-          <Link className="btn btn--ghost btn--sm" to="/settings#speech-models">
+          <Link className="btn btn--ghost btn--sm" to="/settings#alignment">
             Get model
           </Link>
         )}
@@ -364,7 +364,7 @@ export function PipelineDiagram() {
     },
   ];
   return (
-    <div className="pipeline" role="img" aria-label="How alignment works">
+    <div className="pipeline">
       {steps.map((s, i) => (
         <div key={s.n} className={`pipeline__step pipeline__step--${s.n}`}>
           <div className="pipeline__num">{s.n}</div>
@@ -376,12 +376,11 @@ export function PipelineDiagram() {
       ))}
       <p className="pipeline__foot">
         One model covers every language — set it up in{' '}
-        <Link to="/settings#speech-models">Settings → Models</Link>. Step 2 is the expensive part,
-        about a minute of computing per hour of audio — it samples the narration rather than
-        listening to every second — which is why it runs one book at a time and reports live
-        progress above. How many pins turn up is also the edition check: a narration that is not
-        this text produces almost none, and ReadPort refuses to publish timings rather than
-        inventing them.
+        <Link to="/settings#alignment">Settings → Models</Link>. Step 2 is the expensive part, about
+        a minute of computing per hour of audio — it samples the narration rather than listening to
+        every second — which is why it runs one book at a time and reports live progress above. How
+        many pins turn up is also the edition check: a narration that is not this text produces
+        almost none, and ReadPort refuses to publish timings rather than inventing them.
       </p>
     </div>
   );
