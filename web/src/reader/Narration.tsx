@@ -473,6 +473,30 @@ export function NarrationBar({
 }) {
   const [speedOpen, setSpeedOpen] = useState(false);
 
+  /**
+   * A menu that only closes by pressing the same button again is a menu you
+   * are stuck in — especially on a phone, where the instinct is to tap away
+   * from it. Escape closes it too, and does not reach the reader behind.
+   */
+  useEffect(() => {
+    if (!speedOpen) return;
+    const away = (e: PointerEvent) => {
+      if (!(e.target as HTMLElement | null)?.closest('.readalong__speed')) setSpeedOpen(false);
+    };
+    const key = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      setSpeedOpen(false);
+    };
+    document.addEventListener('pointerdown', away);
+    // Capture, so this runs before the reader's own Escape handler.
+    document.addEventListener('keydown', key, true);
+    return () => {
+      document.removeEventListener('pointerdown', away);
+      document.removeEventListener('keydown', key, true);
+    };
+  }, [speedOpen]);
+
   const status = n.error
     ? n.error
     : !n.ready

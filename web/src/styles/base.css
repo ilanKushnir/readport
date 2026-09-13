@@ -995,8 +995,10 @@ select.input {
 @media (min-width: 760px) {
   .sheet {
     inset-inline: auto;
-    inset-inline-end: var(--sp-5);
-    bottom: var(--sp-5);
+    /* A phone in landscape is wider than 760px and has a notch down one side.
+       24px is not enough to clear it, so the card sat under the cutout. */
+    inset-inline-end: max(var(--sp-5), var(--rp-safe-right));
+    bottom: max(var(--sp-5), var(--rp-safe-bottom));
     width: 400px;
     border-radius: var(--radius-card);
   }
@@ -3207,6 +3209,16 @@ select.input {
     opacity: 1;
     pointer-events: auto;
   }
+  /* Being always visible, it is always ON TOP of the row — it covered the
+     book count and the end of any shelf name long enough to reach it. Give
+     the row that width back so the two do not share it. */
+  .sidebar__item--own .sidebar__row {
+    padding-inline-end: 84px;
+  }
+  .sidebar__item--own .sidebar__count {
+    /* The count sat under the tools; it belongs just before them. */
+    margin-inline-end: 0;
+  }
 }
 
 .sidebar__item--own.is-editing {
@@ -3661,6 +3673,11 @@ select.input {
   box-shadow: var(--rp-shadow-2);
   overflow: hidden;
 }
+/* No room below — the tab bar is there. Hang it from the button instead. */
+.queue-menu.is-up {
+  top: auto;
+  bottom: calc(100% - var(--sp-2));
+}
 .queue-menu .list-row:disabled {
   opacity: 0.45;
   cursor: default;
@@ -3881,6 +3898,20 @@ select.input {
   align-self: center;
   min-height: 44px;
   font-size: 14px;
+}
+
+/* A smaller button, for a secondary action beside a heading. Still a real
+   target on a phone — an inline style of `minHeight: 32` defeated every
+   override the rest of the app makes. */
+.btn--tight {
+  min-height: 36px;
+  padding-inline: var(--sp-3);
+  font-size: 13px;
+}
+@media (pointer: coarse) {
+  .btn--tight {
+    min-height: 44px;
+  }
 }
 
 /* ------------------------------------------------- touch target sizing
