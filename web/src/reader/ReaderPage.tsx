@@ -88,6 +88,16 @@ export function ReaderPage() {
   const [detail, setDetail] = useState<BookDetail | null>(null);
   const [spineIdx, setSpineIdx] = useState<number>(-1);
   const [html, setHtml] = useState<string>('');
+  /**
+   * Bumped once per completed chapter load.
+   *
+   * The layout effect used to key off `html`, which fails silently when two
+   * consecutive chapters sanitize to the same string — React bails out of the
+   * identical setState, the effect never runs, and `chapterLoadingRef` stays
+   * true forever, blocking every page turn from then on. A counter always
+   * changes.
+   */
+  const [loadSeq, setLoadSeq] = useState(0);
   const [sentences, setSentences] = useState<SentenceIndexEntry[]>([]);
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [prefs, setPrefs] = useState<ReaderPrefs>(loadPrefs);
@@ -277,6 +287,7 @@ export function ReaderPage() {
         if (!alive) return;
         setSentences(sen.sentences);
         setHtml(text);
+        setLoadSeq((n) => n + 1);
         setLoadError(null);
       } catch {
         if (alive) setLoadError('Could not load this chapter (offline and not downloaded?).');
@@ -438,6 +449,10 @@ export function ReaderPage() {
   // After chapter HTML renders: fix asset URLs, build text map, paginate,
   // jump to pending target, paint highlights.
   useLayoutEffect(() => {
+    // Cleared before anything can bail out. A chapter that sanitizes to
+    // nothing used to return above this line and leave the flag set, which
+    // blocks every page turn from then on — the reader simply stops.
+    chapterLoadingRef.current = false;
     const content = contentRef.current;
     if (!content || !html || !manifest) return;
     for (const img of Array.from(content.querySelectorAll('img[src^="asset/"]'))) {
@@ -445,7 +460,6 @@ export function ReaderPage() {
     }
     textMapRef.current = buildTextMap(content);
     const count = applyPagination();
-    chapterLoadingRef.current = false;
 
     const target = pendingTargetRef.current;
     pendingTargetRef.current = null;
@@ -491,7 +505,7 @@ export function ReaderPage() {
       }
     }
   }, [
-    html,
+    loadSeq,
     prefs.mode,
     prefs.size,
     prefs.lineHeight,
@@ -744,6 +758,24 @@ export function ReaderPage() {
   const gotoChapterRef = useRef(gotoChapter);
   gotoChapterRef.current = gotoChapter;
 
+  /**
+   * Mark the book read.
+   *
+   * Lifted out of nextPage, which only reaches it by turning past the last
+   * page — a thing scroll mode has no way to do, so in scroll mode a book
+   * could never be finished and the "Finish book" button at the end of the
+   * last chapter did nothing at all.
+   */
+  const finishBook = useCallback(() => {
+    if (!manifest || spineIdx < manifest.chapters.length - 1) return;
+    const last = Math.max(0, (manifest.chapters[spineIdx]?.charCount ?? 1) - 1);
+    void recordCheckpoint(id, 'finish', {
+      ...locatorAt(manifest, sentences, spineIdx, last),
+      pct: 1,
+    });
+    toast.show('The End — marked as finished');
+  }, [manifest, spineIdx, sentences, id, toast]);
+
   const nextPage = useCallback(() => {
     if (chapterLoadingRef.current) return;
     // Moving the page by hand takes the wheel from the narration; it is given
@@ -756,15 +788,7 @@ export function ReaderPage() {
     }
     if (page < pageCount - 1) goToPage(page + 1);
     else if (manifest && spineIdx < manifest.chapters.length - 1) gotoChapter(spineIdx + 1, 0);
-    else if (manifest) {
-      // Turning past the last page of the last chapter: the book is finished.
-      const last = Math.max(0, (manifest.chapters[spineIdx]?.charCount ?? 1) - 1);
-      void recordCheckpoint(id, 'finish', {
-        ...locatorAt(manifest, sentences, spineIdx, last),
-        pct: 1,
-      });
-      toast.show('The End — marked as finished');
-    }
+    else if (manifest) finishBook();
   }, [
     prefs.mode,
     page,
@@ -1045,7 +1069,11 @@ export function ReaderPage() {
         start,
         end,
         text: sel.toString().slice(0, 500),
-        x: Math.max(12, Math.min(rect.left + rect.width / 2, window.innerWidth - 150)),
+        // The raw centre of the selection. Clamping here and then offsetting
+        // by half a guessed width at render time overshot both edges — the
+        // menu ran off the right of a phone for most selections and off the
+        // left for any near the start of a line.
+        x: rect.left + rect.width / 2,
         y: Math.max(70, rect.top - 48),
       });
     };
@@ -1067,8 +1095,12 @@ export function ReaderPage() {
   }, []);
 
   const addAnnotation = useCallback(
-    async (kind: 'highlight' | 'bookmark' | 'note', note?: string, color?: HighlightColor) => {
-      if (!manifest) return;
+    async (
+      kind: 'highlight' | 'bookmark' | 'note',
+      note?: string,
+      color?: HighlightColor,
+    ): Promise<boolean> => {
+      if (!manifest) return false;
       const sel = selection;
       const start = sel?.start ?? currentOffsetRef.current;
       const end = sel?.end ?? start;
@@ -1101,8 +1133,10 @@ export function ReaderPage() {
         );
         setSelection(null);
         document.getSelection()?.removeAllRanges();
+        return true;
       } catch {
         toast.show('Could not save — are you offline?');
+        return false;
       }
     },
     [manifest, selection, sentences, spineIdx, id, toast],
@@ -1113,6 +1147,16 @@ export function ReaderPage() {
    * tap is resolved by character offset (see marks.ts) — and it has to win
    * over toggling the chrome, or a highlight would be unreachable on a phone.
    */
+  /**
+   * The selection menu, positioned from its own measured width.
+   *
+   * It is a row of swatches plus two buttons, so its width depends on the
+   * font and the platform; a hardcoded half-width cannot centre it and cannot
+   * keep it on screen.
+   */
+  const selMenuRef = useRef<HTMLDivElement>(null);
+  const [selMenuLeft, setSelMenuLeft] = useState<number | null>(null);
+
   const sheetRef = useRef<SheetKind>('none');
   sheetRef.current = sheet;
 
@@ -1135,12 +1179,32 @@ export function ReaderPage() {
     [annotations, spineIdx],
   );
 
+  /**
+   * Keep the selection menu centred on the selection and on the screen.
+   *
+   * Measured rather than assumed: clamping the centre and then subtracting a
+   * guessed half-width put the menu off the right edge of a phone for most
+   * selections, and off the left for any near the start of a line.
+   */
+  useLayoutEffect(() => {
+    if (!selection) {
+      setSelMenuLeft(null);
+      return;
+    }
+    const el = selMenuRef.current;
+    if (!el) return;
+    const w = el.offsetWidth;
+    const margin = 8;
+    const max = Math.max(margin, window.innerWidth - w - margin);
+    setSelMenuLeft(Math.min(Math.max(margin, selection.x - w / 2), max));
+  }, [selection]);
+
   // A mark's popover belongs to the mark, not to the page: turning the page or
   // changing chapter must not leave it hanging over unrelated text.
   useEffect(() => setMarkPop(null), [spineIdx, page]);
 
   const patchAnnotation = useCallback(
-    async (annId: string, body: { color?: HighlightColor; note?: string }) => {
+    async (annId: string, body: { color?: HighlightColor; note?: string }): Promise<boolean> => {
       try {
         const res = await api<{ annotation: Annotation }>(`/api/annotations/${annId}`, {
           method: 'PATCH',
@@ -1148,8 +1212,10 @@ export function ReaderPage() {
         });
         setAnnotations((all) => all.map((x) => (x.id === annId ? res.annotation : x)));
         setMarkPop((m) => (m && m.a.id === annId ? { ...m, a: res.annotation } : m));
+        return true;
       } catch {
         toast.show('Could not save the change — are you offline?');
+        return false;
       }
     },
     [toast],
@@ -1500,7 +1566,7 @@ export function ReaderPage() {
                     Next: {manifest.chapters[spineIdx + 1]?.title ?? `Chapter ${spineIdx + 2}`}
                   </button>
                 ) : (
-                  <button className="btn btn--secondary" onClick={nextPage}>
+                  <button className="btn btn--secondary" onClick={finishBook}>
                     Finish book
                   </button>
                 )}
@@ -1546,8 +1612,15 @@ export function ReaderPage() {
 
       {selection && (
         <div
+          ref={selMenuRef}
           className="selection-menu"
-          style={{ left: selection.x - 90, top: selection.y }}
+          style={{
+            left: selMenuLeft ?? Math.max(8, selection.x - 150),
+            top: selection.y,
+            // Hidden for the one frame before it has been measured, so it
+            // never appears in the wrong place and jumps.
+            visibility: selMenuLeft === null ? 'hidden' : 'visible',
+          }}
           role="menu"
         >
           {/* The colours ARE the highlight button: picking one is the act, so
@@ -1902,10 +1975,18 @@ export function ReaderPage() {
           <button
             className="btn"
             onClick={() => {
-              if (editingNote) void editNote(editingNote, noteDraft);
-              else void addAnnotation('note', noteDraft);
-              setSheet('none');
-              setEditingNote(null);
+              // Closing regardless discarded the text on any failure — offline,
+              // an expired session, a server hiccup — and there is no draft
+              // anywhere to recover it from. The toast already says what went
+              // wrong; leaving the sheet open makes retrying one tap.
+              void (async () => {
+                const ok = editingNote
+                  ? await editNote(editingNote, noteDraft)
+                  : await addAnnotation('note', noteDraft);
+                if (!ok) return;
+                setSheet('none');
+                setEditingNote(null);
+              })();
             }}
           >
             {editingNote ? 'Save changes' : 'Save note'}

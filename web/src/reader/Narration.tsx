@@ -122,6 +122,20 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
   const cues = useMemo(() => buildCues(sentences, segments ?? []), [sentences, segments]);
   const lookup = useMemo(() => cueAt(cues, bookMs), [cues, bookMs]);
 
+  /**
+   * Adopt the rate this book was last played at, once its id is known.
+   *
+   * The initial state runs before `audioBookId` arrives, so it could only ever
+   * read the global default — a reader who set 1.25x for a slow narrator in
+   * the player got 1x every time they read along with the same book. Guarded
+   * so it cannot overwrite a rate chosen in this session.
+   */
+  const userPickedRateRef = useRef(false);
+  useEffect(() => {
+    if (!audioBookId || userPickedRateRef.current) return;
+    setSpeedState(speedFor(loadPlayback(), audioBookId));
+  }, [audioBookId]);
+
   /* ------------------------------------------------------------- loading */
 
   // The audiobook's own tracks. Read-along needs the file boundaries to turn
@@ -361,6 +375,7 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
 
   const setSpeed = useCallback(
     (rate: number) => {
+      userPickedRateRef.current = true;
       setSpeedState(rate);
       // The same store the player writes, so a rate set while reading along is
       // the rate the player opens at — and reaches the reader's other devices.
@@ -495,7 +510,11 @@ export function NarrationBar({
         {status}
       </span>
 
-      {!following && n.cue && (
+      {/* Shown whenever the page has stopped following, cue or no cue: the
+          moment the reader is MOST lost is when the voice has wandered into a
+          chapter they cannot see, which is exactly when there is no cue here
+          and the way back used to disappear. */}
+      {!following && n.playing && (
         <button className="readalong__resume" onClick={onResume}>
           <IconTarget size={15} />
           <span>Back to the voice</span>
