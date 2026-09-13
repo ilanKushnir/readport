@@ -4,6 +4,48 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.9.2 — 2026-09-13
+
+### Fixed — mobile
+
+- **The setup wizard never finished.** "Reading your shelves" waited for
+  every queued job, including the alignments that are queued as soon as a
+  pair is found and run for minutes each; and `/api/jobs` returns only the
+  newest 100 rows, so on a library of any size the scan job fell out of the
+  window and the progress bar sat on its 5% placeholder. Setup now finishes
+  when the books are in, and reports progress by books indexed.
+- **The setup card slid sideways** whenever a step changed: `overflow-x:
+hidden` still makes a scroll container, and focusing the step heading
+  scrolled the card by the width its background glow bleeds past the edge.
+- **The folder picker took several taps.** Rows were 37px and the icon
+  buttons 36px, under the 44px minimum, with no gap between rows.
+- **Username validation never ran.** `pattern="[a-zA-Z0-9._-]+"` is invalid
+  under the `v` flag browsers compile `pattern` with, so it was ignored.
+- **A setup token typed on a phone was rejected** — iOS capitalised its
+  first character. Usernames had the same problem.
+- **Alignments could not be highlighted near either page edge**, because
+  the page-turn zones sat on top of the text on touch.
+- **A long URL or code block in an EPUB scrolled the whole chapter
+  sideways**, or was silently cut off in paginated mode.
+- **The Pairing page could be swiped two thousand pixels sideways**: the
+  coverage strip drew one bar per minute of audio, unbounded.
+- **A mark's popover fell off the bottom of the screen**, putting Edit and
+  Remove out of reach inside a reader that cannot scroll.
+- **Sheets and drawers let the page scroll behind them.**
+- **The toast covered the narration transport** it was reporting on.
+- Touch targets raised to 44px across chips, segmented controls, highlight
+  swatches, scrubbers, speed buttons and the reorder grip.
+
+### Changed
+
+- **A book owned as both an ebook and an audiobook is one card**, naming
+  both formats, instead of appearing twice side by side. Filtering to
+  Ebooks or Audiobooks still shows that side on its own.
+- **Alignment accuracy and "align every new match" are on the Pairing
+  page**, next to the queue they govern, as well as in Settings.
+- **Download progress is visible**: bytes rather than files on the book
+  page, and a live section on the On-this-device shelf with a stop.
+
 ## 0.9.1 — 2026-09-13
 
 ### Fixed
