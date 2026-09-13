@@ -4,6 +4,33 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.9.4 — 2026-09-13
+
+### Fixed
+
+- **The reader could hide the end of a chapter.** Pagination was measured the
+  instant the chapter was injected — before its images had any height — so a
+  chapter with figures measured as a single page, paging switched off, and
+  the text that arrived with the images was trapped in a box that cannot
+  scroll. It is measured again once images and fonts settle; and if a chapter
+  still will not divide into pages, it scrolls and says so rather than hiding
+  its own text.
+- **The wrong book was suggested as a match.** Sharing an author was worth a
+  quarter of the pairing score — worthless as evidence when you own a dozen
+  books by one writer — and a length ratio of 0.56 passed a band that ran to
+  1.9 and scored full marks. Titles now carry the pair, the ratio is a curve
+  centred on 1.0, and candidates compete: a book has one audiobook, so a pair
+  is offered only when nothing clearly better wants either half.
+
+### Changed
+
+- **Read-along shows a pace marker beside the text** instead of washing every
+  sentence. The wash claimed a precision the alignment cannot always keep,
+  and left the page looking marked up when it drifted. The text is now lit
+  only where the aligner is sure, briefly, to re-anchor the eye.
+- **Auto-scroll**: a toggle that holds the marker at the middle of the screen
+  and eases the page along with the narration.
+
 ## 0.9.3 — 2026-09-13
 
 ### Added
