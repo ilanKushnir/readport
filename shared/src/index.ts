@@ -7,3 +7,4 @@ export * from './facets.js';
 export * from './prefs.js';
 export * from './languages.js';
 export * from './reconcile.js';
+export * from './pairing.js';

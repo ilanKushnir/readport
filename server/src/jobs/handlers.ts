@@ -32,7 +32,7 @@ import {
   resolveAligner,
 } from '../alignment/model.js';
 import { type EbookSentenceInput } from '../alignment/timings.js';
-import { languageCode } from '../pairing/score.js';
+import { chooseRivalPairs, languageCode } from '../pairing/score.js';
 import {
   AUTO_PAIR_THRESHOLD,
   libraryRoots,
@@ -884,6 +884,42 @@ export async function runPairScan(ctx: AppContext, job: JobRow, guard: LeaseGuar
     `Comparing ${ebooks.length} ebooks x ${audios.length} audiobooks`,
   );
 
+  // A candidate is a guess, not a decision — and a guess made by an older
+  // version of the scorer outlives the fix that should have retired it.
+  // (Confirmed, auto and rejected pairs ARE decisions and are never touched.)
+  //
+  // A guess that already has an alignment, or one being aligned right now, is
+  // left alone: deleting it would orphan hours of computed timings.
+  db.prepare(
+    `DELETE FROM pairs
+      WHERE status = 'candidate'
+        AND id NOT IN (SELECT pair_id FROM alignments)
+        AND id NOT IN (
+          SELECT json_extract(payload_json, '$.pairId') FROM jobs
+           WHERE type = 'align' AND state IN ('queued','running')
+        )`,
+  ).run();
+
+  // Books already linked (or already dismissed) are settled. A settled ebook
+  // or audiobook is nobody else's best match, so it takes its side out of the
+  // competition below entirely.
+  const settledEbooks = new Set<string>();
+  const settledAudios = new Set<string>();
+  for (const row of db
+    .prepare("SELECT ebook_id, audio_id FROM pairs WHERE status IN ('auto','confirmed')")
+    .all() as { ebook_id: string; audio_id: string }[]) {
+    settledEbooks.add(String(row.ebook_id));
+    settledAudios.add(String(row.audio_id));
+  }
+
+  /** Every pair worth considering, before they are made to compete. */
+  const scored: {
+    e: Record<string, unknown>;
+    a: Record<string, unknown>;
+    score: number;
+    evidence: ReturnType<typeof scorePair>['evidence'];
+  }[] = [];
+
   for (const e of ebooks) {
     const meta = JSON.parse(String(e.meta_json ?? '{}'));
     for (const a of audios) {
@@ -910,22 +946,51 @@ export async function runPairScan(ctx: AppContext, job: JobRow, guard: LeaseGuar
         },
       });
       if (score < CANDIDATE_THRESHOLD) continue;
-      // Metadata alone NEVER links two editions. A high-scoring match stays a
-      // candidate until the narration itself has been checked against the
-      // text, which happens in runAlign.
-      const autoEligible = score >= AUTO_PAIR_THRESHOLD;
-      const pairId = stableId('pair', String(e.id), String(a.id));
-      guard.assertHeld();
-      if (autoEligible) {
-        evidence.notes.push('Strong metadata match — waiting to be checked against the narration.');
-      }
-      db.prepare(
-        `INSERT INTO pairs (id, ebook_id, audio_id, status, score, evidence_json, created_at)
-         VALUES (?, ?, ?, 'candidate', ?, ?, ?)`,
-      ).run(pairId, String(e.id), String(a.id), score, JSON.stringify(evidence), nowIso());
-      if (autoEligible && settings.autoAlign) {
-        enqueueJob(db, 'align', { pairId }, { dedupeKey: `align:${pairId}`, priority: -2 });
-      }
+      scored.push({ e, a, score, evidence });
+    }
+  }
+
+  /**
+   * Make the candidates compete.
+   *
+   * Scoring each pair on its own means one ebook can be suggested against
+   * several audiobooks and vice versa. Someone who owns two books by the same
+   * author in both formats gets the two right pairs AND the two crossed ones,
+   * and the crossed ones are indistinguishable on the shelf.
+   *
+   * A book has one audiobook. So a pair is only offered when it is the best
+   * on BOTH sides — or close enough to the best to be a genuine toss-up,
+   * which is what two editions of the same book look like. Anything a clearly
+   * better partner outbids is dropped: the right pair is still suggested, and
+   * the crossed one is not.
+   */
+  const winners = chooseRivalPairs(
+    scored.map((p) => ({
+      ebookId: String(p.e.id),
+      audioId: String(p.a.id),
+      score: p.score,
+      item: p,
+    })),
+    { settledEbooks, settledAudios },
+  );
+
+  for (const { ebookId: eId, audioId: aId, score, item } of winners) {
+    const { evidence } = item;
+    // Metadata alone NEVER links two editions. A high-scoring match stays a
+    // candidate until the narration itself has been checked against the
+    // text, which happens in runAlign.
+    const autoEligible = score >= AUTO_PAIR_THRESHOLD;
+    const pairId = stableId('pair', eId, aId);
+    guard.assertHeld();
+    if (autoEligible) {
+      evidence.notes.push('Strong metadata match — waiting to be checked against the narration.');
+    }
+    db.prepare(
+      `INSERT INTO pairs (id, ebook_id, audio_id, status, score, evidence_json, created_at)
+       VALUES (?, ?, ?, 'candidate', ?, ?, ?)`,
+    ).run(pairId, eId, aId, score, JSON.stringify(evidence), nowIso());
+    if (autoEligible && settings.autoAlign) {
+      enqueueJob(db, 'align', { pairId }, { dedupeKey: `align:${pairId}`, priority: -2 });
     }
   }
 
