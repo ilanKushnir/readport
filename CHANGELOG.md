@@ -4,6 +4,27 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.9.7 - 2026-09-13
+
+### Fixed
+
+- **Dark theme corrections never applied on the default setting.** Three rules
+  fixed low-contrast text for dark, keyed on an attribute that is only set
+  when Dark is chosen explicitly - and the default is Auto, which sets none.
+  Coloured text now uses the token that is correct in both themes, and a test
+  keeps it that way.
+- **Explanations under switches rendered as full-size body text**: `.hint` was
+  styled only inside a form field.
+- **A working folder looked like a broken one** in setup: the success colour
+  was never defined and fell back to the primary.
+- **The book page hero never stacked on a phone**, leaving the body 191px wide
+  and one action button per line.
+- **The offline button's downloading state had no styling**, so its label ran
+  together as "Downloading12.4 MB of 210 MB"; and "Downloaded" was as loud as
+  the button that opens the book.
+- **Reading progress was invisible on covers in dark theme.**
+- **"Yes, delete permanently" turned the friendly primary colour on hover.**
+
 ## 0.9.6 - 2026-09-13
 
 ### Added
