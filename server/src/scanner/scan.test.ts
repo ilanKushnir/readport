@@ -57,6 +57,37 @@ function stateOf(id: string): string {
 }
 
 describe('applyScan', () => {
+  it('reunites a renamed file with the book it already was', () => {
+    // Ids are derived from the path, so a rename used to mint a new book and
+    // mark the old one missing — abandoning every highlight, note, bookmark,
+    // shelf membership and reading position, all of which hang off the id.
+    const id = seedReadyBook(FACETS_REV);
+    applyScan(db, {
+      ebooks: [{ rootDir: ROOT, relPath: REL, sizeBytes: 1000, contentHash: 'hash-1' }],
+      audiobooks: [],
+      unsupported: [],
+      errors: [],
+    });
+    // The file goes missing...
+    applyScan(db, { ebooks: [], audiobooks: [], unsupported: [], errors: [] });
+    expect(stateOf(id)).toBe('missing');
+    // ...and comes back under a new name, same bytes.
+    const out = applyScan(db, {
+      ebooks: [{ rootDir: ROOT, relPath: 'renamed.epub', sizeBytes: 1000, contentHash: 'hash-1' }],
+      audiobooks: [],
+      unsupported: [],
+      errors: [],
+    });
+    const rows = db.prepare('SELECT id, rel_path FROM books').all() as {
+      id: string;
+      rel_path: string;
+    }[];
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.id).toBe(id);
+    expect(rows[0]!.rel_path).toBe('renamed.epub');
+    expect(out.needsIndex.map((n) => n.bookId)).toEqual([id]);
+  });
+
   it('re-indexes a book from before facets existed', () => {
     const id = seedReadyBook(0);
     const out = applyScan(db, report('hash-1'));

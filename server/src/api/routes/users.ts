@@ -18,6 +18,7 @@ import { UNUSABLE_PASSWORD } from '../../auth/proxyAuth.js';
 import { newId } from '../../util/ids.js';
 import { nowIso } from '../../db/index.js';
 import { SESSION_COOKIE } from '../guards.js';
+import { sessionCookieOpts } from '../../auth/cookie.js';
 
 interface UserRow {
   id: string;
@@ -66,13 +67,7 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
   const { db, config } = ctx;
   const inviteThrottle = new LoginThrottle(db, 20, 10 * 60_000);
 
-  const cookieOpts = () => ({
-    path: '/',
-    httpOnly: true,
-    sameSite: 'lax' as const,
-    secure: config.trustHttps,
-    maxAge: config.sessionDays * 86400,
-  });
+  const cookieOpts = () => sessionCookieOpts(config);
 
   const listUsers = (): UserDto[] =>
     (
