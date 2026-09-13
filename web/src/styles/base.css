@@ -43,7 +43,8 @@ a {
 :focus-visible {
   outline: 2px solid var(--rp-focus);
   outline-offset: 2px;
-  border-radius: 4px;
+  /* No border-radius here: an outline already follows the element's own
+     shape, and forcing one squared off every round control in the app. */
 }
 ::selection {
   background: rgb(180 83 42 / 0.22);
@@ -973,9 +974,6 @@ select.input {
   cursor: pointer;
   white-space: nowrap;
 }
-[data-app-theme='dark'] .toast__action {
-  color: #b4532a;
-}
 .toast > div {
   display: inline-flex;
   align-items: center;
@@ -1688,6 +1686,7 @@ select.input {
   flex-wrap: wrap;
 }
 .btn--sm {
+  min-height: 32px;
   height: 32px;
   padding: 0 var(--sp-3);
   font-size: 13px;
@@ -3722,6 +3721,10 @@ select.input {
   /* A search result is a jump target, and the excerpt makes the row tall
      enough already — this only guards the short ones. */
   .search-hit {
+    min-height: 44px;
+  }
+  /* btn--sm is 32px by design on a pointer; a finger still needs 44. */
+  .btn--sm {
     min-height: 44px;
   }
 }

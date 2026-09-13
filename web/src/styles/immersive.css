@@ -1396,3 +1396,22 @@
     justify-content: center;
   }
 }
+
+/* The reader's own empty and error states.
+   They render inside .reader-page, which paints the reader's theme, but the
+   shared .empty-state uses app tokens — so on the night theme it was dark
+   grey text on near-black, and in contrast mode invisible. */
+.reader-page .empty-state {
+  color: var(--rd-soft);
+}
+.reader-page .empty-state h2 {
+  color: var(--rd-text);
+}
+.reader-page .empty-state .btn--secondary {
+  color: var(--rd-link);
+  border-color: color-mix(in srgb, var(--rd-text) 25%, transparent);
+}
+/* The focus ring likewise: the app's ember is invisible on the night ground. */
+.reader-page :focus-visible {
+  outline-color: var(--rd-link);
+}
