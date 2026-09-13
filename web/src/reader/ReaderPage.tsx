@@ -106,6 +106,13 @@ export function ReaderPage() {
   const [sheet, setSheet] = useState<SheetKind>('none');
   const [page, setPage] = useState(0);
   const [pageCount, setPageCount] = useState(1);
+  /** Last count actually applied, for the post-load re-measure to compare. */
+  const lastCountRef = useRef(1);
+  /**
+   * This chapter would not divide into pages, so it scrolls instead.
+   * Per-chapter, not a preference: the next chapter gets a fresh chance.
+   */
+  const [paginationFailed, setPaginationFailed] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selection, setSelection] = useState<{
     start: number;
@@ -579,6 +586,68 @@ export function ReaderPage() {
     },
     [prefs.mode, dirFactor, pageForOffset, applyPagination],
   );
+
+  useEffect(() => {
+    setPaginationFailed(false);
+  }, [loadSeq, prefs.mode]);
+
+  /**
+   * Measure the chapter again once it has finished becoming itself.
+   *
+   * Pagination is measured in a layout effect immediately after the chapter
+   * HTML is injected — and the line above that rewrites every `img` src, so
+   * at measuring time every image in the chapter is zero pixels tall. A
+   * chapter with figures fits in one column, `pageCount` becomes 1, and
+   * paging switches off. Then the images load, the text grows past the bottom
+   * of a page box that cannot scroll, and the rest of the chapter is
+   * unreachable: half a sentence at the screen edge and no way to reach the
+   * rest. Web fonts do the same thing more quietly, since Literata's metrics
+   * differ from the fallback's.
+   *
+   * Each pass also checks for text that has become trapped. In a correctly
+   * paginated chapter the content is exactly as tall as its box and overflows
+   * sideways into more columns, so vertical overflow means the columns never
+   * formed — a monolithic element too tall to fragment, a publisher
+   * stylesheet doing something strange. Whatever the cause, the honest answer
+   * is to let that chapter scroll rather than hide the end of it.
+   */
+  useEffect(() => {
+    const content = contentRef.current;
+    if (!content || !html || prefs.mode !== 'paginated') return;
+    let alive = true;
+
+    const pass = () => {
+      const el = contentRef.current;
+      if (!alive || !el || prefs.mode !== 'paginated') return;
+      const after = applyPagination();
+      if (after !== lastCountRef.current) {
+        lastCountRef.current = after;
+        // Reflow is not the reader moving, so this restores rather than records.
+        restoreOffset(currentOffsetRef.current);
+      }
+      // A few pixels of rounding is normal; a trapped paragraph is not.
+      if (el.scrollHeight > el.clientHeight + 8) setPaginationFailed(true);
+    };
+
+    const pending = Array.from(content.querySelectorAll('img')).filter((img) => !img.complete);
+    for (const img of pending) {
+      img.addEventListener('load', pass);
+      img.addEventListener('error', pass);
+    }
+    void document.fonts?.ready.then(pass);
+    // Spaced passes for everything the events do not cover: a slow decode, a
+    // late stylesheet, a publisher script. Cheap, and bounded.
+    const timers = [250, 1200, 3000].map((ms) => window.setTimeout(pass, ms));
+
+    return () => {
+      alive = false;
+      for (const t of timers) window.clearTimeout(t);
+      for (const img of pending) {
+        img.removeEventListener('load', pass);
+        img.removeEventListener('error', pass);
+      }
+    };
+  }, [loadSeq, html, prefs.mode, applyPagination, restoreOffset]);
 
   /**
    * Keep the page's reserved space equal to the chrome that actually covers it.
@@ -1566,10 +1635,15 @@ export function ReaderPage() {
               onClick={nextPage}
               tabIndex={-1}
             />
-            <div className="reader-pages" ref={pagesRef}>
+            <div
+              className={`reader-pages ${paginationFailed ? 'is-unpaginated' : ''}`}
+              ref={pagesRef}
+            >
               <div
                 ref={contentRef}
-                className="reader-content reader-content--paginated"
+                className={`reader-content reader-content--paginated ${
+                  paginationFailed ? 'is-unpaginated' : ''
+                }`}
                 style={{
                   transition: 'transform 200ms var(--rp-ease)',
                   padding: `${chromeInset.top + 8}px ${margins.padding}px ${chromeInset.bottom + 8}px`,
@@ -1843,13 +1917,17 @@ export function ReaderPage() {
         <div className="reader-footer-row">
           {prefs.progressBar === 'full' && (
             <span>
-              {prefs.mode === 'paginated'
-                ? pagesLeft === 0
-                  ? pageCount === 1
-                    ? 'Whole chapter on this page'
-                    : 'Last page in chapter'
-                  : `${pagesLeft} ${pagesLeft === 1 ? 'page' : 'pages'} left in chapter`
-                : chapterTitle}
+              {prefs.mode !== 'paginated'
+                ? chapterTitle
+                : paginationFailed
+                  ? // This chapter would not divide into pages, so it is
+                    // scrolling instead — say so rather than claim one page.
+                    'This chapter scrolls'
+                  : pagesLeft === 0
+                    ? pageCount === 1
+                      ? 'Whole chapter on this page'
+                      : 'Last page in chapter'
+                    : `${pagesLeft} ${pagesLeft === 1 ? 'page' : 'pages'} left in chapter`}
             </span>
           )}
           {prefs.progressBar === 'compact' && (

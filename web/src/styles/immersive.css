@@ -131,6 +131,20 @@
   column-fill: auto;
   will-change: transform;
 }
+/* The catch when a chapter refuses to divide into pages: it scrolls, so no
+   text is ever stranded below an edge with no page to turn to. */
+.reader-pages.is-unpaginated {
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.reader-content--paginated.is-unpaginated {
+  height: auto;
+  min-height: 100%;
+  column-count: 1;
+  transform: none !important;
+}
+
 .reader-ribbon {
   position: absolute;
   /* Hangs from under the top chrome; from the page edge once the chrome hides. */
