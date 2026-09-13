@@ -44,6 +44,11 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
               ebookDirs: config.envPinned.includes('ebookDirs'),
               audiobookDirs: config.envPinned.includes('audiobookDirs'),
               alignmentDirs: config.envPinned.includes('alignmentDirs'),
+              // The wizard already renders a disabled language step and the
+              // RP_DEFAULT_LANGUAGE note, but the pin was never reported — so
+              // on every compose first run that sets it, the operator picked a
+              // language and the choice was silently discarded.
+              defaultLanguage: config.envPinned.includes('defaultLanguage'),
             },
           }
         : null,

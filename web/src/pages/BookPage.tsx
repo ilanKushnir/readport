@@ -226,6 +226,17 @@ export function BookPage() {
   const isEbook = book.kind === 'ebook';
   const pct = book.progress?.pct ?? 0;
   const pair = book.pair && book.pair.status !== 'candidate' ? book.pair : null;
+  /**
+   * Discovered but not yet indexed, and with nothing usable from a previous
+   * pass. A scan inserts every book it finds up front and then indexes them a
+   * couple at a time, so on a real library this state lasts the whole run —
+   * and the grid already says "Indexing…" on the card while the detail page
+   * offered a Read button that leads nowhere.
+   */
+  const notReadyYet =
+    (book.scanState === 'discovered' || book.scanState === 'indexing') &&
+    detail.chapters.length === 0 &&
+    detail.tracks.length === 0;
   const audioSupport = isEbook
     ? null
     : bookAudioSupport(
@@ -333,6 +344,12 @@ export function BookPage() {
               <IconAlert size={16} /> Indexing failed: {book.scanError}
             </div>
           )}
+          {notReadyYet && (
+            <div className="banner" role="status">
+              <IconAlert size={16} /> ReadPort is still reading this book. It opens as soon as
+              indexing finishes.
+            </div>
+          )}
           {book.scanState === 'missing' && (
             <div className="banner banner--error" role="alert">
               <IconAlert size={16} /> The source files for this book are missing from the library
@@ -355,7 +372,14 @@ export function BookPage() {
             </div>
           )}
           <div className="book-hero__actions">
-            {isEbook ? (
+            {notReadyYet ? (
+              // Opening one of these lands on "Cannot open book" for an ebook,
+              // or on a player with no audio at all — a dead end whose only
+              // exit is back to a page that looks perfectly healthy.
+              <button className="btn" disabled title="Still being indexed">
+                {isEbook ? <IconBookOpen size={18} /> : <IconHeadphones size={18} />} Indexing…
+              </button>
+            ) : isEbook ? (
               <Link className="btn" to={`/read/${book.id}`}>
                 <IconBookOpen size={18} /> {pct > 0.001 ? 'Continue reading' : 'Read'}
               </Link>

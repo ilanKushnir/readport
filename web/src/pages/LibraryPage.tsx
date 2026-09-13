@@ -406,7 +406,12 @@ export function LibraryPage() {
             ))}
           </div>
         ) : books.length === 0 ? (
-          <ShelfEmpty showing={showing} filtered={!!query || kind !== 'all'} gone={gone} />
+          <ShelfEmpty
+            showing={showing}
+            filtered={!!query || kind !== 'all'}
+            gone={gone}
+            scanning={data?.scanActive ?? false}
+          />
         ) : (
           <div className="book-grid">
             {books.map((b) => (
@@ -440,11 +445,23 @@ function ShelfEmpty({
   showing,
   filtered,
   gone,
+  scanning,
 }: {
   showing: Showing;
   filtered: boolean;
   gone: boolean;
+  scanning: boolean;
 }) {
+  if (scanning) {
+    // The first screen after setup. Telling the operator to go and configure
+    // the folders they configured thirty seconds ago reads as though the
+    // wizard did not work.
+    return (
+      <EmptyState icon={<IconLibrary size={44} />} title="Reading your shelves">
+        ReadPort is going through your folders. Books appear here as it finds them.
+      </EmptyState>
+    );
+  }
   if (gone) {
     return (
       <EmptyState
