@@ -9,6 +9,8 @@ export interface User {
   username: string;
   role: string;
   displayName?: string | null;
+  /** May download the original file, not just read it in the app. */
+  canExport?: boolean;
 }
 
 /** How the current session was established (reverse-proxy SSO vs. password). */

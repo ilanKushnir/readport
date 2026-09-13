@@ -442,4 +442,25 @@ CREATE INDEX idx_pairs_ebook ON pairs(ebook_id);
 CREATE INDEX idx_pairs_audio ON pairs(audio_id);
 `,
   },
+  {
+    version: 12,
+    sql: `
+-- May this person take a copy of the file off the server?
+--
+-- Not a role. Reading and exporting are different questions: a household
+-- reader may be trusted with the books without being handed the files, and a
+-- curator who confirms pairings has no more claim to a copy than anyone else.
+-- So it is a capability granted to a person, set when they are invited and
+-- changed later, rather than a rung on the role ladder.
+--
+-- Off by default, including for people invited before this existed: a server
+-- that starts handing out files because it was upgraded is the wrong
+-- surprise. Admins always may, and are not stored as an exception.
+ALTER TABLE users ADD COLUMN can_export INTEGER NOT NULL DEFAULT 0;
+
+-- The invitation carries the answer, so accepting one does not need a second
+-- visit to the People page to grant it.
+ALTER TABLE invites ADD COLUMN can_export INTEGER NOT NULL DEFAULT 0;
+`,
+  },
 ];

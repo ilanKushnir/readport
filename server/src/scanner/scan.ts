@@ -237,6 +237,36 @@ function relinkMoved(
   return hit.id;
 }
 
+/**
+ * Forget what we worked out about a book whose bytes have changed.
+ *
+ * A pairing says "these two files are the same work", and an alignment says
+ * "this sentence is spoken at this second". Both are statements about the
+ * CONTENT. Replace the file - a different edition, a re-encode, a corrected
+ * EPUB - and they are not stale, they are wrong: the reader would be handed
+ * timings for a book they no longer have, and switching would land them in
+ * the wrong chapter with no sign that anything was amiss.
+ *
+ * Deliberately NOT done when a book merely goes missing. A NAS that fails to
+ * mount would otherwise destroy every pairing in the library and hours of
+ * computed timings, and `relinkMoved` exists precisely so a file that comes
+ * back - even under a new name - is reunited with everything it had. Deleting
+ * a book for real already cascades through the foreign keys.
+ *
+ * The saved .rpalign files are left alone: they are matched by a fingerprint
+ * of the text, so the new content simply will not match them, and the old
+ * ones stay available for whatever still does.
+ */
+export function discardPairing(db: DB, bookId: string): number {
+  const pairs = db
+    .prepare('SELECT id FROM pairs WHERE ebook_id = ? OR audio_id = ?')
+    .all(bookId, bookId) as { id: string }[];
+  if (pairs.length === 0) return 0;
+  // Alignments and their segments cascade from the pair.
+  db.prepare('DELETE FROM pairs WHERE ebook_id = ? OR audio_id = ?').run(bookId, bookId);
+  return pairs.length;
+}
+
 export function applyScan(db: DB, report: ScanReport): UpsertResult {
   const needsIndex: UpsertResult['needsIndex'] = [];
   const seenIds = new Set<string>();
@@ -293,6 +323,9 @@ export function applyScan(db: DB, report: ScanReport): UpsertResult {
         db.prepare(
           'UPDATE books SET content_hash = ?, size_bytes = ?, scan_state = ? WHERE id = ?',
         ).run(e.contentHash, e.sizeBytes, nextState, existing.id);
+        // Different bytes: whatever this book was paired with, and whatever
+        // was timed against it, described the old file. Start again.
+        if (existing.content_hash !== e.contentHash) discardPairing(db, existing.id);
         needsIndex.push({ bookId: existing.id, kind: 'ebook' });
       }
     }
@@ -338,6 +371,7 @@ export function applyScan(db: DB, report: ScanReport): UpsertResult {
       db.prepare(
         'UPDATE books SET content_hash = ?, size_bytes = ?, scan_state = ? WHERE id = ?',
       ).run(a.contentHash, a.sizeBytes, changed ? 'discovered' : existing.scan_state, existing.id);
+      if (existing.content_hash !== a.contentHash) discardPairing(db, existing.id);
       insertTracks(db, existing.id, a);
       needsIndex.push({ bookId: existing.id, kind: 'audio' });
     }

@@ -29,13 +29,14 @@ interface UserRow {
   status: string;
   created_at: string;
   last_login_at: string | null;
+  can_export: number;
   sessions: number;
   books_in_progress: number;
 }
 
 const USER_SELECT = `
   SELECT u.id, u.username, u.password_hash, u.role, u.display_name, u.status, u.created_at,
-         u.last_login_at,
+         u.last_login_at, u.can_export,
          (SELECT COUNT(*) FROM sessions s WHERE s.user_id = u.id AND s.expires_at > ?) AS sessions,
          (SELECT COUNT(*) FROM progress_state p WHERE p.user_id = u.id AND p.finished = 0)
            AS books_in_progress
@@ -47,6 +48,8 @@ export function toUserDto(r: UserRow): UserDto {
     username: r.username,
     displayName: r.display_name,
     role: r.role as Role,
+    // Admins always may; for everyone else it is the stored capability.
+    canExport: r.role === 'admin' || Number(r.can_export) === 1,
     status: r.status === 'disabled' ? 'disabled' : 'active',
     createdAt: r.created_at,
     lastLoginAt: r.last_login_at,
@@ -85,6 +88,7 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
   const inviteDto = (r: Record<string, unknown>): InviteDto => ({
     id: String(r.id),
     role: r.role as Role,
+    canExport: Number(r.can_export) === 1,
     displayName: (r.display_name as string | null) ?? null,
     username: (r.username as string | null) ?? null,
     createdBy: (r.created_by as string | null) ?? null,
@@ -120,13 +124,14 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
     if (exists) return reply.code(409).send({ error: 'username-taken' });
     const id = newId('user');
     db.prepare(
-      `INSERT INTO users (id, username, password_hash, role, display_name, status, created_by, created_at)
-       VALUES (?, ?, ?, ?, ?, 'active', ?, ?)`,
+      `INSERT INTO users (id, username, password_hash, role, can_export, display_name, status, created_by, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
     ).run(
       id,
       parsed.data.username,
       await hashPassword(parsed.data.password),
       parsed.data.role,
+      parsed.data.canExport ? 1 : 0,
       parsed.data.displayName ?? null,
       req.user!.id,
       nowIso(),
@@ -171,6 +176,11 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
     if (p.status) {
       sets.push('status = ?');
       args.push(p.status);
+    }
+    if (p.canExport !== undefined) {
+      sets.push('can_export = ?');
+      // SQLite has no boolean; the column is an INTEGER flag.
+      args.push(p.canExport ? '1' : '0');
     }
     if (p.displayName !== undefined) {
       sets.push('display_name = ?');
@@ -248,12 +258,13 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
     const id = newId('inv');
     const expiresAt = new Date(Date.now() + parsed.data.expiresInDays * 86_400_000).toISOString();
     db.prepare(
-      `INSERT INTO invites (id, token_hash, role, display_name, username, created_by, created_at, expires_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO invites (id, token_hash, role, can_export, display_name, username, created_by, created_at, expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       id,
       hashInvite(token),
       parsed.data.role,
+      parsed.data.canExport ? 1 : 0,
       parsed.data.displayName ?? null,
       parsed.data.username ?? null,
       req.user!.id,
@@ -331,13 +342,15 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
         return reply.code(409).send({ error: 'username-taken' });
       }
       db.prepare(
-        `INSERT INTO users (id, username, password_hash, role, display_name, status, created_by, created_at)
-         VALUES (?, ?, ?, ?, ?, 'active', ?, ?)`,
+        `INSERT INTO users (id, username, password_hash, role, can_export, display_name, status, created_by, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
       ).run(
         id,
         parsed.data.username,
         passwordHash,
         String(inv.role),
+        // Whatever the invitation promised, granted on acceptance.
+        Number(inv.can_export) === 1 ? 1 : 0,
         parsed.data.displayName ?? (inv.display_name as string | null) ?? null,
         (inv.created_by as string | null) ?? null,
         nowIso(),
