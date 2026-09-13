@@ -101,8 +101,10 @@
   line-height: var(--rd-leading, 1.62);
   max-width: var(--rd-measure, 38em);
   margin-inline: auto;
-  padding: calc(var(--rd-chrome-top, 72px) + 8px) var(--rd-margin, 24px)
-    calc(var(--rd-chrome-bottom, 120px) + 24px);
+  /* The inline padding clears the notch in landscape, where the safe-area
+     inset is on the side rather than the top. */
+  padding: calc(var(--rd-chrome-top, 72px) + 8px) max(var(--rd-margin, 24px), var(--rp-safe-right))
+    calc(var(--rd-chrome-bottom, 120px) + 24px) max(var(--rd-margin, 24px), var(--rp-safe-left));
 }
 .reader-pages {
   /* Centred page box (≤ MAX_PAGE_WIDTH); clips the neighbouring pages that
@@ -1414,4 +1416,39 @@
 /* The focus ring likewise: the app's ember is invisible on the night ground. */
 .reader-page :focus-visible {
   outline-color: var(--rd-link);
+}
+
+/* ------------------------------------------------------- small and short */
+
+/* A phone on its side. The player is a column sized for portrait, so in
+   landscape the cover pushed the title, the scrubber and the switch control
+   off the bottom of a screen that does not scroll. */
+@media (max-height: 500px) {
+  .player-main {
+    justify-content: flex-start;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .player-coverwrap {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  /* The chapter name is squeezed to a letter or two at this width, and the
+     footer already carries it at the default progress-bar setting. */
+  .reader-title {
+    display: none;
+  }
+  /* Keep the footer on one line: "Read along" wrapping mid-phrase broke the
+     row apart at 390px and narrower. */
+  .reader-page .tandem-pill > span {
+    white-space: nowrap;
+  }
+  .reader-footer-row > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }

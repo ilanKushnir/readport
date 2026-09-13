@@ -310,14 +310,21 @@ export function ReaderPage() {
     const content = contentRef.current;
     const pages = pagesRef.current;
     if (!viewport || !content || !pages) return null;
+    // In landscape on a notched phone the cutout is on one side, so the page
+    // box has to start inside it — otherwise a column of text runs underneath
+    // the notch and the first characters of every line are hidden.
+    const root = getComputedStyle(document.documentElement);
+    const safeL = parseFloat(root.getPropertyValue('--rp-safe-left')) || 0;
+    const safeR = parseFloat(root.getPropertyValue('--rp-safe-right')) || 0;
     const layout = computePageLayout(
-      viewport.clientWidth,
+      viewport.clientWidth - safeL - safeR,
       MARGINS[prefs.margin].padding,
       prefs.columns,
     );
     layoutRef.current = layout;
     pages.style.width = `${layout.width}px`;
-    pages.style.left = `${layout.inset}px`;
+    // The stride arithmetic stays symmetric because the box itself moved.
+    pages.style.left = `${layout.inset + safeL}px`;
     content.style.setProperty('--rd-cols', String(layout.columns));
     content.style.setProperty('--rd-colgap', `${layout.columnGap}px`);
     return layout;
@@ -1950,6 +1957,10 @@ export function ReaderPage() {
         <Sheet
           title={editingNote ? 'Edit note' : 'Add note'}
           onClose={() => {
+            // On a phone the way to dismiss the keyboard is to tap outside,
+            // which lands on the backdrop and closes the sheet — so an
+            // accidental dismissal used to take the note with it silently.
+            if (noteDraft.trim() && !window.confirm('Discard this note?')) return;
             setSheet('none');
             setEditingNote(null);
           }}

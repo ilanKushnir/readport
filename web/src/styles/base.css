@@ -321,7 +321,6 @@ select.input {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding-block-start: var(--rp-safe-top);
 }
 .app-header {
   position: sticky;
@@ -330,7 +329,10 @@ select.input {
   display: flex;
   align-items: center;
   gap: var(--sp-4);
-  padding: var(--sp-3) max(var(--sp-4), var(--rp-safe-right)) var(--sp-3)
+  /* The inset belongs on the element that sticks, not on the scroll
+     container above it — there it only holds the header clear of the notch
+     until the first scroll, after which the header slides under it. */
+  padding: calc(var(--sp-3) + var(--rp-safe-top)) max(var(--sp-4), var(--rp-safe-right)) var(--sp-3)
     max(var(--sp-4), var(--rp-safe-left));
   background: color-mix(in srgb, var(--rp-bg) 88%, transparent);
   backdrop-filter: blur(12px);
@@ -390,7 +392,8 @@ select.input {
   z-index: 20;
   display: flex;
   justify-content: space-around;
-  padding: var(--sp-2) var(--sp-2) calc(var(--sp-2) + var(--rp-safe-bottom));
+  padding: var(--sp-2) max(var(--sp-2), var(--rp-safe-right))
+    calc(var(--sp-2) + var(--rp-safe-bottom)) max(var(--sp-2), var(--rp-safe-left));
   background: color-mix(in srgb, var(--rp-bg) 88%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -398,12 +401,15 @@ select.input {
 }
 .tabbar a,
 .tabbar__shelves {
+  /* flex-basis 0 with min-width 0 lets five items share a 320px screen
+     instead of overflowing it. */
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  min-width: 64px;
-  padding: 6px 10px;
+  padding: 6px 4px;
   border-radius: var(--radius-control);
   text-decoration: none;
   color: var(--rp-text-soft);
