@@ -6,7 +6,7 @@ import { buildApp } from './api/app.js';
 import { ensureSetupToken } from './auth/setupToken.js';
 import { type AppContext } from './context.js';
 import { startWorker } from './jobs/worker.js';
-import { enqueueJob } from './jobs/queue.js';
+import { enqueueJob, pruneFinishedJobs } from './jobs/queue.js';
 import { compactProgressHistory } from './progress/service.js';
 import { requeueAlignmentsWaitingFor } from './jobs/handlers.js';
 import { pruneLoginThrottle } from './auth/sessions.js';
@@ -80,6 +80,8 @@ const compactTimer = setInterval(
       const n = compactProgressHistory(db);
       if (n > 0) ctx.log.info(`Compacted ${n} old heartbeat events`);
       pruneLoginThrottle(db);
+      const pruned = pruneFinishedJobs(db);
+      if (pruned > 0) ctx.log.info(`Pruned ${pruned} finished jobs`);
     } catch (err) {
       ctx.log.error(`Compaction failed: ${(err as Error).message}`);
     }

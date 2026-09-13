@@ -79,6 +79,18 @@ export interface AlignmentHandle {
   summary: AlignmentSummary;
 }
 
+/**
+ * Segment tallies, cached by alignment id.
+ *
+ * `/api/library` builds a summary per book and every summary asked for these
+ * two COUNT(*)s over `alignment_segments` — a table with fifteen thousand rows
+ * for one aligned book — so a library of a thousand books ran two thousand
+ * full counts per request. Caching cannot go stale: `storeAlignment` only ever
+ * INSERTs a new version under a new id, and nothing anywhere UPDATEs or
+ * DELETEs a segment, so an id and its tallies are fixed together for life.
+ */
+const tallyCache = new Map<string, { segments: number; exact: number }>();
+
 export function latestAlignment(db: DB, pairId: string): AlignmentHandle | null {
   const row = db
     .prepare(
@@ -86,14 +98,27 @@ export function latestAlignment(db: DB, pairId: string): AlignmentHandle | null 
     )
     .get(pairId) as Record<string, unknown> | undefined;
   if (!row) return null;
-  const count = db
-    .prepare('SELECT COUNT(*) AS c FROM alignment_segments WHERE alignment_id = ?')
-    .get(String(row.id)) as { c: number };
-  const exact = db
-    .prepare(
-      `SELECT COUNT(*) AS c FROM alignment_segments WHERE alignment_id = ? AND source = 'exact' AND confidence >= ?`,
-    )
-    .get(String(row.id), SWITCH_SENTENCE_CONFIDENCE) as { c: number };
+  const alignmentId = String(row.id);
+  let tally = tallyCache.get(alignmentId);
+  if (!tally) {
+    tally = {
+      segments: (
+        db
+          .prepare('SELECT COUNT(*) AS c FROM alignment_segments WHERE alignment_id = ?')
+          .get(alignmentId) as { c: number }
+      ).c,
+      exact: (
+        db
+          .prepare(
+            `SELECT COUNT(*) AS c FROM alignment_segments WHERE alignment_id = ? AND source = 'exact' AND confidence >= ?`,
+          )
+          .get(alignmentId, SWITCH_SENTENCE_CONFIDENCE) as { c: number }
+      ).c,
+    };
+    tallyCache.set(alignmentId, tally);
+  }
+  const count = { c: tally.segments };
+  const exact = { c: tally.exact };
   const provenance = JSON.parse(String(row.provenance_json ?? '{}')) as {
     sentenceCount?: number;
   };
@@ -206,11 +231,15 @@ function segBefore(
 ): AlignmentSegment | null {
   const row = ctx.db
     .prepare(
+      // A row-value comparison rather than the OR form: SQLite plans the OR
+      // as a multi-index union and then sorts the whole alignment, which for
+      // a fifteen-thousand-segment book is milliseconds per call and seconds
+      // across the thousands of calls an offline package makes.
       `SELECT * FROM alignment_segments WHERE alignment_id = ?
-         AND (spine_idx < ? OR (spine_idx = ? AND sentence_ord <= ?))
+         AND (spine_idx, sentence_ord) <= (?, ?)
        ORDER BY spine_idx DESC, sentence_ord DESC LIMIT 1`,
     )
-    .get(ctx.alignmentId, spineIdx, spineIdx, sentenceOrd) as Record<string, unknown> | undefined;
+    .get(ctx.alignmentId, spineIdx, sentenceOrd) as Record<string, unknown> | undefined;
   return row ? rowToSegment(row) : null;
 }
 
@@ -222,10 +251,10 @@ function segAfter(
   const row = ctx.db
     .prepare(
       `SELECT * FROM alignment_segments WHERE alignment_id = ?
-         AND (spine_idx > ? OR (spine_idx = ? AND sentence_ord >= ?))
+         AND (spine_idx, sentence_ord) >= (?, ?)
        ORDER BY spine_idx, sentence_ord LIMIT 1`,
     )
-    .get(ctx.alignmentId, spineIdx, spineIdx, sentenceOrd) as Record<string, unknown> | undefined;
+    .get(ctx.alignmentId, spineIdx, sentenceOrd) as Record<string, unknown> | undefined;
   return row ? rowToSegment(row) : null;
 }
 

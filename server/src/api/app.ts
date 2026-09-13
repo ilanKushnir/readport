@@ -1,6 +1,7 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import Fastify, { type FastifyInstance } from 'fastify';
+import fastifyCompress from '@fastify/compress';
 import fastifyCookie from '@fastify/cookie';
 import fastifyStatic from '@fastify/static';
 import { type AppContext } from '../context.js';
@@ -77,6 +78,11 @@ export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyIn
   });
 
   app.register(fastifyCookie);
+  // Every response went out uncompressed, including the library listing and
+  // the JS bundle. The threshold keeps it off the small stuff, where the CPU
+  // costs more than the bytes saved; audio and images are already compressed
+  // and the plugin skips them by content type.
+  app.register(fastifyCompress, { global: true, encodings: ['br', 'gzip'], threshold: 1024 });
 
   // Body-less mutations (confirm/unlink/align/…) may arrive through proxies
   // that add a content type; an unknown type with an EMPTY body is harmless
