@@ -63,11 +63,14 @@ jobs:
           [ "$ok" = "1" ] || (docker logs tl; exit 1)
           curl -fsS http://127.0.0.1:8383/api/setup/status | grep needsSetup
 
-          # Setup without / with a wrong token must be refused.
+          # This container sets RP_SETUP_TOKEN, so it is LOCKED: setup with no
+          # token and setup with a wrong one must both be refused by the token
+          # check. (Omitting the field is 403, not 400 - it is optional in the
+          # schema because an unlocked instance needs none.)
           code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8383/api/setup \
             -H 'content-type: application/json' -H 'x-rp-csrf: 1' \
             -d '{"username":"admin","password":"smoke-password-123"}')
-          [ "$code" = "400" ] || (echo "tokenless setup returned $code"; exit 1)
+          [ "$code" = "403" ] || (echo "tokenless setup returned $code"; exit 1)
           code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8383/api/setup \
             -H 'content-type: application/json' -H 'x-rp-csrf: 1' \
             -d '{"username":"admin","password":"smoke-password-123","setupToken":"wrong-token"}')
@@ -83,6 +86,42 @@ jobs:
             -d '{"username":"other","password":"smoke-password-123","setupToken":"ci-smoke-setup-token"}')
           [ "$code" = "409" ] || (echo "second setup returned $code"; exit 1)
           docker rm -f tl
+
+      - name: Smoke test container (no RP_SETUP_TOKEN - the default)
+        run: |
+          # The unlocked instance is what most people run, so it is what CI
+          # must exercise: no token to fetch, the wizard helpers answer, and
+          # the window still shuts the moment an account exists.
+          docker run -d --name tl2 -p 8385:8383 \
+            -e RP_SESSION_SECRET=ci-open-secret-0123456789 readport:ci
+          ok=""
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8385/api/health >/dev/null; then ok=1; break; fi
+            sleep 1
+          done
+          [ "$ok" = "1" ] || (docker logs tl2; exit 1)
+          curl -fsS http://127.0.0.1:8385/api/setup/status | grep '"setupTokenRequired":false'
+          docker logs tl2 2>&1 | grep -q 'setup is OPEN' || (docker logs tl2; echo "no open-setup warning"; exit 1)
+
+          # The self-check the wizard shows on its last screen must answer.
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8385/api/preflight \
+            -H 'content-type: application/json' -H 'x-rp-csrf: 1' -d '{}')
+          [ "$code" = "200" ] || (echo "preflight before setup returned $code"; exit 1)
+
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8385/api/setup \
+            -H 'content-type: application/json' -H 'x-rp-csrf: 1' \
+            -d '{"username":"admin","password":"smoke-password-123"}')
+          [ "$code" = "200" ] || (echo "tokenless setup returned $code"; docker logs tl2; exit 1)
+
+          # Shut for good: no second admin, and the helpers close with it.
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8385/api/setup \
+            -H 'content-type: application/json' -H 'x-rp-csrf: 1' \
+            -d '{"username":"other","password":"smoke-password-123"}')
+          [ "$code" = "409" ] || (echo "second setup returned $code"; exit 1)
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8385/api/preflight \
+            -H 'content-type: application/json' -H 'x-rp-csrf: 1' -d '{}')
+          [ "$code" = "403" ] || (echo "preflight after setup returned $code"; exit 1)
+          docker rm -f tl2
 
       - name: Alignment folder is claimed for the app user
         run: |

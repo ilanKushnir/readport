@@ -4,6 +4,35 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.11.0 - 2026-09-13
+
+### Changed
+
+- **First run no longer asks for a token.** You start the server, open it, and
+  create your admin account. The token it used to demand was generated at boot
+  and printed to the log, so getting past your own welcome screen meant going
+  and finding it - friction for the owner, and only ever protection for the
+  seconds between a container starting and its owner opening it. The window is
+  still exactly "no accounts yet", and it still closes for good the moment one
+  exists.
+- **`RP_SETUP_TOKEN` now locks that window instead of decorating it.** Set it
+  and the wizard demands it, for anyone whose instance will be reachable from
+  somewhere hostile before they have finished setting it up. A token is never
+  generated any more, so unset means open - and the server says so in its log
+  rather than letting that be a surprise.
+
+### Upgrading
+
+- **If you relied on the generated token, there is nothing to do** unless your
+  instance is both un-set-up and publicly reachable. On upgrade the stale
+  `<data>/setup-token` file is deleted, `/api/setup/status` reports
+  `setupTokenRequired` in place of `setupTokenSource`, and `setupToken` is
+  optional in the `POST /api/setup` body. An instance that already has an
+  admin is unaffected in every respect.
+- **If your instance is exposed and not yet set up, set `RP_SETUP_TOKEN`
+  before upgrading.** Otherwise the first person to reach it makes the
+  account.
+
 ## 0.10.1 - 2026-09-13
 
 ### Added

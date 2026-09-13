@@ -285,7 +285,7 @@ export const setupSchema = z.object({
   password: passwordSchema,
   displayName: displayNameSchema.optional(),
   /** One-time bootstrap token proving control of the server (env/secret file/log). */
-  setupToken: z.string().min(8).max(512),
+  setupToken: z.string().min(8).max(512).optional(),
   /** Library roots chosen in the wizard (ignored when pinned by env). */
   ebookDirs: dirListSchema.optional(),
   audiobookDirs: dirListSchema.optional(),

@@ -11,7 +11,8 @@ import { sessionCookieOpts } from '../../auth/cookie.js';
 import { enqueueJob } from '../../jobs/queue.js';
 import { alignmentRoots, libraryRoots, saveSettings } from '../../domain/settings.js';
 import { browseDirectories, checkLibraryPath } from '../../setup/paths.js';
-import { mayExport, hasRole } from '../../auth/roles.js';
+import { mayExport } from '../../auth/roles.js';
+import { setupHelperAllowed, setupIsLocked, setupTokenAccepted } from '../../auth/setupGate.js';
 import { hasUsablePassword } from '../../auth/proxyAuth.js';
 
 const ATTEMPT_LIMIT = 10;
@@ -32,9 +33,10 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
     const roots = libraryRoots(db, config);
     return {
       needsSetup,
-      // The client shows where to find the token; the token itself is never
-      // exposed over HTTP.
-      setupTokenSource: needsSetup ? (ctx.setupToken?.source ?? 'env') : null,
+      // Whether the wizard must ask for RP_SETUP_TOKEN. Normally false - the
+      // owner just creates their account. Saying so is safe: it reveals only
+      // that a lock exists, never the token, which is never sent over HTTP.
+      setupTokenRequired: needsSetup && setupIsLocked(ctx),
       // What the wizard can and cannot change (env-pinned roots are shown, not edited).
       libraries: needsSetup
         ? {
@@ -58,49 +60,43 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
     };
   });
 
-  /**
-   * Wizard helpers. Before an admin exists they are gated on the bootstrap
-   * token (sent as a header, never a query string); afterwards on the admin
-   * role. Nothing here writes to disk.
-   */
-  const setupHelperAllowed = (req: {
+  /** Wizard helpers: see auth/setupGate.ts. Nothing here writes to disk. */
+  const helperAllowed = (req: {
     user: { role: string } | null;
     headers: Record<string, unknown>;
-  }) => {
-    if (req.user) return hasRole(req.user.role, 'admin');
-    if (userCount() > 0) return false;
-    const raw = req.headers['x-rp-setup-token'];
-    const token = Array.isArray(raw) ? raw[0] : raw;
-    return typeof token === 'string' && !!ctx.setupToken && ctx.setupToken.matches(token);
-  };
+  }) => setupHelperAllowed(ctx, req);
 
   app.post('/api/setup/verify', { config: { public: true } }, async (req, reply) => {
     if (userCount() > 0) return reply.code(409).send({ error: 'already-configured' });
+    // Nothing to verify on an unlocked instance; the wizard does not call it.
+    if (!setupIsLocked(ctx)) return { ok: true };
     if (!ipThrottle.allow(`setup:${req.ip}`))
       return reply.code(429).send({ error: 'rate-limited' });
     const body = z.object({ setupToken: z.string().min(1).max(512) }).safeParse(req.body);
     if (!body.success) return reply.code(400).send({ error: 'invalid' });
-    const ok = !!ctx.setupToken && ctx.setupToken.matches(body.data.setupToken);
-    if (!ok) return reply.code(403).send({ error: 'bad-setup-token' });
+    if (!setupTokenAccepted(ctx, body.data.setupToken)) {
+      return reply.code(403).send({ error: 'bad-setup-token' });
+    }
     return { ok: true };
   });
 
   app.post('/api/setup/test-paths', { config: { public: true } }, async (req, reply) => {
-    if (!setupHelperAllowed(req)) return reply.code(403).send({ error: 'forbidden' });
+    if (!helperAllowed(req)) return reply.code(403).send({ error: 'forbidden' });
     const body = testPathsSchema.safeParse(req.body);
     if (!body.success) return reply.code(400).send({ error: 'invalid' });
     return { results: body.data.paths.map((p) => checkLibraryPath(p, body.data.kind)) };
   });
 
   app.get('/api/setup/browse', { config: { public: true } }, async (req, reply) => {
-    if (!setupHelperAllowed(req)) return reply.code(403).send({ error: 'forbidden' });
+    if (!helperAllowed(req)) return reply.code(403).send({ error: 'forbidden' });
     const q = req.query as { path?: string };
     const p = typeof q.path === 'string' && q.path.length <= 1024 ? q.path : undefined;
     return browseDirectories(p || undefined);
   });
 
-  // First-run admin creation. Requires the one-time bootstrap token (env or
-  // generated at boot, see auth/setupToken.ts); no default credentials exist.
+  // First-run admin creation. Open until an admin exists, then closed for
+  // good; RP_SETUP_TOKEN locks the window shut (see auth/setupToken.ts). No
+  // default credentials exist either way.
   app.post('/api/setup', { config: { public: true } }, async (req, reply) => {
     if (userCount() > 0) return reply.code(409).send({ error: 'already-configured' });
     if (!ipThrottle.allow(`setup:${req.ip}`)) {
@@ -110,8 +106,11 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
     if (!body.success) {
       return reply.code(400).send({ error: 'invalid', detail: body.error.issues[0]?.message });
     }
-    const token = ctx.setupToken;
-    if (!token || !token.matches(body.data.setupToken)) {
+    // `setupToken` is optional in the schema, so an unlocked instance accepts
+    // a request without one. A locked instance refuses one that omits it, and
+    // refuses it even if the token handle has somehow gone: locked-ness is a
+    // property of the config, so the failure direction is closed.
+    if (!setupTokenAccepted(ctx, body.data.setupToken)) {
       return reply.code(403).send({ error: 'bad-setup-token' });
     }
     const passwordHash = await hashPassword(body.data.password);
@@ -160,8 +159,10 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
       db.exec('ROLLBACK');
       throw err;
     }
-    // The bootstrap token is single-use: disable it the moment setup succeeds.
-    token.consume();
+    // Setup is over for good: an admin exists, so userCount() closes the
+    // route from here on. Consuming the token as well is belt and braces for
+    // the locked case, and a no-op when there was none.
+    ctx.setupToken?.consume();
     ctx.setupToken = null;
     const session = createSession(
       db,
