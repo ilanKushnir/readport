@@ -54,6 +54,8 @@ export interface NarrationApi {
   cue: Cue | null;
   /** This chapter's timed sentences - what the pace marker interpolates over. */
   cues: Cue[];
+  /** Increments on every deliberate seek; the page follows again when it does. */
+  seekNonce: number;
   state: FollowState;
   bookMs: number;
   speed: number;
@@ -107,6 +109,23 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
   const [segments, setSegments] = useState<AlignedSegment[] | null>(null);
   const [trackIdx, setTrackIdx] = useState(0);
   const [bookMs, setBookMs] = useState(0);
+  /**
+   * Bumped on every deliberate seek - the back button, tapping a sentence.
+   *
+   * Moving the playhead by hand means "take me with you", so the page starts
+   * following again even if the reader had wandered off earlier.
+   */
+  const [seekNonce, setSeekNonce] = useState(0);
+  /**
+   * The direction the last automatic chapter move went.
+   *
+   * Without it the walk ping-pongs: stepping forward into a chapter whose
+   * timings all sit earlier than the playhead reads as 'before', which steps
+   * straight back, which reads as 'after', for as long as the audio plays.
+   * A walk may continue in its own direction across any number of untimed
+   * chapters, but it may not immediately reverse.
+   */
+  const lastWalkRef = useRef<'next' | 'prev' | null>(null);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeedState] = useState(() => speedFor(loadPlayback(), audioBookId ?? ''));
   const [error, setError] = useState<string | null>(null);
@@ -203,6 +222,18 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
       const where = locateInTracks(tracks, absMs);
       pendingSeekRef.current = { ...where, play };
       setBookMs(absMs);
+      // An explicit seek is not a continuation of a walk.
+      //
+      // The walker refuses to reverse, which stops it ping-ponging between
+      // two chapters. But a rewind that lands before this chapter's first cue
+      // makes it step BACK - and if the previous chapter's timings all sit
+      // earlier than the playhead, the way forward now counts as a reversal
+      // and is refused. The reader is stranded in a chapter the voice is not
+      // in, with no cue and nothing to point at. Clearing the direction lets
+      // the walk find its way again.
+      lastWalkRef.current = null;
+      // Tell the page a person moved the playhead, so it can come along.
+      setSeekNonce((n) => n + 1);
       if (where.trackIdx !== trackIdx) {
         setTrackIdx(where.trackIdx);
         return; // the src change will load, then applyPendingSeek runs
@@ -276,7 +307,6 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
    * A walk may continue in its own direction across any number of untimed
    * chapters, but it may not immediately reverse.
    */
-  const lastWalkRef = useRef<'next' | 'prev' | null>(null);
   useEffect(() => {
     if (!enabled || !playing || !following || segments === null) return;
     // A chapter with no timings at all - front matter, or one the aligner
@@ -434,6 +464,7 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
     playing,
     cue: lookup.cue,
     cues,
+    seekNonce,
     state: lookup.state,
     bookMs,
     speed,

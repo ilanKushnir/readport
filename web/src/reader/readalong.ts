@@ -305,3 +305,26 @@ export function paceOffset(cues: Cue[], bookMs: number): number | null {
 function clamp01(n: number): number {
   return n < 0 ? 0 : n > 1 ? 1 : n;
 }
+
+/**
+ * The cue nearest a moment in time, whatever the lookup state says.
+ *
+ * `cueAt` deliberately answers "nothing" in a gap, before the first cue and
+ * after the last, because a highlight must not claim a sentence the narrator
+ * is not reading. But "take me back to the voice" is a different question: a
+ * reader who has lost the thread wants to be put somewhere sensible, and the
+ * nearest timed sentence is the honest answer. Refusing to move - which is
+ * what returning nothing meant - left the button doing nothing at all,
+ * exactly when it was needed most.
+ */
+export function nearestCue(cues: Cue[], bookMs: number): Cue | null {
+  if (cues.length === 0) return null;
+  const i = lastStartingBefore(cues, bookMs);
+  const before = i >= 0 ? cues[i]! : null;
+  const after = cues[i + 1] ?? null;
+  if (!before) return after;
+  if (!after) return before;
+  // Inside the earlier cue still counts as being in it.
+  if (bookMs <= before.endMs) return before;
+  return bookMs - before.endMs <= after.startMs - bookMs ? before : after;
+}
