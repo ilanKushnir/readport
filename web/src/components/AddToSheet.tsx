@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../api/client';
 import { useShelves } from '../state/shelves';
 import { Sheet, useToast } from './ui';
-import { IconCheck, IconList, IconPlus, IconShelf } from './icons';
+import { IconCheck, IconListPlus, IconPlus, IconShelf } from './icons';
 import { ordinal } from '../lib/format';
 
 /**
@@ -154,7 +154,7 @@ export function AddToSheet({
           onClick={() => void queue('top')}
           disabled={busy !== null || !member}
         >
-          <IconList size={17} />
+          <IconListPlus size={17} />
           <span className="grow">Read next</span>
           <span className="soft">Front of the queue</span>
         </button>
@@ -164,7 +164,7 @@ export function AddToSheet({
           disabled={busy !== null || !member}
           aria-pressed={member?.onReadingList ?? false}
         >
-          <IconList size={17} />
+          <IconListPlus size={17} />
           <span className="grow">
             {member?.onReadingList ? 'On your reading list' : 'Add to reading list'}
           </span>

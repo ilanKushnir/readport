@@ -32,10 +32,19 @@ export function bookRowToSummary(
     const handle = ['auto', 'confirmed'].includes(String(pairRow.status))
       ? latestAlignment(db, String(pairRow.id))
       : null;
+    const otherBookId =
+      String(pairRow.ebook_id) === id ? String(pairRow.audio_id) : String(pairRow.ebook_id);
+    // The counterpart's kind and format, so one card can name both. A pair
+    // can outlive one of its books (a file goes missing before the row is
+    // cleaned up), so this must tolerate finding nothing.
+    const other = db.prepare('SELECT kind, format FROM books WHERE id = ?').get(otherBookId) as
+      { kind: string; format: string } | undefined;
     pair = {
       pairId: String(pairRow.id),
-      otherBookId:
-        String(pairRow.ebook_id) === id ? String(pairRow.audio_id) : String(pairRow.ebook_id),
+      otherBookId,
+      otherKind: (other?.kind ??
+        (String(row.kind) === 'ebook' ? 'audio' : 'ebook')) as BookSummary['kind'],
+      otherFormat: other?.format ?? '',
       status: String(pairRow.status) as NonNullable<BookSummary['pair']>['status'],
       switchable: isSwitchable(handle),
       handoff: handoffStatus(handle),
@@ -67,6 +76,37 @@ export function bookRowToSummary(
         }
       : null,
   };
+}
+
+/**
+ * Collapse both halves of a matched pair down to a single entry.
+ *
+ * The ebook side is kept because that is the side with the cover, the fuller
+ * title and the page count; the audio side stands in when there is no ebook
+ * row to keep. Order is preserved — the survivor sits where it already was,
+ * so an alphabetical shelf stays alphabetical.
+ *
+ * Only settled pairs collapse. A `candidate` is a guess the user has not
+ * confirmed, and hiding a book behind a guess would lose it.
+ *
+ * @param pairedOnly drop everything that is not half of a settled pair.
+ */
+export function onePerPair(
+  books: BookSummary[],
+  { pairedOnly = false }: { pairedOnly?: boolean } = {},
+): BookSummary[] {
+  const settled = (b: BookSummary) => b.pair && b.pair.status !== 'candidate';
+  const winner = new Map<string, string>();
+  for (const b of books) {
+    if (!settled(b)) continue;
+    const pairId = b.pair!.pairId;
+    const kept = winner.get(pairId);
+    if (kept === undefined || b.kind === 'ebook') winner.set(pairId, b.id);
+  }
+  return books.filter((b) => {
+    if (!settled(b)) return !pairedOnly;
+    return winner.get(b.pair!.pairId) === b.id;
+  });
 }
 
 const libraryQuerySchema = z.object({
@@ -123,19 +163,18 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
     if (q.filter === 'in-progress')
       books = books.filter((b) => b.progress && !b.progress.finished && b.progress.pct > 0.001);
     if (q.filter === 'finished') books = books.filter((b) => b.progress?.finished);
-    if (q.filter === 'both-formats') {
-      // A title owned twice is ONE title. `paired` returns both sides of
-      // every pair, so twelve paired books would read as twenty-four; keep
-      // the ebook side of each pair, falling back to the audio side when the
-      // ebook is missing or not yet indexed.
-      const byPair = new Map<string, BookSummary>();
-      for (const b of books) {
-        if (!b.pair || b.pair.status === 'candidate') continue;
-        const kept = byPair.get(b.pair.pairId);
-        if (!kept || (kept.kind === 'audio' && b.kind === 'ebook')) byPair.set(b.pair.pairId, b);
-      }
-      const keep = new Set([...byPair.values()].map((b) => b.id));
-      books = books.filter((b) => keep.has(b.id));
+    if (q.filter === 'both-formats') books = onePerPair(books, { pairedOnly: true });
+    else if (q.kind === undefined && q.filter === undefined) {
+      // A title owned twice is ONE title. Without this the shelf shows the
+      // same book beside itself, once per format, which is how it read on a
+      // library where most books are owned both ways.
+      //
+      // Only the open shelf (and the facet views, which are the same shelf
+      // narrowed by author or series) collapses. Every named filter keeps its
+      // own meaning: `paired` is about pairs and wants both halves, and
+      // `in-progress` / `finished` are per-book — finishing the audiobook is
+      // not finishing the ebook, and merging them would hide one of the two.
+      books = onePerPair(books);
     }
     if (q.facet) {
       const parsed = parseFacet(q.facet);

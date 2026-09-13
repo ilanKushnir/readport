@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
-import { LANGUAGES, type Job } from '@readport/shared';
+import { LANGUAGES, type Job, type JobCount, type JobsResponse } from '@readport/shared';
 import { api, ApiError } from '../api/client';
+import { setupProgress } from '../lib/setupProgress';
 import { useSession, type User } from '../state/session';
 import {
   IconAlert,
@@ -439,7 +440,7 @@ export function SetupWizard({
                 autoComplete="username"
                 required
                 minLength={3}
-                pattern="[a-zA-Z0-9._-]+"
+                pattern="[a-zA-Z0-9._\-]+"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />
@@ -808,6 +809,7 @@ function InitStep({
   onEnter: () => void;
 }) {
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [totals, setTotals] = useState<JobCount[]>([]);
   const [books, setBooks] = useState<number>(0);
   const [aligner, setAligner] = useState<PreflightReport['aligner'] | null>(null);
   useEffect(() => {
@@ -816,10 +818,11 @@ function InitStep({
     const tick = async () => {
       try {
         if (hasRoots) {
-          const j = await api<{ jobs: Job[] }>('/api/jobs');
+          const j = await api<JobsResponse>('/api/jobs');
           const lib = await api<{ books: unknown[] }>('/api/library');
           if (!alive) return;
           setJobs(j.jobs);
+          setTotals(j.totals ?? []);
           setBooks(lib.books.length);
         }
         if (watchAligner) {
@@ -837,11 +840,12 @@ function InitStep({
       alive = false;
     };
   }, [hasRoots, watchAligner]);
-  const active = jobs.filter((j) => j.state === 'queued' || j.state === 'running');
   const scan = jobs.find((j) => j.type === 'scan');
-  const done =
-    hasRoots && scan && scan.state !== 'queued' && scan.state !== 'running' && active.length === 0;
-  const indexing = active.filter((j) => j.type.startsWith('index')).length;
+  const { done, percent, indexing, aligningLater } = setupProgress(
+    totals,
+    hasRoots,
+    scan?.progress ?? 0.05,
+  );
   return (
     <div className="wizard__body">
       <h1 tabIndex={-1}>{done ? 'All set' : hasRoots ? 'Reading your shelves' : 'All set'}</h1>
@@ -851,13 +855,17 @@ function InitStep({
         <>
           <p className="lede">
             {done
-              ? `${books} titles are in. Pairing suggestions appear once indexing settles; confirm them on the Pairing page.`
+              ? `${books} titles are in.${
+                  aligningLater
+                    ? ` ${aligningLater} book${aligningLater === 1 ? ' is' : 's are'} being timed against their audio in the background — that takes a few minutes each, and reading and listening work now regardless.`
+                    : ' Pairing suggestions appear once indexing settles; confirm them on the Pairing page.'
+                }`
               : `Scanning folders and indexing what they hold. ${books} title${books === 1 ? '' : 's'} so far${indexing ? `, ${indexing} being indexed` : ''}. You can go in now — it keeps running.`}
           </p>
           <div className="progressbar" style={{ height: 6 }}>
             <span
               style={{
-                width: `${done ? 100 : Math.max(6, Math.round((scan?.progress ?? 0.05) * 100))}%`,
+                width: `${Math.max(6, percent)}%`,
                 transition: 'width .5s ease',
               }}
             />

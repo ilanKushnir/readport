@@ -1058,9 +1058,14 @@ describe('ReadPort API', () => {
       books: { id: string }[];
     };
     expect(recent.books.length).toBe(count('recently-added'));
-    const all = (await authed({ url: '/api/library' })).json() as { books: unknown[] };
-    // Everything in the sample library was scanned in a moment ago.
-    expect(recent.books.length).toBe(all.books.length);
+    const all = (await authed({ url: '/api/library' })).json() as {
+      books: { id: string; kind: string; pair: { pairId: string } | null }[];
+    };
+    // Everything in the sample library was scanned in a moment ago, so
+    // recently-added holds every FILE. The open shelf holds every TITLE, and
+    // a paired title is one title — so it is shorter by exactly the number of
+    // pairs, each of which contributed two files and one row.
+    expect(recent.books.length).toBe(all.books.length + both.books.length);
 
     const inProgress = (await authed({ url: '/api/library?filter=in-progress' })).json() as {
       books: unknown[];
@@ -1072,6 +1077,44 @@ describe('ReadPort API', () => {
     expect(finished.books.length).toBe(count('finished'));
 
     expect((await authed({ url: '/api/library?filter=nonsense' })).statusCode).toBe(400);
+  });
+
+  it('shows a book owned in both formats once, naming both formats', async () => {
+    // The shelf used to list the same title twice, side by side — once for the
+    // EPUB and once for the M4B — which is what it looks like on a library
+    // where most books are owned both ways.
+    const all = (await authed({ url: '/api/library' })).json() as {
+      books: {
+        id: string;
+        kind: string;
+        format: string;
+        pair: { pairId: string; otherKind: string; otherFormat: string } | null;
+      }[];
+    };
+
+    const pairIds = all.books.filter((b) => b.pair).map((b) => b.pair!.pairId);
+    expect(pairIds.length).toBeGreaterThan(0);
+    expect(new Set(pairIds).size).toBe(pairIds.length);
+
+    // The survivor is the ebook, and it can name the audio side without a
+    // second request — that is what puts both badges on one card.
+    for (const b of all.books.filter((x) => x.pair)) {
+      expect(b.kind).toBe('ebook');
+      expect(b.pair!.otherKind).toBe('audio');
+      expect(b.pair!.otherFormat).not.toBe('');
+      expect(b.pair!.otherFormat).not.toBe(b.format);
+    }
+
+    // Asking for one side explicitly still returns that side, uncollapsed.
+    const ebooks = (await authed({ url: '/api/library?kind=ebook' })).json() as {
+      books: { kind: string }[];
+    };
+    const audio = (await authed({ url: '/api/library?kind=audio' })).json() as {
+      books: { kind: string }[];
+    };
+    expect(ebooks.books.every((b) => b.kind === 'ebook')).toBe(true);
+    expect(audio.books.every((b) => b.kind === 'audio')).toBe(true);
+    expect(ebooks.books.length + audio.books.length).toBe(all.books.length + pairIds.length);
   });
 
   it('shelves belong to one person: nobody else can read, move or delete them', async () => {

@@ -775,6 +775,9 @@
 }
 .rs-toggle input {
   appearance: none;
+  /* A switch is a fixed shape. Without this it is a flex item like any other
+     and a long label squeezes it narrower than its own knob. */
+  flex: none;
   width: 48px;
   height: 28px;
   border-radius: 14px;

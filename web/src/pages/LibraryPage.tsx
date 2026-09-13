@@ -27,8 +27,15 @@ import {
   IconSearch,
   IconShelf,
 } from '../components/icons';
-import { formatDuration, formatPct } from '../lib/format';
-import { cachedBookSummary, listDownloads } from '../offline/downloads';
+import { formatBytes, formatDuration, formatPct } from '../lib/format';
+import {
+  cachedBookSummary,
+  cancelDownload,
+  downloadPercent,
+  listDownloads,
+  startDownload,
+  type DownloadState,
+} from '../offline/downloads';
 
 type Kind = 'all' | 'ebook' | 'audio';
 type Sort = 'title' | 'author' | 'recent' | 'added';
@@ -81,6 +88,8 @@ export function LibraryPage() {
   const [gone, setGone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [offlineBooks, setOfflineBooks] = useState<BookSummary[] | null>(null);
+  /** What this device is fetching right now — shown on the On-this-device shelf. */
+  const [active, setActive] = useState<DownloadState[]>([]);
   const [downloaded, setDownloaded] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebounced(query, 220);
@@ -117,6 +126,11 @@ export function LibraryPage() {
   const loadDownloads = useCallback(async () => {
     const list = await listDownloads();
     setDownloaded(new Set(list.filter((d) => d.status === 'done').map((d) => d.bookId)));
+    setActive(
+      list
+        .filter((d) => d.status === 'downloading' || d.status === 'error')
+        .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1)),
+    );
     return list;
   }, []);
 
@@ -188,6 +202,16 @@ export function LibraryPage() {
     void loadDownloads();
   }, [loadDownloads]);
 
+  // A download writes its progress to IndexedDB as each chunk lands, but it is
+  // usually started from another page (or another tab), so nothing here is
+  // told about it. Poll while any download is running — and once after it
+  // stops, to pick up the finished state — then go quiet.
+  useEffect(() => {
+    if (active.length === 0) return;
+    const t = setInterval(() => void loadDownloads(), 1000);
+    return () => clearInterval(t);
+  }, [active.length, loadDownloads]);
+
   // Poll while a scan is active so states progress live.
   useEffect(() => {
     if (data?.scanActive && !pollRef.current) {
@@ -203,6 +227,36 @@ export function LibraryPage() {
       }
     };
   }, [data?.scanActive, load]);
+
+  // A download in flight is not in any list yet, so its title has to come
+  // from whatever is already loaded, or from the copy the download itself has
+  // just cached. Until either exists the row still shows, unnamed — knowing
+  // something is downloading matters more than knowing what.
+  const [cachedTitles, setCachedTitles] = useState<Record<string, string>>({});
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      const found: Record<string, string> = {};
+      for (const d of active) {
+        if (cachedTitles[d.bookId]) continue;
+        const b = await cachedBookSummary(d.bookId);
+        if (b) found[d.bookId] = b.title;
+      }
+      if (alive && Object.keys(found).length) setCachedTitles((t) => ({ ...t, ...found }));
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [active, cachedTitles]);
+
+  const titleFor = useCallback(
+    (bookId: string) =>
+      data?.books.find((b) => b.id === bookId)?.title ??
+      offlineBooks?.find((b) => b.id === bookId)?.title ??
+      cachedTitles[bookId] ??
+      null,
+    [data, offlineBooks, cachedTitles],
+  );
 
   const books = useMemo(() => {
     let source = data?.books ?? offlineBooks ?? [];
@@ -395,6 +449,14 @@ export function LibraryPage() {
             <div className="spinner" style={{ width: 16, height: 16 }} />
             Scanning your libraries — new books appear as they are indexed.
           </div>
+        )}
+
+        {showing.kind === 'device' && active.length > 0 && (
+          <DownloadsInProgress
+            active={active}
+            titleFor={titleFor}
+            onChanged={() => void loadDownloads()}
+          />
         )}
 
         {!data && !offlineBooks ? (
@@ -638,6 +700,97 @@ function ContinueCard({ book }: { book: BookSummary }) {
  * SIBLINGS. A button inside an anchor is invalid and swallows the keyboard,
  * so the plus cannot live inside the Link no matter how convenient that is.
  */
+/**
+ * What this device is fetching, on the shelf that claims to show what is on
+ * this device.
+ *
+ * A download runs for minutes over a phone connection and there was nowhere to
+ * watch it: the only sign was a ring on the book's own page, so leaving that
+ * page meant losing sight of it entirely. Progress is in bytes, which is the
+ * only measure that moves steadily on an audiobook of three enormous tracks.
+ */
+function DownloadsInProgress({
+  active,
+  titleFor,
+  onChanged,
+}: {
+  active: DownloadState[];
+  titleFor: (bookId: string) => string | null;
+  onChanged: () => void;
+}) {
+  return (
+    <section className="dls" aria-label="Downloads in progress">
+      <h2 className="dls__h">
+        <IconDownload size={15} />
+        {active.some((d) => d.status === 'downloading')
+          ? `Downloading ${active.filter((d) => d.status === 'downloading').length}`
+          : 'Downloads'}
+      </h2>
+      <ul className="dls__list">
+        {active.map((d) => {
+          const failed = d.status === 'error';
+          const pct = downloadPercent(d);
+          return (
+            <li key={d.bookId} className={`dls__row ${failed ? 'is-bad' : ''}`}>
+              <div className="dls__meta">
+                <Link className="dls__title" to={`/book/${d.bookId}`}>
+                  {titleFor(d.bookId) ?? (failed ? 'Interrupted download' : 'Starting…')}
+                </Link>
+                <span className="dls__sub">
+                  {failed
+                    ? (d.error ?? 'Download failed')
+                    : d.estimatedBytes > 0
+                      ? `${formatBytes(d.storedBytes)} of ${formatBytes(d.estimatedBytes)} · ${pct}%`
+                      : 'Starting…'}
+                </span>
+                {!failed && (
+                  <div
+                    className="progressbar dls__bar"
+                    role="progressbar"
+                    aria-valuenow={pct}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                  >
+                    <span style={{ width: `${Math.max(2, pct)}%` }} />
+                  </div>
+                )}
+              </div>
+              <button
+                className="btn btn--ghost dls__act"
+                onClick={() => {
+                  if (failed) void startDownload(d.bookId, () => onChanged()).then(onChanged);
+                  else {
+                    cancelDownload(d.bookId);
+                    onChanged();
+                  }
+                }}
+              >
+                {failed ? 'Retry' : 'Stop'}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+/** One format inside the badge: EPUB, M4B, MP3, or AUDIO for a folder of files. */
+function FormatPart({ kind, format }: { kind: BookSummary['kind']; format: string }) {
+  const label =
+    kind === 'ebook'
+      ? (format || 'epub').toUpperCase()
+      : !format || format === 'multi'
+        ? 'AUDIO'
+        : format.toUpperCase();
+  return (
+    <>
+      {kind === 'ebook' ? <IconBookOpen size={11} /> : <IconHeadphones size={11} />}
+      {label}
+    </>
+  );
+}
+
 function BookCard({
   book,
   offline,
@@ -655,26 +808,34 @@ function BookCard({
         : null;
   const pair = book.pair && book.pair.status !== 'candidate' ? book.pair : null;
   return (
-    <div className="book-card">
+    // Two format badges wrap to a second row on a phone-width cover, which
+    // lands on top of the placeholder title. Only these cards need the extra
+    // clearance, so only these cards pay for it.
+    <div className={`book-card ${pair ? 'book-card--multiformat' : ''}`}>
       <Link className="book-card__link" to={`/book/${book.id}`}>
         <span className="book-card__coverwrap">
           <Cover book={book} className="book-card__cover" />
           <span className="book-card__badges">
-            <span className={`badge ${book.kind === 'audio' ? 'badge--audio' : ''}`}>
-              {book.kind === 'ebook' ? <IconBookOpen size={11} /> : <IconHeadphones size={11} />}
-              {book.kind === 'ebook'
-                ? 'EPUB'
-                : book.format === 'multi'
-                  ? 'AUDIO'
-                  : book.format.toUpperCase()}
+            {/* One card per title, so one badge naming every format it is
+                owned in. Two separate pills read as two books — which is the
+                thing this card exists to stop — and stacked on a phone they
+                cover the artwork twice over. */}
+            <span className={`badge ${!pair && book.kind === 'audio' ? 'badge--audio' : ''}`}>
+              <FormatPart kind={book.kind} format={book.format} />
+              {pair && (
+                <>
+                  <span className="badge__sep" aria-hidden="true" />
+                  <FormatPart kind={pair.otherKind} format={pair.otherFormat} />
+                </>
+              )}
             </span>
-            {pair && (
+            {pair?.switchable && (
               <span
-                className={`badge badge--paired ${pair.switchable ? 'badge--sync' : ''}`}
-                title={pair.switchable ? 'Synced — exact switching ready' : 'Paired edition'}
+                className="badge badge--paired badge--sync"
+                title="Synced — switching lands in the same place"
               >
                 <IconLink size={11} />
-                {pair.switchable ? 'SYNC' : 'PAIR'}
+                SYNC
               </span>
             )}
           </span>

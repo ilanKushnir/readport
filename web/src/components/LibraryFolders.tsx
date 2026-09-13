@@ -135,7 +135,6 @@ export function LibraryFolders({
                 <button
                   type="button"
                   className="icon-btn"
-                  style={{ width: 36, height: 36 }}
                   aria-label={`Remove ${p}`}
                   onClick={() => onChange(value.filter((x) => x !== p))}
                 >
@@ -234,7 +233,6 @@ function FolderPicker({
         <button
           type="button"
           className="icon-btn"
-          style={{ width: 36, height: 36 }}
           disabled={!cur?.parent && !cur?.path}
           onClick={() => void go(cur?.parent ?? undefined)}
           aria-label="Up one level"
@@ -242,13 +240,7 @@ function FolderPicker({
           <IconBack size={16} />
         </button>
         <code className="picker__path">{cur?.path || 'Common locations'}</code>
-        <button
-          type="button"
-          className="icon-btn"
-          style={{ width: 36, height: 36 }}
-          onClick={onClose}
-          aria-label="Close"
-        >
+        <button type="button" className="icon-btn" onClick={onClose} aria-label="Close">
           <IconClose size={16} />
         </button>
       </div>

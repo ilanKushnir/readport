@@ -32,6 +32,13 @@ export const bookSummarySchema = z.object({
     .object({
       pairId: z.string(),
       otherBookId: z.string(),
+      /**
+       * The other half's kind and format, so a collapsed card can say EPUB
+       * *and* M4B without fetching the counterpart. A book owned twice is one
+       * book; the library shows it once and names both formats on it.
+       */
+      otherKind: bookKindSchema,
+      otherFormat: z.string(),
       status: pairStatusSchema,
       /** Handoff is available (does NOT claim sentence exactness — see handoff). */
       switchable: z.boolean(),
@@ -136,6 +143,28 @@ export const jobSchema = z.object({
     .optional(),
 });
 export type Job = z.infer<typeof jobSchema>;
+
+/**
+ * Counts of every job by type and state.
+ *
+ * `/api/jobs` returns only the newest 100 rows, which is fine for a queue
+ * display and useless for "is the first scan finished?": one book makes one
+ * index job, so a 178-book library pushes the `scan` job — the oldest of the
+ * lot — straight out of the window. Anything reasoning about overall progress
+ * has to read these totals instead of counting rows.
+ */
+export const jobCountSchema = z.object({
+  type: z.string(),
+  state: jobStateSchema,
+  count: z.number().int().nonnegative(),
+});
+export type JobCount = z.infer<typeof jobCountSchema>;
+
+export const jobsResponseSchema = z.object({
+  jobs: z.array(jobSchema),
+  totals: z.array(jobCountSchema),
+});
+export type JobsResponse = z.infer<typeof jobsResponseSchema>;
 
 /**
  * Roles. `admin` runs the server and its people; `curator` shepherds pairs

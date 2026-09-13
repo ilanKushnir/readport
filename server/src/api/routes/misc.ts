@@ -3,7 +3,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import posix from 'node:path/posix';
 import { type FastifyInstance } from 'fastify';
-import { settingsSchema, type Locator, type SwitchResolution } from '@readport/shared';
+import {
+  settingsSchema,
+  type JobState,
+  type Locator,
+  type SwitchResolution,
+} from '@readport/shared';
 import { requireRole } from '../../auth/roles.js';
 import { enqueueJob } from '../../jobs/queue.js';
 import { type AppContext, activeDerivedDir } from '../../context.js';
@@ -107,6 +112,16 @@ export function registerJobRoutes(app: FastifyInstance, ctx: AppContext): void {
           subject: subjectOf(String(r.type), payload),
         };
       }),
+      // The row list above is capped, so overall progress cannot be counted
+      // from it — one index job per book overflows the cap on any real
+      // library. These totals are the whole table, cheaply.
+      totals: (
+        db.prepare('SELECT type, state, COUNT(*) AS n FROM jobs GROUP BY type, state').all() as {
+          type: string;
+          state: string;
+          n: number;
+        }[]
+      ).map((r) => ({ type: r.type, state: r.state as JobState, count: Number(r.n) })),
     };
   });
 

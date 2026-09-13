@@ -328,7 +328,7 @@ function AddPersonSheet({ onClose, onDone }: { onClose: () => void; onDone: () =
             className="input"
             required
             minLength={3}
-            pattern="[a-zA-Z0-9._-]+"
+            pattern="[a-zA-Z0-9._\-]+"
             autoComplete="off"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
