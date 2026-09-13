@@ -15,6 +15,7 @@ import { extractEpub, loadManifest, loadSentences, loadSentencesText } from '../
 import { extractCover, probeAudio } from '../audio/probe.js';
 import { normaliseLanguage } from '@readport/shared';
 import { facetsForBook, writeFacets } from '../library/facets.js';
+import { FACETS_REV } from '../scanner/scan.js';
 import { CANDIDATE_THRESHOLD, scorePair } from '../pairing/score.js';
 import { storeAlignment } from '../alignment/service.js';
 import { textFingerprint, timelineFingerprint } from '../alignment/portable.js';
@@ -649,6 +650,7 @@ export async function runIndexEbook(
           rating: result.meta.rating,
         }),
       );
+      db.prepare('UPDATE books SET facets_rev = ? WHERE id = ?').run(FACETS_REV, bookId);
       db.exec('COMMIT');
     } catch (err) {
       db.exec('ROLLBACK');
@@ -839,6 +841,7 @@ export async function runIndexAudio(
       bookId,
     );
     writeFacets(db, bookId, facetsForBook({ genres: [...genres], narrator, year }));
+    db.prepare('UPDATE books SET facets_rev = ? WHERE id = ?').run(FACETS_REV, bookId);
   } catch (err) {
     markBookError(ctx, guard, bookId, err);
     throw err;

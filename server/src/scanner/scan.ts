@@ -193,6 +193,21 @@ export interface UpsertResult {
 }
 
 /** Apply a scan report to the database. */
+/**
+ * The generation of facet extraction the current code writes.
+ *
+ * A book indexed under an older generation carries tags this build would have
+ * read differently — or, at generation 0, none at all. Bumping this re-indexes
+ * every book once, without touching `scan_state`, so the library stays
+ * readable and pairable while the backfill works through it.
+ */
+export const FACETS_REV = 1;
+
+/** Whether this book predates the current facet extraction. */
+function facetsStale(existing: { facets_rev?: unknown }): boolean {
+  return Number(existing.facets_rev ?? 0) < FACETS_REV;
+}
+
 export function applyScan(db: DB, report: ScanReport): UpsertResult {
   const needsIndex: UpsertResult['needsIndex'] = [];
   const seenIds = new Set<string>();
@@ -204,14 +219,15 @@ export function applyScan(db: DB, report: ScanReport): UpsertResult {
      ON CONFLICT(kind, root_dir, rel_path) DO UPDATE SET size_bytes = excluded.size_bytes`,
   );
   const getExisting = db.prepare(
-    'SELECT id, content_hash, scan_state FROM books WHERE kind = ? AND root_dir = ? AND rel_path = ?',
+    'SELECT id, content_hash, scan_state, facets_rev FROM books WHERE kind = ? AND root_dir = ? AND rel_path = ?',
   );
 
   for (const e of report.ebooks) {
     const id = stableId('ebook', e.rootDir, e.relPath);
     seenIds.add(id);
     const existing = getExisting.get('ebook', e.rootDir, e.relPath) as
-      { id: string; content_hash: string | null; scan_state: string } | undefined;
+      | { id: string; content_hash: string | null; scan_state: string; facets_rev?: number }
+      | undefined;
     if (!existing) {
       upsert.run(
         id,
@@ -225,25 +241,25 @@ export function applyScan(db: DB, report: ScanReport): UpsertResult {
         now,
       );
       needsIndex.push({ bookId: id, kind: 'ebook' });
-    } else if (
-      existing.content_hash !== e.contentHash ||
-      existing.scan_state === 'error' ||
-      existing.scan_state === 'missing' ||
-      existing.scan_state === 'discovered'
-    ) {
-      db.prepare(
-        'UPDATE books SET content_hash = ?, size_bytes = ?, scan_state = ? WHERE id = ?',
-      ).run(
-        e.contentHash,
-        e.sizeBytes,
-        existing.scan_state === 'missing'
-          ? 'discovered'
-          : existing.scan_state === 'ready'
+    } else {
+      const changed =
+        existing.content_hash !== e.contentHash ||
+        existing.scan_state === 'error' ||
+        existing.scan_state === 'missing' ||
+        existing.scan_state === 'discovered';
+      if (changed || facetsStale(existing)) {
+        // A re-index for facets alone must not take the book out of service:
+        // only a real change or a broken state sends it back to 'discovered'.
+        const nextState = changed
+          ? existing.scan_state === 'missing' || existing.scan_state === 'ready'
             ? 'discovered'
-            : existing.scan_state,
-        existing.id,
-      );
-      needsIndex.push({ bookId: existing.id, kind: 'ebook' });
+            : existing.scan_state
+          : existing.scan_state;
+        db.prepare(
+          'UPDATE books SET content_hash = ?, size_bytes = ?, scan_state = ? WHERE id = ?',
+        ).run(e.contentHash, e.sizeBytes, nextState, existing.id);
+        needsIndex.push({ bookId: existing.id, kind: 'ebook' });
+      }
     }
   }
 
@@ -252,7 +268,8 @@ export function applyScan(db: DB, report: ScanReport): UpsertResult {
     seenIds.add(id);
     const format = a.tracks.length === 1 ? a.tracks[0]!.ext.slice(1) : 'multi';
     const existing = getExisting.get('audio', a.rootDir, a.relPath) as
-      { id: string; content_hash: string | null; scan_state: string } | undefined;
+      | { id: string; content_hash: string | null; scan_state: string; facets_rev?: number }
+      | undefined;
     if (!existing) {
       upsert.run(
         id,
@@ -269,11 +286,16 @@ export function applyScan(db: DB, report: ScanReport): UpsertResult {
       needsIndex.push({ bookId: id, kind: 'audio' });
     } else if (
       existing.content_hash !== a.contentHash ||
-      ['error', 'missing', 'discovered'].includes(existing.scan_state)
+      ['error', 'missing', 'discovered'].includes(existing.scan_state) ||
+      facetsStale(existing)
     ) {
+      const changed =
+        existing.content_hash !== a.contentHash ||
+        ['error', 'missing', 'discovered'].includes(existing.scan_state);
+      // As with ebooks: a facets-only re-index leaves the book playable.
       db.prepare(
         'UPDATE books SET content_hash = ?, size_bytes = ?, scan_state = ? WHERE id = ?',
-      ).run(a.contentHash, a.sizeBytes, 'discovered', existing.id);
+      ).run(a.contentHash, a.sizeBytes, changed ? 'discovered' : existing.scan_state, existing.id);
       insertTracks(db, existing.id, a);
       needsIndex.push({ bookId: existing.id, kind: 'audio' });
     }

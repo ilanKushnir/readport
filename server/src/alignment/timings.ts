@@ -3,8 +3,7 @@ import { type AlignmentGap, type AlignmentSegment } from '@readport/shared';
 /**
  * Shared timing + honesty layer.
  *
- * Every alignment engine (the fuzzy transcript aligner in align.ts, the CTC
- * forced aligner, anything later) answers exactly one question per sentence:
+ * An alignment engine answers exactly one question per sentence:
  * "where in the audio is this, and how much do you believe it?". Turning those
  * raw answers into an `AlignmentSegment` — enforcing monotonicity, deciding
  * what may be called `exact`, interpolating small holes, refusing to guess
@@ -260,4 +259,26 @@ function clamp01(v: number): number {
 /** Three decimals: enough to compare confidences, stable across runs. */
 function round3(v: number): number {
   return Math.round(v * 1000) / 1000;
+}
+
+/**
+ * One `alignment_segments` row as an `AlignmentSegment`.
+ *
+ * Here rather than beside each query because three call sites read this table
+ * — resolving a switch, exporting a portable file, and serving one chapter's
+ * timings to read-along — and three hand-written copies of the same eight
+ * conversions is three chances for one of them to forget `uncertaintyMs` and
+ * quietly hand back a segment that claims to be certain.
+ */
+export function rowToSegment(row: Record<string, unknown>): AlignmentSegment {
+  return {
+    sentenceId: String(row.sentence_id),
+    spineIdx: Number(row.spine_idx),
+    sentenceOrd: Number(row.sentence_ord),
+    startMs: Number(row.start_ms),
+    endMs: Number(row.end_ms),
+    confidence: Number(row.confidence),
+    source: String(row.source) as AlignmentSegment['source'],
+    uncertaintyMs: Number(row.uncertainty_ms ?? 0),
+  };
 }

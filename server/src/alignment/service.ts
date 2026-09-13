@@ -15,7 +15,7 @@ import {
 } from '@readport/shared';
 import { type DB, nowIso } from '../db/index.js';
 import { newId } from '../util/ids.js';
-import { type AlignerResult } from './timings.js';
+import { rowToSegment, type AlignerResult } from './timings.js';
 
 /** Persist an aligner run as a new alignment version for the pair. */
 export function storeAlignment(
@@ -135,19 +135,6 @@ export function handoffStatus(handle: AlignmentHandle | null): HandoffStatus | n
     exactSentenceCoverage: handle.summary.exactSentenceCoverage,
     coverage: handle.summary.coverage,
     meanConfidence: handle.summary.meanConfidence,
-  };
-}
-
-function rowToSegment(row: Record<string, unknown>): AlignmentSegment {
-  return {
-    sentenceId: String(row.sentence_id),
-    spineIdx: Number(row.spine_idx),
-    sentenceOrd: Number(row.sentence_ord),
-    startMs: Number(row.start_ms),
-    endMs: Number(row.end_ms),
-    confidence: Number(row.confidence),
-    source: String(row.source) as AlignmentSegment['source'],
-    uncertaintyMs: Number(row.uncertainty_ms ?? 0),
   };
 }
 

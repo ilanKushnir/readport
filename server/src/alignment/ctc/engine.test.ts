@@ -345,14 +345,21 @@ function fakeProbeDecoder(
   n: Narration,
   seen: ProbeWindow[] = [],
 ): (opts: ProbeDecoderOptions) => Promise<ProbeDecoder> {
+  let decodedMs = 0;
   return async (): Promise<ProbeDecoder> => ({
     model: FAKE_MODEL,
     audioMs: n.audioMs,
+    // Mirrors the real decoder: what was actually put through the model, so a
+    // window clipped at the end of the audio is not counted in full.
+    get decodedMs() {
+      return decodedMs;
+    },
     async decode(windows, onWindow) {
       return windows.map((w, i) => {
         seen.push(w);
         onWindow?.(i + 1, windows.length);
-        const hi = w.startMs + w.durationMs;
+        const hi = Math.min(w.startMs + w.durationMs, n.audioMs);
+        decodedMs += Math.max(0, hi - w.startMs);
         return n.chars.filter((c) => c.ms >= w.startMs && c.ms < hi);
       });
     },
