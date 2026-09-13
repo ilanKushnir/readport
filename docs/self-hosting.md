@@ -137,6 +137,13 @@ with `gosu`. Set them to the host user that owns your data volume. `TZ`
 sets the container timezone. No Docker socket is mounted, no privileged mode
 is used, and `no-new-privileges` is enabled in the compose file.
 
+## Which image you get
+
+The compose file builds from source, which works on any architecture and is
+the default. The published image at `ghcr.io/ilankushnir/readport` is built
+for **linux/amd64** only — on an arm64 host (a Pi, an Apple Silicon VM, an ARM
+VPS) keep `build: .` rather than switching to `image:`.
+
 ## Reverse proxy and HTTPS (required for the PWA)
 
 Installable PWAs and service workers require HTTPS (or `localhost`). Put any

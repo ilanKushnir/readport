@@ -491,6 +491,15 @@ export function registerOfflineRoutes(app: FastifyInstance, ctx: AppContext): vo
       urls.push(jsonEntry(`/api/books/${id}/offline-switch`, 'switch', switchTable));
     }
     urls.push({ url: `/api/books/${id}`, sizeBytes: 10_000, kind: 'detail', dynamic: true });
+    // The reader's own highlights, notes and bookmarks. Without these a
+    // downloaded book opens offline with every mark the reader made
+    // invisible, which reads as data loss even though nothing was lost.
+    urls.push({
+      url: `/api/books/${id}/annotations`,
+      sizeBytes: 20_000,
+      kind: 'annotations',
+      dynamic: true,
+    });
     const totalBytes = urls.reduce((a, u) => a + u.sizeBytes, 0);
     return { bookId: id, urls, totalBytes };
   });

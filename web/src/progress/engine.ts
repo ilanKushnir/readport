@@ -390,6 +390,11 @@ export async function flushPending(
       keepalive: useKeepalive,
     });
     await handleAck(ack);
+    // A full batch means there is more behind it. Without re-arming, a
+    // backlog built up over a week offline drained 200 events per flush
+    // interval — so signing out sent the oldest positions and abandoned the
+    // newest, which is the wrong way round in the only case that matters.
+    if (events.length === 200) scheduleFlush(true);
   } catch (err) {
     if (isOffline(err)) return; // events stay queued; the next flush retries
     console.warn('progress flush failed', err);

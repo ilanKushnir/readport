@@ -164,7 +164,9 @@ const TRACK_RE = /^\/api\/books\/[^/]+\/track\/\d+$/;
 /* Book detail JSON embeds progress and pairing state: it changes while a
    download's static content does not, so it is served network-first and
    the cached copy only refreshed/used as the offline fallback. */
-const DETAIL_RE = /^\/api\/books\/[^/]+$/;
+// The book detail and its marks: both are small JSON that must be served
+// from cache offline but refreshed whenever the network is there.
+const DETAIL_RE = /^\/api\/books\/[^/]+(\/annotations)?$/;
 
 self.addEventListener('fetch', (event) => {
   const req = event.request;

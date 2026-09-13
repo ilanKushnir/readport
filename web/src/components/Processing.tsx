@@ -19,11 +19,20 @@ const TYPE_LABEL: Record<string, string> = {
   'pair-scan': 'Look for pairs',
 };
 
-function typeLabel(t: string): string {
+export function typeLabel(t: string): string {
   const known = TYPE_LABEL[t];
   if (known) return known;
   const words = t.replace(/[-_]/g, ' ');
   return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+/** A job state as a word, not as the enum the scheduler happens to use. */
+export function stateLabel(state: string): string {
+  if (state === 'done') return 'Finished';
+  if (state === 'failed') return 'Failed';
+  if (state === 'cancelled') return 'Cancelled';
+  if (state === 'running') return 'Running';
+  return 'Queued';
 }
 
 /** Which of the three scheduler lanes a job waits in. */
