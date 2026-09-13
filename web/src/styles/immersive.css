@@ -391,6 +391,19 @@
   color: var(--rd-soft);
   font-variant-numeric: tabular-nums;
 }
+/* The chapter label is the only part of this row that may give up space.
+   Without this it held its full width, pushed the Listen pill over the
+   percentage, and the percentage truncated to "4…". */
+.reader-footer-row > span:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.reader-footer-row > *:not(:first-child) {
+  flex: none;
+}
 /* Compact: one thin line — bar, (optional) listen pill, percentage. */
 .immersive-chrome--bar-compact {
   padding-block-start: 6px;
@@ -648,6 +661,20 @@
   padding-block: var(--sp-3);
   border-block-end: 1px solid var(--rp-border);
 }
+/* A choice that belongs to the choice above it, not beside it. */
+.rs-label--sub {
+  margin-block-start: var(--sp-3);
+  opacity: 0.8;
+}
+/* What the mode means, in a sentence — so the two options are a decision
+   rather than two words. */
+.rs-note {
+  margin: var(--sp-2) 0 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--rp-text-soft);
+}
+
 .rs-group:last-child {
   border-block-end: 0;
 }
@@ -1149,8 +1176,35 @@
   box-shadow: var(--rp-shadow-2);
   font-size: 13.5px;
   font-weight: 600;
-  cursor: pointer;
   animation: rp-slide-up var(--rp-duration-base) var(--rp-ease);
+  /* Padding now belongs to the two buttons inside, so each of them is a
+     target in its own right rather than a region of one big one. */
+  padding: 0;
+  overflow: hidden;
+}
+.return-pill__go,
+.return-pill__x {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.return-pill__go {
+  padding: 0 6px 0 14px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.return-pill__x {
+  justify-content: center;
+  width: 44px;
+  border-inline-start: 1px solid color-mix(in srgb, currentColor 14%, transparent);
 }
 .reader-page .return-pill {
   background: color-mix(in srgb, var(--rd-bg) 90%, var(--rd-text) 8%);
@@ -1159,7 +1213,9 @@
 }
 .return-pill .return-pill__x {
   opacity: 0.6;
-  margin-inline-start: 4px;
+}
+.return-pill .return-pill__x:hover {
+  opacity: 1;
 }
 .player-cover {
   max-width: min(62vw, 320px);
@@ -1236,6 +1292,15 @@
   height: 56px;
   flex-shrink: 0;
   color: var(--rp-text);
+}
+/* The skip buttons are meant to be smaller than the chapter ones. The rule
+   saying so is earlier in the file and carries the same specificity, so it
+   lost and every button in the row rendered at 56px — which is wider than
+   the row and clipped the outer two against an overflow:hidden edge. */
+.player-controls .icon-btn.icon-btn--small {
+  width: 44px;
+  height: 44px;
+  color: var(--rp-text-soft);
 }
 .play-btn {
   flex-shrink: 0;

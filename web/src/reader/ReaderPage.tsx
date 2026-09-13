@@ -1143,6 +1143,47 @@ export function ReaderPage() {
     scroller.scrollBy({ top: drift, behavior: 'smooth' });
   }, [autoScroll, readAlong, narration.playing, paceTop, prefs.mode]);
 
+  /**
+   * The page turn actually used.
+   *
+   * A reader who has asked the system for less motion gets none, whatever the
+   * preference says — the preference is a taste, that is an accessibility
+   * setting, and it wins.
+   */
+  const [reduceMotion, setReduceMotion] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const sync = () => setReduceMotion(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+  const pageTurn = reduceMotion ? 'instant' : prefs.pageTurn;
+
+  /**
+   * Fade: the page does not travel, it crosses over.
+   *
+   * Setting the transition to `opacity` alone would do nothing, because
+   * nothing changes the opacity — so the turn would silently be `instant`
+   * wearing another name. This dips it and brings it back.
+   */
+  useEffect(() => {
+    if (pageTurn !== 'fade' || prefs.mode !== 'paginated') return;
+    const el = contentRef.current;
+    if (!el) return;
+    el.style.transition = 'opacity 110ms var(--rp-ease)';
+    el.style.opacity = '0';
+    const raf = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        el.style.opacity = '1';
+      });
+    });
+    return () => {
+      cancelAnimationFrame(raf);
+      el.style.opacity = '1';
+    };
+  }, [page, pageTurn, prefs.mode]);
+
   // Leaving the reader stops the voice; so does closing the tab.
   useEffect(
     () => () => {
@@ -1750,7 +1791,9 @@ export function ReaderPage() {
                   paginationFailed ? 'is-unpaginated' : ''
                 }`}
                 style={{
-                  transition: 'transform 200ms var(--rp-ease)',
+                  // How a page turn looks. Fade moves the page without
+                  // travel (the dip is applied below); slide is the default.
+                  transition: pageTurn === 'slide' ? 'transform 200ms var(--rp-ease)' : 'none',
                   padding: `${chromeInset.top + 8}px ${margins.padding}px ${chromeInset.bottom + 8}px`,
                 }}
                 onPointerDown={(e) => {
@@ -1832,29 +1875,32 @@ export function ReaderPage() {
       </div>
 
       {returnPoint && (
-        <button
-          className="return-pill"
-          onClick={() => {
-            const rp = returnPoint;
-            setReturnPoint(null);
-            pendingTargetRef.current = { charOffset: rp.charOffset };
-            if (rp.spineIdx === spineIdx) gotoChapter(spineIdx, rp.charOffset, 'seek');
-            else setSpineIdx(rp.spineIdx);
-          }}
-        >
-          <IconBack size={15} /> Back to where you were · {returnPoint.label}
-          <span
-            className="return-pill__x"
-            role="button"
-            aria-label="Dismiss"
-            onClick={(e) => {
-              e.stopPropagation();
+        // Two buttons side by side, not a button inside a button: nesting
+        // them is invalid, unreachable by keyboard, and left the dismiss as
+        // a 14px target inside a much larger tap area that did the opposite.
+        <div className="return-pill">
+          <button
+            type="button"
+            className="return-pill__go"
+            onClick={() => {
+              const rp = returnPoint;
               setReturnPoint(null);
+              pendingTargetRef.current = { charOffset: rp.charOffset };
+              if (rp.spineIdx === spineIdx) gotoChapter(spineIdx, rp.charOffset, 'seek');
+              else setSpineIdx(rp.spineIdx);
             }}
           >
+            <IconBack size={15} /> Back to where you were · {returnPoint.label}
+          </button>
+          <button
+            type="button"
+            className="return-pill__x"
+            aria-label="Dismiss"
+            onClick={() => setReturnPoint(null)}
+          >
             <IconClose size={14} />
-          </span>
-        </button>
+          </button>
+        </div>
       )}
       {prefs.brightness < 0.995 && (
         <div className="reader-dim" style={{ opacity: 1 - prefs.brightness }} aria-hidden="true" />
@@ -2495,9 +2541,13 @@ function ReaderSettingsSheet({
         </div>
       </div>
 
+      {/* How the book moves. Choosing Pages or Scroll changes what the rest
+          of this group can even mean, so what belongs to each mode is nested
+          under it rather than listed beside it — Columns used to sit under
+          the heading "Progress bar", which is neither. */}
       <div className="rs-group">
-        <div className="rs-label">Layout</div>
-        <div className="segmented" role="group" aria-label="Layout mode">
+        <div className="rs-label">How it reads</div>
+        <div className="segmented" role="group" aria-label="How it reads">
           <button
             aria-pressed={prefs.mode === 'paginated'}
             onClick={() => set('mode', 'paginated')}
@@ -2508,9 +2558,49 @@ function ReaderSettingsSheet({
             Scroll
           </button>
         </div>
-        <div className="rs-label" style={{ marginTop: 12 }}>
-          Progress bar
-        </div>
+
+        {prefs.mode === 'paginated' ? (
+          <>
+            <div className="rs-label rs-label--sub">Pages at a time</div>
+            <div className="segmented" role="group" aria-label="Pages at a time">
+              {(['auto', 'one', 'two'] as const).map((c) => (
+                <button
+                  key={c}
+                  aria-pressed={prefs.columns === c}
+                  onClick={() => set('columns', c)}
+                >
+                  {c === 'auto' ? 'Auto' : c === 'one' ? 'One' : 'Two'}
+                </button>
+              ))}
+            </div>
+
+            <div className="rs-label rs-label--sub">Page turn</div>
+            <div className="segmented" role="group" aria-label="Page turn">
+              {(
+                [
+                  ['slide', 'Slide'],
+                  ['fade', 'Fade'],
+                  ['instant', 'Instant'],
+                ] as const
+              ).map(([v, label]) => (
+                <button
+                  key={v}
+                  aria-pressed={prefs.pageTurn === v}
+                  onClick={() => set('pageTurn', v)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <p className="rs-note">Tap either edge, swipe, or use the arrow keys.</p>
+          </>
+        ) : (
+          <p className="rs-note">One continuous column. Scroll, or swipe up and down.</p>
+        )}
+      </div>
+
+      <div className="rs-group">
+        <div className="rs-label">Progress bar</div>
         <div className="segmented" role="group" aria-label="Progress bar">
           {(['full', 'compact', 'hidden'] as const).map((v) => (
             <button
@@ -2522,15 +2612,6 @@ function ReaderSettingsSheet({
             </button>
           ))}
         </div>
-        {prefs.mode === 'paginated' && (
-          <div className="segmented" role="group" aria-label="Columns" style={{ marginTop: 8 }}>
-            {(['auto', 'one', 'two'] as const).map((c) => (
-              <button key={c} aria-pressed={prefs.columns === c} onClick={() => set('columns', c)}>
-                {c === 'auto' ? 'Auto' : c === 'one' ? 'One page' : 'Two pages'}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
       <div className="rs-group">

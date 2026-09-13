@@ -36,6 +36,17 @@ export function ReadingListPage() {
   const [data, setData] = useState<QueueResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [menu, setMenu] = useState<string | null>(null);
+  /**
+   * Which way the open menu hangs.
+   *
+   * It always dropped downward, so on the last rows of the list it opened
+   * underneath the fixed tab bar — the options were there, behind the bar,
+   * unreachable. Decided when it opens, from the room actually below the
+   * button.
+   */
+  const [menuUp, setMenuUp] = useState(false);
+  /** Roughly the menu's height; only used to choose a direction. */
+  const MENU_H = 190;
   /** The list never arrived, so an empty screen means nothing about the queue. */
   const [stale, setStale] = useState(false);
   const readOnly = phase === 'offline';
@@ -271,13 +282,27 @@ export function ReadingListPage() {
                     className="sidebar__iconbtn"
                     aria-label={`More for ${book.title}`}
                     aria-expanded={menu === id}
-                    onClick={() => setMenu(menu === id ? null : id)}
+                    onClick={(e) => {
+                      if (menu === id) {
+                        setMenu(null);
+                        return;
+                      }
+                      const below =
+                        window.innerHeight - e.currentTarget.getBoundingClientRect().bottom;
+                      // The tab bar sits over the last ~96px of the viewport.
+                      setMenuUp(below - 96 < MENU_H);
+                      setMenu(id);
+                    }}
                   >
                     <IconMore size={18} />
                   </button>
                 </span>
                 {menu === id && (
-                  <div className="queue-menu" role="group" aria-label={`Move ${book.title}`}>
+                  <div
+                    className={`queue-menu ${menuUp ? 'is-up' : ''}`}
+                    role="group"
+                    aria-label={`Move ${book.title}`}
+                  >
                     <button
                       className="list-row"
                       disabled={readOnly || index === 0}

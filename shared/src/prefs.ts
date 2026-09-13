@@ -47,6 +47,14 @@ export const readerPrefsSchema = z.object({
   mode: z.enum(['paginated', 'scroll']),
   /** Paginated columns: 'auto' shows two pages side by side on wide screens. */
   columns: z.enum(['auto', 'one', 'two']),
+  /**
+   * How a page turn looks.
+   *
+   * 'slide' moves the page across, 'fade' crosses it over without travel for
+   * anyone the movement bothers, and 'instant' does neither — which is also
+   * what everyone gets when the system asks for reduced motion.
+   */
+  pageTurn: z.enum(['slide', 'fade', 'instant']),
   /** 0.35–1: page dimming for night reading (1 = no dimming). */
   brightness: z.number().min(0.35).max(1),
   /** Bottom progress indicator: full, one thin line, or nothing. */
@@ -68,6 +76,7 @@ export const DEFAULT_READER_PREFS: ReaderPrefs = {
   hyphens: true,
   mode: 'paginated',
   columns: 'auto',
+  pageTurn: 'slide',
   brightness: 1,
   progressBar: 'full',
 };
@@ -87,6 +96,10 @@ export const PER_DEVICE_READER_KEYS = [
   'margin',
   'mode',
   'columns',
+  // Sits with `mode` and `columns`: a page turn on a phone and a page turn
+  // on a desktop are different gestures, and a reader may well want them to
+  // behave differently.
+  'pageTurn',
   'brightness',
   'progressBar',
 ] as const satisfies readonly (keyof ReaderPrefs)[];

@@ -710,8 +710,7 @@ export function SetupWizard({
               </span>
               <button
                 type="button"
-                className="btn btn--ghost"
-                style={{ minHeight: 32, fontSize: 13 }}
+                className="btn btn--ghost btn--tight"
                 onClick={() => void runPreflight()}
                 disabled={checking}
               >

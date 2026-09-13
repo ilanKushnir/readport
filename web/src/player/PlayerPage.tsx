@@ -88,6 +88,15 @@ export function PlayerPage() {
   const lastHeartbeatRef = useRef(0);
   const lastPositionStateRef = useRef(0);
   const scrubbing = useRef(false);
+  /**
+   * Where the thumb is while a drag is in progress.
+   *
+   * Dragging fires an input event per pixel, and each one used to seek the
+   * audio element and queue a progress write — hundreds of seeks and hundreds
+   * of writes for one gesture, on a phone, over a network. The thumb follows
+   * the finger from here, and the audio is moved once, when the finger lifts.
+   */
+  const [dragMs, setDragMs] = useState<number | null>(null);
 
   const tracks = detail?.tracks ?? [];
   const totalMs = useMemo(() => tracks.reduce((a, t) => a + t.durationMs, 0), [tracks]);
@@ -691,6 +700,15 @@ export function PlayerPage() {
   }
 
   const remainingMs = Math.max(0, totalMs - bookMs);
+
+  /** End of a drag: move the audio once, to where the finger left the thumb. */
+  const commitScrub = () => {
+    scrubbing.current = false;
+    if (dragMs === null) return;
+    setPositionMs(dragMs - (tracks[trackIdx]?.startMsAbsolute ?? 0));
+    seekTo(dragMs);
+    setDragMs(null);
+  };
   const chapterLeftMs = Math.max(0, chapterEndMs - bookMs);
   void sleepTick;
   const sleepLabel = sleepChapterEnd
@@ -813,17 +831,22 @@ export function PlayerPage() {
             min={0}
             max={Math.max(1, totalMs)}
             step={1000}
-            value={Math.round(bookMs)}
+            value={Math.round(dragMs ?? bookMs)}
             aria-label="Position in audiobook"
-            aria-valuetext={`${formatDuration(bookMs)} of ${formatDuration(totalMs)}`}
+            aria-valuetext={`${formatDuration(dragMs ?? bookMs)} of ${formatDuration(totalMs)}`}
             onPointerDown={() => (scrubbing.current = true)}
-            onPointerUp={() => (scrubbing.current = false)}
-            onPointerCancel={() => (scrubbing.current = false)}
-            onLostPointerCapture={() => (scrubbing.current = false)}
+            onPointerUp={commitScrub}
+            onPointerCancel={commitScrub}
+            onLostPointerCapture={commitScrub}
             onChange={(e) => {
               const v = Number(e.target.value);
-              setPositionMs(v - (tracks[trackIdx]?.startMsAbsolute ?? 0));
-              seekTo(v);
+              // Mid-drag: move the thumb only. A keyboard user gets no
+              // pointer events, so for them this IS the commit.
+              if (scrubbing.current) setDragMs(v);
+              else {
+                setPositionMs(v - (tracks[trackIdx]?.startMsAbsolute ?? 0));
+                seekTo(v);
+              }
             }}
           />
           <div className="player-times">
