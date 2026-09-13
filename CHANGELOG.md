@@ -4,6 +4,34 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.10.0 - 2026-09-13
+
+### Added
+
+- **Invitation codes you can read out**: `ABCD-EFGH-JKMN` instead of 32
+  characters of base64url. Case, spaces and dashes are ignored, and the
+  letters that look like digits are folded onto them - so a code dictated over
+  the phone still works. The sign-in page now has somewhere to type one.
+- **A public address**, asked during setup and editable under Sharing.
+  Invitation links are built from it, so they work for the person you send
+  them to rather than only on your own network. Optional.
+
+### Fixed
+
+- **A rewind could strand the reader** in a chapter the voice was not in, with
+  nothing to point at - the chapter walker refuses to reverse, and a rewind
+  could put it in a position where the only way back counted as a reversal.
+- **"Back to the voice" did nothing in a gap**, which is exactly when it is
+  pressed.
+- **Auto-scroll lurched line to line**; it now moves at the speed the
+  narration is working down the page.
+- **The highlight colours were invisible.** The selection menu's button reset
+  out-specified the swatch colours and painted all five transparent.
+- **The selection menu needed two tries** on a phone, and could be wider than
+  the screen.
+- **Chapters did not open at their beginning**, and short front matter left
+  the next-section button floating in the middle of a blank screen.
+
 ## 0.9.7 - 2026-09-13
 
 ### Fixed
