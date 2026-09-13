@@ -115,6 +115,13 @@ h3 {
 .btn--ghost:hover {
   background: var(--rp-surface);
 }
+/* Without its own hover a destructive button inherits `.btn:hover`, which
+   paints it the primary ember - so "Yes, delete permanently" turned into the
+   friendliest-looking button on the screen exactly as the pointer reached it. */
+.btn--danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--rp-danger) 12%, transparent);
+  border-color: var(--rp-danger);
+}
 .btn--danger {
   background: transparent;
   color: var(--rp-danger);
@@ -133,10 +140,28 @@ h3 {
 .offline-btn:hover {
   background: var(--rp-surface);
 }
+/* "Downloaded" is a fact, not a command. It wore the same solid ember as the
+   one button that opens the book, so the eye went to the status instead of
+   the verb. Still clearly marked, no longer shouting. */
 .offline-btn.is-done {
-  background: var(--rp-primary);
-  border-color: var(--rp-primary);
-  color: var(--rp-on-primary);
+  background: color-mix(in srgb, var(--rp-primary) 10%, transparent);
+  border-color: color-mix(in srgb, var(--rp-primary) 35%, var(--rp-border));
+  color: var(--rp-interactive);
+}
+
+/* The downloading state had NO rules at all, so its two spans inherited the
+   button's 15px/600 and ran together as "Downloading12.4 MB of 210 MB". */
+.offline-btn__label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.2;
+}
+.offline-btn__bytes {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--rp-text-soft);
+  font-variant-numeric: tabular-nums;
 }
 .offline-btn__ring {
   --pct: 0;
@@ -210,6 +235,20 @@ select.input {
   font-size: 14px;
   font-weight: 600;
 }
+/* An explanation under a control. It had rules only INSIDE `.field`, so
+   every hint beside a switch - in Settings, in the wizard - rendered as
+   full-weight body text, as loud as the thing it was explaining. */
+.hint {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--rp-text-soft);
+  font-weight: 400;
+}
+.rs-toggle .hint {
+  display: block;
+  margin-block-start: 2px;
+}
+
 .field .hint {
   font-size: 13px;
   color: var(--rp-text-soft);
@@ -311,7 +350,7 @@ select.input {
 .badge--paired {
   background: var(--rp-surface-raised);
   border-color: var(--rp-primary);
-  color: var(--rp-primary);
+  color: var(--rp-interactive);
 }
 .badge--sync {
   background: var(--rp-primary);
@@ -321,10 +360,6 @@ select.input {
 .badge--audio {
   color: var(--rp-accent);
   border-color: color-mix(in srgb, var(--rp-accent) 55%, transparent);
-}
-[data-app-theme='dark'] .badge--paired {
-  color: var(--rp-interactive);
-  border-color: var(--rp-interactive);
 }
 
 /* ------------------------------------------------------------------ layout */
@@ -561,9 +596,6 @@ select.input {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--rp-primary);
-}
-[data-app-theme='dark'] .hero-card__eyebrow {
   color: var(--rp-interactive);
 }
 .hero-card__title {
@@ -868,7 +900,10 @@ select.input {
 .book-card__progress > span {
   display: block;
   height: 100%;
-  background: var(--rp-on-primary);
+  /* Not --rp-on-primary: that token is dark ink in the dark theme, and this
+     sits on a black scrim over artwork, so progress vanished into it. The
+     track above is a hardcoded scrim, so the fill is one too. */
+  background: #fff;
 }
 .book-card__offline {
   position: absolute;
@@ -1269,6 +1304,31 @@ select.input {
   flex-wrap: wrap;
   gap: var(--sp-3);
   margin-block-start: var(--sp-3);
+}
+/* On a phone the cover took 128 of the 343px available and the body kept the
+   remaining 191 - so the title wrapped to three lines, the metadata to two,
+   and each action button, which needs ~180px for its icon, padding and label,
+   took a line of its own. Four of them stacked taller than the cover beside
+   them, and the chapter list started below the fold.
+
+   Stacking gives the whole width back to both. */
+@media (max-width: 560px) {
+  .book-hero {
+    flex-direction: column;
+    gap: var(--sp-4);
+  }
+  .book-hero__coverwrap {
+    /* Smaller, and beside nothing: it is an illustration here, not a column. */
+    width: 108px;
+  }
+  /* Two secondaries share a line; the primary keeps its own. */
+  .book-hero__actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  }
+  .book-hero__actions > :first-child {
+    grid-column: 1 / -1;
+  }
 }
 
 .list-card {
@@ -1733,9 +1793,6 @@ select.input {
   background-repeat: no-repeat;
 }
 .evidence-cell.is-good b {
-  color: var(--rp-primary);
-}
-[data-app-theme='dark'] .evidence-cell.is-good b {
   color: var(--rp-interactive);
 }
 .evidence-cell.is-bad b {
@@ -1883,7 +1940,7 @@ select.input {
 }
 .jobrow--running .jobrow__lead,
 .jobrow--done .jobrow__lead {
-  color: var(--rp-primary);
+  color: var(--rp-interactive);
 }
 .jobrow--failed .jobrow__lead {
   color: var(--rp-danger);
@@ -2097,7 +2154,7 @@ select.input {
   border: 0;
   background: none;
   padding: 0;
-  color: var(--rp-primary);
+  color: var(--rp-interactive);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -2213,7 +2270,7 @@ select.input {
 }
 .wizard__steps li.is-current .wizard__dot {
   border-color: var(--rp-primary);
-  color: var(--rp-primary);
+  color: var(--rp-interactive);
 }
 .wizard__steps li.is-current {
   color: var(--rp-text);
@@ -2345,7 +2402,11 @@ select.input {
   background: var(--rp-surface);
 }
 .folders__row.is-ok {
-  border-color: color-mix(in srgb, var(--rp-success, var(--rp-primary)) 45%, var(--rp-border));
+  /* `--rp-success` was never defined, so this fell back to the primary and a
+     passing folder was tinted almost exactly like a failing one. A folder
+     that works needs no colour at all: leaving it neutral makes the one that
+     does not the only coloured row in the list. */
+  border-color: var(--rp-border);
 }
 .folders__row.is-bad {
   border-color: color-mix(in srgb, var(--rp-danger) 55%, var(--rp-border));
@@ -2357,7 +2418,7 @@ select.input {
   color: var(--rp-text-soft);
 }
 .folders__row.is-ok .folders__icon {
-  color: var(--rp-success, var(--rp-primary));
+  color: var(--rp-text-soft);
 }
 .folders__row.is-bad .folders__icon {
   color: var(--rp-danger);
@@ -2496,7 +2557,7 @@ select.input {
   font-size: 14px;
 }
 .roles-legend__item--admin {
-  border-inline-start-color: var(--rp-primary);
+  border-inline-start-color: var(--rp-interactive);
 }
 .roles-legend__item--curator {
   border-inline-start-color: var(--rp-accent);
@@ -2579,7 +2640,7 @@ select.input {
 }
 .badge--role-admin {
   background: color-mix(in srgb, var(--rp-primary) 14%, transparent);
-  color: var(--rp-primary);
+  color: var(--rp-interactive);
 }
 .badge--role-curator {
   background: color-mix(in srgb, var(--rp-accent) 16%, transparent);
@@ -2683,7 +2744,7 @@ select.input {
   padding: 2px 7px;
   border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--rp-primary) 16%, transparent);
-  color: var(--rp-primary);
+  color: var(--rp-interactive);
 }
 .picker__row.is-mounted .grow {
   font-weight: 600;
@@ -2815,14 +2876,14 @@ select.input {
 .pair-card__pick input {
   width: 18px;
   height: 18px;
-  accent-color: var(--rp-primary);
+  accent-color: var(--rp-interactive);
 }
 .pair-card.is-selected {
   border-color: var(--rp-primary);
   box-shadow: 0 0 0 1px var(--rp-primary);
 }
 .pair-card.is-selected .pair-card__pick {
-  color: var(--rp-primary);
+  color: var(--rp-interactive);
 }
 
 /* ---------------------------------------------------------------- settings dashboard */
@@ -3821,7 +3882,7 @@ select.input {
   height: 20px;
   margin-block-start: 3px;
   flex: none;
-  accent-color: var(--rp-primary);
+  accent-color: var(--rp-interactive);
 }
 .facet-picker__text {
   display: flex;

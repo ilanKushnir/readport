@@ -269,7 +269,7 @@
   background: var(--rp-surface);
 }
 .bm-row__icon {
-  color: var(--rp-primary);
+  color: var(--rp-interactive);
   flex-shrink: 0;
   margin-top: 2px;
 }
