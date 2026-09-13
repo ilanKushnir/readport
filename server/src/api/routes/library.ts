@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import posix from 'node:path/posix';
 import { type FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import {
@@ -13,6 +14,8 @@ import { type AppContext } from '../../context.js';
 import { enqueueJob } from '../../jobs/queue.js';
 import { handoffStatus, latestAlignment, isSwitchable } from '../../alignment/service.js';
 import { getProgressState } from '../../progress/service.js';
+import { requireExport } from '../../auth/roles.js';
+import { realResolveWithin } from '../../util/paths.js';
 
 export function bookRowToSummary(
   ctx: AppContext,
@@ -315,4 +318,68 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
     reply.header('cache-control', 'private, max-age=86400');
     return reply.send(fs.createReadStream(row.cover_path));
   });
+
+  /**
+   * The book itself, as a file, for keeping.
+   *
+   * Distinct from "download for offline", which caches the same bytes inside
+   * the app so they can be read on a plane and removed again. This hands over
+   * a copy that leaves with the reader, so it is gated on a capability an
+   * admin grants a person rather than on the role they read with.
+   *
+   * An audiobook is usually many files; `?track=N` picks one, because a
+   * server that streams books should not also be building zip archives of
+   * them in memory.
+   */
+  app.get('/api/books/:id/export', async (req, reply) => {
+    if (!requireExport(db, req, reply)) return reply;
+    const { id } = req.params as { id: string };
+    const q = z.object({ track: z.coerce.number().int().min(0).max(10_000).optional() });
+    const parsed = q.safeParse(req.query ?? {});
+    if (!parsed.success) return reply.code(400).send({ error: 'bad-query' });
+
+    const book = db
+      .prepare("SELECT * FROM books WHERE id = ? AND scan_state != 'missing'")
+      .get(id) as Record<string, unknown> | undefined;
+    if (!book) return reply.code(404).send({ error: 'not-found' });
+
+    let relPath = String(book.rel_path);
+    if (String(book.kind) === 'audio') {
+      const idx = parsed.data.track ?? 0;
+      const track = db
+        .prepare('SELECT rel_path FROM audio_tracks WHERE book_id = ? AND idx = ?')
+        .get(id, idx) as { rel_path: string } | undefined;
+      if (!track) return reply.code(404).send({ error: 'no-track' });
+      relPath = track.rel_path;
+    }
+
+    let abs: string;
+    try {
+      // Resolves symlinks and refuses anything that lands outside the mount.
+      abs = realResolveWithin(String(book.root_dir), relPath);
+    } catch {
+      return reply.code(404).send({ error: 'not-found' });
+    }
+    if (!fs.existsSync(abs)) return reply.code(404).send({ error: 'file-missing' });
+
+    reply.header('content-type', 'application/octet-stream');
+    reply.header('content-disposition', contentDisposition(posix.basename(relPath)));
+    // Never cached by a shared proxy: this is one person's entitlement.
+    reply.header('cache-control', 'private, no-store');
+    reply.header('x-content-type-options', 'nosniff');
+    return reply.send(fs.createReadStream(abs));
+  });
+}
+
+/**
+ * A `content-disposition` a browser will accept for any filename.
+ *
+ * Book filenames carry quotes, commas, semicolons and non-ASCII - all of
+ * which break a bare `filename="..."`. The ASCII fallback is sanitised and
+ * the real name goes in `filename*` (RFC 5987), which every current browser
+ * prefers.
+ */
+export function contentDisposition(name: string): string {
+  const ascii = name.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_');
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(name)}`;
 }

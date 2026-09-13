@@ -1650,4 +1650,67 @@ describe('ReadPort API', () => {
     expect(names).toHaveLength(2);
     expect(names).toContain('rae');
   });
+
+  it('hands over a copy of the file only to someone allowed one', async () => {
+    // Two different questions: reading a book, and taking the file away with
+    // you. The first is the app's whole purpose; the second is a capability an
+    // admin grants a person, and it must not ride on the role they read with.
+    const list = (await authed({ url: '/api/library?kind=ebook' })).json() as {
+      books: { id: string; title: string }[];
+    };
+    const bookId = list.books[0]!.id;
+
+    // The signed-in account here is the admin, who always may.
+    const ok = await authed({ url: `/api/books/${bookId}/export` });
+    expect(ok.statusCode).toBe(200);
+    // Served as a download, not rendered, and never cached by a shared proxy.
+    expect(ok.headers['content-disposition']).toMatch(/^attachment;/);
+    expect(String(ok.headers['content-disposition'])).toContain("filename*=UTF-8''");
+    expect(ok.headers['cache-control']).toContain('no-store');
+    expect(Number(ok.rawPayload.length)).toBeGreaterThan(0);
+
+    // A reader without the capability is refused.
+    const reader = (
+      await authed({
+        method: 'POST',
+        url: '/api/users',
+        payload: { username: 'nofiles', password: 'reader-password-1', role: 'reader' },
+      })
+    ).json() as { user: { id: string; canExport: boolean } };
+    expect(reader.user.canExport).toBe(false);
+
+    const login = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      headers: { 'x-rp-csrf': '1', 'content-type': 'application/json' },
+      payload: { username: 'nofiles', password: 'reader-password-1' },
+    });
+    const readerCookie = String(login.headers['set-cookie']).split(';')[0];
+    const asReader = (url: string) =>
+      app.inject({ url, headers: { cookie: readerCookie, 'x-rp-csrf': '1' } });
+
+    expect((await asReader(`/api/books/${bookId}/export`)).statusCode).toBe(403);
+    // ...but they can still READ it, which is the point of the distinction.
+    expect((await asReader(`/api/books/${bookId}`)).statusCode).toBe(200);
+
+    // Granted, and it takes effect immediately - not when the session expires.
+    await authed({
+      method: 'PATCH',
+      url: `/api/users/${reader.user.id}`,
+      payload: { canExport: true },
+    });
+    expect((await asReader(`/api/books/${bookId}/export`)).statusCode).toBe(200);
+
+    // Revoked, and that takes effect immediately too.
+    await authed({
+      method: 'PATCH',
+      url: `/api/users/${reader.user.id}`,
+      payload: { canExport: false },
+    });
+    expect((await asReader(`/api/books/${bookId}/export`)).statusCode).toBe(403);
+  });
+
+  it('refuses an export of a book that does not exist', async () => {
+    expect((await authed({ url: '/api/books/nope/export' })).statusCode).toBe(404);
+  });
 });

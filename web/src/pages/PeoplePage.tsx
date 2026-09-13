@@ -373,6 +373,7 @@ function InviteSheet({
 }) {
   const [displayName, setDisplayName] = useState('');
   const [role, setRole] = useState<Role>('reader');
+  const [canExport, setCanExport] = useState(false);
   const [days, setDays] = useState(7);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -385,7 +386,12 @@ function InviteSheet({
         '/api/invites',
         {
           method: 'POST',
-          body: { role, displayName: displayName.trim() || undefined, expiresInDays: days },
+          body: {
+            role,
+            canExport,
+            displayName: displayName.trim() || undefined,
+            expiresInDays: days,
+          },
         },
       );
       onDone({
@@ -421,6 +427,23 @@ function InviteSheet({
           <label>Role</label>
           <RolePicker value={role} onChange={setRole} />
         </div>
+        <label className="rs-toggle" style={{ maxWidth: 620 }}>
+          <span>
+            Let them save copies
+            <span className="hint" style={{ display: 'block' }}>
+              {role === 'admin'
+                ? 'Admins can always download the files.'
+                : 'Downloads the original file to their device, to keep. Reading and offline use do not need this.'}
+            </span>
+          </span>
+          <input
+            type="checkbox"
+            role="switch"
+            disabled={role === 'admin'}
+            checked={role === 'admin' ? true : canExport}
+            onChange={(e) => setCanExport(e.target.checked)}
+          />
+        </label>
         <div className="field">
           <label htmlFor="iv-days">Valid for</label>
           <select
@@ -460,6 +483,7 @@ function ManageSheet({
   const toast = useToast();
   const [displayName, setDisplayName] = useState(user.displayName ?? '');
   const [role, setRole] = useState<Role>(user.role);
+  const [canExport, setCanExport] = useState(user.canExport);
   const [newPassword, setNewPassword] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -481,7 +505,10 @@ function ManageSheet({
     }
   };
 
-  const dirty = displayName.trim() !== (user.displayName ?? '') || role !== user.role;
+  const dirty =
+    displayName.trim() !== (user.displayName ?? '') ||
+    role !== user.role ||
+    canExport !== user.canExport;
 
   return (
     <Sheet title={user.displayName ?? user.username} onClose={onClose}>
@@ -504,12 +531,33 @@ function ManageSheet({
         <RolePicker value={role} onChange={setRole} disabled={isSelf} />
         {isSelf && <span className="hint">Ask another admin to change your own role.</span>}
       </div>
+      <label className="rs-toggle" style={{ maxWidth: 620 }}>
+        <span>
+          Let them save copies
+          <span className="hint" style={{ display: 'block' }}>
+            {role === 'admin'
+              ? 'Admins can always download the files.'
+              : 'Downloads the original EPUB or audio file to their device, to keep. Reading and offline use do not need this.'}
+          </span>
+        </span>
+        <input
+          type="checkbox"
+          role="switch"
+          disabled={role === 'admin'}
+          checked={role === 'admin' ? true : canExport}
+          onChange={(e) => setCanExport(e.target.checked)}
+        />
+      </label>
       <button
         className="btn"
         disabled={!dirty || busy}
         onClick={() =>
           void patch(
-            { displayName: displayName.trim() || null, ...(role !== user.role ? { role } : {}) },
+            {
+              displayName: displayName.trim() || null,
+              ...(role !== user.role ? { role } : {}),
+              ...(canExport !== user.canExport ? { canExport } : {}),
+            },
             'Saved',
           )
         }

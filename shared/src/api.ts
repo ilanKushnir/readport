@@ -194,11 +194,23 @@ const displayNameSchema = z
   .min(1, 'Enter a name, or leave it blank')
   .max(80, 'At most 80 characters');
 
+/**
+ * May this person take a copy of a book off the server?
+ *
+ * Deliberately not a role. Reading and exporting are different questions - a
+ * household reader may be trusted with the books without being handed the
+ * files - so it is granted to a person rather than earned by rank. Admins
+ * always may.
+ */
+export const canExportSchema = z.boolean();
+
 export const userDtoSchema = z.object({
   id: z.string(),
   username: z.string(),
   displayName: z.string().nullable(),
   role: roleSchema,
+  /** May download the original file, not just read it in the app. */
+  canExport: canExportSchema,
   status: z.enum(['active', 'disabled']),
   createdAt: z.string(),
   lastLoginAt: z.string().nullable(),
@@ -213,10 +225,12 @@ export const createUserSchema = z.object({
   username: usernameSchema,
   password: passwordSchema,
   role: roleSchema.default('reader'),
+  canExport: canExportSchema.default(false),
   displayName: displayNameSchema.optional(),
 });
 export const updateUserSchema = z.object({
   role: roleSchema.optional(),
+  canExport: canExportSchema.optional(),
   status: z.enum(['active', 'disabled']).optional(),
   displayName: displayNameSchema.nullable().optional(),
   /** Admin-set new password; signs the user out everywhere. */
@@ -224,6 +238,8 @@ export const updateUserSchema = z.object({
 });
 export const createInviteSchema = z.object({
   role: roleSchema.default('reader'),
+  /** Carried by the invitation, so accepting one grants it immediately. */
+  canExport: canExportSchema.default(false),
   displayName: displayNameSchema.optional(),
   /** Suggested username, editable by the invitee. */
   username: usernameSchema.optional(),
@@ -232,6 +248,7 @@ export const createInviteSchema = z.object({
 export const inviteDtoSchema = z.object({
   id: z.string(),
   role: roleSchema,
+  canExport: canExportSchema,
   displayName: z.string().nullable(),
   username: z.string().nullable(),
   createdBy: z.string().nullable(),

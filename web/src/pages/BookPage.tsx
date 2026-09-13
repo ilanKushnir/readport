@@ -6,6 +6,7 @@ import { type Annotation, type BookDetail, type ResolveResponse } from '../lib/t
 import { Cover, EmptyState, Sheet, useToast } from '../components/ui';
 import { AddToSheet } from '../components/AddToSheet';
 import { useShelves } from '../state/shelves';
+import { useSession } from '../state/session';
 import {
   IconAlert,
   IconBookmark,
@@ -58,6 +59,9 @@ export function BookPage() {
   const [switching, setSwitching] = useState(false);
   const [offlineSheet, setOfflineSheet] = useState(false);
   const [addTo, setAddTo] = useState(false);
+  /** Multi-file audiobook: which file to save. */
+  const [saveOpen, setSaveOpen] = useState(false);
+  const { user } = useSession();
   const [member, setMember] = useState<{
     shelfIds: string[];
     onReadingList: boolean;
@@ -417,6 +421,34 @@ export function BookPage() {
               <IconShelf size={17} /> Add to…
             </button>
             <OfflineButton dl={dl} onClick={() => void openOfflineSheet()} />
+            {user?.canExport && !notReadyYet && (
+              // A real link, not a button: the browser has to perform the
+              // save itself. Distinct from the offline copy above, which
+              // keeps the book inside the app and can be removed again -
+              // this one hands over a file that leaves with the reader.
+              <a
+                className="btn btn--ghost"
+                href={
+                  isEbook
+                    ? `/api/books/${book.id}/export`
+                    : detail.tracks.length > 1
+                      ? undefined
+                      : `/api/books/${book.id}/export`
+                }
+                onClick={
+                  !isEbook && detail.tracks.length > 1
+                    ? (e) => {
+                        e.preventDefault();
+                        setSaveOpen(true);
+                      }
+                    : undefined
+                }
+                download=""
+              >
+                <IconDownload size={17} />
+                {isEbook || detail.tracks.length <= 1 ? 'Save a copy' : 'Save files…'}
+              </a>
+            )}
           </div>
           {pair && (
             // One quiet line, not a card. What it says is the only thing a
@@ -575,6 +607,27 @@ export function BookPage() {
           onClose={() => setAddTo(false)}
           onChanged={() => void loadMembership()}
         />
+      )}
+      {saveOpen && (
+        // An audiobook is many files and the server does not build archives,
+        // so the reader picks. Listed as they play, with their own names.
+        <Sheet title="Save a copy" onClose={() => setSaveOpen(false)}>
+          <p className="hint" style={{ marginBlockEnd: 'var(--sp-3)' }}>
+            {detail.tracks.length} files. Saving them is one at a time.
+          </p>
+          {detail.tracks.map((t, i) => (
+            <a
+              key={i}
+              className="list-row"
+              href={`/api/books/${book.id}/export?track=${i}`}
+              download=""
+            >
+              <IconDownload size={16} />
+              <span className="grow">{t.title || `Part ${i + 1}`}</span>
+              <span className="soft">{t.format.toUpperCase()}</span>
+            </a>
+          ))}
+        </Sheet>
       )}
     </main>
   );
