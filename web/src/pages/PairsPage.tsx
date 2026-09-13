@@ -341,7 +341,17 @@ function ScoreCell({
   return (
     <div className={`evidence-cell ${good === true ? 'is-good' : good === false ? 'is-bad' : ''}`}>
       {label}
-      <b>{value}</b>
+      {/* A shape as well as a hue. The good and bad colours are both in the
+          rust family and only a shade apart, so the verdict was carried by a
+          difference many people cannot see and no screen reader announces. */}
+      <b>
+        {good === true && <IconCheck size={13} aria-hidden="true" />}
+        {good === false && <IconAlert size={13} aria-hidden="true" />}
+        {value}
+        {good !== null && good !== undefined && (
+          <span className="visually-hidden">{good ? ' — good' : ' — poor'}</span>
+        )}
+      </b>
     </div>
   );
 }

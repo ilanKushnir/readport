@@ -24,6 +24,18 @@
   --rp-shadow-2: 0 2px 6px rgb(60 40 20 / 0.08), 0 14px 36px rgb(60 40 20 / 0.14);
   --rp-scrim: rgb(28 25 23 / 0.45);
 
+  /* Highlight hues. Defined app-wide because swatches appear outside the
+     reader — on the Notes page and the book page — where no reader theme is
+     in scope and a color-mix against an undefined token renders nothing at
+     all. The four [data-reader-theme] blocks below override them per theme. */
+  --rd-mark-amber: #d6a034;
+  --rd-mark-rose: #b4532a;
+  --rd-mark-plum: #5e4a8a;
+  --rd-mark-sky: #466e96;
+  --rd-mark-sand: #8c7860;
+  --rd-mark-wash: 34%;
+  --rd-mark-chip: 85%;
+
   /* type */
   --rp-font-ui:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -64,7 +76,8 @@
   --rp-surface-raised: #29231d;
   --rp-primary: #c86a3e;
   --rp-primary-hover: #d67a50;
-  --rp-on-primary: #fff6ee;
+  /* Dark ink on ember: near-white failed contrast on this fill. */
+  --rp-on-primary: #16120f;
   --rp-accent: #b9a6d8;
   --rp-border: #332c25;
   --rp-border-strong: #4d4238;
@@ -86,7 +99,8 @@
     --rp-surface-raised: #29231d;
     --rp-primary: #c86a3e;
     --rp-primary-hover: #d67a50;
-    --rp-on-primary: #fff6ee;
+    /* Dark ink on ember: near-white failed contrast on this fill. */
+    --rp-on-primary: #16120f;
     --rp-accent: #b9a6d8;
     --rp-border: #332c25;
     --rp-border-strong: #4d4238;
