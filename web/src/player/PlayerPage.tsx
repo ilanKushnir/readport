@@ -1016,7 +1016,7 @@ export function PlayerPage() {
       {sheet === 'sleep' && (
         <Sheet title="Sleep timer" onClose={() => setSheet('none')}>
           <div className="chip-row" style={{ flexWrap: 'wrap' }}>
-            {SLEEP_OPTIONS.map((o) => (
+            {SLEEP_OPTIONS.filter((o) => o.minutes !== -1 || chapters.length > 0).map((o) => (
               <button
                 key={o.label}
                 className="chip"
