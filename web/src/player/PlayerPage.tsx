@@ -123,6 +123,31 @@ export function PlayerPage() {
     }),
     [trackIdx, positionMs, bookMs, totalMs],
   );
+  /**
+   * The current locator, readable from a cleanup that must not re-run.
+   *
+   * `locatorNow` is rebuilt on every position change — four times a second
+   * while playing — so an effect that depends on it tears down that often. A
+   * checkpoint in such a cleanup would write four times a second; a ref lets
+   * the mount-only effect below read the latest value and write exactly once.
+   */
+  const locatorNowRef = useRef<AudioLocator | null>(null);
+  locatorNowRef.current = detail ? locatorNow() : null;
+
+  /**
+   * Leaving the player records where you got to.
+   *
+   * Heartbeats are fifteen seconds apart and Back is a route change, not a
+   * pause event, so closing the player mid-chapter could drop a quarter of a
+   * minute of listening — and on a phone, Back is how everyone leaves.
+   */
+  useEffect(() => {
+    return () => {
+      const at = locatorNowRef.current;
+      if (at) void recordCheckpoint(id, 'pause', at);
+    };
+  }, [id]);
+
   const locatorFor = useCallback(
     (t: number, within: number): AudioLocator => {
       const abs = (tracks[t]?.startMsAbsolute ?? 0) + within;

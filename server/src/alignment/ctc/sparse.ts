@@ -130,12 +130,43 @@ export function refineWindows(
   const median = rates.length ? rates[rates.length >> 1]! : 0;
   const tol = Math.log(1 + Math.max(0.01, plan.rateTolerance));
 
+  /**
+   * Time a span cannot account for at the median reading rate.
+   *
+   * A pause adds seconds without adding characters, so it shows up here and
+   * nowhere else. As a RATIO it barely registers — a fifteen-second break
+   * inside a hundred-and-fifty-second span is a ten-per-cent wobble, under
+   * any tolerance worth setting — which is why spans containing chapter
+   * breaks used to sail through refinement untouched while carrying the
+   * largest errors in the book. It is also precisely the quantity the timing
+   * layer turns into uncertainty, so probing the worst of these is what
+   * shrinks the rewind a reader feels when they switch.
+   *
+   * A blind span has no rate to judge, and none of it is mapped, so all of it
+   * is unaccounted for.
+   */
+  const slackMs = (s: Span): number => {
+    const width = s.toMs - s.fromMs;
+    if (!(s.rate > 0) || median <= 0) return width;
+    return Math.max(0, width * (1 - s.rate / median));
+  };
+  // Comfortably above ordinary variation in reading rate, and well below a
+  // chapter break — the point is to catch silences, not to chase noise.
+  const SUSPECT_SLACK_MS = 4_000;
+
   const suspect = spans.filter(
-    (s) => !(s.rate > 0) || median <= 0 || Math.abs(Math.log(s.rate / median)) > tol,
+    (s) =>
+      !(s.rate > 0) ||
+      median <= 0 ||
+      Math.abs(Math.log(s.rate / median)) > tol ||
+      slackMs(s) >= SUSPECT_SLACK_MS,
   );
-  // Widest first: a five-minute unmapped stretch matters more than a
-  // fifteen-second one, and the budget may not cover both.
-  const ranked = [...blind, ...suspect].sort((a, b) => b.toMs - b.fromMs - (a.toMs - a.fromMs));
+  // Worst first, measured by unaccounted time rather than by width: five
+  // minutes nobody has listened to matters more than a fifteen-second pause,
+  // and both matter more than a long stretch that simply reads a little fast.
+  const ranked = [...blind, ...suspect].sort(
+    (a, b) => slackMs(b) - slackMs(a) || b.toMs - b.fromMs - (a.toMs - a.fromMs),
+  );
 
   const out: ProbeWindow[] = [];
   for (const span of ranked) {

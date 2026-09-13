@@ -25,7 +25,7 @@ export function PairsPage() {
   const { user } = useSession();
   const [pairs, setPairs] = useState<PairDto[] | null>(null);
   const [summary, setSummary] = useState<ProcessingSummary | null>(null);
-  /** Multi-select for bulk "start transcription". */
+  /** Multi-select for bulk "align these". */
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -100,18 +100,16 @@ export function PairsPage() {
     }
   };
 
-  const downloadModel = async (modelId: string, language: string) => {
+  const downloadModel = async (modelId: string) => {
     try {
       await api(`/api/models/${modelId}/download`, { method: 'POST' });
-      toast.show(
-        `Downloading the ${languageLabel(language)} model — alignment resumes when it lands`,
-        {
-          label: 'Watch progress',
-          onClick: () => {
-            location.assign('/settings#speech-models');
-          },
+      // One model, every language: there is nothing to name here.
+      toast.show('Downloading the alignment model — alignment resumes when it lands', {
+        label: 'Watch progress',
+        onClick: () => {
+          location.assign('/settings#alignment');
         },
-      );
+      });
       await load();
     } catch {
       toast.show('Could not start the download (admin only)');
@@ -155,7 +153,7 @@ export function PairsPage() {
       });
       toast.show(
         res.queued > 0
-          ? `Queued ${res.queued} book${res.queued === 1 ? '' : 's'} for transcription`
+          ? `Queued ${res.queued} book${res.queued === 1 ? '' : 's'} for alignment`
           : 'Nothing new to queue',
       );
       setSelected(new Set());
@@ -401,7 +399,7 @@ function PairCard({
   speedRatio: number;
   onAction: (id: string, a: PairAction) => void;
   onLanguage: (id: string, language: string | null) => void;
-  onDownloadModel: (modelId: string, language: string) => void;
+  onDownloadModel: (modelId: string) => void;
   /** Verified, not aligned yet: offer it for bulk starting. */
   selectable?: boolean;
   selected?: boolean;
@@ -455,7 +453,7 @@ function PairCard({
             type="checkbox"
             checked={!!selected}
             onChange={() => onSelect(pair.id)}
-            aria-label={`Select ${pair.ebook?.title ?? 'this pair'} for transcription`}
+            aria-label={`Select ${pair.ebook?.title ?? 'this pair'} for alignment`}
           />
           <span>Select</span>
         </label>
@@ -585,13 +583,12 @@ function PairCard({
         <div className="banner banner--action" role="alert">
           <IconDownload size={16} />
           <span className="grow">
-            {/* The aligner is one model for every language, so naming a
-                language here would misdescribe the download. */}
-            <strong>
-              {job.modelMissing.modelId === 'mms-forced-aligner'
-                ? 'Alignment model needed.'
-                : `${languageLabel(job.modelMissing.language)} speech model needed.`}
-            </strong>{' '}
+            {/* One model covers every language, so there is only ever one
+                thing missing and naming a language would misdescribe it. The
+                old branch here compared against a model id that has not
+                existed since forced alignment landed, so it always fell
+                through to a model name nobody could act on. */}
+            <strong>Alignment model needed.</strong>{' '}
             {job.modelMissing.message.replace(/[ —-]*(download|get) it in Settings.*$/i, '')}.
             Download it and this alignment runs by itself when it lands.
           </span>
@@ -599,11 +596,11 @@ function PairCard({
             className="btn"
             style={{ minHeight: 38 }}
             disabled={!isAdmin}
-            onClick={() => onDownloadModel(job.modelMissing!.modelId, job.modelMissing!.language)}
+            onClick={() => onDownloadModel(job.modelMissing!.modelId)}
           >
             Download
           </button>
-          <Link to="/settings#speech-models" className="btn btn--ghost" style={{ minHeight: 38 }}>
+          <Link to="/settings#alignment" className="btn btn--ghost" style={{ minHeight: 38 }}>
             Models
           </Link>
         </div>

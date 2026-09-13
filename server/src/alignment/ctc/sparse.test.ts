@@ -54,6 +54,32 @@ describe('planFor', () => {
 });
 
 describe('refineWindows', () => {
+  it('probes a span that lost time to a pause, which no ratio would catch', () => {
+    // A chapter break is the commonest reason a span is badly interpolated and
+    // the hardest for a rate test to see: ten seconds missing from a hundred
+    // is a ten-per-cent wobble, comfortably inside any tolerance worth
+    // setting, so these spans used to sail through carrying the largest
+    // errors in the book.
+    const RATE = 0.015;
+    const anchors = anchorsAtRate(10, RATE);
+    // Span 4→5 advances only 90% of the characters in the same wall clock:
+    // ten seconds of the hundred went on silence rather than on reading.
+    for (let i = 5; i < anchors.length; i++) {
+      anchors[i]!.bookPos -= Math.round(0.1 * 100_000 * RATE);
+    }
+    const spanRate = (anchors[5]!.bookPos - anchors[4]!.bookPos) / 100_000;
+    // Confirm the ratio test genuinely cannot see it, so this test is about
+    // the slack rule and not about a tolerance that happens to be tight.
+    expect(Math.abs(Math.log(spanRate / RATE))).toBeLessThan(
+      Math.log(1 + DEFAULT_SPARSE_PLAN.rateTolerance),
+    );
+
+    const probes = refineWindows(anchors, gridWindows(900_000, PLAN), 900_000, PLAN, 4);
+    expect(probes.length).toBeGreaterThan(0);
+    // And it probes inside the span that lost the time.
+    expect(probes.some((w) => w.startMs >= 400_000 && w.startMs < 500_000)).toBe(true);
+  });
+
   it('leaves a steadily-read book alone', () => {
     const anchors = anchorsAtRate(10, 0.015);
     expect(refineWindows(anchors, gridWindows(900_000, PLAN), 900_000, PLAN, 10)).toEqual([]);

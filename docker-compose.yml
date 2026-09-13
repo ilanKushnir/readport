@@ -33,8 +33,9 @@ services:
       RP_EBOOK_DIRS: /library/ebooks
       RP_AUDIOBOOK_DIRS: /library/audiobooks
       # Where finished alignments are saved. THE ONE FOLDER READPORT WRITES TO,
-      # which is why it has no :ro below — keep it and a rebuilt container
-      # offers to import everything it already worked out.
+      # which is why it has no :ro below. Keep it across rebuilds and a new
+      # container adopts everything it already worked out — the first-run
+      # wizard asks, and Settings → Libraries can change the answer later.
       RP_ALIGNMENT_DIRS: /library/alignments
       RP_DEFAULT_LANGUAGE: ${RP_DEFAULT_LANGUAGE:-en}
       RP_SCAN_INTERVAL_MINUTES: ${RP_SCAN_INTERVAL_MINUTES:-60}

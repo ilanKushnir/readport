@@ -5,14 +5,7 @@ import { checkCtcEngine } from '../../alignment/ctc/emissions.js';
 import { type AppContext } from '../../context.js';
 import { enqueueJob } from '../../jobs/queue.js';
 import { requeueAlignmentsWaitingFor } from '../../jobs/handlers.js';
-import {
-  isInstalled,
-  LANGUAGES,
-  modelById,
-  modelPath,
-  modelFiles,
-  MODELS,
-} from '../../alignment/model.js';
+import { isInstalled, modelById, modelPath, modelFiles, MODELS } from '../../alignment/model.js';
 
 /** The alignment model: is it here, fetch it, remove it (admin for mutations). */
 export function registerModelRoutes(app: FastifyInstance, ctx: AppContext): void {
@@ -75,7 +68,6 @@ export function registerModelRoutes(app: FastifyInstance, ctx: AppContext): void
           lastError: installed ? null : (failed.get(m.id) ?? null),
         };
       }),
-      languages: LANGUAGES,
     };
   });
 

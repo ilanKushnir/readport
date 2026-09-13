@@ -238,6 +238,8 @@ export const setupSchema = z.object({
   alignmentDirs: dirListSchema.optional(),
   /** Align new matches without being asked; see settingsSchema. */
   autoAlign: z.boolean().optional(),
+  /** Take alignments already in the folder; see settingsSchema. */
+  importSavedAlignments: z.boolean().optional(),
 });
 export const alignManySchema = z.object({
   pairIds: z.array(z.string().min(1).max(64)).min(1).max(500),
@@ -296,6 +298,16 @@ export const settingsSchema = z.object({
   alignPrecision: z.enum(['standard', 'exact']).default('standard'),
   /** Align a book as soon as its two halves are matched, without being asked. */
   autoAlign: z.boolean().default(true),
+  /**
+   * Adopt alignments already sitting in the alignment folder.
+   *
+   * On by default, because the usual reason a folder has files in it is that
+   * this library computed them and the container was rebuilt — hours of work
+   * that should not be repeated. Turned off, the folder is left untouched and
+   * every pair is timed again from the audio, which is what someone wants
+   * when they suspect the saved files are wrong or belong to other editions.
+   */
+  importSavedAlignments: z.boolean().default(true),
   /**
    * Measured throughput: seconds of audio aligned per second of wall clock.
    * Written by the worker from real runs, never guessed; 0 = not yet known.

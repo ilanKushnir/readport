@@ -5,19 +5,9 @@ import { api, ApiError } from '../api/client';
 import { useSession } from '../state/session';
 import { Sheet, useToast } from '../components/ui';
 import { IconAlert, IconCheck, IconClose, IconLink } from '../components/icons';
-import { formatDate } from '../lib/format';
+import { formatDate, ago } from '../lib/format';
 
 const ROLES: Role[] = ['admin', 'curator', 'reader'];
-
-function ago(iso: string | null): string {
-  if (!iso) return 'never';
-  const s = Math.max(0, (Date.now() - Date.parse(iso)) / 1000);
-  if (s < 90) return 'just now';
-  if (s < 3600) return `${Math.round(s / 60)} min ago`;
-  if (s < 86_400) return `${Math.round(s / 3600)} h ago`;
-  if (s < 86_400 * 14) return `${Math.round(s / 86_400)} d ago`;
-  return formatDate(iso);
-}
 
 function errorText(err: unknown, fallback: string): string {
   if (!(err instanceof ApiError)) return fallback;

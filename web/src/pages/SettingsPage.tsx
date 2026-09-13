@@ -89,10 +89,10 @@ export function SettingsPage() {
     applyAppThemeColor();
   }, [appTheme]);
 
-  // Deep link from the pairing page: /settings#speech-models
+  // Deep link from the pairing page: /settings#alignment
   useEffect(() => {
-    if (!data || location.hash !== '#speech-models') return;
-    document.getElementById('speech-models')?.scrollIntoView({ block: 'start' });
+    if (!data || location.hash !== '#alignment') return;
+    document.getElementById('alignment')?.scrollIntoView({ block: 'start' });
   }, [data]);
 
   const save = async (patch?: Partial<Settings>) => {
@@ -389,6 +389,9 @@ function LibrariesEditor({
   const [alignDirs, setAlignDirs] = useState(data.paths.alignmentDirs);
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState<'import' | 'export' | null>(null);
+  const [importSaved, setImportSaved] = useState(data.settings.importSavedAlignments);
+  const { user } = useSession();
+  const canEdit = user?.role === 'admin';
   const folders = useMemo(() => folderApi(), []);
   const pinnedE = data.envPinned.includes('ebookDirs');
   const pinnedA = data.envPinned.includes('audiobookDirs');
@@ -406,6 +409,15 @@ function LibrariesEditor({
       toast.show('Could not start that (admin only)');
     } finally {
       setBusy(null);
+    }
+  };
+  const setImport = async (next: boolean) => {
+    setImportSaved(next);
+    try {
+      await api('/api/settings', { method: 'PUT', body: { importSavedAlignments: next } });
+    } catch {
+      setImportSaved(!next);
+      toast.show('Could not save that (admin only)');
     }
   };
   const save = async () => {
@@ -470,6 +482,26 @@ function LibrariesEditor({
               : `${data.alignments.files} saved · ${formatBytes(data.alignments.bytes)}`}
             {data.alignments.problem ? ` — ${data.alignments.problem}` : ''}
           </p>
+          {/* The redeploy question, kept beside the count that answers it:
+              adopt what is already here, or time every book again. Off leaves
+              the files alone rather than deleting them, so it is reversible. */}
+          <label className="rs-toggle" style={{ maxWidth: 620 }}>
+            <span>
+              Use alignments already in this folder
+              <span className="hint" style={{ display: 'block' }}>
+                {data.alignments.files > 0
+                  ? `On, the ${data.alignments.files} saved here are adopted after a scan and those books are not timed again.`
+                  : 'Applies after a scan finds files here — typically the first scan of a rebuilt container.'}
+              </span>
+            </span>
+            <input
+              type="checkbox"
+              role="switch"
+              disabled={!canEdit}
+              checked={importSaved}
+              onChange={(e) => void setImport(e.target.checked)}
+            />
+          </label>
           <div className="align-store__actions">
             <button
               className="btn btn--secondary"

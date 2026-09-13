@@ -89,7 +89,7 @@ export interface PairDto {
     progress: number;
     detail: string | null;
     error: string | null;
-    modelMissing: { language: string; modelId: string; message: string } | null;
+    modelMissing: { modelId: string; message: string } | null;
     createdAt: string;
   } | null;
   /** Handoff availability; NOT a claim of sentence exactness (see handoff). */
@@ -110,7 +110,8 @@ export interface ProcessingSummary {
   /** Seconds of audio per second of wall clock; 0 until measured. */
   speedRatio: number;
   estimatedMs: number | null;
-  processingMode: 'auto' | 'verify' | 'manual';
+  /** Whether a confirmed pair is aligned without being asked. */
+  autoAlign: boolean;
 }
 
 export interface SwitchAnchorDto {
@@ -154,7 +155,6 @@ export interface ModelsResponse {
   /** Whether onnxruntime-node loaded, i.e. whether forced alignment can run at all. */
   alignerRuntime?: EngineStatus;
   models: ModelInfo[];
-  languages: { code: string; label: string; native: string }[];
 }
 
 /** Catalog id of the alignment model (server: ALIGNER_MODEL_ID). */
