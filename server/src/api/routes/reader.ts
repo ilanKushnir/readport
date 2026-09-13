@@ -70,7 +70,11 @@ export function registerReaderRoutes(app: FastifyInstance, ctx: AppContext): voi
     const book = requireEbook(id);
     if (!book) return reply.code(404).send({ error: 'not-found' });
     const wildcard = (req.params as Record<string, string>)['*'] ?? '';
-    const rel = decodeURIComponent(wildcard);
+    // NOT decoded again: Fastify has already percent-decoded the wildcard, so
+    // a second pass turns an image legitimately named "50%.png" into "50.png"
+    // and breaks it permanently — including in offline packages, which then
+    // never complete.
+    const rel = wildcard;
     let abs: string;
     try {
       abs = resolveWithin(path.join(book.dir, 'assets'), rel);

@@ -74,13 +74,28 @@ describe('applyProgressEvents', () => {
     expect(hist.reject_reason).toBe('unclaimed-session');
   });
 
-  it('finish then reopen clears finished', () => {
+  it('going back into a finished book un-finishes it', () => {
     applyProgressEvents(db, uid, [
       ev({ intent: 'finish', locator: { medium: 'audio', trackIdx: 0, positionMs: 1, pct: 1 } }),
     ]);
     expect(getProgressState(db, uid, 'book1')?.finished).toBe(true);
+    // Reopening near the start is a reader starting it again.
     applyProgressEvents(db, uid, [ev({ intent: 'open' })]);
     expect(getProgressState(db, uid, 'book1')?.finished).toBe(false);
+  });
+
+  it('merely opening a finished book at the end leaves it finished', () => {
+    // Opening a finished book resumes at the saved position, which for a
+    // finished book is the end — so the old rule (any explicit intent clears
+    // the flag) un-finished it just by looking at it, and nothing in the app
+    // can set the flag again short of reading to the end a second time.
+    applyProgressEvents(db, uid, [
+      ev({ intent: 'finish', locator: { medium: 'audio', trackIdx: 0, positionMs: 1, pct: 1 } }),
+    ]);
+    applyProgressEvents(db, uid, [
+      ev({ intent: 'open', locator: { medium: 'audio', trackIdx: 0, positionMs: 9, pct: 0.99 } }),
+    ]);
+    expect(getProgressState(db, uid, 'book1')?.finished).toBe(true);
   });
 
   it('a batch replayed after reconnect acks each event exactly once', () => {

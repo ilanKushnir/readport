@@ -7,6 +7,7 @@ import { createSession, destroySession, LoginThrottle } from '../../auth/session
 import { newId } from '../../util/ids.js';
 import { nowIso } from '../../db/index.js';
 import { SESSION_COOKIE } from '../guards.js';
+import { sessionCookieOpts } from '../../auth/cookie.js';
 import { enqueueJob } from '../../jobs/queue.js';
 import { alignmentRoots, libraryRoots, saveSettings } from '../../domain/settings.js';
 import { browseDirectories, checkLibraryPath } from '../../setup/paths.js';
@@ -21,13 +22,7 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
   const accountThrottle = new LoginThrottle(db, ATTEMPT_LIMIT, WINDOW_MS);
   const ipThrottle = new LoginThrottle(db, IP_ATTEMPT_LIMIT, WINDOW_MS);
 
-  const cookieOpts = () => ({
-    path: '/',
-    httpOnly: true,
-    sameSite: 'lax' as const,
-    secure: config.trustHttps,
-    maxAge: config.sessionDays * 86400,
-  });
+  const cookieOpts = () => sessionCookieOpts(config);
 
   const userCount = () => (db.prepare('SELECT COUNT(*) AS c FROM users').get() as { c: number }).c;
 
@@ -199,7 +194,7 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
     }
     const row = db
       .prepare(
-        'SELECT id, username, password_hash, role, display_name, status FROM users WHERE username = ?',
+        'SELECT id, username, password_hash, role, display_name, status FROM users WHERE lower(username) = lower(?)',
       )
       .get(body.data.username) as
       | {

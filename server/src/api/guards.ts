@@ -4,7 +4,8 @@ import { type AppContext } from '../context.js';
 import { resolveSession, type SessionUser } from '../auth/sessions.js';
 import { buildSourceList, proxyAuthUser } from '../auth/proxyAuth.js';
 
-export const SESSION_COOKIE = 'rp_session';
+export { SESSION_COOKIE, sessionCookieOpts } from '../auth/cookie.js';
+import { SESSION_COOKIE, sessionCookieOpts } from '../auth/cookie.js';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -56,11 +57,19 @@ export function csrfCheck(req: FastifyRequest): boolean {
   return true;
 }
 
-export function attachUser(ctx: AppContext, req: FastifyRequest): void {
+export function attachUser(ctx: AppContext, req: FastifyRequest, reply?: FastifyReply): void {
   const token = (req.cookies ?? {})[SESSION_COOKIE];
-  req.user = token ? resolveSession(ctx.db, ctx.config.sessionSecret, token) : null;
+  req.user = token
+    ? resolveSession(ctx.db, ctx.config.sessionSecret, token, ctx.config.sessionDays)
+    : null;
   if (req.user) {
     req.authVia = 'session';
+    // The server slid this session forward, so the browser's copy has to move
+    // with it — otherwise the cookie expires on the original schedule and the
+    // sign-out still happens, taking this device's downloads with it.
+    if (req.user.renewedUntil && reply) {
+      reply.setCookie(SESSION_COOKIE, token!, sessionCookieOpts(ctx.config));
+    }
     return;
   }
   const proxied = proxyAuthUser(ctx, req, proxySources(ctx));

@@ -14,6 +14,8 @@ export interface SessionUser {
   username: string;
   role: string;
   displayName?: string | null;
+  /** Set when this request slid the session forward; the caller re-cookies. */
+  renewedUntil?: string | null;
 }
 
 function hmacToken(secret: string, token: string): string {
@@ -44,7 +46,12 @@ export function createSession(
   return { token, expiresAt };
 }
 
-export function resolveSession(db: DB, secret: string, token: string): SessionUser | null {
+export function resolveSession(
+  db: DB,
+  secret: string,
+  token: string,
+  sessionDays: number,
+): SessionUser | null {
   if (!token || token.length > 128) return null;
   const row = db
     .prepare(
@@ -69,8 +76,24 @@ export function resolveSession(db: DB, secret: string, token: string): SessionUs
     db.prepare('DELETE FROM sessions WHERE id = ?').run(row.session_id);
     return null;
   }
-  db.prepare('UPDATE sessions SET last_seen_at = ? WHERE id = ?').run(nowIso(), row.session_id);
-  return { id: row.id, username: row.username, role: row.role, displayName: row.display_name };
+  // Sliding expiry. A fixed thirty days meant a session that was in use every
+  // day still died on schedule, and signing back in purges this browser's
+  // downloads — so ordinary use cost people every book they had taken offline.
+  // Extended only in the last day of its life, so this is one extra write a
+  // month rather than one per request.
+  const remaining = Date.parse(row.expires_at) - Date.now();
+  const full = sessionDays * 86_400_000;
+  const renewed = remaining < full - 86_400_000 ? new Date(Date.now() + full).toISOString() : null;
+  db.prepare(
+    'UPDATE sessions SET last_seen_at = ?, expires_at = COALESCE(?, expires_at) WHERE id = ?',
+  ).run(nowIso(), renewed, row.session_id);
+  return {
+    id: row.id,
+    username: row.username,
+    role: row.role,
+    displayName: row.display_name,
+    renewedUntil: renewed,
+  };
 }
 
 export function destroySession(db: DB, secret: string, token: string): void {

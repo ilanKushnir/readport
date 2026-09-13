@@ -83,7 +83,7 @@ export function proxyAuthUser(
   const { db } = ctx;
   const existing = db
     .prepare(
-      'SELECT id, username, role, display_name, status, last_login_at FROM users WHERE username = ?',
+      'SELECT id, username, role, display_name, status, last_login_at FROM users WHERE lower(username) = lower(?)',
     )
     .get(username) as
     | (SessionUser & { display_name: string | null; status: string; last_login_at: string | null })
@@ -122,7 +122,7 @@ export function proxyAuthUser(
     db.exec('ROLLBACK');
     // Lost a race with a concurrent first request for the same user.
     const again = db
-      .prepare('SELECT id, username, role FROM users WHERE username = ?')
+      .prepare('SELECT id, username, role FROM users WHERE lower(username) = lower(?)')
       .get(username) as SessionUser | undefined;
     if (again) return again;
     throw err;

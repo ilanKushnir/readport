@@ -208,6 +208,35 @@ function facetsStale(existing: { facets_rev?: unknown }): boolean {
   return Number(existing.facets_rev ?? 0) < FACETS_REV;
 }
 
+/**
+ * A book that vanished from one path and reappeared at another.
+ *
+ * Book ids are derived from the path, so renaming a file or reorganising a
+ * folder used to mint a brand new book and mark the old one missing — and
+ * every highlight, note, bookmark, shelf membership and reading position
+ * hangs off the old id. Matching on the content hash of a book the scanner
+ * has already marked missing reunites them, which is the difference between
+ * tidying a library and losing your marks in it.
+ */
+function relinkMoved(
+  db: DB,
+  kind: 'ebook' | 'audio',
+  contentHash: string,
+  rootDir: string,
+  relPath: string,
+): string | null {
+  const hit = db
+    .prepare(
+      "SELECT id FROM books WHERE kind = ? AND content_hash = ? AND scan_state = 'missing' LIMIT 1",
+    )
+    .get(kind, contentHash) as { id: string } | undefined;
+  if (!hit) return null;
+  db.prepare(
+    "UPDATE books SET root_dir = ?, rel_path = ?, scan_state = 'discovered' WHERE id = ?",
+  ).run(rootDir, relPath, hit.id);
+  return hit.id;
+}
+
 export function applyScan(db: DB, report: ScanReport): UpsertResult {
   const needsIndex: UpsertResult['needsIndex'] = [];
   const seenIds = new Set<string>();
@@ -229,6 +258,12 @@ export function applyScan(db: DB, report: ScanReport): UpsertResult {
       | { id: string; content_hash: string | null; scan_state: string; facets_rev?: number }
       | undefined;
     if (!existing) {
+      const moved = relinkMoved(db, 'ebook', e.contentHash, e.rootDir, e.relPath);
+      if (moved) {
+        seenIds.add(moved);
+        needsIndex.push({ bookId: moved, kind: 'ebook' });
+        continue;
+      }
       upsert.run(
         id,
         'ebook',
@@ -271,6 +306,13 @@ export function applyScan(db: DB, report: ScanReport): UpsertResult {
       | { id: string; content_hash: string | null; scan_state: string; facets_rev?: number }
       | undefined;
     if (!existing) {
+      const moved = relinkMoved(db, 'audio', a.contentHash, a.rootDir, a.relPath);
+      if (moved) {
+        seenIds.add(moved);
+        insertTracks(db, moved, a);
+        needsIndex.push({ bookId: moved, kind: 'audio' });
+        continue;
+      }
       upsert.run(
         id,
         'audio',

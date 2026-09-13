@@ -96,7 +96,7 @@ export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyIn
       // Book chapter fragments/assets carry their own stricter handling.
       reply.header('content-security-policy', CSP);
     }
-    attachUser(ctx, req);
+    attachUser(ctx, req, reply);
     const pathname = decodedPathname(req.url);
     if (pathname === null) return reply.code(400).send({ error: 'bad-url' });
     // Gate on BOTH the matched route pattern and the decoded path, so an

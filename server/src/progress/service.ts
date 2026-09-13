@@ -138,7 +138,15 @@ export function applyProgressEvents(
       // updated_at); everything else, including a heartbeat with no claim to
       // inherit, states its own.
       const inherits = !isExplicit(ev.intent) && state !== null;
-      const finished = ev.intent === 'finish' ? 1 : inherits && state!.finished ? 1 : 0;
+      // Finishing is a claim about the book, not about this event. Any
+      // explicit intent used to clear it, so simply reopening a finished book
+      // — or jumping to a bookmark in it — silently un-finished it, and
+      // nothing in the app can set the flag again except reading to the end a
+      // second time. It survives unless the reader has actually gone back
+      // into the book.
+      const stillAtEnd = ev.locator.pct >= 0.95;
+      const finished =
+        ev.intent === 'finish' ? 1 : state?.finished && (inherits || stillAtEnd) ? 1 : 0;
       if (exists) {
         db.prepare(
           `UPDATE progress_state SET revision = revision + 1, locator_json = ?, intent = ?,
