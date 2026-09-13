@@ -1188,6 +1188,9 @@ export function ReaderPage() {
   sheetRef.current = sheet;
 
   const [markPop, setMarkPop] = useState<{ a: Annotation; x: number; y: number } | null>(null);
+  /** Measured position for the popover; null until it has been measured. */
+  const [markPopTop, setMarkPopTop] = useState<number | null>(null);
+  const markPopRef = useRef<HTMLDivElement | null>(null);
 
   const openMarkAt = useCallback(
     (x: number, y: number): boolean => {
@@ -1225,6 +1228,47 @@ export function ReaderPage() {
     const max = Math.max(margin, window.innerWidth - w - margin);
     setSelMenuLeft(Math.min(Math.max(margin, selection.x - w / 2), max));
   }, [selection]);
+
+  /**
+   * Keep the mark's popover on the screen, vertically.
+   *
+   * `y` was clamped at the top only. The reader is a fixed, non-scrolling
+   * surface, so a mark in the lower half of the page put Edit and Remove
+   * below the bottom edge with no way to reach them — and no way to scroll
+   * to them. Measured, then flipped above the mark when it does not fit
+   * below, and finally pinned inside the safe area.
+   */
+  useLayoutEffect(() => {
+    if (!markPop) {
+      setMarkPopTop(null);
+      return;
+    }
+    const el = markPopRef.current;
+    if (!el) return;
+    const h = el.offsetHeight;
+    const safeTop = 70;
+    const safeBottom = window.innerHeight - chromeInset.bottom - 12;
+    // Below the mark if it fits, otherwise above it, otherwise pinned.
+    const below = markPop.y;
+    const above = markPop.y - h - 28;
+    const top = below + h <= safeBottom ? below : above >= safeTop ? above : safeTop;
+    setMarkPopTop(Math.min(Math.max(safeTop, top), Math.max(safeTop, safeBottom - h)));
+  }, [markPop, chromeInset.bottom]);
+
+  /**
+   * Tell the toast how tall this page's chrome is.
+   *
+   * The toast is pinned 96px up — the height of the bottom bar without
+   * read-along. With the narration transport open the bar is taller, and the
+   * toast landed on top of it, covering the play button for eight seconds.
+   */
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--rp-toast-bottom', `${chromeInset.bottom + 12}px`);
+    return () => {
+      root.style.removeProperty('--rp-toast-bottom');
+    };
+  }, [chromeInset.bottom]);
 
   // A mark's popover belongs to the mark, not to the page: turning the page or
   // changing chapter must not leave it hanging over unrelated text.
@@ -1677,8 +1721,15 @@ export function ReaderPage() {
 
       {markPop && (
         <div
+          ref={markPopRef}
           className="mark-pop"
-          style={{ left: markPop.x, top: markPop.y }}
+          style={{
+            left: markPop.x,
+            top: markPopTop ?? markPop.y,
+            // Hidden for the single frame between mount and measurement, so
+            // it never flashes in the wrong place.
+            visibility: markPopTop === null ? 'hidden' : undefined,
+          }}
           role="dialog"
           aria-label={markPop.a.kind === 'note' ? 'Note' : 'Highlight'}
         >

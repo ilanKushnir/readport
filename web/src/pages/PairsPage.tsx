@@ -18,6 +18,7 @@ import {
 import { formatDuration, formatPct, formatSpan } from '../lib/format';
 import { PipelineDiagram, ProcessingQueue } from '../components/Processing';
 import { MANUAL_LINK_NOTE, UNALIGNED_PAIR_NOTE } from '../lib/pairLabel';
+import { bucketCoverage } from '../lib/coverageBars';
 
 type PairAction = 'confirm' | 'reject' | 'unlink' | 'align';
 
@@ -900,20 +901,27 @@ function CoverageStrip({ pair }: { pair: PairDto }) {
   }, [pair.id]);
   if (!bars || bars.length === 0) return null;
   const avg = bars.reduce((a, b) => a + b.confidence, 0) / bars.length;
+  // One bar per audio minute makes a ten-hour book 600 bars wide. Average
+  // them down to a fixed count so the strip fits its card on a phone.
+  const shown = bucketCoverage(bars);
   return (
     <div
       className="coverage-strip"
       role="img"
       aria-label={`Alignment confidence per minute across ${bars.length} minutes, average ${formatPct(avg)}`}
     >
-      {bars.map((b) => (
+      {shown.map((b) => (
         <span
           key={b.minute}
           style={{
             height: `${Math.max(12, b.confidence * 100)}%`,
             opacity: 0.35 + b.confidence * 0.65,
           }}
-          title={`Minute ${b.minute}: ${formatPct(b.confidence)}`}
+          title={
+            b.minutes === 1
+              ? `Minute ${b.minute}: ${formatPct(b.confidence)}`
+              : `Minutes ${b.minute}–${b.minute + b.minutes - 1}: ${formatPct(b.confidence)}`
+          }
         />
       ))}
     </div>

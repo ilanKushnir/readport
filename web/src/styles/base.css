@@ -250,6 +250,13 @@ select.input {
 }
 .segmented > button {
   flex: 1;
+  /* A flex item will not shrink below its own text by default, and these
+     labels do not wrap — so four of them ("Everything · Notes · Highlights ·
+     Bookmarks") pushed the whole Notes page wider than the screen. Allow the
+     shrink, and ellipsise rather than overflow if it ever comes to that. */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   min-height: 36px;
   padding: 0 var(--sp-3);
   border: 0;
@@ -1040,7 +1047,10 @@ select.input {
 
 .toast {
   position: fixed;
-  bottom: calc(96px + var(--rp-safe-bottom));
+  /* 96px is the plain tab bar. Surfaces with taller chrome — the reader with
+     the narration transport open — publish their own height, so the toast
+     never sits on top of the controls it is reporting on. */
+  bottom: calc(var(--rp-toast-bottom, 96px) + var(--rp-safe-bottom));
   inset-inline: 0;
   display: flex;
   justify-content: center;
@@ -1346,14 +1356,17 @@ select.input {
 }
 .coverage-strip {
   display: flex;
-  gap: 2px;
+  gap: 1px;
+  overflow: hidden;
   height: 26px;
   align-items: flex-end;
   margin-block: var(--sp-2);
 }
 .coverage-strip > span {
-  flex: 1;
-  min-width: 2px;
+  /* No min-width: the bar count is bucketed to fit, and a floor here would
+     let a long book push the strip — and the whole page — sideways again. */
+  flex: 1 1 0;
+  min-width: 0;
   border-radius: 1px;
   background: var(--rp-primary);
 }
@@ -3333,7 +3346,9 @@ select.input {
   position: fixed;
   z-index: 41;
   inset-block: 0;
-  inset-inline-start: 0;
+  /* In landscape the notch is on one side, and this list is the only way to
+     the shelves on a phone — it cannot start underneath it. */
+  inset-inline-start: var(--rp-safe-left);
   width: min(300px, 86vw);
   display: flex;
   flex-direction: column;
@@ -3845,6 +3860,54 @@ select.input {
    phone, and then how the browse rows did the same when they were appended
    below the block that was supposed to cover them. Anything added after this
    point needs its own entry here, not a new block. */
+/* Phone: buy the room back from the padding so the labels stay whole
+   instead of ellipsising. */
+@media (max-width: 430px) {
+  .segmented > button {
+    /* Four labels share 343px on a 375px screen: 82px each, and "Bookmarks"
+       needs 87 of them at this size. Buy the difference back from the
+       padding rather than truncating the word. */
+    padding: 0 4px;
+    font-size: 12.5px;
+  }
+}
+
+/* ------------------------------------------------- touch target sizing
+   A fingertip needs ~44px. These controls are sized for a mouse, and the
+   phone is where most of this app is used — so the sizes are raised only
+   where the pointer is coarse, leaving the desktop density alone. */
+@media (pointer: coarse) {
+  .chip,
+  .segmented > button {
+    min-height: 44px;
+  }
+  /* A text button with no box around it is the easiest thing to miss, and
+     Undo disappears after a few seconds. */
+  .toast__action {
+    min-height: 44px;
+    padding-inline: var(--sp-2);
+  }
+  /* The grip is the reliable way to reorder — long-pressing the row competes
+     with the browser's own scroll — so it must be a full target. */
+  .queue-handle {
+    width: 44px;
+  }
+  /* Once a row is picked up the browser must stop treating the drag as a
+     scroll of the list underneath it. */
+  .queue-row.is-grabbed {
+    touch-action: none;
+  }
+  /* 16px or larger, or iOS zooms the whole page when the field is focused
+     and never zooms back out. */
+  .input,
+  select.input,
+  .settings select,
+  .field select {
+    font-size: max(16px, 1rem);
+    min-height: 44px;
+  }
+}
+
 @media (pointer: coarse) {
   .shelf-chips .chip {
     min-height: 44px;
