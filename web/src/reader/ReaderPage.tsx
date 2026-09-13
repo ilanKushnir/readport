@@ -991,6 +991,11 @@ export function ReaderPage() {
       });
     };
     const onSelectionChange = () => {
+      // The note sheet autofocuses its textarea, which collapses the DOM
+      // selection — and dropping it here would attach the note to a point
+      // instead of to the passage the reader had chosen, losing the quotation
+      // with it. The sheet owns the selection until it closes.
+      if (sheetRef.current === 'note') return;
       const sel = document.getSelection();
       if (!sel || sel.isCollapsed) setSelection(null);
     };
@@ -1049,6 +1054,9 @@ export function ReaderPage() {
    * tap is resolved by character offset (see marks.ts) — and it has to win
    * over toggling the chrome, or a highlight would be unreachable on a phone.
    */
+  const sheetRef = useRef<SheetKind>('none');
+  sheetRef.current = sheet;
+
   const [markPop, setMarkPop] = useState<{ a: Annotation; x: number; y: number } | null>(null);
 
   const openMarkAt = useCallback(

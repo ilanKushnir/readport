@@ -102,6 +102,15 @@
 
 /* Reader page themes (independent of app theme) */
 [data-reader-theme='paper'] {
+  /* Highlight hues, one token each; the wash and the swatch are mixed
+     from the same hue so a colour can never disagree with its chip. */
+  --rd-mark-amber: #d6a034;
+  --rd-mark-rose: #b4532a;
+  --rd-mark-plum: #5e4a8a;
+  --rd-mark-sky: #466e96;
+  --rd-mark-sand: #8c7860;
+  --rd-mark-wash: 34%;
+  --rd-mark-chip: 85%;
   --rd-bg: #f6f1e8;
   --rd-text: #1c1917;
   --rd-soft: #5f574d;
@@ -112,6 +121,15 @@
   color-scheme: light;
 }
 [data-reader-theme='sepia'] {
+  /* Highlight hues, one token each; the wash and the swatch are mixed
+     from the same hue so a colour can never disagree with its chip. */
+  --rd-mark-amber: #ad7a29;
+  --rd-mark-rose: #7d3f1c;
+  --rd-mark-plum: #5e4a8a;
+  --rd-mark-sky: #3f6588;
+  --rd-mark-sand: #836f52;
+  --rd-mark-wash: 32%;
+  --rd-mark-chip: 85%;
   --rd-bg: #f1e5cf;
   --rd-text: #3a2f22;
   --rd-soft: #6f6049;
@@ -122,6 +140,15 @@
   color-scheme: light;
 }
 [data-reader-theme='night'] {
+  /* Highlight hues, one token each; the wash and the swatch are mixed
+     from the same hue so a colour can never disagree with its chip. */
+  --rd-mark-amber: #d6a034;
+  --rd-mark-rose: #c86a3e;
+  --rd-mark-plum: #826cb4;
+  --rd-mark-sky: #6491be;
+  --rd-mark-sand: #a08e74;
+  --rd-mark-wash: 30%;
+  --rd-mark-chip: 80%;
   --rd-bg: #16120f;
   --rd-text: #ddd5c6;
   --rd-soft: #918a7e;
@@ -132,6 +159,15 @@
   color-scheme: dark;
 }
 [data-reader-theme='contrast'] {
+  /* Highlight hues, one token each; the wash and the swatch are mixed
+     from the same hue so a colour can never disagree with its chip. */
+  --rd-mark-amber: #ffd65a;
+  --rd-mark-rose: #ff9670;
+  --rd-mark-plum: #b49beb;
+  --rd-mark-sky: #82b9f0;
+  --rd-mark-sand: #d2bea0;
+  --rd-mark-wash: 45%;
+  --rd-mark-chip: 95%;
   --rd-bg: #000000;
   --rd-text: #ffffff;
   --rd-soft: #d0d0d0;
