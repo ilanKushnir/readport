@@ -192,8 +192,19 @@ environment:
 ```
 
 The direct LAN port keeps the normal password login (a header sent straight to
-the port is ignored because the peer is not the proxy), so create a password
-account there first if you want a break-glass path.
+the port is ignored because the peer is not the proxy). An account the proxy
+provisioned starts with no password of its own; Settings → Account offers to
+add one, which is the break-glass path when the provider is down.
+
+**Opening the library to people who are not in your identity provider.** An
+invitation cannot get past a proxy that authenticates every request - the
+invitee reaches the provider's login page, not ReadPort's. To use invitations,
+take ReadPort's route out of the forward-auth middleware **and remove
+`RP_PROXY_AUTH_HEADER` / `RP_PROXY_AUTH_SOURCES` in the same change**: without
+the middleware the proxy no longer overwrites that header, so anything a
+client sends arrives with the proxy as its TCP peer and would be believed.
+Give your own account a password before you do either, or you will have no way
+to sign in.
 
 ## Resource and concurrency controls
 

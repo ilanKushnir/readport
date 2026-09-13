@@ -4,6 +4,24 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.10.1 - 2026-09-13
+
+### Added
+
+- **An account signed in through an identity provider can give itself a
+  password.** It never could, which meant a library fronted by Authentik had
+  no way in when Authentik was down - and no way to stay reachable if that
+  gate were ever removed to let invited friends in. Settings -> Account offers
+  it; no old password is asked for because there is none, and once one is set
+  the ordinary rule applies again.
+
+### Documentation
+
+- **What it actually takes to open a library that sits behind forward-auth**,
+  including the part that is easy to get wrong: dropping the middleware
+  without also dropping `RP_PROXY_AUTH_HEADER` leaves the username header
+  forgeable by anyone.
+
 ## 0.10.0 - 2026-09-13
 
 ### Added

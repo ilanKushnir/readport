@@ -119,3 +119,68 @@ describe('proxy header SSO', () => {
     expect(res.statusCode).toBe(401);
   });
 });
+
+/**
+ * Break-glass: a way back in that does not depend on the proxy.
+ *
+ * A provisioned account has no password, and until now could never get one -
+ * so if the identity provider went down, or the gate in front of the app was
+ * ever taken off to let other people in, the admin was locked out of their
+ * own library. Setting a first password is therefore allowed WITHOUT proving
+ * the old one, because there is no old one; every other case still must.
+ */
+describe('setting a first password on a provisioned account', () => {
+  const asDana = (payload: unknown) =>
+    app.inject({
+      method: 'POST',
+      url: '/api/auth/password',
+      remoteAddress: '192.168.1.50',
+      headers: {
+        'x-authentik-username': 'dana',
+        'x-rp-csrf': '1',
+        'content-type': 'application/json',
+      },
+      payload: payload as never,
+    });
+
+  it('says the account has no password of its own', async () => {
+    const me = await app.inject({
+      url: '/api/auth/me',
+      remoteAddress: '192.168.1.50',
+      headers: { 'x-authentik-username': 'dana' },
+    });
+    expect(me.json()).toMatchObject({ via: 'proxy', hasPassword: false });
+  });
+
+  it('still enforces the strength rule', async () => {
+    expect((await asDana({ newPassword: 'short' })).statusCode).toBe(400);
+  });
+
+  it('sets one, and the account can then sign in without the proxy', async () => {
+    expect((await asDana({ newPassword: 'a-real-password-now' })).statusCode).toBe(200);
+
+    const login = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      // Not the proxy: a direct peer, which is the whole point.
+      remoteAddress: '192.168.1.99',
+      headers: { 'x-rp-csrf': '1', 'content-type': 'application/json' },
+      payload: { username: 'dana', password: 'a-real-password-now' },
+    });
+    expect(login.statusCode).toBe(200);
+  });
+
+  it('will not skip the check a second time', async () => {
+    // The account now HAS a password, so omitting the current one is refused
+    // rather than treated as another first-time set.
+    expect((await asDana({ newPassword: 'another-password-x' })).statusCode).toBe(403);
+    expect(
+      (
+        await asDana({
+          currentPassword: 'a-real-password-now',
+          newPassword: 'another-password-x',
+        })
+      ).statusCode,
+    ).toBe(200);
+  });
+});

@@ -49,7 +49,7 @@ interface SettingsResponse {
 }
 
 export function SettingsPage() {
-  const { user, via, logout } = useSession();
+  const { user, via, hasPassword, logout } = useSession();
   const toast = useToast();
   const [data, setData] = useState<SettingsResponse | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -358,7 +358,7 @@ export function SettingsPage() {
           {ROLE_LABELS[(user?.role as Role) ?? 'reader']?.label ?? user?.role}
           {via === 'proxy' ? ', through your identity provider.' : '.'}
         </p>
-        <AccountSelfService via={via} />
+        <AccountSelfService via={via} hasPassword={hasPassword} />
         {via === 'proxy' ? (
           <p style={{ fontSize: 13.5, color: 'var(--rp-text-soft)' }}>
             Sign-in is handled by the reverse proxy in front of ReadPort; sign out from there.
@@ -721,7 +721,7 @@ function LibrariesEditor({
   );
 }
 
-function AccountSelfService({ via }: { via: string }) {
+function AccountSelfService({ via, hasPassword }: { via: string; hasPassword: boolean }) {
   const { user, refresh } = useSession();
   const toast = useToast();
   const [name, setName] = useState(user?.displayName ?? '');
@@ -745,14 +745,19 @@ function AccountSelfService({ via }: { via: string }) {
     try {
       const r = await api<{ revokedOtherSessions: number }>('/api/auth/password', {
         method: 'POST',
-        body: { currentPassword: cur, newPassword: next },
+        // Omitted, not blank, when there is nothing to prove: the server
+        // decides whether this account is allowed to skip the check.
+        body: hasPassword ? { currentPassword: cur, newPassword: next } : { newPassword: next },
       });
       setCur('');
       setNext('');
+      await refresh();
       toast.show(
         r.revokedOtherSessions
           ? `Password changed - signed out of ${r.revokedOtherSessions} other device${r.revokedOtherSessions === 1 ? '' : 's'}`
-          : 'Password changed',
+          : hasPassword
+            ? 'Password changed'
+            : 'Password set - you can now sign in without your identity provider',
       );
     } catch (err) {
       toast.show(
@@ -787,10 +792,10 @@ function AccountSelfService({ via }: { via: string }) {
           </button>
         </div>
       </div>
-      {via !== 'proxy' && (
-        <div className="field">
-          <label htmlFor="ac-cur">Change password</label>
-          <div className="pw-row">
+      <div className="field">
+        <label htmlFor="ac-cur">{hasPassword ? 'Change password' : 'Add a password'}</label>
+        <div className="pw-row">
+          {hasPassword && (
             <input
               id="ac-cur"
               className="input"
@@ -800,27 +805,34 @@ function AccountSelfService({ via }: { via: string }) {
               value={cur}
               onChange={(e) => setCur(e.target.value)}
             />
-            <input
-              className="input"
-              type="password"
-              autoComplete="new-password"
-              placeholder="New (10+ chars)"
-              minLength={10}
-              value={next}
-              onChange={(e) => setNext(e.target.value)}
-              aria-label="New password"
-            />
-            <button
-              className="btn btn--secondary"
-              disabled={busy || !cur || next.length < 10}
-              onClick={() => void changePw()}
-            >
-              Change
-            </button>
-          </div>
-          <span className="hint">Other devices are signed out; this one stays in.</span>
+          )}
+          <input
+            id={hasPassword ? undefined : 'ac-cur'}
+            className="input"
+            type="password"
+            autoComplete="new-password"
+            placeholder={hasPassword ? 'New (10+ chars)' : 'Password (10+ chars)'}
+            minLength={10}
+            value={next}
+            onChange={(e) => setNext(e.target.value)}
+            aria-label={hasPassword ? 'New password' : 'Password'}
+          />
+          <button
+            className="btn btn--secondary"
+            disabled={busy || (hasPassword && !cur) || next.length < 10}
+            onClick={() => void changePw()}
+          >
+            {hasPassword ? 'Change' : 'Set'}
+          </button>
         </div>
-      )}
+        <span className="hint">
+          {hasPassword
+            ? 'Other devices are signed out; this one stays in.'
+            : via === 'proxy'
+              ? 'You sign in through your identity provider, so this account has no password of its own. Adding one is a way back in if the provider is ever unavailable - and what you would use if the app is opened up beyond it.'
+              : 'This account has no password yet.'}
+        </span>
+      </div>
     </div>
   );
 }

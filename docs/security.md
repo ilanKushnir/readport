@@ -90,6 +90,13 @@ oauth2-proxy can let that proxy sign users in:
   once any user exists.
 - Proxied requests are authenticated per request (no ReadPort cookie is
   issued); signing out is the proxy's job, and the UI says so.
+- A provisioned account can **add a password to itself** under Settings →
+  Account, without proving an old one - there is no old one, and whoever is
+  asking is already authenticated as that account. It is the way back in when
+  the identity provider is down, and what an admin needs before the gate in
+  front of ReadPort is ever removed. Once set, the ordinary rule applies
+  again: changing it requires the current one. Setting a password on somebody
+  _else's_ provisioned account is still refused.
 
 Without a proxy, nothing changes: the setup token + password flow is the
 default, and it stays available on the direct URL for accounts that have a

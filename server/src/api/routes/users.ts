@@ -407,11 +407,22 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
     }
     const row = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(req.user!.id) as
       { password_hash: string } | undefined;
-    if (!row || row.password_hash === UNUSABLE_PASSWORD) {
-      return reply.code(409).send({ error: 'proxy-managed' });
-    }
-    if (!(await verifyPassword(parsed.data.currentPassword, row.password_hash))) {
-      return reply.code(403).send({ error: 'bad-credentials' });
+    if (!row) return reply.code(404).send({ error: 'not-found' });
+
+    // Two cases, and the SERVER decides which one this is - a client that
+    // simply omits `currentPassword` must not thereby skip the check.
+    const firstPassword = row.password_hash === UNUSABLE_PASSWORD;
+    if (firstPassword) {
+      // An account the proxy provisioned has no password to prove. Setting
+      // one is break-glass: it is the way back in when the identity provider
+      // is down, and the way to keep an admin account usable if the proxy
+      // gate is ever taken off. The person doing it is already authenticated
+      // as this account, so no second factor exists to ask for.
+      ctx.log.info(`${req.user!.username} set a password on a proxy-provisioned account`);
+    } else {
+      if (!(await verifyPassword(parsed.data.currentPassword ?? '', row.password_hash))) {
+        return reply.code(403).send({ error: 'bad-credentials' });
+      }
     }
     db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(
       await hashPassword(parsed.data.newPassword),

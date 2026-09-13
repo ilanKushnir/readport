@@ -19,6 +19,13 @@ export type AuthVia = 'session' | 'proxy';
 interface SessionCtx {
   user: User | null;
   via: AuthVia;
+  /**
+   * Whether this account can sign in without the proxy. Distinct from `via`:
+   * an account provisioned by an identity provider has no password until its
+   * owner sets one, and someone can arrive through the proxy on an account
+   * that has had one all along.
+   */
+  hasPassword: boolean;
   /** Signed in as an admin, but no library folders configured yet. */
   needsLibraries: boolean;
   /** 'loading' | 'setup' | 'login' | 'ready' | 'offline' */
@@ -31,6 +38,7 @@ interface SessionCtx {
 const Ctx = createContext<SessionCtx>({
   user: null,
   via: 'session',
+  hasPassword: true,
   needsLibraries: false,
   phase: 'loading',
   refresh: async () => {},
@@ -56,21 +64,27 @@ const sessionCheckSignal = (): AbortSignal | undefined =>
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [via, setVia] = useState<AuthVia>('session');
+  const [hasPassword, setHasPassword] = useState(true);
   const [needsLibraries, setNeedsLibraries] = useState(false);
   const [phase, setPhase] = useState<SessionCtx['phase']>('loading');
 
   const refresh = useCallback(async () => {
     try {
-      const me = await api<{ user: User; via?: AuthVia; needsLibraries?: boolean }>(
-        '/api/auth/me',
-        { signal: sessionCheckSignal() },
-      );
+      const me = await api<{
+        user: User;
+        via?: AuthVia;
+        hasPassword?: boolean;
+        needsLibraries?: boolean;
+      }>('/api/auth/me', { signal: sessionCheckSignal() });
       // Before anything can be delivered: queued checkpoints belong to the
       // account that recorded them. The same person keeps a backlog written
       // while their session was expired; a different person starts empty.
       await claimProgressQueue(me.user.id).catch(() => {});
       setUser(me.user);
       setVia(me.via ?? 'session');
+      // Default true: an older server does not send it, and offering to "add
+      // a password" to an account that already has one is the worse mistake.
+      setHasPassword(me.hasPassword !== false);
       setNeedsLibraries(me.needsLibraries === true);
       setPhase('ready');
       return;
@@ -175,6 +189,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         via,
+        hasPassword,
         needsLibraries,
         phase,
         refresh,
