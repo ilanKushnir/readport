@@ -116,15 +116,57 @@ export function rangeForSpan(map: TextMap, start: number, end: number): Range | 
 }
 
 /**
+ * The node index a character offset falls in.
+ *
+ * A binary search over the offsets the map already holds, so a caller that
+ * knows roughly where the reader is can hand `firstVisibleOffset` a starting
+ * point instead of making it walk the chapter. Correctness never depends on
+ * it — the scan visits every node either way — so a stale hint costs a few
+ * comparisons and nothing else.
+ */
+export function hintForOffset(map: TextMap, offset: number): number {
+  let lo = 0;
+  let hi = map.nodes.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (map.nodes[mid]!.start <= offset) lo = mid;
+    else hi = mid - 1;
+  }
+  return Math.max(0, lo);
+}
+
+/**
+ * Node indices to try, nearest the hint first: forward from it, then backward.
+ * Forward first because a page turn is far more often onward than back.
+ */
+function* visitOrder(count: number, hint: number): Generator<number> {
+  const start = Math.max(0, Math.min(hint, count - 1));
+  for (let i = start; i < count; i++) yield i;
+  for (let i = start - 1; i >= 0; i--) yield i;
+}
+
+/**
  * First visible text offset inside a viewport box (paginated page or scroll
  * viewport). Walks text nodes and returns the first whose rect intersects.
  */
 export function firstVisibleOffset(
   map: TextMap,
   box: { left: number; right: number; top: number; bottom: number },
+  /**
+   * Where to start looking, as an index into `map.nodes`.
+   *
+   * The scan used to begin at node zero every time, so the cost of a page
+   * turn grew with how far into the chapter the reader had got — a long
+   * chapter hitches progressively worse the more of it you have read. A page
+   * turn moves one page, so starting from the last answer and walking outward
+   * finds the new one in a handful of nodes.
+   */
+  hint = 0,
 ): number | null {
   const probe = document.createRange();
-  for (const entry of map.nodes) {
+  const order = visitOrder(map.nodes.length, hint);
+  for (const i of order) {
+    const entry = map.nodes[i]!;
     if (!entry.node.data.trim()) continue;
     probe.selectNodeContents(entry.node);
     const rects = probe.getClientRects();

@@ -30,6 +30,7 @@ import {
   buildTextMap,
   domToOffset,
   firstVisibleOffset,
+  hintForOffset,
   nearestOccurrence,
   rangeForSpan,
   type TextMap,
@@ -394,12 +395,16 @@ export function ReaderPage() {
       if (map) {
         const rect = pages.getBoundingClientRect();
         const shift = tx - targetTx;
-        const off = firstVisibleOffset(map, {
-          left: rect.left + shift,
-          right: rect.right + shift,
-          top: rect.top,
-          bottom: rect.bottom,
-        });
+        const off = firstVisibleOffset(
+          map,
+          {
+            left: rect.left + shift,
+            right: rect.right + shift,
+            top: rect.top,
+            bottom: rect.bottom,
+          },
+          hintForOffset(map, currentOffsetRef.current),
+        );
         if (off !== null) {
           currentOffsetRef.current = off;
           setLiveOffset(off);
@@ -670,7 +675,11 @@ export function ReaderPage() {
           footerTimer = null;
           const map = textMapRef.current;
           if (!map) return;
-          const off = firstVisibleOffset(map, scroller.getBoundingClientRect());
+          const off = firstVisibleOffset(
+            map,
+            scroller.getBoundingClientRect(),
+            hintForOffset(map, currentOffsetRef.current),
+          );
           if (off !== null) setLiveOffset(off);
         }, 80);
       }
@@ -680,7 +689,7 @@ export function ReaderPage() {
         const map = textMapRef.current;
         if (!map) return;
         const rect = scroller.getBoundingClientRect();
-        const off = firstVisibleOffset(map, rect);
+        const off = firstVisibleOffset(map, rect, hintForOffset(map, currentOffsetRef.current));
         if (off !== null && Math.abs(off - currentOffsetRef.current) > 40) {
           currentOffsetRef.current = off;
           // Scrolling on is as deliberate as turning a page: the first
@@ -1163,6 +1172,17 @@ export function ReaderPage() {
    */
   const selMenuRef = useRef<HTMLDivElement>(null);
   const [selMenuLeft, setSelMenuLeft] = useState<number | null>(null);
+
+  /**
+   * Where the position slider's thumb is while it is being dragged.
+   *
+   * The input used to be driven by the real reading position and to commit on
+   * every change — so each step of a drag loaded a chapter, and the thumb
+   * sprang back to wherever the reader actually still was. The thumb now
+   * follows the finger and the jump happens once, when it stops moving.
+   */
+  const [dragPct, setDragPct] = useState<number | null>(null);
+  const dragCommitRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const sheetRef = useRef<SheetKind>('none');
   sheetRef.current = sheet;
@@ -1744,19 +1764,28 @@ export function ReaderPage() {
             type="range"
             min={0}
             max={1000}
-            value={Math.round(bookPct * 1000)}
+            value={Math.round((dragPct ?? bookPct) * 1000)}
             aria-label="Book position"
             onChange={(e) => {
               if (!manifest) return;
               const pct = Number(e.target.value) / 1000;
-              const targetChars = pct * manifest.totalChars;
-              let s = 0;
-              for (const c of manifest.chapters) {
-                if (c.cumChars <= targetChars) s = c.idx;
-                else break;
-              }
-              const within = Math.max(0, Math.floor(targetChars - manifest.chapters[s]!.cumChars));
-              gotoChapter(s, within);
+              setDragPct(pct);
+              if (dragCommitRef.current) clearTimeout(dragCommitRef.current);
+              dragCommitRef.current = setTimeout(() => {
+                dragCommitRef.current = null;
+                const targetChars = pct * manifest.totalChars;
+                let s = 0;
+                for (const c of manifest.chapters) {
+                  if (c.cumChars <= targetChars) s = c.idx;
+                  else break;
+                }
+                const within = Math.max(
+                  0,
+                  Math.floor(targetChars - manifest.chapters[s]!.cumChars),
+                );
+                gotoChapter(s, within);
+                setDragPct(null);
+              }, 160);
             }}
           />
         )}
