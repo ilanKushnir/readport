@@ -5,7 +5,7 @@ import fastifyCompress from '@fastify/compress';
 import fastifyCookie from '@fastify/cookie';
 import fastifyStatic from '@fastify/static';
 import { type AppContext } from '../context.js';
-import { attachUser, csrfCheck, requireUser } from './guards.js';
+import { apiKeyAllows, attachUser, csrfCheck, requireUser } from './guards.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerLibraryRoutes } from './routes/library.js';
 import { registerPrefsRoutes } from './routes/prefs.js';
@@ -19,6 +19,7 @@ import { registerJobRoutes, registerOfflineRoutes, registerSettingsRoutes } from
 import { registerModelRoutes } from './routes/models.js';
 import { registerPreflightRoutes } from './routes/preflight.js';
 import { registerUserRoutes } from './routes/users.js';
+import { registerKeyRoutes } from './routes/keys.js';
 import { createRequire } from 'node:module';
 
 const APP_VERSION: string = (
@@ -127,6 +128,11 @@ export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyIn
     if (!csrfCheck(req)) return reply.code(403).send({ error: 'csrf' });
     if (req.routeOptions?.config?.public === true) return;
     if (!requireUser(req, reply)) return reply;
+    // A key can read. That is the whole contract, and it is checked in one
+    // place so no future route can quietly opt out of it.
+    if (req.authVia === 'apikey' && !apiKeyAllows(req.method, pathname)) {
+      return reply.code(403).send({ error: 'read-only', detail: 'This API key may only read' });
+    }
   });
 
   // Never leak internal error messages (paths, SQL, stack fragments).
@@ -159,6 +165,7 @@ export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyIn
   registerPairRoutes(app, ctx);
   registerJobRoutes(app, ctx);
   registerSettingsRoutes(app, ctx);
+  registerKeyRoutes(app, ctx);
   registerOfflineRoutes(app, ctx);
   registerModelRoutes(app, ctx);
   registerPreflightRoutes(app, ctx);

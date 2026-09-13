@@ -7,6 +7,38 @@ header. Schemas are zod-validated; canonical types live in
 an exact match - roles rank reader, curator, admin, and anything a curator may
 do an admin may do too.
 
+## Agent access (read-only API keys)
+
+A key lets something else - an assistant, a script, a home agent - see a
+person's library, lists and progress without being able to change any of it.
+
+    curl -H 'Authorization: Bearer rp_a1b2c3d4_...' https://readport.example/api/library
+
+Keys are created in Settings -> Agent access, or with a session:
+
+| Method | Path            | Notes                                                  |
+| ------ | --------------- | ------------------------------------------------------ |
+| GET    | `/api/keys`     | the caller's own keys (never the secret)               |
+| POST   | `/api/keys`     | `{name}`; returns `{key}` ONCE - only a hash is stored |
+| DELETE | `/api/keys/:id` | revoke; takes effect on the next request               |
+
+**What a key may do.** Exactly one thing: `GET`. This is enforced in the
+request hook, not per route, so a route added later cannot opt out of it.
+Two `GET`s are still refused:
+
+- `/api/books/:id/export` - reading a list is not a licence to pull the
+  library down. Files need a real session and the export capability.
+- `/api/keys*` - keys do not manage keys.
+
+Anything else a key does is refused with `403 {"error":"read-only"}`; an
+unknown, malformed or revoked key gets `401`, and a key stops working the
+moment its owner's account is disabled. A key carries its owner's view of the
+library, so what it can see is what they can see.
+
+Useful reads for an agent: `/api/auth/me`, `/api/library` (supports `kind`,
+`filter`, `facet`, `sort`, `query`), `/api/books/:id`, `/api/reading-list`,
+`/api/shelves`, `/api/annotations`, `/api/pairs`, `/api/jobs`.
+
 ## Auth & setup
 
 | Method | Path                    | Notes                                                                                |

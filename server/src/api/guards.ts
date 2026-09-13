@@ -3,6 +3,7 @@ import { type FastifyReply, type FastifyRequest } from 'fastify';
 import { type AppContext } from '../context.js';
 import { resolveSession, type SessionUser } from '../auth/sessions.js';
 import { buildSourceList, proxyAuthUser } from '../auth/proxyAuth.js';
+import { bearerToken, resolveApiKey } from '../auth/apikeys.js';
 
 export { SESSION_COOKIE, sessionCookieOpts } from '../auth/cookie.js';
 import { SESSION_COOKIE, sessionCookieOpts } from '../auth/cookie.js';
@@ -11,7 +12,7 @@ declare module 'fastify' {
   interface FastifyRequest {
     user: SessionUser | null;
     /** How the request was authenticated (undefined when anonymous). */
-    authVia?: 'session' | 'proxy';
+    authVia?: 'session' | 'proxy' | 'apikey';
   }
 }
 
@@ -58,6 +59,22 @@ export function csrfCheck(req: FastifyRequest): boolean {
 }
 
 export function attachUser(ctx: AppContext, req: FastifyRequest, reply?: FastifyReply): void {
+  // An API key first: an agent sends no cookies, and a request carrying a key
+  // is a key request even if a browser session happens to exist alongside it.
+  const bearer = bearerToken(req.headers.authorization);
+  if (bearer) {
+    const keyUser = resolveApiKey(ctx.db, bearer, new Date().toISOString());
+    if (keyUser) {
+      req.user = keyUser;
+      req.authVia = 'apikey';
+      return;
+    }
+    // A presented-but-invalid key is not silently downgraded to anonymous:
+    // leaving req.user null makes the route reply 401, which is the honest
+    // answer and what a client can act on.
+    req.user = null;
+    return;
+  }
   const token = (req.cookies ?? {})[SESSION_COOKIE];
   req.user = token
     ? resolveSession(ctx.db, ctx.config.sessionSecret, token, ctx.config.sessionDays)
@@ -84,5 +101,25 @@ export function requireUser(req: FastifyRequest, reply: FastifyReply): boolean {
     reply.code(401).send({ error: 'unauthorized' });
     return false;
   }
+  return true;
+}
+
+/**
+ * What an API key may do: read, and nothing else.
+ *
+ * Enforced here rather than route by route. An allowlist of "safe" routes is
+ * a list somebody has to remember to extend, and the day they forget is the
+ * day a key can write.
+ *
+ * Two things a GET still must not do:
+ *  - `/api/books/:id/export` hands over the book file itself. An agent that
+ *    can read a reading list has no business pulling the library down.
+ *  - `/api/keys*` would let a key enumerate or (via a future route) mint
+ *    others. Keys do not manage keys.
+ */
+export function apiKeyAllows(method: string, pathname: string): boolean {
+  if (!['GET', 'HEAD'].includes(method)) return false;
+  if (/^\/api\/books\/[^/]+\/export\b/.test(pathname)) return false;
+  if (pathname === '/api/keys' || pathname.startsWith('/api/keys/')) return false;
   return true;
 }

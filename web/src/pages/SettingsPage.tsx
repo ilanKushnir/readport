@@ -5,7 +5,7 @@ import { api, ApiError, actionFailed } from '../api/client';
 import { useSession } from '../state/session';
 import { useToast } from '../components/ui';
 import { IconAlert, IconCheck, IconDownload, IconTrash } from '../components/icons';
-import { formatBytes, formatDate, formatSpan } from '../lib/format';
+import { ago, formatBytes, formatDate, formatSpan } from '../lib/format';
 import { storageEstimate } from '../offline/downloads';
 import { alignerModel, type ModelInfo, type ModelsResponse } from '../lib/types';
 import { applyAppThemeColor } from '../lib/themeColor';
@@ -369,8 +369,140 @@ export function SettingsPage() {
           </button>
         )}
       </section>
+
+      <ApiKeysSection />
     </main>
   );
+}
+
+/**
+ * Read-only keys, for a person's own agents.
+ *
+ * The distinction the copy has to carry: a key lets something SEE your
+ * library, and can never change it or take the files. That is what makes it
+ * safe to paste into an assistant, and it is the first thing someone will
+ * want to know before they do.
+ */
+function ApiKeysSection() {
+  const toast = useToast();
+  const [keys, setKeys] = useState<ApiKeyDto[] | null>(null);
+  const [name, setName] = useState('');
+  const [fresh, setFresh] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      setKeys((await api<{ keys: ApiKeyDto[] }>('/api/keys')).keys);
+    } catch {
+      setKeys([]);
+    }
+  }, []);
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const create = async () => {
+    setBusy(true);
+    try {
+      const res = await api<{ key: string }>('/api/keys', {
+        method: 'POST',
+        body: { name: name.trim() || 'Agent' },
+      });
+      setFresh(res.key);
+      setName('');
+      await load();
+    } catch (err) {
+      toast.show(actionFailed(err, 'Could not create the key.'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="settings-section" aria-label="Agent access" id="keys">
+      <h2>Agent access</h2>
+      <p className="settings-section__lede">
+        A key lets something else - an assistant, a script - see your library, your lists and how
+        far through you are. It can only ever read: it cannot change anything, and it cannot
+        download the books themselves.
+      </p>
+
+      {fresh && (
+        <div className="banner" role="status">
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <strong>Copy this now.</strong> It is not shown again.
+            <code className="apikey">{fresh}</code>
+          </div>
+          <button
+            className="btn btn--secondary"
+            onClick={() => {
+              void navigator.clipboard?.writeText(fresh).then(
+                () => toast.show('Key copied'),
+                () => toast.show('Could not copy - select it by hand'),
+              );
+            }}
+          >
+            Copy
+          </button>
+          <button className="btn btn--ghost" onClick={() => setFresh(null)}>
+            Done
+          </button>
+        </div>
+      )}
+
+      {keys && keys.length > 0 && (
+        <ul className="keylist">
+          {keys.map((k) => (
+            <li key={k.id} className="keylist__row">
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <strong>{k.name}</strong>
+                <span className="hint" style={{ display: 'block' }}>
+                  rp_{k.prefix}… · {k.lastUsedAt ? `last used ${ago(k.lastUsedAt)}` : 'never used'}
+                </span>
+              </span>
+              <button
+                className="btn btn--ghost"
+                onClick={() => {
+                  void api(`/api/keys/${k.id}`, { method: 'DELETE' })
+                    .then(() => {
+                      toast.show('Key revoked');
+                      return load();
+                    })
+                    .catch((err) => toast.show(actionFailed(err, 'Could not revoke it.')));
+                }}
+              >
+                Revoke
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="folders__add">
+        <input
+          className="input"
+          placeholder="What is it for? e.g. Claude Code"
+          value={name}
+          maxLength={60}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') void create();
+          }}
+        />
+        <button className="btn btn--secondary" disabled={busy} onClick={() => void create()}>
+          {busy ? 'Creating…' : 'New key'}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+interface ApiKeyDto {
+  id: string;
+  name: string;
+  prefix: string;
+  createdAt: string;
+  lastUsedAt: string | null;
 }
 
 function LibrariesEditor({
