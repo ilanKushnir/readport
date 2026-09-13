@@ -127,6 +127,8 @@ export function SetupWizard({
   const [alignDirs, setAlignDirs] = useState<string[]>([]);
   const [language, setLanguage] = useState('en');
   const [autoAlign, setAutoAlign] = useState(true);
+  /** How friends will reach this server; blank for a library nobody shares. */
+  const [publicUrl, setPublicUrl] = useState('');
   const [importSaved, setImportSaved] = useState(true);
   const [wantAligner, setWantAligner] = useState(true);
   const [preflight, setPreflight] = useState<PreflightReport | null>(null);
@@ -157,6 +159,7 @@ export function SetupWizard({
         defaultLanguage: string;
         alignmentDirs: string[];
         autoAlign: boolean;
+        publicUrl?: string;
         importSavedAlignments: boolean;
       };
       envPinned: string[];
@@ -186,6 +189,7 @@ export function SetupWizard({
         setLanguage(s.settings.defaultLanguage);
         setAutoAlign(s.settings.autoAlign ?? true);
         setImportSaved(s.settings.importSavedAlignments ?? true);
+        setPublicUrl(s.settings.publicUrl ?? '');
       })
       .catch(() => setError('Could not reach the server.'));
   }, [firstRun]);
@@ -312,6 +316,7 @@ export function SetupWizard({
             ...(pinned.defaultLanguage ? {} : { defaultLanguage: language }),
             autoAlign,
             importSavedAlignments: importSaved,
+            publicUrl: publicUrl.trim(),
           },
         });
         await startAlignerDownload();
@@ -332,6 +337,7 @@ export function SetupWizard({
           defaultLanguage: language,
           autoAlign,
           importSavedAlignments: importSaved,
+          ...(publicUrl.trim() ? { publicUrl: publicUrl.trim() } : {}),
         },
       });
       // The session cookie is set by /api/setup, so the admin-only download
@@ -547,6 +553,25 @@ export function SetupWizard({
                   : null
               }
             />
+            <div className="field" style={{ marginBlockStart: 'var(--sp-5)' }}>
+              <label htmlFor="wz-public">Address friends will use</label>
+              <input
+                id="wz-public"
+                className="input"
+                inputMode="url"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                placeholder="https://readport.example.com"
+                value={publicUrl}
+                onChange={(e) => setPublicUrl(e.target.value)}
+              />
+              <span className="hint">
+                Optional, and only needed if you invite people. An invitation link is built from
+                this, so it works for whoever you send it to rather than only on your own network.
+                You can set it later under Settings.
+              </span>
+            </div>
             <div className="field" style={{ maxWidth: 340, marginBlockStart: 'var(--sp-5)' }}>
               <label htmlFor="wz-lang">Most of my books are in</label>
               <select
@@ -922,6 +947,11 @@ function InitStep({
         </div>
       )}
       <div className="wizard__actions">
+        {/* Sharing is the reason most people set a public address a moment
+            ago, so offer the next step rather than making them find it. */}
+        <a className="btn btn--secondary" href="/settings/people">
+          Invite someone
+        </a>
         <button type="button" className="btn" onClick={onEnter}>
           Open the library
         </button>

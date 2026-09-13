@@ -290,6 +290,13 @@ export const setupSchema = z.object({
   autoAlign: z.boolean().optional(),
   /** Take alignments already in the folder; see settingsSchema. */
   importSavedAlignments: z.boolean().optional(),
+  /**
+   * How this server is reached from outside. Asked during setup because it
+   * is what makes an invitation link work for the person receiving it, and
+   * the moment someone is setting up a library to share is the moment they
+   * know the answer.
+   */
+  publicUrl: z.string().trim().max(300).optional(),
 });
 export const alignManySchema = z.object({
   pairIds: z.array(z.string().min(1).max(64)).min(1).max(500),
@@ -338,6 +345,16 @@ export const settingsSchema = z.object({
    * data directory, which a rebuild can take with it.
    */
   alignmentDirs: dirListSchema.default([]),
+  /**
+   * How this server is reached from outside, e.g. `https://readport.example`.
+   *
+   * Invitation links were built from whatever address the ADMIN happened to
+   * be using, so a link made from `http://server.lan:7323` is useless to the
+   * friend it was made for. Optional: a library nobody reaches from outside
+   * does not need one, and when it is empty the link falls back to the
+   * current origin, which is right for exactly that case.
+   */
+  publicUrl: z.string().trim().max(300).default(''),
   /**
    * How much of the narration is listened to.
    *  - `standard` samples it and interpolates between the matches: minutes per

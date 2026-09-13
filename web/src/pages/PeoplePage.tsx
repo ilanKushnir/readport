@@ -35,7 +35,12 @@ export function PeoplePage() {
   const [invites, setInvites] = useState<InviteDto[]>([]);
   const [sheet, setSheet] = useState<'none' | 'add' | 'invite'>('none');
   const [editing, setEditing] = useState<UserDto | null>(null);
-  const [link, setLink] = useState<{ url: string; role: Role; expiresAt: string } | null>(null);
+  const [link, setLink] = useState<{
+    url: string;
+    code: string;
+    role: Role;
+    expiresAt: string;
+  } | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -209,6 +214,20 @@ export function PeoplePage() {
             Share this once. It creates one {ROLE_LABELS[link.role].label.toLowerCase()} account and
             stops working after use or on {formatDate(link.expiresAt)}.
           </p>
+          <div className="field">
+            <label htmlFor="iv-code">Or read them this code</label>
+            <input
+              id="iv-code"
+              className="input invitecode"
+              readOnly
+              value={link.code}
+              onFocus={(e) => e.currentTarget.select()}
+            />
+            <span className="hint">
+              They enter it on the sign-in page. Case does not matter, and it is the same invitation
+              as the link.
+            </span>
+          </div>
           <div className="linkbox">
             <input
               className="input"
@@ -369,7 +388,7 @@ function InviteSheet({
   onDone,
 }: {
   onClose: () => void;
-  onDone: (l: { url: string; role: Role; expiresAt: string }) => void;
+  onDone: (l: { url: string; code: string; role: Role; expiresAt: string }) => void;
 }) {
   const [displayName, setDisplayName] = useState('');
   const [role, setRole] = useState<Role>('reader');
@@ -382,20 +401,26 @@ function InviteSheet({
     setBusy(true);
     setError(null);
     try {
-      const res = await api<{ path: string; invite: { role: Role; expiresAt: string } }>(
-        '/api/invites',
-        {
-          method: 'POST',
-          body: {
-            role,
-            canExport,
-            displayName: displayName.trim() || undefined,
-            expiresInDays: days,
-          },
+      const res = await api<{
+        path: string;
+        url: string | null;
+        code: string;
+        invite: { role: Role; expiresAt: string };
+      }>('/api/invites', {
+        method: 'POST',
+        body: {
+          role,
+          canExport,
+          displayName: displayName.trim() || undefined,
+          expiresInDays: days,
         },
-      );
+      });
       onDone({
-        url: `${location.origin}${res.path}`,
+        // The server builds the link from the public address it was told
+        // about. Falling back to this browser's origin is right only for a
+        // library nobody shares - which is exactly when publicUrl is unset.
+        url: res.url ?? `${location.origin}${res.path}`,
+        code: res.code,
         role: res.invite.role,
         expiresAt: res.invite.expiresAt,
       });

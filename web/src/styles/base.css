@@ -4056,6 +4056,32 @@ select.input {
   background: var(--rp-surface-raised);
 }
 
+/* A quiet way out of the sign-in form, for the minority who arrive with a
+   code rather than an account. */
+.auth-card__aside {
+  align-self: center;
+  min-height: 44px;
+  padding: 0 var(--sp-3);
+  border: 0;
+  background: transparent;
+  color: var(--rp-interactive);
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+.auth-card__aside:hover {
+  text-decoration: underline;
+}
+
+/* A code that will be read out loud: spaced, monospaced, and big enough to
+   dictate from across a room. */
+.invitecode {
+  font-family: var(--rp-font-mono, ui-monospace, monospace);
+  font-size: 20px;
+  letter-spacing: 0.14em;
+  text-align: center;
+}
+
 /* ------------------------------------------------- touch target sizing
    A fingertip needs ~44px. These controls are sized for a mouse, and the
    phone is where most of this app is used - so the sizes are raised only

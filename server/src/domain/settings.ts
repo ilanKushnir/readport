@@ -14,6 +14,7 @@ const DEFAULTS: Settings = {
   ebookDirs: [],
   audiobookDirs: [],
   alignmentDirs: [],
+  publicUrl: '',
   alignPrecision: 'standard',
   autoAlign: true,
   importSavedAlignments: true,

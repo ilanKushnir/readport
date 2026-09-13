@@ -370,8 +370,62 @@ export function SettingsPage() {
         )}
       </section>
 
+      {isAdmin && <PublicAddressSection settings={s} onDraft={set} />}
+
       <ApiKeysSection />
     </main>
+  );
+}
+
+/**
+ * The address this server answers to from outside.
+ *
+ * Only matters for sharing. An invitation link is built from it, so without
+ * one a link made on the admin's laptop points at a LAN name their friend
+ * cannot resolve - the invitation looks fine and simply does not open.
+ */
+function PublicAddressSection({
+  settings,
+  onDraft,
+}: {
+  settings: Settings;
+  onDraft: (k: 'publicUrl', v: string) => void;
+}) {
+  const value = settings.publicUrl ?? '';
+  // Not validation, a warning: plenty of valid setups are http, and it is not
+  // this field's job to refuse them.
+  const looksLocal = /^https?:\/\/(localhost|127\.|192\.168\.|10\.|\[?::1)|\.lan(?::|\/|$)/i.test(
+    value,
+  );
+  return (
+    <section className="settings-section" aria-label="Sharing" id="sharing">
+      <h2>Sharing</h2>
+      <p className="settings-section__lede">
+        Where people reach this library from outside your network. Invitation links are built from
+        it, so it is what makes an invitation work for the person you send it to.
+      </p>
+      <div className="field">
+        <label htmlFor="set-public">Public address</label>
+        <input
+          id="set-public"
+          className="input"
+          inputMode="url"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          placeholder="https://readport.example.com"
+          value={value}
+          onChange={(e) => onDraft('publicUrl', e.target.value)}
+        />
+        <span className="hint">
+          {value.trim() === ''
+            ? 'Empty is fine for a library only you use: invitation links will use whatever address you are on.'
+            : looksLocal
+              ? 'That address only works on your own network, so an invitation built from it will not open for anyone else.'
+              : 'Invitation links will use this address.'}
+        </span>
+      </div>
+    </section>
   );
 }
 
