@@ -15,6 +15,7 @@ import { extractEpub, loadManifest, loadSentences, loadSentencesText } from '../
 import { extractCover, probeAudio } from '../audio/probe.js';
 import { normaliseLanguage } from '@readport/shared';
 import { facetsForBook, writeFacets } from '../library/facets.js';
+import { formatBytes } from '../util/format.js';
 import { FACETS_REV } from '../scanner/scan.js';
 import { CANDIDATE_THRESHOLD, scorePair } from '../pairing/score.js';
 import { storeAlignment } from '../alignment/service.js';
@@ -200,7 +201,7 @@ export async function runModelDownload(
   const out = fs.createWriteStream(part, { flags: resumed ? 'a' : 'w' });
   let received = have;
   let lastReport = 0;
-  const fmt = (n: number) => `${(n / 1_073_741_824).toFixed(2)} GB`;
+  const fmt = formatBytes;
   try {
     for await (const chunk of res.body as unknown as AsyncIterable<Uint8Array>) {
       if (guard.isLost()) {

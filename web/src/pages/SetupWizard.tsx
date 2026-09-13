@@ -330,6 +330,7 @@ export function SetupWizard({
           ...(alignDirs.length ? { alignmentDirs: alignDirs } : {}),
           defaultLanguage: language,
           autoAlign,
+          importSavedAlignments: importSaved,
         },
       });
       // The session cookie is set by /api/setup, so the admin-only download
@@ -737,8 +738,13 @@ export function SetupWizard({
               // straight back into the wizard.
               if (ebookDirs.length + audioDirs.length > 0) localStorage.removeItem(SKIP_KEY);
               else localStorage.setItem(SKIP_KEY, '1');
-              if (createdUser) setUser(createdUser);
-              else void refresh().then(() => onDone?.());
+              // onDone on BOTH paths. On first run it was only setUser, so
+              // an operator who finished without folders was handed straight
+              // back to the wizard they had just completed.
+              if (createdUser) {
+                setUser(createdUser);
+                onDone?.();
+              } else void refresh().then(() => onDone?.());
             }}
           />
         )}

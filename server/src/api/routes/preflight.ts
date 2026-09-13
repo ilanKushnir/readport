@@ -1,3 +1,4 @@
+import { formatBytes } from '../../util/format.js';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -97,13 +98,6 @@ async function probeBinary(bin: string): Promise<BinaryProbe> {
   });
   probeCache.set(bin, { at: Date.now(), value });
   return value;
-}
-
-/** Same units and precision as the web client's formatter, so the two agree. */
-function formatBytes(n: number): string {
-  if (n >= 1024 ** 3) return `${(n / 1024 ** 3).toFixed(1)} GB`;
-  if (n >= 1024 ** 2) return `${(n / 1024 ** 2).toFixed(1)} MB`;
-  return `${Math.max(1, Math.round(n / 1024))} KB`;
 }
 
 /** Nearest existing ancestor of `p` — what a writability test can actually stat. */

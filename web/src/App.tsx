@@ -135,7 +135,7 @@ function Shell() {
       </div>
     );
   }
-  if (phase === 'setup') return <SetupWizard />;
+  if (phase === 'setup') return <SetupWizard onDone={() => setSetupSkipped(true)} />;
   const join = /^\/join\/([A-Za-z0-9_-]+)$/.exec(location.pathname);
   if (phase === 'login') return join ? <JoinPage token={join[1]!} /> : <LoginPage />;
   // Signed in as an admin with no libraries configured — finish setup. Behind

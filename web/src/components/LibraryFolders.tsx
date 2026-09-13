@@ -108,24 +108,27 @@ export function LibraryFolders({
         {value.map((p) => {
           const c = checks[p] ?? checks[p.replace(/\/+$/, '')];
           return (
-            <li key={p} className={`folders__row ${c ? (c.ok ? 'is-ok' : 'is-bad') : ''}`}>
+            <li
+              key={p}
+              className={`folders__row ${c ? (c.ok && !c.problem ? 'is-ok' : 'is-bad') : ''}`}
+            >
               <span className="folders__icon" aria-hidden="true">
-                {!c ? '·' : c.ok ? <IconCheck size={15} /> : <IconAlert size={15} />}
+                {!c ? '·' : c.ok && !c.problem ? <IconCheck size={15} /> : <IconAlert size={15} />}
               </span>
               <span className="folders__body">
                 <code className="folders__path">{p}</code>
                 <span className="folders__meta">
                   {!c
                     ? 'Not tested yet'
-                    : c.ok
-                      ? c.matches === 0
-                        ? c.problem
-                        : kind === 'alignment'
-                          ? c.matches === 0
-                            ? 'Empty — new alignments will be saved here'
-                            : `${c.matches} saved alignment${c.matches === 1 ? '' : 's'} here`
-                          : `${c.matches}${c.sampled ? '+' : ''} ${kind === 'ebook' ? 'EPUB' : 'audio'} file${c.matches === 1 ? '' : 's'} found`
-                      : c.problem}
+                    : !c.ok
+                      ? c.problem
+                      : kind === 'alignment'
+                        ? c.matches === 0
+                          ? 'Empty — new alignments will be saved here'
+                          : `${c.matches} saved alignment${c.matches === 1 ? '' : 's'} here`
+                        : c.matches === 0
+                          ? (c.problem ?? 'No books found in this folder')
+                          : `${c.matches}${c.sampled ? '+' : ''} ${kind === 'ebook' ? 'EPUB' : 'audio'} file${c.matches === 1 ? '' : 's'} found`}
                 </span>
               </span>
               {!disabled && (
