@@ -4,6 +4,33 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.9.5 — 2026-09-13
+
+### Changed
+
+- **The reading settings are ordered.** "Layout" held the mode, the progress
+  bar, and then — under the heading "Progress bar", unlabelled — the column
+  count. It is now _How it reads_ (Pages or Scroll) with each mode's own
+  options nested under it, and the progress bar as its own group.
+- **Page turns**: Slide, Fade or Instant. Reduced-motion settings override
+  the choice.
+
+### Fixed
+
+- Every button in the player transport rendered at 56px, making the row wider
+  than the box that clips it: the skip buttons' own rule had equal
+  specificity and came earlier, so it never applied.
+- The reader footer's chapter label pushed the Listen pill over the
+  percentage until it truncated.
+- The return pill's dismiss was a `<span role="button">` nested inside a
+  `<button>` — invalid, keyboard-unreachable, and a 14px target.
+- The reading-list row menu opened behind the tab bar on the last rows.
+- The audiobook scrubber seeked on every input event of a drag; it now moves
+  the audio once, when the finger lifts.
+- The read-along speed menu could not be dismissed by tapping away or Escape.
+- On touch, the shelf tools covered the book count and the end of the name.
+- A sheet that did not clear the notch in landscape.
+
 ## 0.9.4 — 2026-09-13
 
 ### Fixed
