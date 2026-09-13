@@ -126,6 +126,7 @@ export function SetupWizard({
   const [alignDirs, setAlignDirs] = useState<string[]>([]);
   const [language, setLanguage] = useState('en');
   const [autoAlign, setAutoAlign] = useState(true);
+  const [importSaved, setImportSaved] = useState(true);
   const [wantAligner, setWantAligner] = useState(true);
   const [preflight, setPreflight] = useState<PreflightReport | null>(null);
   const [checking, setChecking] = useState(false);
@@ -151,7 +152,12 @@ export function SetupWizard({
     // them the environment pins. The stored `alignmentDirs` is read rather
     // than the resolved path, so "unset" stays unset.
     void api<{
-      settings: { defaultLanguage: string; alignmentDirs: string[]; autoAlign: boolean };
+      settings: {
+        defaultLanguage: string;
+        alignmentDirs: string[];
+        autoAlign: boolean;
+        importSavedAlignments: boolean;
+      };
       envPinned: string[];
       paths: { ebookDirs: string[]; audiobookDirs: string[] };
     }>('/api/settings')
@@ -178,6 +184,7 @@ export function SetupWizard({
         setAlignDirs(s.settings.alignmentDirs ?? []);
         setLanguage(s.settings.defaultLanguage);
         setAutoAlign(s.settings.autoAlign ?? true);
+        setImportSaved(s.settings.importSavedAlignments ?? true);
       })
       .catch(() => setError('Could not reach the server.'));
   }, [firstRun]);
@@ -303,6 +310,7 @@ export function SetupWizard({
             ...(pinned.alignmentDirs ? {} : { alignmentDirs: alignDirs }),
             ...(pinned.defaultLanguage ? {} : { defaultLanguage: language }),
             autoAlign,
+            importSavedAlignments: importSaved,
           },
         });
         await startAlignerDownload();
@@ -652,6 +660,25 @@ export function SetupWizard({
                 The last download attempt failed: {aligner.lastError}
               </p>
             )}
+
+            {/* The question a rebuilt container has to ask: this folder may
+                already hold hours of work from the last install. */}
+            <label className="rs-toggle" style={{ maxWidth: 620 }}>
+              <span>
+                Use alignments already in that folder
+                <span className="hint" style={{ display: 'block' }}>
+                  On: any alignments a previous install left there are adopted, and those books are
+                  not timed again. Off: every book is timed from its audio, and the existing files
+                  are left where they are rather than deleted.
+                </span>
+              </span>
+              <input
+                type="checkbox"
+                role="switch"
+                checked={importSaved}
+                onChange={(e) => setImportSaved(e.target.checked)}
+              />
+            </label>
 
             <label className="rs-toggle" style={{ maxWidth: 620 }}>
               <span>

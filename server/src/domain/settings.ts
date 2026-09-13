@@ -16,6 +16,7 @@ const DEFAULTS: Settings = {
   alignmentDirs: [],
   alignPrecision: 'standard',
   autoAlign: true,
+  importSavedAlignments: true,
   alignSpeedRatio: 0,
 };
 

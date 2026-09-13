@@ -1,3 +1,4 @@
+import { ago } from '../lib/format';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { type Job } from '@readport/shared';
@@ -41,24 +42,39 @@ function elapsed(fromIso: string | null): string | null {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
-/** Rough remaining time from linear progress — only once there is real signal. */
-function eta(startedAt: string | null, progress: number): string | null {
-  if (!startedAt || progress <= 0.08 || progress >= 0.995) return null;
-  const spent = Date.now() - Date.parse(startedAt);
-  if (spent < 60_000) return null;
-  const mins = Math.round(((spent / progress) * (1 - progress)) / 60_000);
+/**
+ * The first (time, progress) pair actually seen for a job, per job id.
+ *
+ * Remaining time used to be `spent / progress × (1 − progress)`, which assumes
+ * the bar was at zero when the clock started. It never is: a job reports a
+ * little progress the moment it has set itself up, and dividing the whole
+ * elapsed time by that pedestal makes the work look far faster than it is —
+ * the reason an alignment that takes thirteen minutes announced eight.
+ * Measuring the rate between two observed points removes the assumption, and
+ * with it any sensitivity to where the bar starts.
+ */
+const firstSeen = new Map<string, { t: number; p: number }>();
+
+/** Rough remaining time, measured from this job's own observed rate. */
+function eta(jobId: string, startedAt: string | null, progress: number): string | null {
+  if (!startedAt || progress >= 0.995) {
+    firstSeen.delete(jobId);
+    return null;
+  }
+  const now = Date.now();
+  const first = firstSeen.get(jobId);
+  if (!first) {
+    firstSeen.set(jobId, { t: now, p: progress });
+    return null;
+  }
+  const dp = progress - first.p;
+  const dt = now - first.t;
+  // Enough of both to mean anything, and never from a bar that went backwards.
+  if (dp <= 0.02 || dt < 45_000) return null;
+  const mins = Math.round(((dt / dp) * (1 - progress)) / 60_000);
   if (mins < 1) return 'less than a minute left';
   if (mins < 90) return `about ${mins} min left`;
   return `about ${Math.round(mins / 60)} h left`;
-}
-
-function ago(iso: string | null): string {
-  if (!iso) return '';
-  const s = Math.max(0, (Date.now() - Date.parse(iso)) / 1000);
-  if (s < 60) return 'just now';
-  if (s < 3600) return `${Math.round(s / 60)} min ago`;
-  if (s < 86_400) return `${Math.round(s / 3600)} h ago`;
-  return `${Math.round(s / 86_400)} d ago`;
 }
 
 /**
@@ -214,7 +230,7 @@ function JobRow({
   // name them once instead of printing the same words twice.
   const title = subject?.title ?? typeLabel(job.type);
   const spent = live ? elapsed(job.startedAt) : null;
-  const remaining = live ? eta(job.startedAt, job.progress) : null;
+  const remaining = live ? eta(job.id, job.startedAt, job.progress) : null;
   return (
     <div className={`jobrow ${live ? 'jobrow--live' : ''} jobrow--${job.state}`}>
       <div className="jobrow__lead">
@@ -251,7 +267,7 @@ function JobRow({
           {!live && job.state !== 'queued' ? (
             <>
               {job.state === 'done' ? 'Finished' : job.state === 'failed' ? 'Failed' : 'Cancelled'}{' '}
-              {ago(job.finishedAt)}
+              {ago(job.finishedAt, '')}
               {errorText ? ` · ${errorText}` : ''}
             </>
           ) : null}

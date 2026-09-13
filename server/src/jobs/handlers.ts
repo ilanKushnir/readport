@@ -138,7 +138,7 @@ export async function runExportAlignments(
 }
 
 /**
- * Stream a catalog speech model into RP_MODELS_DIR. Writes to `<file>.part`
+ * Stream a catalog model into RP_MODELS_DIR. Writes to `<file>.part`
  * with progress updates and renames only once the whole file arrived and
  * matches the published size, so a half-download is never mistaken for a
  * model. Resumable across attempts via HTTP Range.
@@ -928,8 +928,12 @@ export async function runPairScan(ctx: AppContext, job: JobRow, guard: LeaseGuar
   // Before anything is computed: an alignment that already exists on disk for
   // one of these pairs is hours of work this server does not have to redo.
   // Higher priority than the align jobs just queued, so a redeploy restores
-  // rather than recomputes.
-  enqueueJob(db, 'import-alignments', {}, { dedupeKey: 'import-alignments', priority: 5 });
+  // rather than recomputes. Skipped entirely when the operator has said they
+  // would rather start fresh — in which case the files are left alone, not
+  // deleted, so the decision stays reversible.
+  if (settings.importSavedAlignments) {
+    enqueueJob(db, 'import-alignments', {}, { dedupeKey: 'import-alignments', priority: 5 });
+  }
 }
 
 export async function runAlign(ctx: AppContext, job: JobRow, guard: LeaseGuard): Promise<void> {

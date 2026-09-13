@@ -60,3 +60,19 @@ export function ordinal(n: number): string {
   if (rest >= 11 && rest <= 13) return `${n}th`;
   return `${n}${['th', 'st', 'nd', 'rd'][Math.abs(n) % 10] ?? 'th'}`;
 }
+
+/**
+ * A rough "when was this" for a timestamp, falling back to a date once the
+ * distance stops being useful. `whenNever` is what to say for no timestamp at
+ * all — "never" reads right beside a last-seen column, an empty string reads
+ * right inside a sentence.
+ */
+export function ago(iso: string | null | undefined, whenNever = 'never'): string {
+  if (!iso) return whenNever;
+  const s = Math.max(0, (Date.now() - Date.parse(iso)) / 1000);
+  if (s < 90) return 'just now';
+  if (s < 3600) return `${Math.round(s / 60)} min ago`;
+  if (s < 86_400) return `${Math.round(s / 3600)} h ago`;
+  if (s < 86_400 * 14) return `${Math.round(s / 86_400)} d ago`;
+  return formatDate(iso);
+}

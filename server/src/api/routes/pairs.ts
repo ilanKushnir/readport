@@ -106,7 +106,7 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
     };
   };
 
-  /** Per-pair narration language override (drives speech-model choice). */
+  /** Per-pair narration language override (drives romanization). */
   app.post('/api/pairs/:id/language', async (req, reply) => {
     if (!requireRole(req, reply, 'curator')) return reply;
     const { id } = req.params as { id: string };
@@ -123,16 +123,16 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
   });
 
   /**
-   * How much transcription work is outstanding, and roughly how long it would
+   * How much alignment work is outstanding, and roughly how long it would
    * take on THIS machine. The ratio is measured from real runs
-   * (settings.transcribeSpeedRatio); before any measurement exists the
+   * (settings.alignSpeedRatio); before any measurement exists the
    * estimate is reported as unknown rather than guessed.
    */
   const processingSummary = () => {
     const { values: settings } = resolveSettings(db, ctx.config);
     const row = db
       .prepare(
-        // Exactly the work a "Start all" would queue: linked, not transcribed,
+        // Exactly the work a "Start all" would queue: linked, not aligned,
         // and not already in the queue — so the estimate describes what the
         // button does, not work that is already under way.
         `SELECT COUNT(*) AS pairs, COALESCE(SUM(b.duration_ms), 0) AS audio_ms

@@ -70,7 +70,7 @@ export function registerJobRoutes(app: FastifyInstance, ctx: AppContext): void {
       if (type === 'model-download' && typeof payload.modelId === 'string') {
         return {
           title: modelById(payload.modelId)?.label ?? String(payload.modelId),
-          sub: 'Speech model',
+          sub: 'Alignment model',
           pairId: null,
           bookId: null,
         };
