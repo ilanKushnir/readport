@@ -5,6 +5,8 @@ import fastifyCompress from '@fastify/compress';
 import fastifyCookie from '@fastify/cookie';
 import fastifyStatic from '@fastify/static';
 import { type AppContext } from '../context.js';
+import { buildClientIp, isPrivateAddress } from './clientIp.js';
+import { buildSourceList } from '../auth/proxyAuth.js';
 import { apiKeyAllows, attachUser, csrfCheck, requireUser } from './guards.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerLibraryRoutes } from './routes/library.js';
@@ -68,9 +70,12 @@ export interface BuildAppOptions {
   webDist?: string;
 }
 
-let warnedProxy = false;
-
 export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyInstance {
+  // Per instance, not per module: a module-level flag makes one test's
+  // warning suppress another's.
+  let warnedProxy = false;
+  const clientIp = buildClientIp(ctx.config, buildSourceList(ctx.config.clientIpSources), ctx.log);
+
   const app = Fastify({
     logger: { level: ctx.config.logLevel },
     bodyLimit: 2 * 1024 * 1024,
@@ -105,16 +110,21 @@ export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyIn
       // Book chapter fragments/assets carry their own stricter handling.
       reply.header('content-security-policy', CSP);
     }
+    // Who this request counts as, for rate limiting only.
+    req.clientIp = clientIp(req);
     // Said once, at the moment it is demonstrably wrong: a forwarded header
-    // arrived and we are not configured to trust anything, so every client
-    // looks like the proxy and the per-address login limits are really one
-    // bucket for the whole server.
-    if (!warnedProxy && req.headers['x-forwarded-for'] && ctx.config.trustProxy === false) {
+    // arrived and the address we ended up counting is still a private one,
+    // so a hop in the chain is not trusted and every client outside it
+    // shares a single bucket. That covers RP_TRUST_PROXY being unset AND the
+    // subtler case of it naming the proxy but not the tunnel in front of it,
+    // which looks correct and is not.
+    if (!warnedProxy && req.headers['x-forwarded-for'] && isPrivateAddress(req.clientIp)) {
       warnedProxy = true;
       ctx.log.warn(
-        'Requests carry X-Forwarded-For but RP_TRUST_PROXY is unset, so every client looks ' +
-          "like the proxy and sign-in rate limits apply server-wide. Set it to the proxy's " +
-          'address or CIDR.',
+        `Requests carry X-Forwarded-For but rate limits are counting ${req.clientIp}, a private ` +
+          'address - so every client outside it shares one bucket and a stranger can lock the ' +
+          'owner out of their own sign-in. Name every hop in RP_TRUST_PROXY, or set ' +
+          'RP_CLIENT_IP_HEADER (+ RP_CLIENT_IP_SOURCES) behind a tunnel.',
       );
     }
     attachUser(ctx, req, reply);

@@ -63,6 +63,12 @@ const envSchema = z.object({
   proxyAuthHeader: z.string().max(64).default(''),
   /** Proxy peer addresses/CIDRs whose header is trusted. Required when enabled. */
   proxyAuthSources: z.array(z.string()).default([]),
+  /**
+   * Rate-limit keys only: a header naming the real client, honoured solely
+   * from the peers listed alongside it. See api/clientIp.ts.
+   */
+  clientIpHeader: z.string().max(64).default(''),
+  clientIpSources: z.array(z.string()).default([]),
   /** Usernames (from the header) that are admins. */
   proxyAuthAdmins: z.array(z.string()).default([]),
   logLevel: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
@@ -127,6 +133,8 @@ export function loadConfig(overrides: Partial<Record<string, unknown>> = {}): En
     scanIntervalMinutes: readEnv('RP_SCAN_INTERVAL_MINUTES'),
     proxyAuthHeader: readEnv('RP_PROXY_AUTH_HEADER'),
     proxyAuthSources: splitDirs(readEnv('RP_PROXY_AUTH_SOURCES')),
+    clientIpHeader: readEnv('RP_CLIENT_IP_HEADER'),
+    clientIpSources: splitDirs(readEnv('RP_CLIENT_IP_SOURCES')),
     proxyAuthAdmins: splitDirs(readEnv('RP_PROXY_AUTH_ADMINS')),
     logLevel: readEnv('RP_LOG_LEVEL'),
   };

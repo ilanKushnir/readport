@@ -70,7 +70,7 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
     if (userCount() > 0) return reply.code(409).send({ error: 'already-configured' });
     // Nothing to verify on an unlocked instance; the wizard does not call it.
     if (!setupIsLocked(ctx)) return { ok: true };
-    if (!ipThrottle.allow(`setup:${req.ip}`))
+    if (!ipThrottle.allow(`setup:${req.clientIp}`))
       return reply.code(429).send({ error: 'rate-limited' });
     const body = z.object({ setupToken: z.string().min(1).max(512) }).safeParse(req.body);
     if (!body.success) return reply.code(400).send({ error: 'invalid' });
@@ -99,7 +99,7 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
   // default credentials exist either way.
   app.post('/api/setup', { config: { public: true } }, async (req, reply) => {
     if (userCount() > 0) return reply.code(409).send({ error: 'already-configured' });
-    if (!ipThrottle.allow(`setup:${req.ip}`)) {
+    if (!ipThrottle.allow(`setup:${req.clientIp}`)) {
       return reply.code(429).send({ error: 'rate-limited' });
     }
     const body = setupSchema.safeParse(req.body);
@@ -197,8 +197,8 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
     // proxy, so a direct attacker cannot rotate X-Forwarded-For past the
     // limits - and a remote attacker cannot lock the real owner out of a
     // known username by burning its attempts from elsewhere.
-    const acctKey = `acct:${body.data.username.toLowerCase()}@${req.ip}`;
-    const ipKey = `ip:${req.ip}`;
+    const acctKey = `acct:${body.data.username.toLowerCase()}@${req.clientIp}`;
+    const ipKey = `ip:${req.clientIp}`;
     if (!accountThrottle.allow(acctKey) || !ipThrottle.allow(ipKey)) {
       return reply.code(429).send({ error: 'rate-limited' });
     }
