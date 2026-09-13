@@ -19,8 +19,8 @@ import { JOB_HANDLERS } from './handlers.js';
  * (compose `worker` service). Both modes share the queue safely because
  * claims are atomic lease grants.
  *
- * While a handler runs — including long external processes that
- * produce no database writes of their own — the worker renews the job lease
+ * While a handler runs - including long external processes that
+ * produce no database writes of their own - the worker renews the job lease
  * on a timer, independent of handler code. If renewal ever fails the job
  * was reclaimed elsewhere; the handler's subsequent conditional writes
  * become no-ops/throws instead of corrupting the new owner's run.
@@ -100,7 +100,7 @@ export function startWorker(ctx: AppContext, concurrency: number): WorkerHandle 
           // container stop) goes back to the queue instead of counting as
           // failed; the next start resumes it.
           if (error && stopped && !guard.isLost() && requeueJob(ctx.db, job.id, job.lease_token)) {
-            ctx.log.warn(`Job ${job.id} (${job.type}) interrupted by shutdown — re-queued`);
+            ctx.log.warn(`Job ${job.id} (${job.type}) interrupted by shutdown - re-queued`);
           } else if (
             !skipFinish &&
             !guard.isLost() &&

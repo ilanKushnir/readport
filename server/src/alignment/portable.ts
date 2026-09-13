@@ -18,7 +18,7 @@ import { z } from 'zod';
  *
  * Two decisions shape everything below.
  *
- * The file is a gzip-compressed JSON document with COLUMNAR segments — eight
+ * The file is a gzip-compressed JSON document with COLUMNAR segments - eight
  * parallel arrays rather than an array of objects. On a real 16,000-segment
  * book that is 950 KiB raw / 309 KiB gzipped, against 2450 KiB / 433 KiB for
  * objects: the repeated key names dominate both the raw size and, because gzip
@@ -28,7 +28,7 @@ import { z } from 'zod';
  * format worth having: a self-hoster can gunzip the file and read it.
  *
  * Matching a file back to a library is by FINGERPRINT, never by path, id or
- * filename — none of those survive a reinstall. The two fingerprints and the
+ * filename - none of those survive a reinstall. The two fingerprints and the
  * pair key derived from them are the whole identity story, and each one carries
  * its algorithm as a prefix so the algorithm can be replaced later without a
  * format bump: an old reader meeting `t2:` knows only that it cannot compare
@@ -80,8 +80,8 @@ export function textFingerprint(sentenceIdsInReadingOrder: string[]): string {
 /**
  * Identity of the audiobook's timeline, from its per-track durations.
  *
- * Duration-based and not byte-based on purpose. Retagging an audiobook —
- * fixing the narrator, embedding cover art, renaming chapters — rewrites every
+ * Duration-based and not byte-based on purpose. Retagging an audiobook -
+ * fixing the narrator, embedding cover art, renaming chapters - rewrites every
  * file and must not cost the user their alignment, because none of it moves a
  * single word of narration. Durations do not change under retagging. Rounding
  * to 100 ms absorbs the last-frame disagreements between ffprobe versions and
@@ -126,8 +126,8 @@ const COLUMN_NAMES = [
 
 /**
  * Enough of the ebook to recognise it, describe it in an import list, and say
- * out loud why it did not match. The counts and size are not part of identity —
- * only `textFingerprint` is — but they are what lets the import UI tell a user
+ * out loud why it did not match. The counts and size are not part of identity -
+ * only `textFingerprint` is - but they are what lets the import UI tell a user
  * "this file is for a 412-sentence book and yours has 1,208" instead of a bare
  * "no match".
  */
@@ -291,8 +291,8 @@ export interface AlignmentDocumentInput {
  * Counts, durations and the pair key are computed here rather than asked for,
  * because a file whose declared sentence count disagrees with the text its
  * fingerprint was taken over is a file that fails to match for reasons nobody
- * can debug. The fingerprints themselves may be handed in — the database keeps
- * them — but they are never invented by the caller.
+ * can debug. The fingerprints themselves may be handed in - the database keeps
+ * them - but they are never invented by the caller.
  */
 export function buildAlignmentDocument(input: AlignmentDocumentInput): PortableAlignment {
   const ids = input.ebook.sentenceIdsInReadingOrder;
@@ -335,7 +335,7 @@ export function buildAlignmentDocument(input: AlignmentDocumentInput): PortableA
  * Windows box and a phone's SMB mount, and non-ASCII names survive that trip
  * unreliably (NFC/NFD disagreements alone will hand you two files that look
  * identical). The cost is that a book with no Latin characters at all slugs to
- * nothing, which is why the fallback exists — the pair key in the filename is
+ * nothing, which is why the fallback exists - the pair key in the filename is
  * the real identifier, and the slug is a courtesy to whoever is looking at the
  * folder.
  */
@@ -379,7 +379,7 @@ function keySuffix(key: string): string {
  * A missing or unreadable directory is not an error worth propagating: this is
  * called on a user-configured mount point that may be unmounted, empty or
  * simply not created yet, and every one of those cases means the same thing to
- * the caller — no alignments to import. Dotfiles are skipped so a half-written
+ * the caller - no alignments to import. Dotfiles are skipped so a half-written
  * temporary file, or a Synology/macOS sidecar, is never offered as an import.
  */
 export function listAlignmentFiles(dir: string): string[] {
@@ -420,7 +420,7 @@ export function findAlignmentFile(dir: string, key: string): string | null {
  * Write `doc` into `dir`, returning the path written.
  *
  * The mount this lands on is the user's library, watched by their sync client
- * and their backup job, so a partially written file is not a private problem —
+ * and their backup job, so a partially written file is not a private problem -
  * it gets replicated. Hence the temporary-then-rename dance, with the
  * temporary in the SAME directory so the rename is a same-filesystem atomic
  * one, and an fsync before it so a container killed mid-write cannot leave a
@@ -525,7 +525,7 @@ export function decodeAlignmentFile(bytes: Buffer | Uint8Array): ReadAlignmentRe
   }
   if (version > ALIGNMENT_FORMAT_VERSION) {
     return reject(
-      `This alignment file was written by a newer version of ReadPort (alignment format ${version}, this server understands ${ALIGNMENT_FORMAT_VERSION}) — upgrade this server to read it.`,
+      `This alignment file was written by a newer version of ReadPort (alignment format ${version}, this server understands ${ALIGNMENT_FORMAT_VERSION}) - upgrade this server to read it.`,
     );
   }
 
@@ -550,12 +550,12 @@ export function decodeAlignmentFile(bytes: Buffer | Uint8Array): ReadAlignmentRe
   // book. Refusing the file is the honest answer.
   if (!doc.ebook.textFingerprint.startsWith(TEXT_FINGERPRINT_PREFIX)) {
     return reject(
-      `This alignment file identifies its ebook with a fingerprint scheme this server does not know ("${doc.ebook.textFingerprint.split(':')[0]}"), so it cannot be matched to a book — upgrade this server to use it.`,
+      `This alignment file identifies its ebook with a fingerprint scheme this server does not know ("${doc.ebook.textFingerprint.split(':')[0]}"), so it cannot be matched to a book - upgrade this server to use it.`,
     );
   }
   if (!doc.audio.timelineFingerprint.startsWith(TIMELINE_FINGERPRINT_PREFIX)) {
     return reject(
-      `This alignment file identifies its audiobook with a fingerprint scheme this server does not know ("${doc.audio.timelineFingerprint.split(':')[0]}"), so it cannot be matched to an audiobook — upgrade this server to use it.`,
+      `This alignment file identifies its audiobook with a fingerprint scheme this server does not know ("${doc.audio.timelineFingerprint.split(':')[0]}"), so it cannot be matched to an audiobook - upgrade this server to use it.`,
     );
   }
 

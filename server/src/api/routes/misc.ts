@@ -113,7 +113,7 @@ export function registerJobRoutes(app: FastifyInstance, ctx: AppContext): void {
         };
       }),
       // The row list above is capped, so overall progress cannot be counted
-      // from it — one index job per book overflows the cap on any real
+      // from it - one index job per book overflows the cap on any real
       // library. These totals are the whole table, cheaply.
       totals: (
         db.prepare('SELECT type, state, COUNT(*) AS n FROM jobs GROUP BY type, state').all() as {
@@ -188,7 +188,7 @@ export function registerSettingsRoutes(app: FastifyInstance, ctx: AppContext): v
     const { envPinned } = resolveSettings(db, config);
     // `.partial()` does NOT stop zod from filling in `.default()` values for
     // keys the caller never sent, so parsed.data always contains every
-    // defaulted field. Writing those would silently reset unrelated settings —
+    // defaulted field. Writing those would silently reset unrelated settings -
     // library folders included. Persist only what was actually sent.
     const sent = new Set(Object.keys((req.body ?? {}) as Record<string, unknown>));
     const patch = Object.fromEntries(
@@ -221,7 +221,7 @@ export function registerSettingsRoutes(app: FastifyInstance, ctx: AppContext): v
 /**
  * Sampling step for an audiobook's offline switch answers. Coarser than a
  * sentence, but the client always takes the entry at or BEFORE its position,
- * so the rounding error only ever lands the reader earlier in the text —
+ * so the rounding error only ever lands the reader earlier in the text -
  * the same direction the resolver's own rewind margin errs in, and the only
  * direction that cannot spoil what has not been heard yet.
  */
@@ -322,7 +322,7 @@ export function registerOfflineRoutes(app: FastifyInstance, ctx: AppContext): vo
    * and a second one written against a cached segment table would drift from
    * it silently. Ebook packages are keyed by sentence id (the reader's saved
    * position always carries one); audio packages are sampled on a time grid
-   * and run-length encoded — an entry is emitted only where the answer
+   * and run-length encoded - an entry is emitted only where the answer
    * changes, including where it changes to "no aligned position here", so an
    * unaligned stretch can never inherit the previous entry's answer.
    */
@@ -455,9 +455,9 @@ export function registerOfflineRoutes(app: FastifyInstance, ctx: AppContext): vo
       }
       // Every referenced derived asset (images) is part of the package, so
       // an illustrated book is genuinely complete offline. The URL must be
-      // spelled EXACTLY as the sanitizer wrote it into the chapter HTML —
+      // spelled EXACTLY as the sanitizer wrote it into the chapter HTML -
       // one percent-encoded path segment, separators included (see
-      // sanitize.ts) — because Cache Storage matches on the literal URL: an
+      // sanitize.ts) - because Cache Storage matches on the literal URL: an
       // entry stored under `.../asset/img/pic.png` is invisible to a reader
       // asking for `.../asset/img%2Fpic.png`.
       const assetDir = path.join(dir, 'assets');
@@ -477,7 +477,7 @@ export function registerOfflineRoutes(app: FastifyInstance, ctx: AppContext): vo
         // Integrity is computed from the file AS CURRENTLY SERVED (not the
         // scan-time database row): size, an immutable source version the
         // track route also emits as its ETag, and a SHA-256 per 8MiB chunk
-        // (streamed — the file is never buffered whole). A track that
+        // (streamed - the file is never buffered whole). A track that
         // cannot be read must fail the manifest rather than yield a
         // "complete" offline package with holes.
         let abs: string;

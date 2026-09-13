@@ -5,35 +5,35 @@
 A pair of editions goes through three gates, and the middle one is the only
 one that can actually link them.
 
-1. **Candidate** — normalized title/author/series/identifier/language and
+1. **Candidate** - normalized title/author/series/identifier/language and
    length heuristics produce a score. Below 0.55 (`CANDIDATE_THRESHOLD`)
    nothing is created at all; above it a candidate appears and waits for your
    review. Contradictory languages hard-cap the score (translation guard);
-   identifier matches raise it. At or above `AUTO_PAIR_THRESHOLD` — 0.92, a
+   identifier matches raise it. At or above `AUTO_PAIR_THRESHOLD` - 0.92, a
    constant rather than a setting, because nobody can choose a better number
-   without data they do not have — the pair is additionally queued for
+   without data they do not have - the pair is additionally queued for
    alignment on the spot (unless `autoAlign` is off), and its evidence says
-   what is happening: "Strong metadata match — waiting to be checked against
+   what is happening: "Strong metadata match - waiting to be checked against
    the narration."
-2. **The narration itself** — the density of the acoustic match _is_ the
+2. **The narration itself** - the density of the acoustic match _is_ the
    edition check (see [The refusal signal](#the-refusal-signal)). A pair is
    linked only once the audio has been heard and found to be reading this
    text; the alignment job is what promotes a candidate to a link. The
    evidence stays visible afterwards and unlinking is one click.
-3. **Alignment readiness** — sentence-exact switching is offered only when
+3. **Alignment readiness** - sentence-exact switching is offered only when
    alignment coverage ≥ 50% and mean confidence ≥ 0.25, and each individual
    switch degrades honestly: `sentence` → `paragraph` (nearest aligned
    sentence) → refusal with a reason. Low-confidence regions are never
    presented as exact.
 
 Metadata alone can put two editions in front of you, but it never links them
-and it certainly never enables sentence-exact switching — that always requires
+and it certainly never enables sentence-exact switching - that always requires
 timings computed from the audio, or restored from a file that holds them.
 
 ## Forced alignment, not transcription
 
 Speech recognition answers a much harder question than the one we have. **We
-are not trying to discover the words — they are sitting in the EPUB.** We only
+are not trying to discover the words - they are sitting in the EPUB.** We only
 need to know _when_ each one is spoken. Transcribing the whole audiobook to
 find that out costs hours of CPU and a multi-gigabyte model per language, and
 every word it invents is a word the matcher then has to forgive.
@@ -42,10 +42,10 @@ So the engine (`server/src/alignment/ctc/`) runs a CTC acoustic model over the
 audio, greedy-decodes its emissions into a stream of romanized characters with
 20 ms timestamps, and then finds where that stream and the book's own
 romanized characters agree. There is one model, it covers every supported
-language, and it needs the ebook's text — which we always have.
+language, and it needs the ebook's text - which we always have.
 
-And it does not listen to all of it. The timeline is built from anchors —
-places where the audio and the text provably agree — and a few seconds of
+And it does not listen to all of it. The timeline is built from anchors -
+places where the audio and the text provably agree - and a few seconds of
 narration every couple of minutes produces plenty of them. Everything between
 two anchors is interpolated, and a second pass re-listens wherever the implied
 reading rate says the interpolation would be a lie.
@@ -55,7 +55,7 @@ reading rate says the interpolation would be a lie.
 - **`standard`** (the default) samples the narration on a schedule and
   interpolates between the matches. Measured on the target server (a 6-CPU
   LXC with `RP_ALIGN_THREADS=4`): a 67-minute book in 72 seconds, a 36.7-hour
-  book in 28.6 minutes — i.e. a six-hour audiobook in about six minutes. It
+  book in 28.6 minutes - i.e. a six-hour audiobook in about six minutes. It
   decodes around 7% of the audio.
 - **`exact`** puts every sample through the model. Roughly fifteen times the
   wall clock, and on everything measured so far no more accurate at the
@@ -84,7 +84,7 @@ scored against.
 
 The error is not the interesting number; the _sign_ is. A reader switching
 from the page to the narration can tolerate hearing a sentence again, and
-cannot tolerate hearing one they have not reached — so every segment carries
+cannot tolerate hearing one they have not reached - so every segment carries
 its own `uncertaintyMs`, and the handoff subtracts it (see "Staying behind the
 reader" below). That costs a median rewind of 7.6 seconds, which is roughly
 the line that just scrolled off the top of the page.
@@ -100,7 +100,7 @@ its duty cycle suggests.
 1. **Romanize the ebook** (`romanize.ts`). The model's vocabulary is 31
    tokens: four specials (`<blank> <pad> </s> <unk>`), the 26 lowercase
    Latin letters, and an apostrophe. There is **no space token**, so its
-   output is one uninterrupted character stream — and the ebook has to be
+   output is one uninterrupted character stream - and the ebook has to be
    pushed through the same funnel. Latin text is NFKD-folded and stripped to
    `[a-z']`; Cyrillic, Greek, Hebrew and Arabic are transliterated (schemes
    and their deliberate deviations are documented at the top of
@@ -115,7 +115,7 @@ its duty cycle suggests.
    of it that nothing has listened to yet. Up to three rounds, with a probe
    budget of 60% of the first pass. A chapter break shows up as a stretch that
    is too slow, a passage the narration skips as one that is too fast, and a
-   probe that landed in music as one with no anchors — all three are the same
+   probe that landed in music as one with no anchors - all three are the same
    signal, and all three are exactly where interpolation goes wrong. The
    unanchored head and tail of the book are always suspect: there is no rate
    to judge them by, and they are every bit as unmapped.
@@ -127,7 +127,7 @@ its duty cycle suggests.
    only a ~32-second window is ever resident. The sampling path seeks to each
    probe instead, again with a second of context on each side, and holds the
    ONNX session open across rounds. The model emits one frame per 320 samples
-   over a 400-sample window — exactly 20.0 ms — and the code asserts that
+   over a 400-sample window - exactly 20.0 ms - and the code asserts that
    frame count on every chunk, so swapping in a model with a different stride
    fails loudly instead of silently shifting every timestamp. Greedy CTC
    collapse (skip blank, skip repeats) turns the emissions into stamped
@@ -146,9 +146,9 @@ its duty cycle suggests.
    away is reported as a gap instead of a timing; closer than that, its score
    falls linearly from 1 at an anchor to 0 at the cut-off. Each timing also
    carries an `uncertaintyMs`: 2 seconds plus 15% of the _audio_ distance to
-   the nearer bracketing anchor, or — outside the anchored range, where the
+   the nearer bracketing anchor, or - outside the anchored range, where the
    timing is not an interpolation but an edge anchor's time held while the
-   narration kept going — 2 seconds plus the whole extrapolated distance.
+   narration kept going - 2 seconds plus the whole extrapolated distance.
 6. **Decide what may be claimed** (`../timings.ts`). `segmentsFromTimings()`
    is the only function in the codebase that constructs an
    `AlignmentSegment`. The engine reports evidence; that module enforces
@@ -162,8 +162,8 @@ its duty cycle suggests.
 
 The anchor approach makes **no proportionality assumption** between position
 in the text and position in the audio. Front matter, credits, a spoken
-chapter announcement, endnotes, an index — anything the narrator did or did
-not say that the other side lacks — simply produces no anchors there, rather
+chapter announcement, endnotes, an index - anything the narrator did or did
+not say that the other side lacks - simply produces no anchors there, rather
 than dragging the whole mapping off course.
 
 That is not a theoretical preference. A prototype that force-aligned with
@@ -175,21 +175,21 @@ the same real book and put **every** spot check on the wrong sentence.
 Finding the grams that occur exactly once on each side is the whole of the
 matching, and the obvious implementation of it had a length limit hiding
 inside it. Indexing both sides into a `Map<string, number>` allocates one
-14-character string per position — around ninety bytes each in V8 — so both
+14-character string per position - around ninety bytes each in V8 - so both
 sides had to be capped at 1.2 million characters to keep the index near
 110 MB a side. A long book quietly ran past that: on a 36.7-hour Russian
 audiobook the last 7% of the text was never even offered to the matcher, and
 the job reported 92% coverage as though that were the honest answer.
 
-`ngram-index.ts` inverts the problem. Only the **decoded** side is indexed —
+`ngram-index.ts` inverts the problem. Only the **decoded** side is indexed -
 under sampling that is a few tens of thousands of characters against a book's
-million-plus — into flat `Int32Array`s addressed by a rolling polynomial hash
+million-plus - into flat `Int32Array`s addressed by a rolling polynomial hash
 with a murmur3 finaliser. The book is then **streamed** past that index and
 never allocated at all, so it has no length limit. Every hash hit is confirmed
 character by character before it becomes a match, which means a collision
 costs one wasted comparison and can never produce a wrong anchor, and a gram's
 multiplicity on the book side falls out of counting how many book positions
-landed in the same slot — the "unique on both sides" rule survives intact.
+landed in the same slot - the "unique on both sides" rule survives intact.
 
 The guard that remains is on the decoded side alone: `maxIndexChars`, eight
 million characters, with an `indexTruncated` flag when it is hit. It is
@@ -200,16 +200,16 @@ around ninety thousand characters and a few megabytes of typed array.
 ## The refusal signal
 
 On the validated book, 18,913 candidate anchors were found and 18,902 of
-them (99.94%) survived the monotonicity pass — about 386 anchors per
+them (99.94%) survived the monotonicity pass - about 386 anchors per
 thousand characters of text. A wrong pairing does not produce a worse
 alignment; it produces almost no anchors at all.
 
 So the density is the edition check. Below **2 monotone anchors per thousand
-characters** the matcher returns no timings at all — deliberately empty
+characters** the matcher returns no timings at all - deliberately empty
 rather than sparse, because a caller that trusted a handful of coincidental
-anchors would scatter the reader across the wrong audio — and the engine
+anchors would scatter the reader across the wrong audio - and the engine
 raises `AlignmentRefusedError`. The job does not fail: it records
-`Narration check failed — …` in the pair's evidence, sets the content score
+`Narration check failed - …` in the pair's evidence, sets the content score
 to zero, leaves the pair undecided, and waits for you.
 
 The margin between "correct book" and "refuse" is roughly two orders of
@@ -235,7 +235,7 @@ reads the ebook's own text instead, over the first 200,000 characters:
   transliterate, but it is not one of the ten book languages, so a book
   detected as Greek gets the English number rules.)
 - **Function words separate the Latin languages.** A few dozen of them per
-  language — `il` and `gli` are only Italian, `het` only Dutch, `los`/`las`
+  language - `il` and `gli` are only Italian, `het` only Dutch, `los`/`las`
   only Spanish. Function words are the most frequent words in any language and
   they barely overlap between these seven. Content words would be a far worse
   signal, because a translated novel shares its proper nouns with every
@@ -257,24 +257,24 @@ language nobody can trace.
   copyright, dedications, "end of part one", an index: no anchors, so those
   sentences are reported as gaps and the reader refuses the handoff there
   rather than landing somewhere plausible-looking. Decoding the validated
-  book contiguously — hearing every second of it — still timed only 830 of its
+  book contiguously - hearing every second of it - still timed only 830 of its
   880 sentences; the other 50 were gaps or too far from an anchor to trust.
   Those fifty are not what sampling costs. They are what the narration does
   not contain.
 - **Abridged editions are refused,** not silently half-aligned. A softer
   version of the same signal is surfaced before refusal: when the narration
-  ratio — the decoded characters, divided back out by the fraction of the
+  ratio - the decoded characters, divided back out by the fraction of the
   audio that was actually decoded, so the number means the same thing at
-  either precision — falls below 0.7, the pairing page warns that the
+  either precision - falls below 0.7, the pairing page warns that the
   narration covers noticeably less text than the ebook. (The validated ratio
   on a matching pair was 0.937.)
 - **Digits and abbreviations are not in the model's alphabet.** The narrator
   says "twenty five" where the ebook has "25", and the model cannot spell
   "25". The romanizer therefore expands numbers, currency, percent, "&" and
   a table of abbreviations into words in the book's own language before
-  transliterating them. The expansions are deliberately conservative — a
+  transliterating them. The expansions are deliberately conservative - a
   wrong expansion injects letters the narrator never said, which is worse
-  than no expansion — so there are known gaps, listed in full at the top of
+  than no expansion - so there are known gaps, listed in full at the top of
   `server/src/alignment/ctc/romanize.ts`. The notable ones: integers above
   9999, years read as digit pairs ("1984" spells as a cardinal, the narrator
   probably said "nineteen eighty four"), Roman numerals, times, phone
@@ -286,7 +286,7 @@ language nobody can trace.
   `garcon` while the narrator says /ɡaʁsɔ̃/. Deep orthographies (English,
   French) therefore anchor on fewer, longer words than shallow ones. Hebrew
   is aligned on its consonant skeleton, because unpointed text gives no way
-  to recover the vowels — long words still anchor well, short ones do not, so
+  to recover the vowels - long words still anchor well, short ones do not, so
   Hebrew yields fewer anchors than a Latin-script book of the same length.
 - **Empty sentences are never timed.** A heading, or a sentence that
   romanized to nothing, has no characters to anchor.
@@ -310,7 +310,7 @@ language nobody can trace.
 
 Switching from the page to the narration is not symmetric. Landing a few
 seconds early costs the reader a sentence they have already read. Landing a
-few seconds late plays them a plot turn they have not reached — and no amount
+few seconds late plays them a plot turn they have not reached - and no amount
 of precision elsewhere makes up for that.
 
 So every segment carries `uncertaintyMs`, the aligner's own account of how far
@@ -318,7 +318,7 @@ its start could be wrong, and `resolveEbookToAudio` subtracts it before handing
 a position to the player (capped at 45 seconds, past which it is not a safety
 margin but a different scene). The reader page already sends the _first_
 sentence visible on the page rather than the last, so the two together put the
-handoff at or slightly above the top of the screen — the line that just
+handoff at or slightly above the top of the screen - the line that just
 scrolled away.
 
 Measured on the sampled run of the validated book, that leaves 2 sentences out
@@ -332,13 +332,13 @@ erring toward the earlier one is already what the lookup does.
 An alignment is expensive and, kept only in SQLite, it is also disposable: a
 from-scratch redeploy throws away every CPU-hour the user has ever paid for.
 So a finished alignment is also written out as a file, into an **alignment
-folder** the operator mounts from their own library — the one folder ReadPort
+folder** the operator mounts from their own library - the one folder ReadPort
 ever writes to. A fresh install reads that folder back after its first scan
 and is immediately as capable as the install that was wiped.
 
 The write target is the first configured folder (`alignmentDirs` /
 `RP_ALIGNMENT_DIRS`) that will actually accept a file. If none will, the
-alignment is not lost — it falls back to `alignments/` inside the data
+alignment is not lost - it falls back to `alignments/` inside the data
 directory and logs what to fix. That fallback survives a container restart but
 not a rebuild that discards the volume, which is exactly why the setup wizard
 asks for a folder in the library instead.
@@ -379,7 +379,7 @@ title it has ever had.
 }
 ```
 
-The segments are **columnar** — eight parallel arrays rather than an array of
+The segments are **columnar** - eight parallel arrays rather than an array of
 objects. On a real 16,000-segment book that is 950 KiB raw / 309 KiB gzipped,
 against 2450 KiB / 433 KiB for objects: the repeated key names dominate the
 raw size and, because gzip is matching them over a 32 KiB window, much of the
@@ -390,7 +390,7 @@ portable format worth having: a self-hoster can gunzip the file and read it.
 The counts and titles are not part of the file's identity. They are there so
 an import can say "this file is for a 412-sentence book and yours has 1,208"
 instead of a bare "no match", and `trackDurationsMs` is kept in full rather
-than only hashed for the same reason — a near-miss should be diagnosable.
+than only hashed for the same reason - a near-miss should be diagnosable.
 
 Files are written to a dotfile temporary in the same directory, fsynced, and
 renamed into place. The folder is the user's library: it is watched by their
@@ -400,7 +400,7 @@ problem, it gets replicated.
 ### The two fingerprints
 
 Matching a file back to a library is by **fingerprint, never by path, id or
-filename** — none of those survive a reinstall. Each fingerprint carries its
+filename** - none of those survive a reinstall. Each fingerprint carries its
 algorithm as a prefix, so the algorithm can be replaced later without a format
 bump: a reader that meets `t2:` knows only that it cannot compare it, which is
 precisely what stops it from confidently mis-matching a book.
@@ -416,12 +416,12 @@ precisely what stops it from confidently mis-matching a book.
   computed during indexing, where the sentence index is built, and stored on
   the book. An id folds in the spine index and the normalized sentence text,
   so a differently built EPUB of the same title produces different ids and so
-  a different fingerprint — which is the right answer, because its sentences
+  a different fingerprint - which is the right answer, because its sentences
   are not the ones these timings were measured against.
 - **`a1:` the timeline.** SHA-256 over the track count and every track's
   duration rounded to 100 ms, comma-joined; again the first 32 hex characters.
-  Duration-based and not byte-based on purpose: retagging an audiobook —
-  fixing the narrator, embedding cover art, renaming chapters — rewrites every
+  Duration-based and not byte-based on purpose: retagging an audiobook -
+  fixing the narrator, embedding cover art, renaming chapters - rewrites every
   file and must not cost the user their alignment, because none of it moves a
   single word of narration. The rounding absorbs the last-frame disagreements
   between ffprobe versions and container remuxes, which are a few milliseconds
@@ -469,7 +469,7 @@ the machine the file came from. The provenance recorded with it says where it
 came from and when.
 
 Going the other way, `export-alignments` writes out every alignment this
-server holds that is not already on disk — the one-click answer for an install
+server holds that is not already on disk - the one-click answer for an install
 that has been aligning books since before there was anywhere to put them. It
 skips by pair key, so running it twice is cheap.
 
@@ -485,7 +485,7 @@ copy that could not be written is worth a line in the log and nothing more.
 | What it is  | Meta's MMS-300M forced aligner, exported to ONNX (int8) by `onnx-community/mms-300m-1130-forced-aligner-ONNX` |
 | Size        | 317 MB, plus a 351-byte `vocab.json` and a 2.1 KB `config.json`                                               |
 | Languages   | all ten, from the one download                                                                                |
-| **Licence** | **CC-BY-NC-4.0 — non-commercial**                                                                             |
+| **Licence** | **CC-BY-NC-4.0 - non-commercial**                                                                             |
 
 It is the only model ReadPort uses and the only entry in the catalog. Because
 it works on a romanized character stream rather than on words, the same file
@@ -497,7 +497,7 @@ term that is not AGPL-compatible in spirit. ReadPort itself is AGPL-3.0 and
 ships no model; this one is fetched from Hugging Face on an explicit admin
 click, and the licence is shown on the card **before** the download starts.
 For personal and household use it is fine. If you are running ReadPort in a
-commercial setting, do not install it — and note that without it nothing on
+commercial setting, do not install it - and note that without it nothing on
 this server can compute an alignment; the only timings it will ever have are
 the ones it imports from a folder of `.rpalign` files.
 

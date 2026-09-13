@@ -4,7 +4,7 @@ import posix from 'node:path/posix';
 import { Unzip, UnzipInflate } from 'fflate';
 
 /**
- * Bounded, streaming ZIP extraction for EPUBs — to disk, never to memory.
+ * Bounded, streaming ZIP extraction for EPUBs - to disk, never to memory.
  *
  * The archive is read from disk in small chunks, inflated entry-by-entry,
  * and every decompressed chunk is written straight to a private file under
@@ -12,7 +12,7 @@ import { Unzip, UnzipInflate } from 'fflate';
  * chunk of any entry held in memory, and the aggregate decompressed output
  * lives on disk only. Every limit is enforced on actual streamed bytes (not
  * on header claims, which a crafted zip can lie about), and a violation
- * aborts extraction — deleting the partial entry — before the next chunk is
+ * aborts extraction - deleting the partial entry - before the next chunk is
  * accepted. Entry names that are absolute or escape upward are dropped at
  * extraction time; stored files use opaque generated names so a hostile
  * entry name can never influence the on-disk path.

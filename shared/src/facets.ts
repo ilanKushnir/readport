@@ -87,8 +87,8 @@ export interface FacetGroup {
 /**
  * The wire form of a filter: `kind:value`.
  *
- * The value may itself contain a colon — "Publisher: A: An Imprint" is a real
- * thing — so only the first one separates, and parsing splits once from the
+ * The value may itself contain a colon - "Publisher: A: An Imprint" is a real
+ * thing - so only the first one separates, and parsing splits once from the
  * left rather than joining a split array back together.
  */
 export function formatFacet(kind: FacetKind, value: string): string {
@@ -112,7 +112,7 @@ export const MIN_FACET_VALUES = 2;
  *
  * Stored per person, because two people sharing a server browse differently:
  * one wants genres, the other only ever looks for a narrator. An empty list
- * means "not chosen yet" and the defaults below apply — distinct from a list
+ * means "not chosen yet" and the defaults below apply - distinct from a list
  * the reader has deliberately emptied, which is `[]` with `chosen: true`.
  */
 export interface SidebarPrefs {
@@ -136,7 +136,7 @@ export const DEFAULT_SIDEBAR_FACETS: FacetKind[] = ['genre', 'series'];
  * What to show, given what this reader chose and what this library has.
  *
  * A choice is honoured exactly, including the choice to show nothing: a
- * reader who unticked everything meant it. Only the *defaults* adapt — a
+ * reader who unticked everything meant it. Only the *defaults* adapt - a
  * library with no genres and no series would otherwise get an empty Browse
  * section explaining that nothing was chosen, when in fact nothing was ever
  * asked. There, the first two groupings the library does support stand in.

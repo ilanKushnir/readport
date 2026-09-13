@@ -7,7 +7,7 @@ import { setupProgress } from './setupProgress';
  * version of this never left "Reading your shelves".
  *
  * Reported from a live 178-book library: scanning and indexing had finished,
- * the alignment model was fully downloaded, every job had succeeded — and the
+ * the alignment model was fully downloaded, every job had succeeded - and the
  * wizard still showed a 4% bar that never moved.
  */
 

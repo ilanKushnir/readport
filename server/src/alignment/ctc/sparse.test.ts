@@ -15,7 +15,7 @@ import {
  * The probe schedule, tested without the model.
  *
  * Everything here is arithmetic over anchors and windows, and it decides how
- * much of a book gets listened to — so it is worth pinning down precisely,
+ * much of a book gets listened to - so it is worth pinning down precisely,
  * particularly the refinement rule, whose whole job is to notice the places
  * where interpolating between two anchors would be a lie.
  */
@@ -108,7 +108,7 @@ describe('refineWindows', () => {
     expect(out[0]!.startMs).toBeLessThan(500_000);
   });
 
-  it('probes an unanchored head — the part no measured rate can describe', () => {
+  it('probes an unanchored head - the part no measured rate can describe', () => {
     // Nothing matched for the first four minutes: a foreword, a credit, or a
     // probe that landed in music.
     const anchors = anchorsAtRate(6, 0.015, 240_000);

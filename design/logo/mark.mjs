@@ -3,8 +3,8 @@
  *
  * A bookmark ribbon with a play triangle knocked out of it: the two things the
  * app does, in one shape. It is drawn from numbers rather than traced from an
- * image so it stays crisp at 16px, and the triangle is a *hole* — punched with
- * the even-odd rule — so the mark reads correctly in one colour on any ground.
+ * image so it stays crisp at 16px, and the triangle is a *hole* - punched with
+ * the even-odd rule - so the mark reads correctly in one colour on any ground.
  *
  * This file is the single source of truth. `scripts/generate-icons.mjs` writes
  * the favicon and the PNG icon set from it, and `web/src/components/icons.tsx`

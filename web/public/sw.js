@@ -10,7 +10,7 @@
    - /api/books/* GETs: offline-cache first (populated only by explicit
      per-title downloads), then network. Audio tracks are stored as
      fixed-size chunks and served back with correct 206/Content-Range
-     semantics. Nothing else under /api is ever cached — progress and auth
+     semantics. Nothing else under /api is ever cached - progress and auth
      always hit the network and queue in IndexedDB when it is unreachable. */
 
 importScripts('/sw-range.js');
@@ -42,7 +42,7 @@ let cacheOwnedByViewer = true;
    per-user content is served; a 401/403 purges the offline cache, notifies
    open pages, and cached serving stops. Offline keeps the last known state
    so deliberate airplane-mode reading continues to work (a device that is
-   already offline learns about revocation only on reconnect — documented
+   already offline learns about revocation only on reconnect - documented
    in docs/security.md). */
 const authGate = self.rpAuth.createAuthGate({
   fetchFn: async () => {
@@ -77,8 +77,8 @@ const authGate = self.rpAuth.createAuthGate({
  * contents may be served to them.
  *
  * A shared device (a family tablet, a kiosk) can move from one account to
- * the next without a single request ever failing — reverse-proxy SSO has no
- * cookie and no logout, so nothing ever answers 401 — and the downloaded
+ * the next without a single request ever failing - reverse-proxy SSO has no
+ * cookie and no logout, so nothing ever answers 401 - and the downloaded
  * books of whoever used it last carry that person's reading progress and
  * bookmarks. Content that cannot be shown to belong to the current account
  * is therefore removed from the device rather than served, and the emptied
@@ -201,7 +201,7 @@ self.addEventListener('fetch', (event) => {
 
   // Other book content: only served from cache when explicitly downloaded,
   // and only while the session is not known to be revoked. When the gate
-  // refuses, the request falls through to the network — whose 401 lets the
+  // refuses, the request falls through to the network - whose 401 lets the
   // open app discover the revocation and purge.
   if (DETAIL_RE.test(url.pathname)) {
     event.respondWith(
@@ -223,7 +223,7 @@ self.addEventListener('fetch', (event) => {
             }
             return res;
           }
-          // The server answered, badly — a container restart, a failing
+          // The server answered, badly - a container restart, a failing
           // proxy. A downloaded title stays readable through it. A 401/403
           // or 404 is a real answer and is passed through, so the app can
           // purge or show the title as gone.
@@ -288,7 +288,7 @@ self.addEventListener('fetch', (event) => {
 });
 
 /**
- * Store an app shell as the offline navigation fallback — but only a real
+ * Store an app shell as the offline navigation fallback - but only a real
  * shell for THIS build. A newer deploy's index.html points at hashed
  * bundles that this build's cache does not hold and never will, so keeping
  * it would turn the next offline cold start into a blank page.
@@ -389,7 +389,7 @@ async function serveTrack(req, url) {
 function offlineFallback() {
   return new Response(
     '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width">' +
-      '<title>ReadPort — offline</title>' +
+      '<title>ReadPort - offline</title>' +
       '<body style="font-family:system-ui;background:#F6F1E8;color:#1C1917;display:grid;place-items:center;min-height:100dvh;margin:0">' +
       '<div style="text-align:center;padding:24px"><h1 style="font-size:20px">You are offline</h1>' +
       '<p>ReadPort could not load. Reconnect once, and the app will work offline afterwards.</p></div>',

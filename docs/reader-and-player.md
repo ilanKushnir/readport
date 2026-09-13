@@ -11,8 +11,8 @@ never modified.
 Derived indexes are immutable versioned directories: each (re-)index
 attempt extracts into its own directory and a single atomic database
 pointer switch makes it active, so the book stays readable throughout a
-re-index. Old versions are garbage-collected lazily — retired at the
-switch and deleted only after a conservative grace period — so a request
+re-index. Old versions are garbage-collected lazily - retired at the
+switch and deleted only after a conservative grace period - so a request
 that resolved the previous version just before the switch still reads it
 successfully.
 
@@ -31,7 +31,7 @@ Implemented:
   percentage, no chapter text), or **Hidden**. It tracks live in scroll mode
   as well as page mode.
 - Themes: Auto (follows the system appearance), Paper, Sepia, Night, High
-  contrast — independent of the app theme; the iPhone status bar follows the
+  contrast - independent of the app theme; the iPhone status bar follows the
   reader theme in standalone mode. A page-dimming slider (screen brightness
   without leaving the app) sits next to the text-size stepper.
 - Typography: Literata (bundled, OFL), Iowan Old Style, Charter, Palatino,
@@ -123,8 +123,8 @@ bookmarks, highlights and notes in book order with chapter, position and
 excerpt, each with jump and delete. The caret exists only once there is
 something behind it, so an unmarked book shows the ribbon on its own.
 
-Selecting text offers five highlight colours — amber, rose, plum, sky and
-sand — as five swatches, and picking one _is_ the act of highlighting: there
+Selecting text offers five highlight colours - amber, rose, plum, sky and
+sand - as five swatches, and picking one _is_ the act of highlighting: there
 is no Highlight button to press first, so highlighting in a chosen colour is
 one tap, the same as highlighting at all. They are muted tints of the app's own
 warm palette rather than the saturated yellows most readers reach for, on the
@@ -133,8 +133,8 @@ dark reader themes carry their own values for the three that would otherwise
 glow. The colour is stored on the annotation, so it is the same colour on
 every device.
 
-A note is drawn differently on purpose — a dashed underline in the accent
-colour rather than a wash — because a note marks a place to come back to and
+A note is drawn differently on purpose - a dashed underline in the accent
+colour rather than a wash - because a note marks a place to come back to and
 a highlight marks a passage worth re-reading, and the two have to be tellable
 apart without being read.
 
@@ -144,7 +144,7 @@ elements: the chapter's DOM comes from the book and must not be rewritten, and
 a wrapper would shift the character offsets that everything else in the reader
 is addressed by. The cost of that choice is that a highlight is paint, with
 nothing under the finger to receive a click, so the hit test runs the other
-way round — the point becomes a character offset and the reader asks which
+way round - the point becomes a character offset and the reader asks which
 mark covers it (`web/src/reader/marks.ts`). Where marks overlap the shortest
 wins: a note written inside a long highlight is both the more specific target
 and the one that cannot be reached any other way. A tap that lands on a mark
@@ -174,12 +174,12 @@ left; it stays until used or dismissed.
 Switching moves you between two surfaces; **read-along** puts both on one.
 Press **Read along** in the reader of an aligned pair and the narration starts
 at the sentence in front of you, the spoken sentence is washed as it is read,
-and the page turns itself to keep up. The player is untouched by this — this is
+and the page turns itself to keep up. The player is untouched by this - this is
 the reader, with a voice.
 
 The transport is deliberately four controls: play/pause, back (the same skip
-length the player uses), speed, and stop. Everything else a listener wants —
-sleep timer, chapter list, bookmarks — already lives in the player, one tap
+length the player uses), speed, and stop. Everything else a listener wants -
+sleep timer, chapter list, bookmarks - already lives in the player, one tap
 away. It sits inside the reader's bottom chrome and that chrome refuses to
 hide while it is there: you should never need two taps to stop a book that is
 talking.
@@ -191,7 +191,7 @@ through to the reader's own behaviour, so no existing gesture is lost.
 **Looking ahead is free.** Turning a page, scrolling, or jumping from the
 contents hands the wheel back to you, and the page stops following. It starts
 following again on its own the moment the voice reaches whatever page you went
-to — there is nothing to press, and the _Back to the voice_ button in the
+to - there is nothing to press, and the _Back to the voice_ button in the
 transport is there for when you would rather not wait.
 
 Where the alignment says nothing, read-along says so rather than guessing:
@@ -200,8 +200,8 @@ Where the alignment says nothing, read-along says so rather than guessing:
   pause does not make it blink;
 - past that, in a stretch with no timings, the wash is dropped and the
   transport reads _the narration is ahead of the timed text_;
-- a chapter with no timings at all — front matter, or one the aligner skipped
-  — is walked past rather than dead-ending the feature;
+- a chapter with no timings at all - front matter, or one the aligner skipped
+  - is walked past rather than dead-ending the feature;
 - a sentence the aligner never timed is never given an interpolated cue. An
   invented cue would put the wash on a line with exactly the same confidence
   as a measured one.
@@ -210,15 +210,16 @@ Listening this way records heartbeats against the **audiobook's** position as
 well as the ebook's, so opening the player afterwards resumes where the reading
 got to rather than where listening last stopped.
 
-The arithmetic — joining sentences to timings, deciding what is a pause and
+The arithmetic - joining sentences to timings, deciding what is a pause and
 what is a hole, and turning a book-absolute position into a file and an offset
-— is in `web/src/reader/readalong.ts`, pure and unit-tested.
+
+- is in `web/src/reader/readalong.ts`, pure and unit-tested.
 
 ## Two-way switching
 
 When a pair is aligned, the reader shows **Listen from here**, the player
 shows **Read from here**, and the book page and library hero offer
-**Listen/Read instead** — every one of them resolves your saved position
+**Listen/Read instead** - every one of them resolves your saved position
 through the alignment graph, so opening the other edition lands at the
 same place rather than at that edition's own last position. The precision
 is reported honestly instead of a blanket "exact" claim:
@@ -229,14 +230,14 @@ is reported honestly instead of a blanket "exact" claim:
   distance) is used instead;
 - **refusal with surrounding anchors** when the position lies in an explicit
   alignment gap, past the drift bound, or too far from any verified
-  sentence — the response then carries the nearest aligned points before and
+  sentence - the response then carries the nearest aligned points before and
   after, and the UI names them rather than silently jumping to an unrelated
   sentence.
 
 Refusals are not rare edge cases and are not a defect. The default forced
 aligner deliberately produces no timing where the narration and the text do
-not both exist — a title page, a copyright notice, a spoken chapter
-announcement, an index — so those regions are explicit gaps and the switch
+not both exist - a title page, a copyright notice, a spoken chapter
+announcement, an index - so those regions are explicit gaps and the switch
 says so instead of landing somewhere plausible but wrong. On the audiobook
 the engine was validated against, 830 of 880 sentences had timings
 (docs/alignment.md).

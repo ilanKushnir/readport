@@ -12,7 +12,7 @@ import { CANDIDATE_THRESHOLD, chooseRivalPairs, scorePair } from './score.js';
  * Three things went wrong together and all three are pinned here:
  *  - sharing an author was worth a quarter of the score, when someone who
  *    owns a dozen books by one writer scores 100% on every wrong combination;
- *  - a length ratio of 0.56 — an audiobook half as long as the text implies —
+ *  - a length ratio of 0.56 - an audiobook half as long as the text implies -
  *    passed a band that ran from 0.55 to 1.9 and scored full marks;
  *  - nothing made the candidates compete, so one file could be suggested
  *    against several others at once.
@@ -128,7 +128,7 @@ describe('chooseRivalPairs', () => {
   });
 
   it('keeps both when two are a genuine toss-up', () => {
-    // Two editions of the same book — a reissue, a boxed set — score within a
+    // Two editions of the same book - a reissue, a boxed set - score within a
     // hair of each other, and a person should be shown both.
     const out = chooseRivalPairs([p('e1', 'a1', 0.93), p('e1', 'a2', 0.91)]);
     expect(kept(out)).toEqual(['e1~a1', 'e1~a2']);
@@ -153,7 +153,7 @@ describe('chooseRivalPairs', () => {
   });
 
   it('lets a weaker pair through when the leader wants a different partner', () => {
-    // a1 is e1's best. e2 has only a2, more weakly — that is still e2's and
+    // a1 is e1's best. e2 has only a2, more weakly - that is still e2's and
     // a2's own best, so it survives on its own merits.
     const out = chooseRivalPairs([p('e1', 'a1', 0.95), p('e2', 'a2', 0.7)]);
     expect(kept(out)).toEqual(['e1~a1', 'e2~a2']);

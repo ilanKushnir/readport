@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest';
  * and threw `Invalid character in character class` in the console on every
  * page that rendered it. A pattern that does not compile is simply ignored, so
  * the username fields on the setup wizard, the invite page and the people page
- * silently accepted anything at all — the failure is invisible unless you have
+ * silently accepted anything at all - the failure is invisible unless you have
  * the console open.
  *
  * This walks the real source rather than testing a copy of the string, so a

@@ -4,14 +4,14 @@ All endpoints are same-origin JSON under `/api`, authenticated by session
 cookie except where noted. Mutating requests require the `x-rp-csrf: 1`
 header. Schemas are zod-validated; canonical types live in
 `shared/src` (`@readport/shared`). A role named below is a floor rather than
-an exact match — roles rank reader, curator, admin, and anything a curator may
+an exact match - roles rank reader, curator, admin, and anything a curator may
 do an admin may do too.
 
 ## Auth & setup
 
 | Method | Path                    | Notes                                                                                |
 | ------ | ----------------------- | ------------------------------------------------------------------------------------ |
-| GET    | `/api/health`           | public; liveness — `{status, version, time}`                                         |
+| GET    | `/api/health`           | public; liveness - `{status, version, time}`                                         |
 | GET    | `/api/setup/status`     | public; `{needsSetup, setupTokenSource, libraries, languages, defaultLanguage}`      |
 | POST   | `/api/setup/verify`     | public until first user exists; rate limited; checks the bootstrap token             |
 | POST   | `/api/setup/test-paths` | admin, or `x-rp-setup-token` header before setup; `{paths, kind?}` folder checks     |
@@ -23,8 +23,8 @@ do an admin may do too.
 | PATCH  | `/api/auth/me`          | own display name                                                                     |
 | POST   | `/api/auth/password`    | own password (current + new); revokes other sessions                                 |
 
-`libraries` in the status payload covers all three folder lists — `ebookDirs`,
-`audiobookDirs` and `alignmentDirs` — each with a flag saying whether an
+`libraries` in the status payload covers all three folder lists - `ebookDirs`,
+`audiobookDirs` and `alignmentDirs` - each with a flag saying whether an
 environment variable has pinned it, because the wizard shows a pinned folder
 rather than offering to edit it. `test-paths` takes the same `kind` vocabulary:
 an `alignment` folder is checked for writability as well as for readability,
@@ -75,7 +75,7 @@ step.
 
 A book summary carries `pair`, and a pair carries both `switchable` and
 `handoff`. They are not the same claim: `switchable` means a handoff is
-available at all, while `handoff` reports the honest numbers behind it —
+available at all, while `handoff` reports the honest numbers behind it -
 `coverage`, `meanConfidence` and `exactSentenceCoverage`. A client that shows
 one without the other will over-promise.
 
@@ -87,7 +87,7 @@ between is missing the one thing owning both editions is for. It is a table of
 precomputed answers rather than a copy of the alignment: for an audiobook it is
 sampled on a five-second grid, and the client always takes the entry at or
 before its position, so the rounding can only ever land the reader earlier in
-the text — the same direction the resolver's own margin errs in.
+the text - the same direction the resolver's own margin errs in.
 
 ## Progress & annotations
 
@@ -103,7 +103,7 @@ the text — the same direction the resolver's own margin errs in.
 A batch of progress events is a drained offline queue, not a form. Refusing all
 two hundred because one is malformed would lose the other hundred and
 ninety-nine and leave the client resending the same slice forever, so each bad
-event comes back named and rejected instead — a durable verdict the client can
+event comes back named and rejected instead - a durable verdict the client can
 act on by dropping it.
 
 `GET /api/annotations` exists separately from the per-book list because it
@@ -128,7 +128,7 @@ group carries its values and how many books hold each.
 
 Two rules are enforced here rather than in the client:
 
-- a grouping with fewer than two distinct values is not returned at all — one
+- a grouping with fewer than two distinct values is not returned at all - one
   publisher is not a way to browse anything;
 - books the scanner has marked `missing` are excluded throughout, so a genre
   never leads to an empty grid.
@@ -155,13 +155,13 @@ book's metadata. Nothing is ever written back to the library's files.
 
 Which groups appear is per person, not per server: two people share every book
 and no furniture. An empty `facets` with `chosen:true` means "show none" and is
-honoured; `chosen:false` means the defaults apply, and those adapt — a library
+honoured; `chosen:false` means the defaults apply, and those adapt - a library
 with no genres and no series gets the first two groupings it does support
 rather than an empty section.
 
 ## Shelves & reading list
 
-Personal furniture, one set per account. Not gated on role — the guard is
+Personal furniture, one set per account. Not gated on role - the guard is
 ownership: every statement is scoped `WHERE user_id = ?`, every shelf
 sub-resource resolves through one owned-shelf lookup, and a miss answers 404
 rather than 403 so a shelf id cannot be probed. Ordering uses a fractional
@@ -173,7 +173,7 @@ key, and a neighbour that moved underneath answers `409 stale-order`.
 | ------ | ----------------------------------------- | ---------------------------------------------------------------------------------- |
 | GET    | `/api/shelves`                            | the whole sidebar: automatic counts, own shelves, queue count + what is next       |
 | POST   | `/api/shelves`                            | `{name}`; `409 shelf-name-taken` (case-insensitive), `409 too-many-shelves`        |
-| PATCH  | `/api/shelves/:id`                        | `{name?, afterShelfId?}` — an ABSENT `afterShelfId` means "do not move"            |
+| PATCH  | `/api/shelves/:id`                        | `{name?, afterShelfId?}` - an ABSENT `afterShelfId` means "do not move"            |
 | DELETE | `/api/shelves/:id`                        | removes the shelf and its membership; no book, no file                             |
 | GET    | `/api/shelves/:id/books?sort=`            | `manual` (default) \| `title` \| `author` \| `added`; + `missingCount`             |
 | PUT    | `/api/shelves/:id/books/:bookId`          | idempotent add → `{added, count}`; optional `{afterBookId}`                        |
@@ -182,7 +182,7 @@ key, and a neighbour that moved underneath answers `409 stale-order`.
 | PATCH  | `/api/shelves/:id/books/:bookId/position` | `{afterBookId}`; null = first                                                      |
 | GET    | `/api/reading-list`                       | queue order, with notes; missing books reported not hidden                         |
 | PUT    | `/api/reading-list/:bookId`               | queue or re-place; `{position?, afterBookId?, note?}` → `{added, moved, position}` |
-| PATCH  | `/api/reading-list/:bookId`               | `{note}` — a note belongs to a place in the queue, not to a book                   |
+| PATCH  | `/api/reading-list/:bookId`               | `{note}` - a note belongs to a place in the queue, not to a book                   |
 | PATCH  | `/api/reading-list/:bookId/position`      | `{afterBookId}`; null = first                                                      |
 | DELETE | `/api/reading-list/:bookId`               | `{removed}`                                                                        |
 | GET    | `/api/books/:id/shelves`                  | `{shelfIds, onReadingList, readingListPosition}` for the book page                 |
@@ -192,14 +192,14 @@ The automatic shelves are NOT endpoints of their own: `filter=reading-now` is
 `GET /api/library?filter=`, so one code path still owns filtering, sorting and
 the missing-book exclusion. `both-formats` keeps one row per pair (the ebook
 side, or the audio side when the ebook is missing), because a title owned
-twice is one title. "On this device" has no endpoint at all — downloads live
+twice is one title. "On this device" has no endpoint at all - downloads live
 in one browser and only that browser can count them.
 
 `PUT /api/reading-list/:bookId` with a `position` or an `afterBookId` MOVES a
 book that is already queued; with an empty body it only queues one that is
 not. "Read next" has to mean the front of the queue even for a book sitting
 seventh, or the button is describing something other than what it does. Every
-`position` reported back — here and in `readingListPosition` — counts the list
+`position` reported back - here and in `readingListPosition` - counts the list
 the reader can actually open, so a queued book on an unmounted drive holds its
 rank without pushing the visible numbers along.
 
@@ -207,15 +207,15 @@ rank without pushing the visible numbers along.
 
 | Method | Path                                             | Notes                                                       |
 | ------ | ------------------------------------------------ | ----------------------------------------------------------- |
-| GET    | `/api/pairs`                                     | `{pairs, summary}` — evidence, compat, handoff, last job    |
+| GET    | `/api/pairs`                                     | `{pairs, summary}` - evidence, compat, handoff, last job    |
 | GET    | `/api/pairs/:id` / `/api/pairs/:id/alignment`    | detail; per-minute confidence                               |
 | POST   | `/api/pairs/link`                                | curator; manual link `{ebookId, audioId}`                   |
 | POST   | `/api/pairs/:id/confirm` \| `reject` \| `unlink` | curator; decisions are durable                              |
 | POST   | `/api/pairs/:id/language`                        | curator; `{language}` or `{language: null}` to clear        |
 | POST   | `/api/pairs/:id/align`                           | curator; queue this pair → `{jobId, queued}`                |
 | POST   | `/api/pairs/align-many`                          | curator; `{pairIds: []}` → `{queued, skipped}`              |
-| POST   | `/api/pairs/:id/resolve`                         | `{from: Locator}` → `{to, resolution}` — the two-way switch |
-| GET    | `/api/pairs/:id/segments/:spineIdx`              | one chapter's timings — what read-along reads               |
+| POST   | `/api/pairs/:id/resolve`                         | `{from: Locator}` → `{to, resolution}` - the two-way switch |
+| GET    | `/api/pairs/:id/segments/:spineIdx`              | one chapter's timings - what read-along reads               |
 
 Each pair reports its `language` as three values rather than one, because the
 useful thing to show is not just the answer but where it came from: `override`
@@ -231,8 +231,8 @@ should get it even on a server configured to match and wait. Both it and
 and the same live progress apply; `queued: false` means one was already
 waiting, not that anything failed.
 
-`summary` on `GET /api/pairs` describes exactly what a "Start all" would queue —
-linked pairs with no alignment and nothing already in the queue — as
+`summary` on `GET /api/pairs` describes exactly what a "Start all" would queue -
+linked pairs with no alignment and nothing already in the queue - as
 `pendingPairs` and `pendingAudioMs`, with `candidatePairs` counting suggestions
 still awaiting a decision. `speedRatio` is seconds of audio per second of wall
 clock, measured from real runs on this machine; while it is `0` there has been
@@ -253,7 +253,7 @@ uses to decide how far to rewind before playing.
 
 Finished alignments live as files in a folder the operator mounts from their
 own library, which is the only place ReadPort writes. Both jobs run by
-themselves — import after every scan, export when an alignment finishes — so
+themselves - import after every scan, export when an alignment finishes - so
 these two routes are for the operator who has just mounted another folder and
 does not want to wait for the next scan. Both are deduplicated, so pressing the
 button twice queues one job.
@@ -261,7 +261,7 @@ button twice queues one job.
 Where those files are, and whether they can be written, is reported by
 `GET /api/settings` under `alignments`: `{dirs, writeDir, files, bytes,
 problem}`. `writeDir` is the first folder that accepted a test write, and
-`problem` is a sentence to show the operator when none of them did — alignments
+`problem` is a sentence to show the operator when none of them did - alignments
 then fall back to the data directory, so nothing is lost, but they stop being
 portable until the mount is fixed.
 
@@ -281,17 +281,17 @@ string; with no body it checks the roots the server would use today.
 The response is `{ok, checks[], modelsDir, aligner}`. Each check is
 `{id, label, state: 'ok'|'warn'|'fail', detail, fix?}` with a concrete
 `detail` (a version, a path, a byte count) and a `fix` whenever the state is
-not `ok`. `ok` is true when no check failed — a `warn` does not sink it. The
+not `ok`. `ok` is true when no check failed - a `warn` does not sink it. The
 checks are `audio-tools` (ffmpeg/ffprobe), `onnx-runtime` (the native module
 actually loads on this CPU), `aligner-model`, `disk`, `writable`, `libraries`
 and `alignments`. Two of them can only ever `warn`. A missing model is one:
 everything else about the container is fine and the download is one click
 away. An alignment folder that will not take a file is the other, and it is
-the one people get wrong — every other library line in the stock compose file
-ends in `:ro` — but a book still aligns without it, so the honest verdict is
+the one people get wrong - every other library line in the stock compose file
+ends in `:ro` - but a book still aligns without it, so the honest verdict is
 that the timings will not survive the container, not that the container is
 broken. `aligner`
-summarises the catalog entry — id, label, `licence`, `note`, `sizeBytes` across
+summarises the catalog entry - id, label, `licence`, `note`, `sizeBytes` across
 **all** its files, `installed`, live `download` state and `lastError`.
 
 ## The alignment model
@@ -314,12 +314,12 @@ the settings page has to be able to tell "not downloaded" apart from
 "downloaded, but this build cannot run it on this CPU".
 
 `languages[]` is the shared language catalog (`code`, `label`, `native`). It
-is not a list of things to download — the one model covers all of them — but
+is not a list of things to download - the one model covers all of them - but
 the set a client may offer as a default language or as a per-pair override,
 and the set `POST /api/pairs/:id/language` validates against.
 
 Each entry in `models[]` is the catalog's `ModelSpec`
-(`server/src/alignment/model.ts` — `id`, `label`, `licence`, `url`, `file`,
+(`server/src/alignment/model.ts` - `id`, `label`, `licence`, `url`, `file`,
 `sizeBytes`, `extraFiles`, `note`) plus `installed`, `installedBytes`,
 `download` (live job state or `null`) and `lastError`. `licence` is always
 present and clients must display it before the download button: today's model
@@ -334,7 +334,7 @@ about:
   its published size, so a truncated or partial download never reads as
   installed.
 - The download job fetches the small companions first, then streams the large
-  file to `<file>.part` with resumable HTTP Range and renames on completion —
+  file to `<file>.part` with resumable HTTP Range and renames on completion -
   so a finished big file is never left without the metadata that makes it
   usable.
 - `installedBytes` and `sizeBytes` describe the **primary file only**; the

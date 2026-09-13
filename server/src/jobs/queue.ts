@@ -7,7 +7,7 @@ import { newId } from '../util/ids.js';
  * unique lease token and expiry; every subsequent write for that job
  * (progress, checkpoint, finish, failure) is conditional on still holding
  * the active lease. Stale-job recovery reclaims only jobs whose lease has
- * expired, and a reclaimed job gets a fresh token — so a worker that was
+ * expired, and a reclaimed job gets a fresh token - so a worker that was
  * merely slow (not dead) can no longer double-run or clobber a job that was
  * handed to someone else.
  */
@@ -68,7 +68,7 @@ export function enqueueJob(
 
 /** Job types that hold a CPU for minutes or more. */
 export const HEAVY_JOB_TYPES = ['align'] as const;
-/** Long network transfers (gigabyte model files) — cheap on CPU, slow on the clock. */
+/** Long network transfers (gigabyte model files) - cheap on CPU, slow on the clock. */
 export const DOWNLOAD_JOB_TYPES = ['model-download'] as const;
 export type Lane = 'heavy' | 'download' | 'light';
 
@@ -180,7 +180,7 @@ export function cancelJob(db: DB, id: string): boolean {
 
 /**
  * Hand a running job back to the queue without burning its attempt as a
- * failure — used when the process is shutting down under a job (a container
+ * failure - used when the process is shutting down under a job (a container
  * restart mid-alignment is not the job's fault). Only the lease holder
  * may do this.
  */
@@ -222,7 +222,7 @@ export function retryJob(db: DB, id: string): boolean {
  * extends the lease in the same conditional UPDATE, so a write performed
  * immediately after it cannot race the stale-job sweeper. It FAILS CLOSED:
  * a lost lease, a reclaimed job, or a database error that prevents
- * confirmation all throw LeaseLostError — an attempt that cannot prove it
+ * confirmation all throw LeaseLostError - an attempt that cannot prove it
  * still owns the job is not allowed to write.
  *
  * `heartbeat()` is the worker's background renewal. Transient renewal errors
@@ -248,7 +248,7 @@ export function makeLeaseGuard(db: DB, job: Pick<JobRow, 'id' | 'lease_token'>):
     try {
       held = renewLease(db, job.id, job.lease_token);
     } catch {
-      return false; // could not confirm — caller decides how closed to fail
+      return false; // could not confirm - caller decides how closed to fail
     }
     if (!held) {
       lost = true;
@@ -305,7 +305,7 @@ export function recoverStaleJobs(db: DB): number {
  * Drop long-finished jobs.
  *
  * The table was append-only, and the pairing page scans it with a LIKE on the
- * payload for every pair on a three-second poll — so a server that has been
+ * payload for every pair on a three-second poll - so a server that has been
  * running for months pays for every alignment it ever ran, on every poll. A
  * week is enough history for the processing view, which only ever shows what
  * is live plus a short tail.

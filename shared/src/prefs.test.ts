@@ -13,8 +13,8 @@ import {
 
 /**
  * The judgement this module encodes is which preferences follow the reader and
- * which stay with the screen. Getting it wrong is not a crash — it is a phone
- * quietly resizing the type on a desktop — so it is worth pinning down.
+ * which stay with the screen. Getting it wrong is not a crash - it is a phone
+ * quietly resizing the type on a desktop - so it is worth pinning down.
  */
 
 const T1 = '2026-01-01T00:00:00.000Z';

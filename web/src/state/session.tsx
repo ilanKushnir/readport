@@ -38,8 +38,8 @@ const Ctx = createContext<SessionCtx>({
 export const useSession = () => useContext(Ctx);
 
 /**
- * A network that accepts the connection but never answers — captive portal,
- * half-up VPN, a wedged server — makes fetch hang instead of rejecting. The
+ * A network that accepts the connection but never answers - captive portal,
+ * half-up VPN, a wedged server - makes fetch hang instead of rejecting. The
  * session check must not hold the whole app on a loading spinner for it:
  * downloaded titles are on this device and readable without an answer. Only
  * this request is bounded; content requests must stay open long enough for
@@ -76,7 +76,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       if (isUnauthorized(err)) {
         // Session expired or revoked: logout-as-revocation removes the
         // offline copies of server content this browser held for the
-        // signed-out user (docs/security.md). Awaited — revocation fails
+        // signed-out user (docs/security.md). Awaited - revocation fails
         // closed before the login screen appears. (The global unauthorized
         // handler has already purged once inside api(); this is idempotent
         // belt and braces for the /api/auth/me path.) Un-synced checkpoints
@@ -103,7 +103,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   // Fail-closed revocation, from either discovery path:
   //  - ANY API request answered 401 runs this handler (awaited inside the
-  //    fetch wrapper) — downloads aborted, offline content purged — before
+  //    fetch wrapper) - downloads aborted, offline content purged - before
   //    the caller sees the error. It must never call api() (see the handler
   //    contract in api/client.ts), so no flush is attempted here; the queue
   //    is kept and delivered when this account signs in again.
@@ -141,7 +141,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     } finally {
       // Logout removes this browser's offline book content and per-user
       // state; a fresh login re-downloads what is wanted (docs/security.md).
-      // The queue goes too — but only here, after the flush above had its
+      // The queue goes too - but only here, after the flush above had its
       // chance, because signing out is a deliberate "leave nothing behind".
       await purgeOfflineData().catch(() => {});
       await purgeProgressQueue().catch(() => {});
@@ -153,7 +153,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   // Connectivity came back while the app was running in offline mode: pick
   // the session back up so the library, covers and sync resume on their own
   // instead of waiting for the reader to guess and reload. Coming back to
-  // the tab counts too — a captive portal that has since been signed into
+  // the tab counts too - a captive portal that has since been signed into
   // never fires an 'online' event.
   useEffect(() => {
     if (phase !== 'offline') return;
@@ -185,7 +185,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             void claimProgressQueue(u.id);
             setPhase('ready');
             // Pick up server-side setup state (needsLibraries) that only
-            // /api/auth/me reports — otherwise a fresh sign-in lands on an
+            // /api/auth/me reports - otherwise a fresh sign-in lands on an
             // empty library instead of the unfinished wizard.
             void refresh();
           }

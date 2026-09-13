@@ -15,7 +15,7 @@ function errorText(err: unknown, fallback: string): string {
     case 'username-taken':
       return 'That username is already taken.';
     case 'last-admin':
-      return 'This is the last active admin — promote someone else first.';
+      return 'This is the last active admin - promote someone else first.';
     case 'self-lockout':
       return 'You cannot remove your own admin access.';
     case 'proxy-managed':
@@ -414,7 +414,7 @@ function InviteSheet({
             className="input"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Optional — shown on the invite"
+            placeholder="Optional - shown on the invite"
           />
         </div>
         <div className="field">

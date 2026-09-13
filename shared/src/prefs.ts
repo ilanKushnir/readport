@@ -4,7 +4,7 @@ import { z } from 'zod';
  * Personal preferences, and which of them belong to the person rather than to
  * the screen in front of them.
  *
- * Everything here follows a reader between their devices — that is the point.
+ * Everything here follows a reader between their devices - that is the point.
  * But not everything *should*. A type size chosen on a phone held at arm's
  * length is the wrong size on a 27-inch monitor, and two-page spreads are
  * meaningless on either. Pushing one number to both places is worse than not
@@ -51,7 +51,7 @@ export const readerPrefsSchema = z.object({
    * How a page turn looks.
    *
    * 'slide' moves the page across, 'fade' crosses it over without travel for
-   * anyone the movement bothers, and 'instant' does neither — which is also
+   * anyone the movement bothers, and 'instant' does neither - which is also
    * what everyone gets when the system asks for reduced motion.
    */
   pageTurn: z.enum(['slide', 'fade', 'instant']),
@@ -87,7 +87,7 @@ export const DEFAULT_READER_PREFS: ReaderPrefs = {
  * Size, leading and margins are how big the text has to be to read at this
  * distance; mode and columns are what the shape of the screen allows;
  * brightness is the room; the progress bar is how much chrome fits. Everything
- * NOT listed here — theme, typeface, weight, justification, hyphenation — is
+ * NOT listed here - theme, typeface, weight, justification, hyphenation - is
  * what the reader likes, and follows them everywhere.
  */
 export const PER_DEVICE_READER_KEYS = [
@@ -152,7 +152,7 @@ export function mergeReaderPrefs(
  * Fold a complete set of preferences back into the two buckets.
  *
  * Only the keys that differ from the defaults are stored, so a reader who
- * never touched the margins does not pin them — and a later change to a
+ * never touched the margins does not pin them - and a later change to a
  * default reaches them instead of being silently overridden by a copy of the
  * old one.
  */
@@ -199,7 +199,7 @@ export function reconcileReaderPrefs(
 /* ------------------------------------------------------------- playback */
 
 /**
- * How a book sounds, which is about the narrator and not about the phone —
+ * How a book sounds, which is about the narrator and not about the phone -
  * so all of it is shared. Per-book speed is capped: it is a convenience, not
  * a record worth growing without limit.
  */

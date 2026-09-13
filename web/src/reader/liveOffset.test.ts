@@ -4,7 +4,7 @@ import { type TextMap } from './textmap';
 
 /**
  * Lifecycle checkpoints in scroll mode must persist the CURRENT viewport
- * position from live scroll geometry — not the 600ms-debounced ref, which
+ * position from live scroll geometry - not the 600ms-debounced ref, which
  * is stale when pagehide fires inside the debounce window.
  */
 

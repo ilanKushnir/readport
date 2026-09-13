@@ -38,7 +38,7 @@ if (config.inlineWorker) {
   worker = startWorker(ctx, config.jobConcurrency);
   ctx.log.info(`Inline worker started (concurrency ${config.jobConcurrency})`);
 } else {
-  ctx.log.info('Inline worker disabled — run the dedicated worker container');
+  ctx.log.info('Inline worker disabled - run the dedicated worker container');
 }
 
 // Initial scan if libraries are configured and DB has users already.

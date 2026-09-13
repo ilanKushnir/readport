@@ -2,9 +2,9 @@
 
 ## Precedence
 
-1. **Environment variables** (`RP_*`) — pin values in Compose; the settings
+1. **Environment variables** (`RP_*`) - pin values in Compose; the settings
    they pin are shown read-only ("env") in the admin UI.
-2. **In-app admin settings** — stored in the database, editable in
+2. **In-app admin settings** - stored in the database, editable in
    Settings; only for keys not pinned by env.
 3. **Built-in defaults.**
 
@@ -21,12 +21,12 @@ bundled `docker-compose.yml` reads.
 | -------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `RP_PORT`                  | `8383`                             | HTTP port.                                                                                                                                                                                              |
 | `RP_HOST`                  | `127.0.0.1` (image sets `0.0.0.0`) | Bind address.                                                                                                                                                                                           |
-| `RP_DATA_DIR`              | `./data` (image: `/data`)          | SQLite, derived ebook indexes, reading progress, and the fallback alignment folder. Local disk only — never SMB/NFS.                                                                                    |
+| `RP_DATA_DIR`              | `./data` (image: `/data`)          | SQLite, derived ebook indexes, reading progress, and the fallback alignment folder. Local disk only - never SMB/NFS.                                                                                    |
 | `RP_CACHE_DIR`             | `./cache` (image: `/cache`)        | Cover images. Reproducible: safe to delete.                                                                                                                                                             |
 | `RP_MODELS_DIR`            | `./models` (image: `/models`)      | The alignment model, in `mms-fa/` (317 MB, one download for every language). Reproducible: safe to delete and fetch again.                                                                              |
-| `RP_EBOOK_DIRS`            | —                                  | Comma-separated ebook roots, up to 16, mounted `:ro`. Optional: when unset, the setup wizard / Settings → Libraries store the roots in the database.                                                    |
-| `RP_AUDIOBOOK_DIRS`        | —                                  | Comma-separated audiobook roots, as above.                                                                                                                                                              |
-| `RP_ALIGNMENT_DIRS`        | —                                  | Comma-separated folders that finished alignments are written into — the only library folders ReadPort writes to, so no `:ro`. Unset means `<data>/alignments`. See below.                               |
+| `RP_EBOOK_DIRS`            | -                                  | Comma-separated ebook roots, up to 16, mounted `:ro`. Optional: when unset, the setup wizard / Settings → Libraries store the roots in the database.                                                    |
+| `RP_AUDIOBOOK_DIRS`        | -                                  | Comma-separated audiobook roots, as above.                                                                                                                                                              |
+| `RP_ALIGNMENT_DIRS`        | -                                  | Comma-separated folders that finished alignments are written into - the only library folders ReadPort writes to, so no `:ro`. Unset means `<data>/alignments`. See below.                               |
 | `RP_SESSION_SECRET`        | auto-generated                     | HMAC key for session tokens. Set explicitly in production; rotating it signs everyone out. If unset, one is generated and persisted at `<data>/session-secret` (0600).                                  |
 | `RP_SETUP_TOKEN`           | auto-generated                     | One-time first-run bootstrap token required to create the admin account. If unset, generated on first start, printed in the log, stored at `<data>/setup-token` (0600). Consumed when the admin exists. |
 | `RP_TRUST_PROXY`           | `0`                                | Proxy trust for client IPs. `0` (default): forwarded headers ignored. `1`: trust local/private-network proxies. Otherwise: comma-separated proxy IPs/CIDRs.                                             |
@@ -37,9 +37,9 @@ bundled `docker-compose.yml` reads.
 | `RP_ALIGN_THREADS`         | `4`                                | Threads **one** alignment may give the model (1–32). Should track the container's CPU allowance, not the host's core count. See below.                                                                  |
 | `RP_DEFAULT_LANGUAGE`      | `en`                               | BCP-47 language of last resort, used when nothing about a book says what it is in.                                                                                                                      |
 | `RP_SCAN_INTERVAL_MINUTES` | `60`                               | Minutes between automatic library rescans so titles added in Calibre/Audiobookshelf appear on their own; `0` disables (manual/API rescans only). Maximum a week.                                        |
-| `RP_PROXY_AUTH_HEADER`     | —                                  | Reverse-proxy SSO: header carrying the signed-in username (e.g. `x-authentik-username`). Empty = disabled. See docs/security.md.                                                                        |
-| `RP_PROXY_AUTH_SOURCES`    | —                                  | Comma-separated proxy IPs/CIDRs whose header is trusted (checked on the TCP peer). Required for proxy SSO.                                                                                              |
-| `RP_PROXY_AUTH_ADMINS`     | —                                  | Comma-separated usernames (as sent by the proxy) that get the admin role. On an empty instance the first proxied user is admin regardless.                                                              |
+| `RP_PROXY_AUTH_HEADER`     | -                                  | Reverse-proxy SSO: header carrying the signed-in username (e.g. `x-authentik-username`). Empty = disabled. See docs/security.md.                                                                        |
+| `RP_PROXY_AUTH_SOURCES`    | -                                  | Comma-separated proxy IPs/CIDRs whose header is trusted (checked on the TCP peer). Required for proxy SSO.                                                                                              |
+| `RP_PROXY_AUTH_ADMINS`     | -                                  | Comma-separated usernames (as sent by the proxy) that get the admin role. On an empty instance the first proxied user is admin regardless.                                                              |
 | `RP_LOG_LEVEL`             | `info`                             | fatal/error/warn/info/debug/trace.                                                                                                                                                                      |
 | `PUID` / `PGID` / `TZ`     | `1000`/`1000`/`Etc/UTC`            | Container user mapping and timezone (entrypoint).                                                                                                                                                       |
 
@@ -60,9 +60,9 @@ rest, admin only.
 | `ebookDirs`       | none       | Settings → Libraries, and the wizard | `RP_EBOOK_DIRS`       |
 | `audiobookDirs`   | none       | Settings → Libraries, and the wizard | `RP_AUDIOBOOK_DIRS`   |
 | `alignmentDirs`   | none       | Settings → Libraries, and the wizard | `RP_ALIGNMENT_DIRS`   |
-| `alignPrecision`  | `standard` | Settings → Alignment                 | —                     |
-| `autoAlign`       | `true`     | Settings → Alignment, and the wizard | —                     |
-| `alignSpeedRatio` | `0`        | nowhere — the worker measures it     | —                     |
+| `alignPrecision`  | `standard` | Settings → Alignment                 | -                     |
+| `autoAlign`       | `true`     | Settings → Alignment, and the wizard | -                     |
+| `alignSpeedRatio` | `0`        | nowhere - the worker measures it     | -                     |
 
 `alignSpeedRatio` is how many seconds of audio this machine aligns per second
 of wall clock, and it is the only setting nobody is meant to touch: the Pairing
@@ -76,9 +76,9 @@ does not leave every estimate wrong for the next several books.
 `defaultLanguage` is the last of five answers, not the first. An alignment asks,
 in order: a language set on the pair itself, the EPUB's `dc:language`, the
 audiobook's tags, the ebook's own prose, and only then this setting. Reading it
-from the prose needs no model — a non-Latin script settles Cyrillic, Hebrew,
+from the prose needs no model - a non-Latin script settles Cyrillic, Hebrew,
 Arabic or Greek outright, and a few dozen function words separate the Latin
-languages, which barely share them — and it abstains rather than guess when the
+languages, which barely share them - and it abstains rather than guess when the
 evidence is thin.
 
 Getting it wrong is cheap by design. The language decides only how numbers,
@@ -97,15 +97,15 @@ gzipped `.rpalign` file. A fresh install scans that folder and imports whatever
 it recognises, so a rebuilt container is immediately as capable as the one it
 replaced.
 
-Files are matched to books by fingerprint — of the ebook's sentence ids and of
-the audiobook's track durations — never by path or filename, none of which
+Files are matched to books by fingerprint - of the ebook's sentence ids and of
+the audiobook's track durations - never by path or filename, none of which
 survive a reinstall. That is also why nothing is ever imported halfway: a file
 either describes a pair on this server or it does not.
 
 Leaving it unset is supported and is not the recommendation: alignments then go
 to `<data>/alignments`, which survives a restart but not a rebuild that discards
 the volume. The one setup mistake worth watching for is the opposite of the
-usual one — every other library line in the stock Compose file ends in `:ro`,
+usual one - every other library line in the stock Compose file ends in `:ro`,
 and copying that pattern here gives you a folder ReadPort cannot write to. The
 folder tester in the wizard and in Settings catches it by actually writing a
 probe file, because a bind mount can report friendly permission bits and still
@@ -116,8 +116,8 @@ refuse.
 Two numbers multiply, and only their product matters to the CPU allowance:
 
 - `RP_JOB_CONCURRENCY` is how many books may be aligned at the same time. The
-  worker runs three lanes — this many heavy slots, one slot for the model
-  download, one for everything light (scans, indexing, pairing) — so an
+  worker runs three lanes - this many heavy slots, one slot for the model
+  download, one for everything light (scans, indexing, pairing) - so an
   alignment that runs for half an hour cannot stop a new book appearing in the
   library. The worker reads it from the environment at startup and from
   nowhere else: it is in `settingsSchema` because the settings page reports it,
@@ -143,10 +143,11 @@ lower the concurrency rather than raising the threads.
 Sampling works because narration is close to a constant rate over a couple of
 minutes: the aligner does not need to hear a book to time it, only to find
 enough places where the audio and the text provably agree that everything
-between them can be interpolated. Where that assumption breaks — a chapter
+between them can be interpolated. Where that assumption breaks - a chapter
 break, a pause at a heading, a passage the narration skips, a producer's credit
-— the implied reading rate goes visibly wrong, and the refinement rounds spend
-their probes there and leave the steady parts alone.
+
+- the implied reading rate goes visibly wrong, and the refinement rounds spend
+  their probes there and leave the steady parts alone.
 
 What `standard` costs you is certainty about the last few seconds. Switching
 from reading to listening deliberately lands _behind_ where you were by
@@ -160,9 +161,9 @@ word on the page. Full measurements are in docs/alignment.md.
 
 `autoAlign` (on by default) lets a library scan start an alignment without
 being asked: a strong metadata match queues one at low priority, behind
-anything else waiting. Metadata alone never links two editions — the alignment
+anything else waiting. Metadata alone never links two editions - the alignment
 _is_ the edition check, and a pair whose narration does not match the text is
-handed back undecided rather than aligned wrongly — so leaving this on is how
+handed back undecided rather than aligned wrongly - so leaving this on is how
 most libraries sort themselves out overnight.
 
 Turn it off and nothing is computed until you press Start on the Pairing page,
@@ -182,8 +183,8 @@ they do not have, and the alignment behind it is the real check anyway.
 With no accounts yet, the app shows a four-step wizard: welcome (bootstrap
 token) → admin account → books → ready.
 
-The books step asks for all three folder kinds at once — ebooks, audiobooks,
-and the alignment folder — plus the language most of your books are in. Each
+The books step asks for all three folder kinds at once - ebooks, audiobooks,
+and the alignment folder - plus the language most of your books are in. Each
 folder is tested where the server sees it: existence, readability, a shallow
 count of the matching files, and, for the alignment folder, whether a file can
 actually be created in it. A picker lists what the container has mounted, read
@@ -193,7 +194,7 @@ possibly work. Folders pinned by `RP_EBOOK_DIRS`, `RP_AUDIOBOOK_DIRS` or
 
 The ready step reviews all of that, offers the alignment model download and the
 "align new matches automatically" switch, and runs the readiness report from
-`POST /api/preflight` — ffmpeg, the ONNX runtime, the model, free disk,
+`POST /api/preflight` - ffmpeg, the ONNX runtime, the model, free disk,
 writable folders, library folders. Finishing does not advance to another
 screen: it turns into the live progress of the first scan and, if you asked for
 it, of the download. Everything chosen there is editable later under Settings.

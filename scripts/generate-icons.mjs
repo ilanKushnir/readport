@@ -2,7 +2,7 @@
 /**
  * Rasterizes the ReadPort mark into the favicon and the PWA/App icon set.
  *
- * The artwork comes from design/logo/mark.mjs — the one place the geometry
+ * The artwork comes from design/logo/mark.mjs - the one place the geometry
  * lives. Run this after changing it; the outputs are committed, so nobody
  * needs it to build or run ReadPort.
  *
@@ -49,7 +49,7 @@ fs.writeFileSync(
 );
 console.log('logo readport-mark.svg, readport-tile.svg');
 
-// The favicon stays a vector — browsers scale it themselves. Rounded, because
+// The favicon stays a vector - browsers scale it themselves. Rounded, because
 // it sits in a tab next to other rounded things.
 fs.writeFileSync(path.join(outDir, 'favicon.svg'), `${tileSvg({ size: 24, radius: 5 })}\n`);
 console.log('icon favicon.svg');

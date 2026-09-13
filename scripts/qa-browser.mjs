@@ -223,7 +223,7 @@ async function run() {
       await page.fill('#su-confirm', PASS);
       await page.click('button[type=submit]');
       await page.waitForSelector('.book-grid, .empty-state', { timeout: 15000 });
-      // Wait for the initial scan/index/pair/align pipeline to finish — the
+      // Wait for the initial scan/index/pair/align pipeline to finish - the
       // sweep needs a SWITCHABLE pair, so poll for exactly that (a fixed
       // sleep is flaky on a cold start).
       let pipelineReady = false;
@@ -349,7 +349,7 @@ async function run() {
       if (!inSheet) note('a11y', 'focus escaped the settings sheet while tabbing');
       // Regression: when focus is the dialog CONTAINER itself (the initial
       // state), Shift+Tab must wrap to the LAST focusable control inside the
-      // sheet — never escape into the page behind it.
+      // sheet - never escape into the page behind it.
       await page.evaluate(() => document.querySelector('.sheet')?.focus());
       await page.keyboard.press('Shift+Tab');
       const wrap = await page.evaluate(() => {
@@ -428,7 +428,7 @@ async function run() {
       const scrolled = await page.evaluate(() => {
         const s = document.querySelector('.reader-scroller');
         if (!s || s.scrollHeight <= s.clientHeight + 120) return null;
-        // Scroll deep into the chapter and fire pagehide IMMEDIATELY —
+        // Scroll deep into the chapter and fire pagehide IMMEDIATELY -
         // squarely inside the 600ms debounce window.
         s.scrollTop = s.scrollHeight - s.clientHeight;
         window.dispatchEvent(new Event('pagehide'));
@@ -707,7 +707,7 @@ async function run() {
 
   // ONLINE REVOCATION fails closed: with downloads present and the app open,
   // server-side session loss (cookies cleared = revoked/expired) must purge
-  // the offline cache and stop cache-first serving — not keep reading books.
+  // the offline cache and stop cache-first serving - not keep reading books.
   await page.goto(BASE, { waitUntil: 'networkidle' });
   await ctx.clearCookies();
   await page.goto(`${BASE}/book/${audioBookId}`, { waitUntil: 'networkidle' });

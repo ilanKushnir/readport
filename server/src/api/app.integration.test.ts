@@ -79,8 +79,8 @@ function authed(opts: {
  * The acoustic aligner needs a 317 MB model this suite deliberately never
  * installs, so the switch, resolve and handoff assertions below would have
  * nothing to run against. Sentence ids come from the derived index the reader
- * routes actually serve — invented ones would leave resolve() with nothing to
- * find — and each chapter is laid over the track that narrates it, which is
+ * routes actually serve - invented ones would leave resolve() with nothing to
+ * find - and each chapter is laid over the track that narrates it, which is
  * the shape a real run produces for this book.
  *
  * The last sentence of every chapter is left merely fuzzy: narration really
@@ -232,7 +232,7 @@ describe('ReadPort API', () => {
     });
     expect(weak.statusCode).toBe(400);
 
-    // RACE: two setup requests with the valid token — exactly one wins.
+    // RACE: two setup requests with the valid token - exactly one wins.
     const wizardFolders = {
       ebookDirs: [path.join(fixtures, 'ebooks')],
       audiobookDirs: [path.join(fixtures, 'audiobooks')],
@@ -335,7 +335,7 @@ describe('ReadPort API', () => {
   });
 
   it('chapter HTML carries a sandboxing CSP when fetched directly', async () => {
-    // Runs after indexing (see later tests) — but the header must be present
+    // Runs after indexing (see later tests) - but the header must be present
     // for any successful chapter response, so probe leniently here.
     const lib = await authed({ url: '/api/library' });
     const ebook = (lib.json() as { books: { id: string; kind: string }[] }).books.find(
@@ -540,7 +540,7 @@ describe('ReadPort API', () => {
       }
     ).pair;
     // Every sentence in the book was placed, so coverage short of 1 means the
-    // store/read path lost segments on the way — a loose `> 0.8` here would
+    // store/read path lost segments on the way - a loose `> 0.8` here would
     // wave that through.
     expect(p.alignment!.coverage).toBe(1);
     expect(p.alignment!.meanConfidence).toBeGreaterThan(0.6);
@@ -587,7 +587,7 @@ describe('ReadPort API', () => {
     // Chapter 2 audio starts after track 0; bookMs must be inside track 1.
     expect(res.to!.trackIdx).toBe(1);
     // The switch steps back by exactly the doubt the aligner recorded for this
-    // sentence — the only end-to-end proof that uncertaintyMs survives the
+    // sentence - the only end-to-end proof that uncertaintyMs survives the
     // store/read round-trip rather than being dropped to zero on the way.
     expect(res.resolution.rewindMs).toBe(250);
 
@@ -1063,7 +1063,7 @@ describe('ReadPort API', () => {
     };
     // Everything in the sample library was scanned in a moment ago, so
     // recently-added holds every FILE. The open shelf holds every TITLE, and
-    // a paired title is one title — so it is shorter by exactly the number of
+    // a paired title is one title - so it is shorter by exactly the number of
     // pairs, each of which contributed two files and one row.
     expect(recent.books.length).toBe(all.books.length + both.books.length);
 
@@ -1080,8 +1080,8 @@ describe('ReadPort API', () => {
   });
 
   it('shows a book owned in both formats once, naming both formats', async () => {
-    // The shelf used to list the same title twice, side by side — once for the
-    // EPUB and once for the M4B — which is what it looks like on a library
+    // The shelf used to list the same title twice, side by side - once for the
+    // EPUB and once for the M4B - which is what it looks like on a library
     // where most books are owned both ways.
     const all = (await authed({ url: '/api/library' })).json() as {
       books: {
@@ -1097,7 +1097,7 @@ describe('ReadPort API', () => {
     expect(new Set(pairIds).size).toBe(pairIds.length);
 
     // The survivor is the ebook, and it can name the audio side without a
-    // second request — that is what puts both badges on one card.
+    // second request - that is what puts both badges on one card.
     for (const b of all.books.filter((x) => x.pair)) {
       expect(b.kind).toBe('ebook');
       expect(b.pair!.otherKind).toBe('audio');
@@ -1121,7 +1121,7 @@ describe('ReadPort API', () => {
     // A library owned mostly in both formats produces dozens of candidates,
     // and confirming them one at a time is dozens of taps. The bulk route
     // must still be the same decision: only a `candidate` may be confirmed,
-    // so a pair someone already linked — or rejected — is left alone.
+    // so a pair someone already linked - or rejected - is left alone.
     const before = (await authed({ url: '/api/pairs' })).json() as {
       pairs: { id: string; status: string }[];
     };

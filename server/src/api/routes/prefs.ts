@@ -20,7 +20,7 @@ import { nowIso } from '../../db/index.js';
  *
  * Every key is validated by its own schema on the way in. A key/value table
  * makes the next preference a write rather than a migration, but it would
- * also happily store anything, so nothing is trusted on the way out either —
+ * also happily store anything, so nothing is trusted on the way out either -
  * a row that no longer parses is treated as absent, which is what happens to
  * a preference written by a newer version and read back by an older one.
  */
@@ -76,7 +76,7 @@ export function registerPrefsRoutes(app: FastifyInstance, ctx: AppContext): void
    * The client is the source of truth for its own device bucket and pushes
    * the whole document, because it is the only side that knows which device
    * class it is. The server's job is to validate it and hand it to the next
-   * device that asks — a phone must not be able to write the desktop's type
+   * device that asks - a phone must not be able to write the desktop's type
    * size by accident, which is why the shape, not just the values, is checked.
    */
   app.get('/api/prefs/reader', async (req) => ({ reader: readPref(ctx, req.user!.id, 'reader') }));

@@ -52,7 +52,7 @@ type Showing =
   | { kind: 'auto'; id: AutoShelfId }
   | { kind: 'device' }
   | { kind: 'user'; id: string }
-  /** One value of one of the library's own groupings — a genre, a narrator. */
+  /** One value of one of the library's own groupings - a genre, a narrator. */
   | { kind: 'facet'; facet: FacetKind; value: string };
 
 const AUTO_IDS = AUTO_SHELVES.map((s) => s.id) as string[];
@@ -88,7 +88,7 @@ export function LibraryPage() {
   const [gone, setGone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [offlineBooks, setOfflineBooks] = useState<BookSummary[] | null>(null);
-  /** What this device is fetching right now — shown on the On-this-device shelf. */
+  /** What this device is fetching right now - shown on the On-this-device shelf. */
   const [active, setActive] = useState<DownloadState[]>([]);
   const [downloaded, setDownloaded] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState('');
@@ -204,8 +204,8 @@ export function LibraryPage() {
 
   // A download writes its progress to IndexedDB as each chunk lands, but it is
   // usually started from another page (or another tab), so nothing here is
-  // told about it. Poll while any download is running — and once after it
-  // stops, to pick up the finished state — then go quiet.
+  // told about it. Poll while any download is running - and once after it
+  // stops, to pick up the finished state - then go quiet.
   useEffect(() => {
     if (active.length === 0) return;
     const t = setInterval(() => void loadDownloads(), 1000);
@@ -230,7 +230,7 @@ export function LibraryPage() {
 
   // A download in flight is not in any list yet, so its title has to come
   // from whatever is already loaded, or from the copy the download itself has
-  // just cached. Until either exists the row still shows, unnamed — knowing
+  // just cached. Until either exists the row still shows, unnamed - knowing
   // something is downloading matters more than knowing what.
   const [cachedTitles, setCachedTitles] = useState<Record<string, string>>({});
   useEffect(() => {
@@ -447,7 +447,7 @@ export function LibraryPage() {
         {data?.scanActive && (
           <div className="banner" role="status" style={{ marginBlockStart: 'var(--sp-4)' }}>
             <div className="spinner" style={{ width: 16, height: 16 }} />
-            Scanning your libraries — new books appear as they are indexed.
+            Scanning your libraries - new books appear as they are indexed.
           </div>
         )}
 
@@ -535,7 +535,7 @@ function ShelfEmpty({
           </Link>
         }
       >
-        It was removed — on this device or another one. The books that were on it are all still in
+        It was removed - on this device or another one. The books that were on it are all still in
         your library.
       </EmptyState>
     );
@@ -817,8 +817,8 @@ function BookCard({
           <Cover book={book} className="book-card__cover" />
           <span className="book-card__badges">
             {/* One card per title, so one badge naming every format it is
-                owned in. Two separate pills read as two books — which is the
-                thing this card exists to stop — and stacked on a phone they
+                owned in. Two separate pills read as two books - which is the
+                thing this card exists to stop - and stacked on a phone they
                 cover the artwork twice over. */}
             <span className={`badge ${!pair && book.kind === 'audio' ? 'badge--audio' : ''}`}>
               <FormatPart kind={book.kind} format={book.format} />
@@ -832,7 +832,7 @@ function BookCard({
             {pair?.switchable && (
               <span
                 className="badge badge--paired badge--sync"
-                title="Synced — switching lands in the same place"
+                title="Synced - switching lands in the same place"
               >
                 <IconLink size={11} />
                 SYNC

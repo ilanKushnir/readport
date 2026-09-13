@@ -60,7 +60,7 @@ const hashInvite = (token: string) => createHash('sha256').update(token).digest(
 
 /**
  * People management. Accounts are only ever created by an admin (directly,
- * with a password) or through a one-time invite link — there is no open
+ * with a password) or through a one-time invite link - there is no open
  * registration. Invite tokens are stored hashed and expire.
  */
 export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void {
@@ -216,7 +216,7 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
       // Shelves, shelf membership and the reading list are NOT in this list:
       // they carry ON DELETE CASCADE to users(id) (migration 7) and go with
       // the row below. A table named here and a table with a cascade are two
-      // mechanisms for one rule, and this list is the fragile one — anything
+      // mechanisms for one rule, and this list is the fragile one - anything
       // added from now on should carry its own cascade instead.
       for (const t of ['progress_events', 'progress_state', 'annotations', 'sessions']) {
         db.prepare(`DELETE FROM ${t} WHERE user_id = ?`).run(id);

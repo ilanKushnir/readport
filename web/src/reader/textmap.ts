@@ -121,7 +121,7 @@ export function rangeForSpan(map: TextMap, start: number, end: number): Range | 
  * A binary search over the offsets the map already holds, so a caller that
  * knows roughly where the reader is can hand `firstVisibleOffset` a starting
  * point instead of making it walk the chapter. Correctness never depends on
- * it — the scan visits every node either way — so a stale hint costs a few
+ * it - the scan visits every node either way - so a stale hint costs a few
  * comparisons and nothing else.
  */
 export function hintForOffset(map: TextMap, offset: number): number {
@@ -156,7 +156,7 @@ export function firstVisibleOffset(
    * Where to start looking, as an index into `map.nodes`.
    *
    * The scan used to begin at node zero every time, so the cost of a page
-   * turn grew with how far into the chapter the reader had got — a long
+   * turn grew with how far into the chapter the reader had got - a long
    * chapter hitches progressively worse the more of it you have read. A page
    * turn moves one page, so starting from the last answer and walking outward
    * finds the new one in a handful of nodes.
@@ -205,8 +205,8 @@ export function firstVisibleOffset(
 /**
  * The chapter's text exactly as the offsets address it.
  *
- * This is the same string `extractText()` builds on the server — text-node
- * data in document order, with a synthetic newline after each block — so an
+ * This is the same string `extractText()` builds on the server - text-node
+ * data in document order, with a synthetic newline after each block - so an
  * offset that came from the server indexes into it directly.
  */
 export function mappedText(map: TextMap): string {

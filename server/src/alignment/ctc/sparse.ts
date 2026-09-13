@@ -7,7 +7,7 @@ import { type Anchor } from './anchors.js';
  * Forced alignment does not need to hear a book to time it. It needs enough
  * places where the decoded audio and the text provably agree that everything
  * in between can be interpolated, and narration is close to a constant rate
- * over a couple of minutes — so a short probe every so often buys almost the
+ * over a couple of minutes - so a short probe every so often buys almost the
  * same timeline as decoding every sample, for a fifteenth of the compute.
  *
  * "Almost" is the whole problem, and it is what the refinement pass is for.
@@ -15,8 +15,8 @@ import { type Anchor } from './anchors.js';
  * anchors, and the places where that is false are exactly the places a reader
  * notices: a chapter break, a pause for a section heading, a passage of the
  * ebook the narration skips, a producer's credit. Each of those shows up as a
- * stretch whose implied reading rate is wrong — too few book characters per
- * second across a silence, too many across a skip — so the schedule spends its
+ * stretch whose implied reading rate is wrong - too few book characters per
+ * second across a silence, too many across a skip - so the schedule spends its
  * second round of probes on precisely those stretches and leaves the steady
  * parts alone.
  *
@@ -91,7 +91,7 @@ interface Span {
  * not contain).
  *
  * Returns an empty array when the timeline looks uniform, which ends the
- * refinement early — most books get there after one round.
+ * refinement early - most books get there after one round.
  */
 export function refineWindows(
   anchors: Anchor[],
@@ -134,9 +134,9 @@ export function refineWindows(
    * Time a span cannot account for at the median reading rate.
    *
    * A pause adds seconds without adding characters, so it shows up here and
-   * nowhere else. As a RATIO it barely registers — a fifteen-second break
+   * nowhere else. As a RATIO it barely registers - a fifteen-second break
    * inside a hundred-and-fifty-second span is a ten-per-cent wobble, under
-   * any tolerance worth setting — which is why spans containing chapter
+   * any tolerance worth setting - which is why spans containing chapter
    * breaks used to sail through refinement untouched while carrying the
    * largest errors in the book. It is also precisely the quantity the timing
    * layer turns into uncertainty, so probing the worst of these is what
@@ -151,7 +151,7 @@ export function refineWindows(
     return Math.max(0, width * (1 - s.rate / median));
   };
   // Comfortably above ordinary variation in reading rate, and well below a
-  // chapter break — the point is to catch silences, not to chase noise.
+  // chapter break - the point is to catch silences, not to chase noise.
   const SUSPECT_SLACK_MS = 4_000;
 
   const suspect = spans.filter(
@@ -184,7 +184,7 @@ export function refineWindows(
  *
  * Aiming at the exact midpoint is not good enough. The commonest reason a
  * stretch is suspicious in the first place is that a grid probe inside it
- * heard nothing — it landed in a pause, in music, in a chapter announcement —
+ * heard nothing - it landed in a pause, in music, in a chapter announcement -
  * and that probe sits at or near the middle. Re-probing the same seconds would
  * spend the budget learning the same nothing.
  */
@@ -215,8 +215,8 @@ export interface ProbeRun {
  * order, with a {@link PROBE_BREAK} between neighbours.
  *
  * The breaks are what make sparse decoding safe rather than merely cheap.
- * Without them the last syllable of one probe and the first of the next —
- * minutes apart in the narration — would form n-grams that the matcher could
+ * Without them the last syllable of one probe and the first of the next -
+ * minutes apart in the narration - would form n-grams that the matcher could
  * anchor somewhere neither probe ever visited.
  */
 export function assembleProbes(runs: ProbeRun[]): DecodedChar[] {

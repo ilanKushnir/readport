@@ -43,7 +43,7 @@ describe('page layout', () => {
   it('single column: text lands at the same inset on every page', () => {
     // A 375px phone with 24px margins: one column of 327px, and the stride
     // between page origins must equal the column pitch the browser lays out
-    // (column width + column gap) — that pitch is what the transform steps by.
+    // (column width + column gap) - that pitch is what the transform steps by.
     const l = computePageLayout(375, 24, 'auto');
     expect(l.columns).toBe(1);
     expect(l.width).toBe(375);

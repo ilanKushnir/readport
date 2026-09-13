@@ -98,7 +98,7 @@ export function Sidebar({
   const [editName, setEditName] = useState('');
   const [confirmRemove, setConfirmRemove] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  // Two Sidebars are mounted whenever the overlay is open — the rail is still
+  // Two Sidebars are mounted whenever the overlay is open - the rail is still
   // in the DOM behind it, only hidden. Fixed ids would collide, and a
   // `<label for>` in the panel you can see would point at the input you
   // cannot. Every id here is scoped to this instance.
@@ -115,7 +115,7 @@ export function Sidebar({
     labelOf: nameOf,
     onCommit: (id, afterId) => {
       void moveShelf(id, afterId).then((ok) => {
-        if (!ok) toast.show('Could not save the new order — check the connection.');
+        if (!ok) toast.show('Could not save the new order - check the connection.');
       });
     },
   });

@@ -1,7 +1,7 @@
 /**
  * Ordered schema migrations. Each entry runs once inside a transaction;
  * applied versions are recorded in schema_migrations. Never edit an entry
- * after release — append a new one.
+ * after release - append a new one.
  */
 export const MIGRATIONS: { version: number; sql: string }[] = [
   {
@@ -374,8 +374,8 @@ CREATE INDEX idx_reading_list_order ON reading_list(user_id, sort_key);
 -- invented here, and never written back to them.
 --
 -- A table rather than more columns on books, because these are many-to-one
--- (a book has several tags) and because the sidebar's question — "which
--- values exist, and how many books each" — is a GROUP BY, which wants an
+-- (a book has several tags) and because the sidebar's question - "which
+-- values exist, and how many books each" - is a GROUP BY, which wants an
 -- index it can walk rather than a JSON column it has to parse per row.
 --
 -- Only the facets that are NOT already columns on books live here. Author,
@@ -432,7 +432,7 @@ ALTER TABLE books ADD COLUMN facets_rev INTEGER NOT NULL DEFAULT 0;
 -- Walking an alignment in reading order.
 --
 -- Resolving a switch asks for the nearest segment before or after a position,
--- which without this is a scan and a sort of every segment in the book —
+-- which without this is a scan and a sort of every segment in the book -
 -- fifteen thousand rows for one aligned title, and an offline package asks
 -- thousands of times.
 CREATE INDEX idx_alignseg_ord ON alignment_segments(alignment_id, spine_idx, sentence_ord);

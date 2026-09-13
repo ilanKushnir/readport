@@ -5,7 +5,7 @@
  *   - Audiobook narration synthesized with espeak-ng (text2wav, WASM) and
  *     encoded with the system ffmpeg
  *     (sentence boundaries are exact; word times are proportional within a
- *     sentence — documented honestly in docs/alignment.md)
+ *     sentence - documented honestly in docs/alignment.md)
  *
  * Requirements (development machine only; the generated fixtures are
  * committed): node >= 22, ffmpeg on PATH, `npm i` at the repo root.

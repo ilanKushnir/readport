@@ -3,7 +3,7 @@ import { api, ApiError, isOffline, notifyUnauthorized, setUnauthorizedHandler } 
 
 /**
  * Revocation fails closed at the fetch wrapper: EVERY API 401 runs the
- * registered unauthorized handler — and AWAITS it — before the error is
+ * registered unauthorized handler - and AWAITS it - before the error is
  * surfaced. Credential-entry endpoints are exempt (a wrong password is not
  * a revocation).
  */
@@ -121,7 +121,7 @@ describe('global unauthorized handling', () => {
   // handler contract is NON-RECURSIVE (see UnauthorizedHandler in
   // client.ts): every non-exempt 401 awaits the shared in-flight purge, so
   // an api() call from inside the handler that is answered 401 would await
-  // the handler's own completion — a deadlock by construction. A handler
+  // the handler's own completion - a deadlock by construction. A handler
   // needing the network must use raw fetch(); the production handler only
   // purges local state.
 

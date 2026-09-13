@@ -7,8 +7,8 @@ import { type SentenceIndexEntry } from '../lib/types';
  *
  * Karaoke highlighting was reported as inaccurate and as leaving marks behind:
  * a wrong highlight is worse than none, because the reader's eye follows it.
- * So the continuous thing is a marker beside the text — an estimate, drawn as
- * one — and the text itself is only ever touched where the aligner is sure.
+ * So the continuous thing is a marker beside the text - an estimate, drawn as
+ * one - and the text itself is only ever touched where the aligner is sure.
  */
 
 const sentence = (id: string, start: number, end: number): SentenceIndexEntry =>

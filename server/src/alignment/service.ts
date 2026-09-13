@@ -83,8 +83,8 @@ export interface AlignmentHandle {
  * Segment tallies, cached by alignment id.
  *
  * `/api/library` builds a summary per book and every summary asked for these
- * two COUNT(*)s over `alignment_segments` — a table with fifteen thousand rows
- * for one aligned book — so a library of a thousand books ran two thousand
+ * two COUNT(*)s over `alignment_segments` - a table with fifteen thousand rows
+ * for one aligned book - so a library of a thousand books ran two thousand
  * full counts per request. Caching cannot go stale: `storeAlignment` only ever
  * INSERTs a new version under a new id, and nothing anywhere UPDATEs or
  * DELETEs a segment, so an id and its tallies are fixed together for life.
@@ -143,7 +143,7 @@ export function latestAlignment(db: DB, pairId: string): AlignmentHandle | null 
 /** Minimum coverage before a pair offers position handoff at all. */
 export const SWITCHABLE_MIN_COVERAGE = 0.5;
 
-/** Handoff availability. This does NOT claim sentence exactness — see handoffStatus(). */
+/** Handoff availability. This does NOT claim sentence exactness - see handoffStatus(). */
 export function isSwitchable(handle: AlignmentHandle | null): boolean {
   if (!handle) return false;
   return (
@@ -262,8 +262,8 @@ function segAfter(
  * Step a read-to-listen switch back by the segment's own admitted error.
  *
  * Landing early is a second of narration the reader already knows. Landing
- * late is a spoiler — a sentence, a plot turn, a punchline they had not
- * reached — and no amount of precision elsewhere makes up for it. So the
+ * late is a spoiler - a sentence, a plot turn, a punchline they had not
+ * reached - and no amount of precision elsewhere makes up for it. So the
  * asymmetry is deliberate: the switch always aims behind the reader by however
  * far the aligner says it might be wrong, and never further than
  * {@link SWITCH_MAX_REWIND_MS}, past which it is not a margin but a different

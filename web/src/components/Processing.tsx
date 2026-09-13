@@ -57,7 +57,7 @@ function elapsed(fromIso: string | null): string | null {
  * Remaining time used to be `spent / progress × (1 − progress)`, which assumes
  * the bar was at zero when the clock started. It never is: a job reports a
  * little progress the moment it has set itself up, and dividing the whole
- * elapsed time by that pedestal makes the work look far faster than it is —
+ * elapsed time by that pedestal makes the work look far faster than it is -
  * the reason an alignment that takes thirteen minutes announced eight.
  * Measuring the rate between two observed points removes the assumption, and
  * with it any sensitivity to where the bar starts.
@@ -176,7 +176,7 @@ export function ProcessingQueue({
           <p className="queue__lede">
             {idle
               ? 'Nothing is being processed right now. Confirming a pair or downloading a model adds work here.'
-              : 'Three lanes run side by side: one alignment, one model download, one library task — so a long alignment never blocks a scan.'}
+              : 'Three lanes run side by side: one alignment, one model download, one library task - so a long alignment never blocks a scan.'}
           </p>
         </div>
         <span className={`queue__dot ${idle ? '' : 'is-live'}`} aria-hidden="true" />
@@ -346,7 +346,7 @@ export function PipelineDiagram() {
     {
       n: 2,
       title: 'Listening',
-      body: 'An acoustic model hears the narration and reports which sound it is hearing, twenty milliseconds at a time. It never decides which words were said — that is what makes it fast, and the same model works for every language.',
+      body: 'An acoustic model hears the narration and reports which sound it is hearing, twenty milliseconds at a time. It never decides which words were said - that is what makes it fast, and the same model works for every language.',
       tag: !aligner
         ? 'acoustic model'
         : aligner.installed
@@ -368,7 +368,7 @@ export function PipelineDiagram() {
     {
       n: 5,
       title: 'Switching map',
-      body: 'Every pinned or interpolated sentence knows its second in the audio, and every second knows its sentence — that is what the switch between reading and listening lands on.',
+      body: 'Every pinned or interpolated sentence knows its second in the audio, and every second knows its sentence - that is what the switch between reading and listening lands on.',
       tag: 'sentence ↔ second',
     },
   ];
@@ -384,10 +384,10 @@ export function PipelineDiagram() {
         </div>
       ))}
       <p className="pipeline__foot">
-        One model covers every language — set it up in{' '}
+        One model covers every language - set it up in{' '}
         <Link to="/settings#alignment">Settings → Models</Link>. Step 2 is the expensive part, about
-        a minute of computing per hour of audio — it samples the narration rather than listening to
-        every second — which is why it runs one book at a time and reports live progress above. How
+        a minute of computing per hour of audio - it samples the narration rather than listening to
+        every second - which is why it runs one book at a time and reports live progress above. How
         many pins turn up is also the edition check: a narration that is not this text produces
         almost none, and ReadPort refuses to publish timings rather than inventing them.
       </p>

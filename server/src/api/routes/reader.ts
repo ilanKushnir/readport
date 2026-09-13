@@ -10,7 +10,7 @@ export function registerReaderRoutes(app: FastifyInstance, ctx: AppContext): voi
   const { db } = ctx;
 
   // Reading resolves the ACTIVE derived version (books.derived_rev), which a
-  // re-index switches atomically — so a book that has ever been indexed
+  // re-index switches atomically - so a book that has ever been indexed
   // stays readable while it is being re-indexed and even when a later index
   // attempt failed ('indexing'/'error' states still resolve the last good
   // version; loadManifest simply returns null when none exists yet).
@@ -45,7 +45,7 @@ export function registerReaderRoutes(app: FastifyInstance, ctx: AppContext): voi
     // Sanitized fragment that the reader fetches as text and injects into its
     // own DOM under the app CSP. If a browser is pointed at this URL
     // directly, `sandbox` gives the document an opaque origin (no cookies,
-    // no same-origin DOM) and `default-src 'none'` blocks every load — so a
+    // no same-origin DOM) and `default-src 'none'` blocks every load - so a
     // sanitizer bypass still has no script or exfiltration channel.
     reply.header('content-security-policy', "sandbox; default-src 'none'");
     reply.header('cache-control', 'private, max-age=3600');
@@ -72,7 +72,7 @@ export function registerReaderRoutes(app: FastifyInstance, ctx: AppContext): voi
     const wildcard = (req.params as Record<string, string>)['*'] ?? '';
     // NOT decoded again: Fastify has already percent-decoded the wildcard, so
     // a second pass turns an image legitimately named "50%.png" into "50.png"
-    // and breaks it permanently — including in offline packages, which then
+    // and breaks it permanently - including in offline packages, which then
     // never complete.
     const rel = wildcard;
     let abs: string;

@@ -95,9 +95,9 @@ export const progressAckSchema = z.object({
   state: progressStateSchema.nullable(),
   /**
    * The reconciled state of every book the batch touched, in the order they
-   * first appeared in it. A flush usually carries several books — a phone
+   * first appeared in it. A flush usually carries several books - a phone
    * coming back online after a day has the novel it was reading and the
-   * audiobook it was listening to — and acknowledging only the last one left
+   * audiobook it was listening to - and acknowledging only the last one left
    * the others' revisions stale, so the next write for them raced.
    */
   states: z.array(progressStateSchema).default([]),

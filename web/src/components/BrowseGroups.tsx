@@ -19,8 +19,8 @@ import {
 /**
  * Browsing the library the way its own metadata already describes it.
  *
- * Every value under here was written by whoever built the library — Calibre
- * tags, an audiobook's genre, a narrator, a publisher — and ReadPort neither
+ * Every value under here was written by whoever built the library - Calibre
+ * tags, an audiobook's genre, a narrator, a publisher - and ReadPort neither
  * invents categories nor writes any of it back. Which groups appear is the
  * reader's own choice, kept per person, because two people sharing a server
  * browse it differently.
@@ -148,7 +148,7 @@ export function BrowseGroups({ onNavigate }: { onNavigate?: () => void }) {
  * Every grouping this library can support is listed, with how many entries it
  * has and where those came from, so the choice is made against the library in
  * front of the reader rather than against a list of features. Groupings the
- * library cannot support are not listed at all — a Narrators row that would
+ * library cannot support are not listed at all - a Narrators row that would
  * always be empty is not an option, it is a puzzle.
  */
 function CustomiseSheet({ onClose }: { onClose: () => void }) {
@@ -172,7 +172,7 @@ function CustomiseSheet({ onClose }: { onClose: () => void }) {
   return (
     <Sheet title="What to browse by" onClose={onClose}>
       <p className="sheet__lede">
-        These come from your own files — Calibre tags, audiobook genres, whatever your library
+        These come from your own files - Calibre tags, audiobook genres, whatever your library
         already says. ReadPort never writes any of it back.
       </p>
       <ul className="facet-picker">

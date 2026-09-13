@@ -21,7 +21,7 @@ import { useReorder } from '../components/reorder';
 /**
  * The queue. Not a grid: the order is the content, so this is an ordered list
  * of rows that can be moved with the keyboard, with a pointer, with a finger,
- * or from a menu — whichever the reader has to hand.
+ * or from a menu - whichever the reader has to hand.
  */
 
 interface QueueResponse {
@@ -40,7 +40,7 @@ export function ReadingListPage() {
    * Which way the open menu hangs.
    *
    * It always dropped downward, so on the last rows of the list it opened
-   * underneath the fixed tab bar — the options were there, behind the bar,
+   * underneath the fixed tab bar - the options were there, behind the bar,
    * unreachable. Decided when it opens, from the room actually below the
    * button.
    */
@@ -127,7 +127,7 @@ export function ReadingListPage() {
             return;
           }
           setData((d) => (d ? { ...d, items: before } : d));
-          toast.show('Could not save the new order — check the connection.');
+          toast.show('Could not save the new order - check the connection.');
         });
     },
     [items, byId, load, refreshSidebar, toast],
@@ -208,7 +208,7 @@ export function ReadingListPage() {
             </button>
           }
         >
-          Nothing is lost — the list is on the server and will be here when it answers.
+          Nothing is lost - the list is on the server and will be here when it answers.
         </EmptyState>
       ) : items.length === 0 ? (
         <EmptyState

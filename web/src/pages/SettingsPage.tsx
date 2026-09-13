@@ -207,7 +207,7 @@ export function SettingsPage() {
           <DashCard
             to="/pairs"
             label="Processing"
-            value={stats.jobsRunning > 0 ? `${stats.jobsRunning}` : '—'}
+            value={stats.jobsRunning > 0 ? `${stats.jobsRunning}` : '-'}
             unit={stats.jobsRunning > 0 ? 'running' : 'idle'}
             detail={
               stats.jobsQueued > 0
@@ -224,7 +224,7 @@ export function SettingsPage() {
           <DashCard
             to="#alignment"
             label="Alignment"
-            value={!models ? '—' : modelsReady ? 'Ready' : 'Set up'}
+            value={!models ? '-' : modelsReady ? 'Ready' : 'Set up'}
             unit={modelsReady ? 'to align' : 'needed'}
             detail={
               !models ? 'Unavailable' : modelsReady ? 'Model installed' : 'Model not installed yet'
@@ -243,7 +243,7 @@ export function SettingsPage() {
           <DashCard
             to="#offline"
             label="Offline"
-            value={storage ? formatBytes(storage.usage) : '—'}
+            value={storage ? formatBytes(storage.usage) : '-'}
             unit="on this device"
             detail={storage ? `of about ${formatBytes(storage.quota)}` : 'Not reported'}
           />
@@ -334,7 +334,7 @@ export function SettingsPage() {
                 )}
                 <span className="grow" style={{ whiteSpace: 'normal' }}>
                   <span style={{ fontWeight: 600 }}>{typeLabel(j.type)}</span>
-                  {j.detail ? ` — ${j.detail}` : ''}
+                  {j.detail ? ` - ${j.detail}` : ''}
                   {j.error ? (
                     <span style={{ display: 'block', color: 'var(--rp-danger)', fontSize: 13 }}>
                       {j.error.replace(/^model-missing:[^|]*\|/, '')}
@@ -434,7 +434,7 @@ function LibrariesEditor({
       });
       onSaved({ ebookDirs, audiobookDirs: audioDirs, alignmentDirs: alignDirs });
       await api('/api/library/rescan', { method: 'POST' }).catch(() => {});
-      toast.show('Folders saved — rescanning');
+      toast.show('Folders saved - rescanning');
     } catch {
       toast.show('Could not save folders');
     } finally {
@@ -464,7 +464,7 @@ function LibrariesEditor({
       <h3 className="settings-h3">Alignment folder</h3>
       <p className="settings-section__lede">
         Where the timings are saved once a book has been lined up, so they survive rebuilding the
-        container. This is the only folder ReadPort writes to — mount it read-write. Without one,
+        container. This is the only folder ReadPort writes to - mount it read-write. Without one,
         the timings live in the app&rsquo;s own data and a rebuild takes them with it.
       </p>
       <LibraryFolders
@@ -481,7 +481,7 @@ function LibrariesEditor({
             {data.alignments.files === 0
               ? 'Nothing saved yet.'
               : `${data.alignments.files} saved · ${formatBytes(data.alignments.bytes)}`}
-            {data.alignments.problem ? ` — ${data.alignments.problem}` : ''}
+            {data.alignments.problem ? ` - ${data.alignments.problem}` : ''}
           </p>
           {/* The redeploy question, kept beside the count that answers it:
               adopt what is already here, or time every book again. Off leaves
@@ -492,7 +492,7 @@ function LibrariesEditor({
               <span className="hint" style={{ display: 'block' }}>
                 {data.alignments.files > 0
                   ? `On, the ${data.alignments.files} saved here are adopted after a scan and those books are not timed again.`
-                  : 'Applies after a scan finds files here — typically the first scan of a rebuilt container.'}
+                  : 'Applies after a scan finds files here - typically the first scan of a rebuilt container.'}
               </span>
             </span>
             <input
@@ -565,7 +565,7 @@ function AccountSelfService({ via }: { via: string }) {
       setNext('');
       toast.show(
         r.revokedOtherSessions
-          ? `Password changed — signed out of ${r.revokedOtherSessions} other device${r.revokedOtherSessions === 1 ? '' : 's'}`
+          ? `Password changed - signed out of ${r.revokedOtherSessions} other device${r.revokedOtherSessions === 1 ? '' : 's'}`
           : 'Password changed',
       );
     } catch (err) {
@@ -659,7 +659,7 @@ function OfflineStorageSection({ storage }: { storage: { usage: number; quota: n
         </p>
       )}
       <p style={{ color: 'var(--rp-text-soft)', fontSize: 13.5 }}>
-        Downloads are per-title and explicit — manage them from each book page.
+        Downloads are per-title and explicit - manage them from each book page.
       </p>
     </section>
   );
@@ -791,7 +791,7 @@ function AlignmentSection({
       <h2>Alignment</h2>
       <p className="settings-section__lede">
         Lining a book up with its audiobook is what lets you switch between reading and listening at
-        the same place. It happens once per book, here on this server — no audio, text or metadata
+        the same place. It happens once per book, here on this server - no audio, text or metadata
         ever leaves it.
       </p>
 
@@ -809,7 +809,7 @@ function AlignmentSection({
         <div className="banner banner--error" role="alert">
           <IconAlert size={16} />
           <span className="grow">
-            This server&rsquo;s catalog is out of date — update ReadPort.
+            This server&rsquo;s catalog is out of date - update ReadPort.
           </span>
         </div>
       )}
@@ -866,7 +866,7 @@ function AlignmentSection({
       </div>
       <p className="settings-section__lede">
         Switching from reading to listening always lands a little <em>behind</em> where you were,
-        never ahead — so a switch never plays you a sentence you have not read yet.
+        never ahead - so a switch never plays you a sentence you have not read yet.
       </p>
 
       <h3 className="settings-h3">Language</h3>

@@ -2,14 +2,14 @@
  * The n-gram index, built over the SHORTER of the two strings.
  *
  * Anchoring needs the grams that occur exactly once on each side. The obvious
- * way to find them — index both sides into `Map<string, number>` — allocates
+ * way to find them - index both sides into `Map<string, number>` - allocates
  * one 14-character string per position, about ninety bytes each in V8, which
  * put a hard cap on book length: at 1.2 million characters the index already
  * cost ~110 MB a side, and a 36-hour Russian audiobook romanizes to more than
  * that, so the tail of the book silently became one long gap.
  *
- * This indexes only the heard side — under sampling that is a few tens of
- * thousands of characters against a book's million-plus — into flat typed
+ * This indexes only the heard side - under sampling that is a few tens of
+ * thousands of characters against a book's million-plus - into flat typed
  * arrays, then streams the book past it with a rolling hash. Every hit is
  * confirmed by comparing the actual characters, so a hash collision costs a
  * wasted comparison and never a wrong anchor, and a gram's multiplicity on the

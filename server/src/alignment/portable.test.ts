@@ -27,7 +27,7 @@ import {
  * Two properties matter more than the rest. A file must round-trip exactly,
  * because what comes back is used as timing truth for a whole book. And a bad
  * file must come back as a rejection a self-hoster can act on, never as a
- * throw — these files live on a folder the user syncs, edits and backs up, so
+ * throw - these files live on a folder the user syncs, edits and backs up, so
  * "damaged" is a normal state of the world, not an exceptional one.
  */
 

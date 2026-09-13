@@ -6,7 +6,7 @@ body:
     attributes:
       value: |
         Thanks for taking the time. The most useful bug reports say what you
-        did, what happened, and what you expected — in that order.
+        did, what happened, and what you expected - in that order.
   - type: textarea
     id: what
     attributes:
@@ -56,7 +56,7 @@ body:
       label: Server log
       description: |
         `docker compose logs --tail 200 readport`. Redact anything you would
-        rather not publish — paths and book titles are fine to remove.
+        rather not publish - paths and book titles are fine to remove.
       render: text
   - type: checkboxes
     id: checks

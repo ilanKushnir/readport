@@ -4,7 +4,7 @@ import { MANUAL_LINK_NOTE, pairStatusLabel, UNALIGNED_PAIR_NOTE } from './pairLa
 /**
  * Paired-edition labels must never overclaim: an unaligned linked pair can
  * resolve NO positions at all (the resolve endpoint returns unavailable),
- * so the label must say switching is unavailable until alignment exists —
+ * so the label must say switching is unavailable until alignment exists -
  * not promise "chapter accuracy" or any other granularity.
  */
 
@@ -55,7 +55,7 @@ describe('pairStatusLabel', () => {
 });
 
 describe('Pairing-page copy (shared constants rendered by PairsPage)', () => {
-  it('an unaligned pair is described as UNAVAILABLE until alignment — never approximate', () => {
+  it('an unaligned pair is described as UNAVAILABLE until alignment - never approximate', () => {
     for (const copy of [UNALIGNED_PAIR_NOTE, MANUAL_LINK_NOTE]) {
       expect(copy).toMatch(/unavailable until alignment completes/i);
       expect(copy).not.toMatch(/approximate/i);

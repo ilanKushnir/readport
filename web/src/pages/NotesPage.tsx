@@ -13,9 +13,9 @@ import { formatDate } from '../lib/format';
  * The reader already shows a book's own marks while you are in it. This is the
  * other half: the thing you wrote down six weeks ago in a book you have since
  * finished, which is unreachable if the only way to a note is to be reading
- * the page it sits on. So it is organised the way that search actually goes —
+ * the page it sits on. So it is organised the way that search actually goes -
  * newest first, filterable by what kind of mark it is, and searchable across
- * the note, the quoted passage and the book's title at once — and every entry
+ * the note, the quoted passage and the book's title at once - and every entry
  * opens the book at exactly the place it came from.
  */
 
@@ -97,7 +97,7 @@ export function NotesPage() {
       await api(`/api/annotations/${a.id}`, { method: 'DELETE' });
       setAll((list) => (list ?? []).filter((x) => x.id !== a.id));
     } catch {
-      toast.show('Could not delete — are you offline?');
+      toast.show('Could not delete - are you offline?');
     }
   };
 

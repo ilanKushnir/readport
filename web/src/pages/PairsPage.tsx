@@ -23,7 +23,7 @@ import { bucketCoverage } from '../lib/coverageBars';
 type PairAction = 'confirm' | 'reject' | 'unlink' | 'align';
 
 /**
- * Two outcomes, not two settings — the same pair of choices Settings offers,
+ * Two outcomes, not two settings - the same pair of choices Settings offers,
  * worded for the moment you are about to start a queue.
  */
 const ACCURACY: [Settings['alignPrecision'], string, string][] = [
@@ -45,7 +45,7 @@ export function PairsPage() {
   /**
    * The two alignment choices, editable here rather than only in Settings.
    * This is the page where someone is looking at the queue and deciding how
-   * much of it to run and how well — sending them elsewhere to answer that,
+   * much of it to run and how well - sending them elsewhere to answer that,
    * then back again, is the wrong shape for the decision.
    */
   const [settings, setSettings] = useState<Pick<Settings, 'autoAlign' | 'alignPrecision'> | null>(
@@ -110,7 +110,7 @@ export function PairsPage() {
       await api(`/api/pairs/${pairId}/${action}`, { method: 'POST' });
       toast.show(
         action === 'confirm'
-          ? 'Pair confirmed — alignment queued'
+          ? 'Pair confirmed - alignment queued'
           : action === 'align'
             ? 'Alignment queued'
             : action === 'reject'
@@ -129,7 +129,7 @@ export function PairsPage() {
    * Say yes to every suggestion at once.
    *
    * A library owned mostly in both formats produces dozens of candidates,
-   * and each one was a separate tap — on the page whose whole purpose is to
+   * and each one was a separate tap - on the page whose whole purpose is to
    * get them linked and aligned.
    */
   const confirmAll = async (ids: string[]) => {
@@ -142,7 +142,7 @@ export function PairsPage() {
       });
       toast.show(
         res.confirmed > 0
-          ? `Linked ${res.confirmed} book${res.confirmed === 1 ? '' : 's'} — alignment queued`
+          ? `Linked ${res.confirmed} book${res.confirmed === 1 ? '' : 's'} - alignment queued`
           : 'Nothing left to link',
       );
       await load();
@@ -169,7 +169,7 @@ export function PairsPage() {
     try {
       await api(`/api/models/${modelId}/download`, { method: 'POST' });
       // One model, every language: there is nothing to name here.
-      toast.show('Downloading the alignment model — alignment resumes when it lands', {
+      toast.show('Downloading the alignment model - alignment resumes when it lands', {
         label: 'Watch progress',
         onClick: () => {
           location.assign('/settings#alignment');
@@ -305,7 +305,7 @@ export function PairsPage() {
                   <span className="hint" style={{ display: 'block' }}>
                     {settings.autoAlign
                       ? 'New matches queue themselves. Turn off to start books yourself.'
-                      : 'Nothing runs on its own — start books from here.'}
+                      : 'Nothing runs on its own - start books from here.'}
                   </span>
                 </span>
                 <input
@@ -344,7 +344,7 @@ export function PairsPage() {
           onClose={() => setLinkOpen(false)}
           onLinked={() => {
             setLinkOpen(false);
-            toast.show('Pair linked — alignment queued');
+            toast.show('Pair linked - alignment queued');
             void load();
           }}
         />
@@ -463,7 +463,7 @@ function ScoreCell({
         {good === false && <IconAlert size={13} aria-hidden="true" />}
         {value}
         {good !== null && good !== undefined && (
-          <span className="visually-hidden">{good ? ' — good' : ' — poor'}</span>
+          <span className="visually-hidden">{good ? ' - good' : ' - poor'}</span>
         )}
       </b>
     </div>
@@ -496,7 +496,7 @@ function EditionTile({
         </span>
         <span className="edition-tile__title">{book?.title ?? 'Unknown'}</span>
         <span className="edition-tile__meta">
-          {book?.author ?? '—'}
+          {book?.author ?? '-'}
           {extra ? ` · ${extra}` : ''}
         </span>
       </span>
@@ -537,7 +537,7 @@ function PairCard({
     if (pair.status === 'auto') {
       return [
         {
-          text: 'Strong metadata match — content verification passed; linked automatically.',
+          text: 'Strong metadata match - content verification passed; linked automatically.',
           done: true,
         },
       ];
@@ -564,7 +564,7 @@ function PairCard({
           ? 'from the ebook'
           : lang.source === 'audio-tags'
             ? 'from the audio tags'
-            : 'unknown — will be detected';
+            : 'unknown - will be detected';
 
   return (
     <article
@@ -648,7 +648,7 @@ function PairCard({
         )}
         <ScoreCell
           label="Identifiers"
-          value={e.identifierMatch ? 'Match' : '—'}
+          value={e.identifierMatch ? 'Match' : '-'}
           good={e.identifierMatch ? true : null}
         />
         <ScoreCell
@@ -696,7 +696,7 @@ function PairCard({
             <span style={{ fontWeight: 600 }}>
               {job.state === 'queued' ? 'Alignment queued' : 'Aligning'}
             </span>
-            {job.detail ? ` — ${job.detail}` : ''}
+            {job.detail ? ` - ${job.detail}` : ''}
             <span className="progressbar" aria-hidden="true">
               <span style={{ width: `${Math.round(job.progress * 100)}%` }} />
             </span>
@@ -713,7 +713,7 @@ function PairCard({
                 existed since forced alignment landed, so it always fell
                 through to a model name nobody could act on. */}
             <strong>Alignment model needed.</strong>{' '}
-            {job.modelMissing.message.replace(/[ —-]*(download|get) it in Settings.*$/i, '')}.
+            {job.modelMissing.message.replace(/[ --]*(download|get) it in Settings.*$/i, '')}.
             Download it and this alignment runs by itself when it lands.
           </span>
           <button
@@ -893,7 +893,7 @@ function ManualLinkSheet({ onClose, onLinked }: { onClose: () => void; onLinked:
           {ebooks.map((b) => (
             <option key={b.id} value={b.id}>
               {b.title}
-              {b.author ? ` — ${b.author}` : ''}
+              {b.author ? ` - ${b.author}` : ''}
             </option>
           ))}
         </select>
@@ -910,7 +910,7 @@ function ManualLinkSheet({ onClose, onLinked }: { onClose: () => void; onLinked:
           {audios.map((b) => (
             <option key={b.id} value={b.id}>
               {b.title}
-              {b.author ? ` — ${b.author}` : ''}
+              {b.author ? ` - ${b.author}` : ''}
             </option>
           ))}
         </select>

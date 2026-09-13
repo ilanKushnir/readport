@@ -104,7 +104,7 @@ describe('cueAt', () => {
   });
 
   it('says the narration is before this chapter, but not for a hair', () => {
-    expect(cueAt(CUES, 0).state).toBe('hold'); // 1s early — clock rounding
+    expect(cueAt(CUES, 0).state).toBe('hold'); // 1s early - clock rounding
     expect(cueAt(CUES, 1_000 - HOLD_MS - 1).state).toBe('before');
   });
 

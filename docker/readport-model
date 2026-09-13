@@ -1,5 +1,5 @@
 #!/bin/sh
-# readport-model — fetch the alignment model into the models volume from the
+# readport-model - fetch the alignment model into the models volume from the
 # command line. The same download is available with a progress bar in
 # Settings → Alignment; this exists for a server with no browser attached.
 #
@@ -19,7 +19,7 @@ case "${1:-install}" in
     missing=0
     # A here-document, not a pipe: a piped loop runs in a subshell, so the
     # `missing` it sets is discarded and `status` reported success even with
-    # no model on disk — which is exactly what a health check would ask.
+    # no model on disk - which is exactly what a health check would ask.
     while IFS='|' read -r rel _url; do
       [ -n "$rel" ] || continue
       if [ -s "$MODELS_DIR/$rel" ]; then
@@ -35,7 +35,7 @@ EOF
     ;;
   install)
     echo "Alignment model → $MODELS_DIR"
-    echo "Licence: CC-BY-NC-4.0 — free for your own library, not for a paid service."
+    echo "Licence: CC-BY-NC-4.0 - free for your own library, not for a paid service."
     echo "$FILES" | while IFS='|' read -r rel url; do
       dest="$MODELS_DIR/$rel"
       if [ -s "$dest" ]; then

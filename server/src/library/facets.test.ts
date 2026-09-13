@@ -138,7 +138,7 @@ describe('facetGroups', () => {
     expect(genres.values.some((v) => v.value === 'Poetry')).toBe(false);
   });
 
-  it('reads years and ratings backwards — newest and best first', () => {
+  it('reads years and ratings backwards - newest and best first', () => {
     const a = addBook();
     const b = addBook();
     writeFacets(db, a, facetsForBook({ year: 1998, rating: 3 }));

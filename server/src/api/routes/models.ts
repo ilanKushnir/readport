@@ -86,7 +86,7 @@ export function registerModelRoutes(app: FastifyInstance, ctx: AppContext): void
     const { id } = req.params as { id: string };
     const spec = modelById(id);
     if (!spec) return reply.code(404).send({ error: 'not-found' });
-    // Remove every artefact, not just the big one — a stray vocab.json would
+    // Remove every artefact, not just the big one - a stray vocab.json would
     // otherwise linger for the life of the volume.
     for (const f of modelFiles(spec)) {
       const p = path.join(config.modelsDir, f.name);

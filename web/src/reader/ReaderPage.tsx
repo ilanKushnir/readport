@@ -83,9 +83,17 @@ const THEME_BG: Record<ReturnType<typeof effectiveTheme>, string> = {
  * How long a confident anchor stays lit.
  *
  * Long enough for the eye to catch it, short enough that the page is never
- * left looking marked up — which is what a permanent wash did.
+ * left looking marked up - which is what a permanent wash did.
  */
 const FLASH_MS = 900;
+
+/**
+ * Where the marker sits while auto-scrolling, as a fraction of the height.
+ *
+ * Slightly above the middle: what you are about to read matters more than
+ * what you have read, so the page keeps more text below the line than above.
+ */
+const AUTO_SCROLL_ANCHOR = 0.42;
 
 export function ReaderPage() {
   const { id = '' } = useParams();
@@ -101,7 +109,7 @@ export function ReaderPage() {
    * Bumped once per completed chapter load.
    *
    * The layout effect used to key off `html`, which fails silently when two
-   * consecutive chapters sanitize to the same string — React bails out of the
+   * consecutive chapters sanitize to the same string - React bails out of the
    * identical setState, the effect never runs, and `chapterLoadingRef` stays
    * true forever, blocking every page turn from then on. A counter always
    * changes.
@@ -120,8 +128,12 @@ export function ReaderPage() {
   const flashTimerRef = useRef<number | null>(null);
   /** Where the narration is, as a fraction down the visible text. */
   const [paceTop, setPaceTop] = useState<number | null>(null);
-  /** Keep the pace marker centred and scroll the page under it. */
+  /** Keep the pace marker still and scroll the page under it. */
   const [autoScroll, setAutoScroll] = useState(false);
+  /** Where the scroller should be so the marker sits on the anchor line. */
+  const autoScrollTargetRef = useRef<number | null>(null);
+  /** Has the voice been off-screen since the reader last took over? */
+  const cueLeftSinceTakeoverRef = useRef(true);
   /**
    * This chapter would not divide into pages, so it scrolls instead.
    * Per-chapter, not a preference: the next chapter gets a fresh chance.
@@ -153,7 +165,7 @@ export function ReaderPage() {
    * The two chrome bars, measured rather than guessed at.
    *
    * The page reserves room for them in its own padding, and the numbers used
-   * to be constants — 72 at the top, 64 at the bottom. The bottom bar is 96px
+   * to be constants - 72 at the top, 64 at the bottom. The bottom bar is 96px
    * with the shipped defaults and 165px once the read-along transport is in
    * it, so the last line of every page sat behind an opaque bar, and with
    * read-along on it was three lines. A constant cannot track a bar whose
@@ -199,7 +211,7 @@ export function ReaderPage() {
    * True from asking for a chapter until it has rendered and been paginated.
    * `page` and `pageCount` describe the OLD chapter in that window, so a
    * second page turn arriving inside it would be answered with stale numbers
-   * — which, at the end of the last-but-one chapter, reads as "past the last
+   * - which, at the end of the last-but-one chapter, reads as "past the last
    * page of the last chapter" and marks the book finished.
    */
   const chapterLoadingRef = useRef(false);
@@ -301,7 +313,7 @@ export function ReaderPage() {
           ),
         ]);
         // This one request cannot go through api() (the body is HTML), so
-        // it reports its own 401 — otherwise a revoked session keeps the
+        // it reports its own 401 - otherwise a revoked session keeps the
         // reader open and blames the network for it.
         if (res.status === 401) await notifyUnauthorized(`/api/books/${id}/chapter/${spineIdx}`);
         if (!res.ok) throw new Error(`chapter ${res.status}`);
@@ -333,7 +345,7 @@ export function ReaderPage() {
     const pages = pagesRef.current;
     if (!viewport || !content || !pages) return null;
     // In landscape on a notched phone the cutout is on one side, so the page
-    // box has to start inside it — otherwise a column of text runs underneath
+    // box has to start inside it - otherwise a column of text runs underneath
     // the notch and the first characters of every line are hidden.
     const root = getComputedStyle(document.documentElement);
     const safeL = parseFloat(root.getPropertyValue('--rp-safe-left')) || 0;
@@ -484,7 +496,7 @@ export function ReaderPage() {
   useLayoutEffect(() => {
     // Cleared before anything can bail out. A chapter that sanitizes to
     // nothing used to return above this line and leave the flag set, which
-    // blocks every page turn from then on — the reader simply stops.
+    // blocks every page turn from then on - the reader simply stops.
     chapterLoadingRef.current = false;
     const content = contentRef.current;
     if (!content || !html || !manifest) return;
@@ -553,7 +565,7 @@ export function ReaderPage() {
   /**
    * Pick up preferences changed on another device.
    *
-   * Once, when the reader opens a book — not on a timer. Preferences are
+   * Once, when the reader opens a book - not on a timer. Preferences are
    * changed rarely and read constantly, so polling would be all cost; and
    * re-reading them mid-chapter would reflow the page under someone who is
    * reading it. The local copy is what the first paint used, so this can only
@@ -609,7 +621,7 @@ export function ReaderPage() {
    * Measure the chapter again once it has finished becoming itself.
    *
    * Pagination is measured in a layout effect immediately after the chapter
-   * HTML is injected — and the line above that rewrites every `img` src, so
+   * HTML is injected - and the line above that rewrites every `img` src, so
    * at measuring time every image in the chapter is zero pixels tall. A
    * chapter with figures fits in one column, `pageCount` becomes 1, and
    * paging switches off. Then the images load, the text grows past the bottom
@@ -621,7 +633,7 @@ export function ReaderPage() {
    * Each pass also checks for text that has become trapped. In a correctly
    * paginated chapter the content is exactly as tall as its box and overflows
    * sideways into more columns, so vertical overflow means the columns never
-   * formed — a monolithic element too tall to fragment, a publisher
+   * formed - a monolithic element too tall to fragment, a publisher
    * stylesheet doing something strange. Whatever the cause, the honest answer
    * is to let that chapter scroll rather than hide the end of it.
    */
@@ -728,7 +740,7 @@ export function ReaderPage() {
   // Lifecycle persistence: expose the LIVE reading position so backgrounding
   // the tab records it even inside the scroll debounce window. In scroll
   // mode the offset is computed synchronously from live scroll geometry at
-  // checkpoint time — the debounced ref may be up to 600ms stale.
+  // checkpoint time - the debounced ref may be up to 600ms stale.
   useEffect(() => {
     if (!manifest) return;
     return setActiveLocatorProvider(() => {
@@ -787,9 +799,14 @@ export function ReaderPage() {
     };
     // Reading along, in scroll mode: a wheel or a finger means the reader is
     // moving the page themselves, so the narration stops dragging it back.
-    // Listening for the gesture rather than for `scroll` is deliberate — the
+    // Listening for the gesture rather than for `scroll` is deliberate - the
     // follow effect scrolls too, and a scroll event cannot say who caused it.
-    const onUserScroll = () => setFollowing(false);
+    const onUserScroll = () => {
+      setFollowing(false);
+      // They are where they want to be; the voice being visible here is not a
+      // reason to drag them back.
+      cueLeftSinceTakeoverRef.current = false;
+    };
     scroller.addEventListener('scroll', onScroll, { passive: true });
     scroller.addEventListener('wheel', onUserScroll, { passive: true });
     scroller.addEventListener('touchmove', onUserScroll, { passive: true });
@@ -807,7 +824,7 @@ export function ReaderPage() {
   const gotoChapter = useCallback(
     (s: number, charOffset = 0, intent: 'seek' | 'open' = 'seek', fragment?: string) => {
       if (!manifest) return;
-      // Jumping by hand — contents, search, a bookmark, the slider — takes the
+      // Jumping by hand - contents, search, a bookmark, the slider - takes the
       // wheel back from the narration, exactly as turning a page does. The one
       // caller that must not is the narration itself, which re-arms after.
       setFollowing(false);
@@ -861,7 +878,7 @@ export function ReaderPage() {
    * Mark the book read.
    *
    * Lifted out of nextPage, which only reaches it by turning past the last
-   * page — a thing scroll mode has no way to do, so in scroll mode a book
+   * page - a thing scroll mode has no way to do, so in scroll mode a book
    * could never be finished and the "Finish book" button at the end of the
    * last chapter did nothing at all.
    */
@@ -872,7 +889,7 @@ export function ReaderPage() {
       ...locatorAt(manifest, sentences, spineIdx, last),
       pct: 1,
     });
-    toast.show('The End — marked as finished');
+    toast.show('The End - marked as finished');
   }, [manifest, spineIdx, sentences, id, toast]);
 
   const nextPage = useCallback(() => {
@@ -932,7 +949,7 @@ export function ReaderPage() {
 
   /**
    * The narration has run off the end (or the start) of this chapter. Follow
-   * it, and stay in follow mode — this is the voice moving the page, which is
+   * it, and stay in follow mode - this is the voice moving the page, which is
    * the whole point, not the reader taking over.
    */
   const onLeaveChapter = useCallback(
@@ -984,7 +1001,7 @@ export function ReaderPage() {
     // confident-looking guess, and the reader's eye follows it to the wrong
     // line; worse, an inaccurate one leaves the page looking marked up. The
     // pace marker in the margin carries the continuous signal instead, and
-    // the text itself is only touched to re-anchor the eye — briefly — when
+    // the text itself is only touched to re-anchor the eye - briefly - when
     // the timing is tight enough to be a fact.
     if (flashTimerRef.current !== null) window.clearTimeout(flashTimerRef.current);
     if (isConfident(cue)) {
@@ -1005,7 +1022,10 @@ export function ReaderPage() {
         : scrollerRef.current
       )?.getBoundingClientRect(),
     );
-    if (!shouldFollow(following, cue, onScreen)) return;
+    // Once the reader has taken over, the voice has to leave the screen and
+    // come back before the page starts following it again.
+    if (!onScreen) cueLeftSinceTakeoverRef.current = true;
+    if (!shouldFollow(following, cue, onScreen, cueLeftSinceTakeoverRef.current)) return;
     if (!following) setFollowing(true);
     if (onScreen) return;
     if (prefs.mode === 'paginated') {
@@ -1085,7 +1105,7 @@ export function ReaderPage() {
   /**
    * The pace marker: where the narration has got to, beside the text.
    *
-   * Highlighting every sentence made two promises the alignment cannot keep —
+   * Highlighting every sentence made two promises the alignment cannot keep -
    * that this exact sentence is being spoken, and that the marks left behind
    * mean something. A marker in the margin makes the honest promise instead:
    * roughly here, moving at the pace the narrator is reading. It is drawn
@@ -1094,7 +1114,7 @@ export function ReaderPage() {
    * Positioned from the interpolated character offset, which keeps moving
    * between sentences rather than stalling and jumping.
    */
-  useEffect(() => {
+  const updatePace = useCallback(() => {
     if (!readAlong || !narration.playing) {
       setPaceTop(null);
       return;
@@ -1114,40 +1134,102 @@ export function ReaderPage() {
     }
     const r = range.getBoundingClientRect();
     const b = box.getBoundingClientRect();
+
+    // Auto-scrolling: the marker is nailed to the anchor line and the text is
+    // moved to meet it. Its position is therefore a constant, and what varies
+    // is where the page has to be.
+    if (autoScroll && prefs.mode !== 'paginated') {
+      const scroller = scrollerRef.current;
+      setPaceTop(scroller ? scroller.clientHeight * AUTO_SCROLL_ANCHOR : null);
+      if (scroller) {
+        autoScrollTargetRef.current =
+          scroller.scrollTop +
+          (r.top - b.top) +
+          r.height / 2 -
+          scroller.clientHeight * AUTO_SCROLL_ANCHOR;
+      }
+      return;
+    }
+    autoScrollTargetRef.current = null;
+
     // Off the current page or scrolled out of view: nothing to point at.
     if (r.height === 0 || r.bottom < b.top || r.top > b.bottom) {
       setPaceTop(null);
       return;
     }
     setPaceTop(r.top - b.top + r.height / 2);
-  }, [readAlong, narration.playing, narration.bookMs, narration.cues, prefs.mode, page]);
+  }, [readAlong, narration.playing, narration.bookMs, narration.cues, prefs.mode, autoScroll]);
+
+  // The clock moves the marker; so does the reader. Recomputing only on the
+  // clock left it pinned to a stale screen position during a scroll - it sat
+  // still while the text slid under it, then jumped on the next tick, and
+  // blinked in and out as the on-screen test flipped between ticks.
+  useEffect(() => {
+    updatePace();
+  }, [updatePace, page]);
+
+  useEffect(() => {
+    if (!readAlong) return;
+    const scroller = scrollerRef.current;
+    if (!scroller || prefs.mode === 'paginated') return;
+    let raf = 0;
+    const onScroll = () => {
+      // One recompute per frame at most: scroll fires far faster than paint.
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        updatePace();
+      });
+    };
+    scroller.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      scroller.removeEventListener('scroll', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [readAlong, prefs.mode, updatePace, html]);
 
   /**
-   * Auto-scroll: hold the pace marker at the middle of the screen.
+   * Auto-scroll: the marker holds still and the text moves under it.
    *
-   * Scrolling mode only — in paginated mode the page already turns itself when
-   * the voice reaches the next one. The scroll is eased rather than snapped so
-   * the line you are reading does not jump out from under you, and it is
-   * skipped entirely while the reader is dragging the page themselves.
+   * The first version did the opposite - the marker drifted down and the page
+   * jumped to catch it every so often, which is two things moving and neither
+   * of them smoothly. Pinned, it becomes what it should be: a fixed line to
+   * read at, with the book flowing past it.
+   *
+   * Eased every frame rather than scrolled in steps. `scrollBy` with smooth
+   * behaviour restarts its own animation on each call, so successive nudges
+   * fight each other and the page stutters; a small fraction of the remaining
+   * distance per frame is continuous and self-correcting, speeding up when
+   * the voice gets ahead and settling when it is level.
+   *
+   * Scrolling mode only: in paginated mode the page already turns itself.
    */
   useEffect(() => {
     if (!autoScroll || !readAlong || !narration.playing) return;
     if (prefs.mode === 'paginated') return;
     const scroller = scrollerRef.current;
-    if (scroller === null || paceTop === null) return;
-    const middle = scroller.clientHeight / 2;
-    const drift = paceTop - middle;
-    // A few pixels either way is the marker breathing, not the page needing
-    // to move; scrolling for that would never settle.
-    if (Math.abs(drift) < 24) return;
-    scroller.scrollBy({ top: drift, behavior: 'smooth' });
-  }, [autoScroll, readAlong, narration.playing, paceTop, prefs.mode]);
+    if (!scroller) return;
+    let raf = 0;
+    const step = () => {
+      raf = requestAnimationFrame(step);
+      const want = autoScrollTargetRef.current;
+      if (want === null) return;
+      const drift = want - scroller.scrollTop;
+      // Sub-pixel drift is the estimate breathing, not the page needing to
+      // move; chasing it would never settle.
+      if (Math.abs(drift) < 0.5) return;
+      // Ease toward it. Clamped so a chapter jump glides rather than lurches.
+      scroller.scrollTop += Math.max(-14, Math.min(14, drift * 0.08));
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [autoScroll, readAlong, narration.playing, prefs.mode]);
 
   /**
    * The page turn actually used.
    *
    * A reader who has asked the system for less motion gets none, whatever the
-   * preference says — the preference is a taste, that is an accessibility
+   * preference says - the preference is a taste, that is an accessibility
    * setting, and it wins.
    */
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -1164,7 +1246,7 @@ export function ReaderPage() {
    * Fade: the page does not travel, it crosses over.
    *
    * Setting the transition to `opacity` alone would do nothing, because
-   * nothing changes the opacity — so the turn would silently be `instant`
+   * nothing changes the opacity - so the turn would silently be `instant`
    * wearing another name. This dips it and brings it back.
    */
   useEffect(() => {
@@ -1194,7 +1276,7 @@ export function ReaderPage() {
   );
 
   /**
-   * A tap while reading along. On a timed sentence it moves the voice there —
+   * A tap while reading along. On a timed sentence it moves the voice there -
    * the gesture the whole feature turns on. On the margin, or on text the
    * aligner never timed, it falls through to the reader's own behaviour, so
    * no existing gesture is lost.
@@ -1215,8 +1297,8 @@ export function ReaderPage() {
    * A plain click near either edge of the column turns the page.
    *
    * On touch the tapzone buttons on top of the page do this. They cannot on a
-   * mouse — a button over the text swallows the drag that would otherwise be
-   * a selection — so there they sit behind the page box and this handles the
+   * mouse - a button over the text swallows the drag that would otherwise be
+   * a selection - so there they sit behind the page box and this handles the
    * part of the edge that the text covers. Only ever reached for a genuine
    * tap: a drag is filtered out before this runs, which is the whole point.
    */
@@ -1244,7 +1326,7 @@ export function ReaderPage() {
     try {
       if (!localStorage.getItem('rp-readalong-hint')) {
         localStorage.setItem('rp-readalong-hint', '1');
-        toast.show('Reading along — tap any line to move the voice there');
+        toast.show('Reading along - tap any line to move the voice there');
       }
     } catch {
       /* private mode: the hint is a nicety, not a requirement */
@@ -1292,7 +1374,7 @@ export function ReaderPage() {
         end,
         text: sel.toString().slice(0, 500),
         // The raw centre of the selection. Clamping here and then offsetting
-        // by half a guessed width at render time overshot both edges — the
+        // by half a guessed width at render time overshot both edges - the
         // menu ran off the right of a phone for most selections and off the
         // left for any near the start of a line.
         x: rect.left + rect.width / 2,
@@ -1301,7 +1383,7 @@ export function ReaderPage() {
     };
     const onSelectionChange = () => {
       // The note sheet autofocuses its textarea, which collapses the DOM
-      // selection — and dropping it here would attach the note to a point
+      // selection - and dropping it here would attach the note to a point
       // instead of to the passage the reader had chosen, losing the quotation
       // with it. The sheet owns the selection until it closes.
       if (sheetRef.current === 'note') return;
@@ -1357,7 +1439,7 @@ export function ReaderPage() {
         document.getSelection()?.removeAllRanges();
         return true;
       } catch {
-        toast.show('Could not save — are you offline?');
+        toast.show('Could not save - are you offline?');
         return false;
       }
     },
@@ -1366,7 +1448,7 @@ export function ReaderPage() {
 
   /**
    * The mark the reader tapped. A highlight is paint, not an element, so the
-   * tap is resolved by character offset (see marks.ts) — and it has to win
+   * tap is resolved by character offset (see marks.ts) - and it has to win
    * over toggling the chrome, or a highlight would be unreachable on a phone.
    */
   /**
@@ -1383,7 +1465,7 @@ export function ReaderPage() {
    * Where the position slider's thumb is while it is being dragged.
    *
    * The input used to be driven by the real reading position and to commit on
-   * every change — so each step of a drag loaded a chapter, and the thumb
+   * every change - so each step of a drag loaded a chapter, and the thumb
    * sprang back to wherever the reader actually still was. The thumb now
    * follows the finger and the jump happens once, when it stops moving.
    */
@@ -1440,7 +1522,7 @@ export function ReaderPage() {
    *
    * `y` was clamped at the top only. The reader is a fixed, non-scrolling
    * surface, so a mark in the lower half of the page put Edit and Remove
-   * below the bottom edge with no way to reach them — and no way to scroll
+   * below the bottom edge with no way to reach them - and no way to scroll
    * to them. Measured, then flipped above the mark when it does not fit
    * below, and finally pinned inside the safe area.
    */
@@ -1464,7 +1546,7 @@ export function ReaderPage() {
   /**
    * Tell the toast how tall this page's chrome is.
    *
-   * The toast is pinned 96px up — the height of the bottom bar without
+   * The toast is pinned 96px up - the height of the bottom bar without
    * read-along. With the narration transport open the bar is taller, and the
    * toast landed on top of it, covering the play button for eight seconds.
    */
@@ -1491,7 +1573,7 @@ export function ReaderPage() {
         setMarkPop((m) => (m && m.a.id === annId ? { ...m, a: res.annotation } : m));
         return true;
       } catch {
-        toast.show('Could not save the change — are you offline?');
+        toast.show('Could not save the change - are you offline?');
         return false;
       }
     },
@@ -1531,7 +1613,7 @@ export function ReaderPage() {
         setAnnotations((a) => a.filter((x) => x.id !== currentBookmark.id));
         toast.show('Bookmark removed');
       } catch {
-        toast.show('Could not remove the bookmark — are you offline?');
+        toast.show('Could not remove the bookmark - are you offline?');
       }
       return;
     }
@@ -1580,7 +1662,7 @@ export function ReaderPage() {
         },
       );
     } catch {
-      toast.show('Could not save — are you offline?');
+      toast.show('Could not save - are you offline?');
     }
   }, [manifest, currentBookmark, sentences, spineIdx, page, prefs.mode, id, toast]);
 
@@ -1590,7 +1672,7 @@ export function ReaderPage() {
         await api(`/api/annotations/${annId}`, { method: 'DELETE' });
         setAnnotations((a) => a.filter((x) => x.id !== annId));
       } catch {
-        toast.show('Could not delete — are you offline?');
+        toast.show('Could not delete - are you offline?');
       }
     },
     [toast],
@@ -1646,7 +1728,7 @@ export function ReaderPage() {
           (back > 0 ? `&back=${back}` : ''),
       );
     } catch {
-      toast.show('Switching failed — server unreachable?');
+      toast.show('Switching failed - server unreachable?');
     }
   }, [detail, manifest, sentences, spineIdx, id, navigate, toast]);
 
@@ -1830,7 +1912,10 @@ export function ReaderPage() {
             </div>
           </>
         ) : (
-          <div className="reader-scroller" ref={scrollerRef}>
+          <div
+            className={`reader-scroller ${autoScroll && readAlong ? 'is-autoscrolling' : ''}`}
+            ref={scrollerRef}
+          >
             <div
               ref={contentRef}
               className="reader-content"
@@ -2074,7 +2159,7 @@ export function ReaderPage() {
                 ? chapterTitle
                 : paginationFailed
                   ? // This chapter would not divide into pages, so it is
-                    // scrolling instead — say so rather than claim one page.
+                    // scrolling instead - say so rather than claim one page.
                     'This chapter scrolls'
                   : pagesLeft === 0
                     ? pageCount === 1
@@ -2102,7 +2187,7 @@ export function ReaderPage() {
             <div className="reader-tandem">
               {/* Read along adds the voice to the page; Listen instead leaves
                   the page for the player. Two different things, so two
-                  buttons — the one people came for reads first. */}
+                  buttons - the one people came for reads first. */}
               <button
                 className="tandem-pill tandem-pill--lead"
                 onClick={readAlong ? () => setReadAlong(false) : startReadAlong}
@@ -2111,7 +2196,7 @@ export function ReaderPage() {
                 title={
                   pair.switchable
                     ? 'Play the narration over the page you are reading'
-                    : 'Alignment not ready — the narration cannot follow the text yet'
+                    : 'Alignment not ready - the narration cannot follow the text yet'
                 }
               >
                 <IconReadAlong size={17} />
@@ -2202,7 +2287,7 @@ export function ReaderPage() {
                       </span>
                       <span className="bm-row__text">
                         {a.selectedText ?? a.note ?? 'Bookmarked page'}
-                        {a.kind === 'note' && a.note && a.selectedText ? ` — ${a.note}` : ''}
+                        {a.kind === 'note' && a.note && a.selectedText ? ` - ${a.note}` : ''}
                       </span>
                     </span>
                     <button
@@ -2268,7 +2353,7 @@ export function ReaderPage() {
           title={editingNote ? 'Edit note' : 'Add note'}
           onClose={() => {
             // On a phone the way to dismiss the keyboard is to tap outside,
-            // which lands on the backdrop and closes the sheet — so an
+            // which lands on the backdrop and closes the sheet - so an
             // accidental dismissal used to take the note with it silently.
             if (noteDraft.trim() && !window.confirm('Discard this note?')) return;
             setSheet('none');
@@ -2296,8 +2381,8 @@ export function ReaderPage() {
           <button
             className="btn"
             onClick={() => {
-              // Closing regardless discarded the text on any failure — offline,
-              // an expired session, a server hiccup — and there is no draft
+              // Closing regardless discarded the text on any failure - offline,
+              // an expired session, a server hiccup - and there is no draft
               // anywhere to recover it from. The toast already says what went
               // wrong; leaving the sheet open makes retrying one tap.
               void (async () => {
@@ -2543,7 +2628,7 @@ function ReaderSettingsSheet({
 
       {/* How the book moves. Choosing Pages or Scroll changes what the rest
           of this group can even mean, so what belongs to each mode is nested
-          under it rather than listed beside it — Columns used to sit under
+          under it rather than listed beside it - Columns used to sit under
           the heading "Progress bar", which is neither. */}
       <div className="rs-group">
         <div className="rs-label">How it reads</div>
@@ -2694,7 +2779,7 @@ interface SearchMatch {
  *
  * The server returns each hit already split into what came before it, the hit
  * itself, and what came after, so the row can mark the words without
- * re-finding them in the excerpt — re-finding would mark the wrong occurrence
+ * re-finding them in the excerpt - re-finding would mark the wrong occurrence
  * whenever a word appears twice inside sixty characters.
  */
 function SearchSheet({
@@ -2765,7 +2850,7 @@ function SearchSheet({
           )}
           {results.length === 0 ? (
             <p style={{ color: 'var(--rp-text-soft)' }}>
-              {failed ? 'Could not search — are you offline?' : 'No matches.'}
+              {failed ? 'Could not search - are you offline?' : 'No matches.'}
             </p>
           ) : (
             results.map((r, i) => (

@@ -26,8 +26,8 @@ export {
 /**
  * Reader appearance on this device.
  *
- * The contract — what a preference is, and which of them belong to the screen
- * rather than to the person — lives in @readport/shared so the server can
+ * The contract - what a preference is, and which of them belong to the screen
+ * rather than to the person - lives in @readport/shared so the server can
  * validate what it is handed. This module is the browser half: which device
  * class this is, where the local copy lives, and how the two are kept in step.
  *
@@ -44,7 +44,7 @@ const KEY = 'rp-reader-prefs';
  * Width alone would call a laptop in a narrow window a phone and hand it that
  * phone's type size, so the pointer is consulted too: a coarse pointer at
  * tablet width is a tablet, a fine pointer at any width is a desktop. Read
- * once per load — a reader does not change device mid-session, and re-deciding
+ * once per load - a reader does not change device mid-session, and re-deciding
  * on every resize would swap their settings while they drag a window.
  */
 export function deviceClass(): DeviceClass {
@@ -129,7 +129,7 @@ export async function syncPrefs(): Promise<ReaderPrefs> {
     const res = await api<{ reader: SyncedReaderPrefs | null }>('/api/prefs/reader');
     const winner = reconcileReaderPrefs(local, res.reader);
     if (winner !== local) storeSynced(winner);
-    // This device has something the server has not seen — a change made
+    // This device has something the server has not seen - a change made
     // offline, or a first run against a server that has never been told.
     else if (Date.parse(local.updatedAt) > Date.parse(res.reader?.updatedAt ?? '1970-01-01')) {
       void api('/api/prefs/reader', { method: 'PUT', body: local }).catch(() => {});

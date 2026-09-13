@@ -7,7 +7,7 @@
    the server (at most once per TTL); an explicit 401/403 marks the session
    revoked, triggers the purge callback, and cached private content stops
    being served. When the network is unreachable the gate preserves
-   deliberate airplane-mode offline access by keeping its LAST KNOWN state —
+   deliberate airplane-mode offline access by keeping its LAST KNOWN state -
    which also means a device that is already offline cannot learn about a
    server-side revocation until it reconnects (documented limitation). */
 (function (root, factory) {
@@ -53,7 +53,7 @@
         }
         return false;
       }
-      // 2xx: authorized. Other statuses (5xx, redirects): inconclusive —
+      // 2xx: authorized. Other statuses (5xx, redirects): inconclusive -
       // keep the last verdict but refresh the timestamp so a flapping
       // server is not hammered on every request.
       state = { ok: res.ok ? true : state.ok, at: now() };

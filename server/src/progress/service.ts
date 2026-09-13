@@ -24,7 +24,7 @@ import { type DB, nowIso } from '../db/index.js';
  * Read the stored row, reporting its existence separately from whether it
  * could be understood. A row that fails to parse still occupies the
  * (user_id, book_id) primary key: treating it as absent would make the next
- * event INSERT on top of it, and the collision would fail the whole batch —
+ * event INSERT on top of it, and the collision would fail the whole batch -
  * every book behind it in the client's queue with it. Unreadable is therefore
  * "present but carries nothing forward", and the next event heals it.
  */
@@ -63,7 +63,7 @@ export function getProgressState(db: DB, userId: string, bookId: string): Progre
 /**
  * A batch is a queue drain and routinely spans several books (read one,
  * listened to another). Every book it touched comes back, so each one's
- * client-side revision and cached position stay current — a book left with a
+ * client-side revision and cached position stay current - a book left with a
  * stale revision sends a stale baseRevision next time, and reconciliation
  * silently degrades from causal ordering to clock comparison.
  */
@@ -140,7 +140,7 @@ export function applyProgressEvents(
       const inherits = !isExplicit(ev.intent) && state !== null;
       // Finishing is a claim about the book, not about this event. Any
       // explicit intent used to clear it, so simply reopening a finished book
-      // — or jumping to a bookmark in it — silently un-finished it, and
+      // - or jumping to a bookmark in it - silently un-finished it, and
       // nothing in the app can set the flag again except reading to the end a
       // second time. It survives unless the reader has actually gone back
       // into the book.

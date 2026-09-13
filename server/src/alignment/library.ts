@@ -185,7 +185,7 @@ export interface ImportOutcome {
  *
  * A row in the database always wins over a file: a redeploy that kept its data
  * imports nothing, which is what makes running this after every scan safe. And
- * a file is either applied whole or not at all — importing the sentences that
+ * a file is either applied whole or not at all - importing the sentences that
  * happen to still exist would leave the reader with a timeline full of silent
  * holes and a coverage figure that lies about them.
  */
@@ -241,7 +241,7 @@ export function importAlignments(
       out.rejected.push({
         file,
         title: doc.ebook.title,
-        reason: 'Its timings do not line up with this copy of the ebook — align this pair again.',
+        reason: 'Its timings do not line up with this copy of the ebook - align this pair again.',
       });
     }
   });
@@ -252,7 +252,7 @@ export function importAlignments(
  * Insert a document's timings for a pair, after checking that every one of
  * them names a sentence this install actually has.
  *
- * The pair key already says the text is the same, so this is belt and braces —
+ * The pair key already says the text is the same, so this is belt and braces -
  * but it is cheap, and it is the difference between an import that is provably
  * safe and one that is merely plausible.
  */

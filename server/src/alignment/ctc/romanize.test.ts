@@ -5,13 +5,13 @@ import { MODEL_ALPHABET, isModelAlphabet, romanize, romanizeWithMap } from './ro
  * The contract these tests defend: whatever goes in, what comes out is spellable
  * by the aligner's 27-symbol alphabet, and every output character can name the
  * offset in the original string that produced it. The anchor matcher relies on
- * both — the first to compare against the model's greedy decode at all, the
+ * both - the first to compare against the model's greedy decode at all, the
  * second to turn a matched n-gram back into a position in the ebook.
  */
 
 /** Sample prose per supported language, in its own script. */
 const SAMPLES: Record<string, string> = {
-  en: 'Mr. Holloway paid $25 for 3 books on the 1st of May — “worth it,” he said.',
+  en: 'Mr. Holloway paid $25 for 3 books on the 1st of May - “worth it,” he said.',
   de: 'Dr. Weiß zahlte 25 € für drei Bücher; z.B. über Straßen und Flüsse.',
   nl: 'Mevr. de Vries kocht 25 boeken; bijv. over rivieren en straten.',
   fr: 'M. Lefèvre a payé 25 € pour trois livres, c.-à-d. une affaire.',
@@ -65,7 +65,7 @@ describe('alphabet safety', () => {
     for (const lang of Object.keys(SAMPLES)) {
       expect(romanize('', lang)).toBe('');
       expect(romanize('   \n\t  ', lang)).toBe('');
-      expect(romanize('… — “” «» ‹› ?!.,;:()[]{}/\\*#@^~|', lang)).toBe('');
+      expect(romanize('… - “” «» ‹› ?!.,;:()[]{}/\\*#@^~|', lang)).toBe('');
       expect(romanizeWithMap('...', lang).sourceIndex).toEqual([]);
     }
   });
@@ -83,7 +83,7 @@ describe('source index', () => {
   });
 
   it('stays non-decreasing and in range for mixed content', () => {
-    const text = 'Dr. Weiß kaufte 1.234 Bücher — und ½ Liter Öl; Щи, שלום, مرحبا.';
+    const text = 'Dr. Weiß kaufte 1.234 Bücher - und ½ Liter Öl; Щи, שלום, مرحبا.';
     const { chars, sourceIndex } = romanizeWithMap(text, 'de');
     expect(sourceIndex).toHaveLength(chars.length);
     let prev = -1;

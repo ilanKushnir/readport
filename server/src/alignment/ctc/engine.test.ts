@@ -22,9 +22,9 @@ import { type SparsePlan } from './sparse.js';
  * Engine-level tests for forced alignment.
  *
  * The acoustic model is stubbed out through `CtcAlignRequest.decode`, so these
- * exercise everything the engine itself decides — romanization, anchoring,
+ * exercise everything the engine itself decides - romanization, anchoring,
  * refusal, gaps, the handover to the shared timing layer and the progress
- * mapping — without the 317 MB aligner or onnxruntime.
+ * mapping - without the 317 MB aligner or onnxruntime.
  *
  * The stub is not a recording: the "heard" stream is BUILT FROM THE BOOK'S OWN
  * romanized characters at a known rate and offset, which is what makes a
@@ -101,7 +101,7 @@ interface Narration {
 
 /**
  * Read the book aloud at `CPS`, starting at `OFFSET_MS`. Sentences in the
- * half-open `skip` range are not read at all and take no audio time — which is
+ * half-open `skip` range are not read at all and take no audio time - which is
  * exactly what front matter, a dedication or an index does to a real
  * audiobook.
  */
@@ -193,7 +193,7 @@ describe('alignWithCtc', () => {
 
   it('REFUSES a pairing whose audio narrates a different book', async () => {
     const book = makeBook(2, 200);
-    // Same length, same language, same rate — only the words differ, which is
+    // Same length, same language, same rate - only the words differ, which is
     // all that separates a wrong edition from a right one.
     const other = makeBook(999, 200);
     const heard = narrate(other.text);
@@ -228,7 +228,7 @@ describe('alignWithCtc', () => {
     for (let i = 250; i < 290; i++) {
       expect(placed.get(i), `sentence ${i} sits in un-narrated text`).toBeUndefined();
     }
-    // Before it, and again after it, the timings are the truth — the hole did
+    // Before it, and again after it, the timings are the truth - the hole did
     // not drag the mapping off, which is the whole point of anchoring rather
     // than warping the book onto the audio.
     for (const i of [0, 50, 150, 199, 340, 400, 500, 599]) {
@@ -323,7 +323,7 @@ describe('alignWithCtc', () => {
       sentences: book.sentences,
       // Punctuation and whitespace only: the aligner's alphabet has nothing to
       // anchor on, and a "0 % coverage" alignment would be worse than an error.
-      text: book.text.map(() => '— … !?'),
+      text: book.text.map(() => '- … !?'),
     };
     const heard = narrate(book.text);
 
@@ -433,7 +433,7 @@ describe('alignWithCtc, sampling the narration', () => {
     expect(mean(heardDirectly.map((s) => s.uncertaintyMs))).toBeLessThan(
       mean(guessed.map((s) => s.uncertaintyMs)),
     );
-    // Whatever the schedule, the claim has to cover the actual error — that is
+    // Whatever the schedule, the claim has to cover the actual error - that is
     // the only thing standing between a reader and a switch that spoils the
     // next paragraph.
     for (const s of out.result.segments) {
@@ -445,7 +445,7 @@ describe('alignWithCtc, sampling the narration', () => {
 
   it('spends its second pass on the stretch where the narrator paused', async () => {
     // A book read straight through, except for two minutes of silence in the
-    // middle — the shape of a chapter break, and the one thing interpolation
+    // middle - the shape of a chapter break, and the one thing interpolation
     // between two distant anchors cannot see.
     const book = makeBook(13, 400);
     const heard = narrate(book.text);

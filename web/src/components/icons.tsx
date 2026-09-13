@@ -26,7 +26,7 @@ function I({ size = 22, children, ...rest }: P) {
 /**
  * The ReadPort mark: a bookmark ribbon with a play triangle cut out of it.
  *
- * The triangle is a hole, not a shape on top — `evenodd` on a single path — so
+ * The triangle is a hole, not a shape on top - `evenodd` on a single path - so
  * the mark works in one colour on any ground, and the hole shows whatever is
  * behind it. Geometry rather than a traced logo, so it stays crisp at 16px.
  */
@@ -92,7 +92,7 @@ export const IconPause = (p: P) => (
  *
  * Geometry, so it can be adjusted without guessing: the ring is r=9 about
  * (12,12) with a 72-degree gap centred on twelve o'clock, which puts its ends
- * at 36 degrees either side — (6.71, 4.72) and (17.29, 4.72). The arrowhead
+ * at 36 degrees either side - (6.71, 4.72) and (17.29, 4.72). The arrowhead
  * sits on the end the arc travels towards, pointing along the tangent there,
  * so back turns anticlockwise and forward clockwise and the two are exact
  * mirrors. The digits are centred in the ring rather than sharing space with

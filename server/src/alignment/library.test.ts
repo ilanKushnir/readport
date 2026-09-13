@@ -15,8 +15,8 @@ import { listAlignmentFiles, readAlignmentFile, textFingerprint } from './portab
  * throw the machine away, and have the next one recognise the work.
  *
  * These tests build a small library by hand rather than through the scanner,
- * because what is being checked is the identity logic — whether a file finds
- * its book again when the database is empty and the ids are different — and
+ * because what is being checked is the identity logic - whether a file finds
+ * its book again when the database is empty and the ids are different - and
  * the scanner would give both installs the same ids and prove nothing.
  */
 
@@ -54,7 +54,7 @@ function makeContext(dirName: string): AppContext {
 /**
  * A pair, its derived sentence index, and the fingerprints the indexing jobs
  * would have written. `idSuffix` lets a test build a second install whose
- * ebook ids differ — the case that proves matching is by content.
+ * ebook ids differ - the case that proves matching is by content.
  */
 function seedPair(
   c: AppContext,

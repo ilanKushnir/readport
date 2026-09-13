@@ -13,19 +13,19 @@ export class ApiError extends Error {
 
 /**
  * Global unauthorized hook: EVERY API 401 (not just /api/auth/me) runs the
- * registered handler — which aborts active downloads and awaits the offline
- * purge — BEFORE the error is surfaced to the caller. Session revocation
+ * registered handler - which aborts active downloads and awaits the offline
+ * purge - BEFORE the error is surfaced to the caller. Session revocation
  * therefore fails closed no matter which request discovers it.
  *
  * Exempt: credential-entry endpoints where a 401 means "wrong password",
  * not "your session was revoked" (purging another prospective user's data
  * on a typo would be wrong).
  *
- * CONTRACT — the handler is NON-RECURSIVE: it must NOT call the api()
+ * CONTRACT - the handler is NON-RECURSIVE: it must NOT call the api()
  * wrapper, directly or transitively. Every non-exempt 401 awaits the
  * in-flight cleanup promise (see below), so an api() call made from inside
  * the handler that is answered 401 would await the handler's own
- * completion — a deadlock. If cleanup ever needs the network it must use
+ * completion - a deadlock. If cleanup ever needs the network it must use
  * raw fetch() or another non-intercepting path. The production handler
  * only purges local state (aborts downloads, clears offline data).
  */
@@ -33,8 +33,8 @@ export type UnauthorizedHandler = (info: { url: string }) => Promise<void> | voi
 let unauthorizedHandler: UnauthorizedHandler | null = null;
 /**
  * SINGLE-FLIGHT cleanup: the first 401 starts the purge and EVERY other
- * non-exempt 401 — whether its request was already in flight when the
- * purge began or was initiated afterwards — awaits the SAME in-flight
+ * non-exempt 401 - whether its request was already in flight when the
+ * purge began or was initiated afterwards - awaits the SAME in-flight
  * promise, so no caller surfaces its error while the purge is still
  * running. The promise is cleared only after it settles
  * (identity-checked), so late awaiters always observe a completed purge.
@@ -67,7 +67,7 @@ async function handleUnauthorized(url: string): Promise<void> {
       if (unauthorizedCleanup === run) unauthorizedCleanup = null;
     });
   }
-  // EVERY non-exempt 401 awaits the shared in-flight purge — including a
+  // EVERY non-exempt 401 awaits the shared in-flight purge - including a
   // request that was initiated only after the purge began. The handler
   // contract (non-recursive, no api() calls) is what makes this safe.
   await unauthorizedCleanup;
@@ -96,7 +96,7 @@ export async function api<T>(
   const method = opts.method ?? 'GET';
   // Mutations always carry an explicit JSON body (`{}` when the call has
   // none): some proxies attach a content type to body-less POSTs, which a
-  // strict server turns into 415 — an empty JSON object is unambiguous.
+  // strict server turns into 415 - an empty JSON object is unambiguous.
   const hasBody = opts.body !== undefined || (method !== 'GET' && method !== 'HEAD');
   let res: Response;
   try {
@@ -126,7 +126,7 @@ export async function api<T>(
       /* non-JSON error body */
     }
     // Revocation fails closed: the purge is AWAITED before the caller sees
-    // the error, on every unauthorized path — every CONCURRENT 401 shares
+    // the error, on every unauthorized path - every CONCURRENT 401 shares
     // the same in-flight purge promise, including requests initiated after
     // the purge already began.
     if (res.status === 401) await handleUnauthorized(url);
@@ -143,7 +143,7 @@ export const isUnauthorized = (err: unknown): boolean =>
  * What to tell someone when an action did not go through.
  *
  * Call sites used to append "(admin only)" to every failure, which is only
- * ever read by an admin — the one person for whom it is never the reason. The
+ * ever read by an admin - the one person for whom it is never the reason. The
  * two causes worth naming are being offline and not being allowed; everything
  * else is the caller's own sentence.
  */

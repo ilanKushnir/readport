@@ -20,7 +20,7 @@ import { useSession } from './session';
  *
  * One row is deliberately not in the server's answer. "On this device" counts
  * the books downloaded into THIS browser, which lives in IndexedDB and which
- * the server has no way to know — see `deviceCount` below.
+ * the server has no way to know - see `deviceCount` below.
  */
 
 interface ShelvesCtx {

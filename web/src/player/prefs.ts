@@ -13,7 +13,7 @@ import { api } from '../api/client';
  * a screen. A narrator who needs 1.25× to be comfortable needs it on the
  * phone and on the laptop; a reader who prefers a 30-second rewind prefers it
  * everywhere. That is the opposite of the reader's type size, and the reason
- * the two are stored separately — see @readport/shared/prefs.
+ * the two are stored separately - see @readport/shared/prefs.
  *
  * As with the reader's appearance, localStorage answers instantly and offline
  * and is what the UI reads; the server copy is the sync layer beneath it.

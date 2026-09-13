@@ -9,7 +9,7 @@ import { domToOffset, rangeForSpan, type TextMap } from './textmap';
  * text in elements: the chapter's DOM comes from the book and must not be
  * rewritten, and a wrapper would break the character offsets everything else
  * in the reader is addressed by. The cost of that choice is that a highlight
- * is paint, not an element — nothing to click. So hit testing is done the
+ * is paint, not an element - nothing to click. So hit testing is done the
  * other way round: turn the point into a character offset and ask which mark
  * covers it.
  */

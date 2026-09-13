@@ -43,7 +43,7 @@ export const alignmentSummarySchema = z.object({
   coverage: z.number().min(0).max(1),
   /**
    * Fraction of ebook sentences with a sentence-exact, high-confidence
-   * mapping. This — not overall coverage — is what "exact" claims in the UI
+   * mapping. This - not overall coverage - is what "exact" claims in the UI
    * must be based on.
    */
   exactSentenceCoverage: z.number().min(0).max(1),

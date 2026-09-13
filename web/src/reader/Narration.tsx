@@ -30,7 +30,7 @@ import {
  *
  * This is deliberately not the player. The player is a place you go; read-along
  * is something the reader does, so it owns the smallest transport that can
- * honestly be called one — play, back, speed, stop — and nothing else. Sleep
+ * honestly be called one - play, back, speed, stop - and nothing else. Sleep
  * timers, chapter lists and bookmarks already have a home one tap away.
  *
  * The audio element lives here rather than in the reader so that turning
@@ -43,7 +43,7 @@ const SPEEDS = [0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2];
 export interface NarrationApi {
   /** True once the audiobook and this chapter's timings have loaded. */
   ready: boolean;
-  /** Nothing in this chapter is timed — read-along has nothing to show. */
+  /** Nothing in this chapter is timed - read-along has nothing to show. */
   emptyChapter: boolean;
   /** The timings request failed, as opposed to this chapter having none. */
   timingsFailed: boolean;
@@ -52,7 +52,7 @@ export interface NarrationApi {
   playing: boolean;
   /** The sentence being spoken, when there is one to point at. */
   cue: Cue | null;
-  /** This chapter's timed sentences — what the pace marker interpolates over. */
+  /** This chapter's timed sentences - what the pace marker interpolates over. */
   cues: Cue[];
   state: FollowState;
   bookMs: number;
@@ -63,7 +63,7 @@ export interface NarrationApi {
   back: () => void;
   /** Start (or move) the narration at the sentence covering a char offset. */
   playFrom: (charOffset: number) => void;
-  /** How far the back button goes, in seconds — the player's own setting. */
+  /** How far the back button goes, in seconds - the player's own setting. */
   backSeconds: number;
   /** The <audio> element to mount. */
   element: React.ReactNode;
@@ -86,8 +86,8 @@ export interface NarrationOptions {
 /**
  * The read-along engine.
  *
- * Positions are book-absolute milliseconds throughout — the unit the alignment
- * speaks — and turned into a file and an offset only at the moment the audio
+ * Positions are book-absolute milliseconds throughout - the unit the alignment
+ * speaks - and turned into a file and an offset only at the moment the audio
  * element is told where to go.
  */
 export function useNarration(opts: NarrationOptions): NarrationApi {
@@ -129,7 +129,7 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
    * Adopt the rate this book was last played at, once its id is known.
    *
    * The initial state runs before `audioBookId` arrives, so it could only ever
-   * read the global default — a reader who set 1.25x for a slow narrator in
+   * read the global default - a reader who set 1.25x for a slow narrator in
    * the player got 1x every time they read along with the same book. Guarded
    * so it cannot overwrite a rate chosen in this session.
    */
@@ -175,8 +175,8 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
       })
       .catch(() => {
         if (!alive) return;
-        // A chapter with no stored alignment is a normal answer — front and
-        // end matter are often unnarrated — but a request that never arrived
+        // A chapter with no stored alignment is a normal answer - front and
+        // end matter are often unnarrated - but a request that never arrived
         // is not, and telling the reader "nothing is timed here" when the
         // truth is "we could not ask" sends them looking for the wrong fault.
         setSegments([]);
@@ -217,7 +217,7 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
    * Where the narration is, as the audiobook's own locator.
    *
    * Read-along advances the audiobook as surely as the player does, so it
-   * writes the audiobook's progress too — otherwise an hour of reading along
+   * writes the audiobook's progress too - otherwise an hour of reading along
    * leaves the player still at the start. `pct` is real rather than zero
    * because the library's Continue rail and the finished check both read it.
    */
@@ -279,8 +279,8 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
   const lastWalkRef = useRef<'next' | 'prev' | null>(null);
   useEffect(() => {
     if (!enabled || !playing || !following || segments === null) return;
-    // A chapter with no timings at all — front matter, or one the aligner
-    // skipped — would otherwise dead-end the whole feature: the voice plays
+    // A chapter with no timings at all - front matter, or one the aligner
+    // skipped - would otherwise dead-end the whole feature: the voice plays
     // on, the page never moves, and nothing says why. Walking forward is both
     // the honest guess and self-terminating at the last chapter.
     if (cues.length === 0) {
@@ -381,7 +381,7 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
       userPickedRateRef.current = true;
       setSpeedState(rate);
       // The same store the player writes, so a rate set while reading along is
-      // the rate the player opens at — and reaches the reader's other devices.
+      // the rate the player opens at - and reaches the reader's other devices.
       if (audioBookId) setBookSpeed(audioBookId, rate);
     },
     [audioBookId],
@@ -451,8 +451,8 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
  * The read-along bar: a strip along the bottom of the reader.
  *
  * It says what is happening in words as well as controls, because the states
- * that matter most are the ones where the highlight is *absent* — an unaligned
- * stretch, or a chapter the narrator skipped — and a bar that only ever shows
+ * that matter most are the ones where the highlight is *absent* - an unaligned
+ * stretch, or a chapter the narrator skipped - and a bar that only ever shows
  * a play button leaves the reader wondering what broke.
  */
 export function NarrationBar({
@@ -467,7 +467,7 @@ export function NarrationBar({
   following: boolean;
   onResume: () => void;
   onClose: () => void;
-  /** Null when the page turns itself — auto-scroll is a scrolling idea. */
+  /** Null when the page turns itself - auto-scroll is a scrolling idea. */
   autoScroll: boolean | null;
   onAutoScroll: (on: boolean) => void;
 }) {
@@ -475,7 +475,7 @@ export function NarrationBar({
 
   /**
    * A menu that only closes by pressing the same button again is a menu you
-   * are stuck in — especially on a phone, where the instinct is to tap away
+   * are stuck in - especially on a phone, where the instinct is to tap away
    * from it. Escape closes it too, and does not reach the reader behind.
    */
   useEffect(() => {

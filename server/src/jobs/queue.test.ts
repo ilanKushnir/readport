@@ -120,7 +120,7 @@ describe('lease guard (handler-side ownership revalidation)', () => {
     expect(second.lease_token).not.toBe(job.lease_token);
     expect(() => guard.assertHeld()).toThrow(LeaseLostError);
     expect(guard.isLost()).toBe(true);
-    // Once lost, always lost — no write window reopens for this attempt.
+    // Once lost, always lost - no write window reopens for this attempt.
     expect(() => guard.assertHeld()).toThrow(LeaseLostError);
   });
 

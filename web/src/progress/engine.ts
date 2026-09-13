@@ -25,8 +25,8 @@ import { idbAll, idbClear, idbDelete, idbGet, idbPut, STORES } from './idb';
  * A v4 UUID, on any origin.
  *
  * `crypto.randomUUID` exists only in a secure context, so on a plain-HTTP LAN
- * address — `http://server.lan:8383`, which is exactly what the self-hosting
- * guide tells people to open — it is undefined. This module is imported by
+ * address - `http://server.lan:8383`, which is exactly what the self-hosting
+ * guide tells people to open - it is undefined. This module is imported by
  * App.tsx, so calling it unguarded threw during module evaluation and the app
  * rendered nothing at all: a white screen with one line in the console, on the
  * documented URL. `crypto.getRandomValues` has no such gate.
@@ -72,7 +72,7 @@ let seq = 0;
  * offline reading dies with the session. It is therefore kept across
  * revocation and delivered once the SAME account signs back in. The account
  * that recorded it is stamped here so a DIFFERENT person signing in on this
- * browser can never inherit — or silently publish — someone else's reading
+ * browser can never inherit - or silently publish - someone else's reading
  * positions.
  */
 const OWNER_KEY = 'rp-progress-owner';
@@ -102,7 +102,7 @@ function writeOwner(id: string | null): void {
 }
 
 /** Discard the un-synced queue. Deliberate logout and a change of account
- *  only — never session revocation. */
+ *  only - never session revocation. */
 export async function purgeProgressQueue(): Promise<void> {
   writeOwner(null);
   try {
@@ -113,8 +113,8 @@ export async function purgeProgressQueue(): Promise<void> {
 }
 
 /**
- * Hand the queue to the signed-in account. The same person returning — after
- * a logout-less session expiry, a re-login, or a week offline — keeps every
+ * Hand the queue to the signed-in account. The same person returning - after
+ * a logout-less session expiry, a re-login, or a week offline - keeps every
  * queued checkpoint; anybody else starts empty.
  */
 export async function claimProgressQueue(userId: string): Promise<void> {
@@ -197,14 +197,14 @@ export async function recordCheckpoint(
     }
   }
   const event = buildEvent(bookId, intent, locator);
-  // IndexedDB first — never lose a checkpoint to a dropped connection.
+  // IndexedDB first - never lose a checkpoint to a dropped connection.
   await idbPut(STORES.pendingEvents, event.eventId, event);
   if (opts.flush !== false) scheduleFlush(intent !== 'heartbeat');
 }
 
 /**
  * The active reader/player surface registers a provider returning its CURRENT
- * position, so lifecycle events can persist the live locator — not just
+ * position, so lifecycle events can persist the live locator - not just
  * whatever already made it past the debounce/heartbeat windows.
  */
 export type ActiveLocatorProvider = () => { bookId: string; locator: Locator } | null;
@@ -222,7 +222,7 @@ export function setActiveLocatorProvider(fn: ActiveLocatorProvider): () => void 
  *
  * pagehide can be followed by freeze or termination before an IndexedDB
  * transaction commits, and the keepalive request cannot help when there is
- * no network — exactly the case offline reading depends on. localStorage
+ * no network - exactly the case offline reading depends on. localStorage
  * writes synchronously, so the live position survives even a page that never
  * runs again; the next start puts it back in the queue. Events are
  * idempotent (eventId), so a stash that turns out to have been stored or
@@ -342,7 +342,7 @@ async function quarantineInvalid(events: ProgressEvent[]): Promise<number> {
 }
 
 /**
- * Fetch caps in-flight keepalive bodies at 64 KiB per origin — a budget this
+ * Fetch caps in-flight keepalive bodies at 64 KiB per origin - a budget this
  * batch shares with the single-event request the pagehide path just issued.
  * Over quota the fetch rejects, which reads as "offline" and delivers
  * nothing, precisely when the backlog is largest. Trim to a batch that fits;
@@ -392,7 +392,7 @@ export async function flushPending(
     await handleAck(ack);
     // A full batch means there is more behind it. Without re-arming, a
     // backlog built up over a week offline drained 200 events per flush
-    // interval — so signing out sent the oldest positions and abandoned the
+    // interval - so signing out sent the oldest positions and abandoned the
     // newest, which is the wrong way round in the only case that matters.
     if (events.length === 200) scheduleFlush(true);
   } catch (err) {

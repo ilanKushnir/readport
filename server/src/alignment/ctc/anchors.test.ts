@@ -244,7 +244,7 @@ describe('matchChars', () => {
     // constant reading rate, so a pause adds seconds without adding
     // characters and every sentence in the span is placed early by up to the
     // whole pause. Measuring the doubt as the distance to the nearer anchor
-    // missed it entirely — a sentence a moment after a fifteen-second break
+    // missed it entirely - a sentence a moment after a fifteen-second break
     // sits beside an anchor, so it reported almost no doubt while being
     // fifteen seconds out. `startMs - uncertaintyMs` is where a switch lands;
     // if that is AFTER the reader, they are shown text they have not reached.

@@ -133,7 +133,7 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
     const row = db
       .prepare(
         // Exactly the work a "Start all" would queue: linked, not aligned,
-        // and not already in the queue — so the estimate describes what the
+        // and not already in the queue - so the estimate describes what the
         // button does, not work that is already under way.
         `SELECT COUNT(*) AS pairs, COALESCE(SUM(b.duration_ms), 0) AS audio_ms
            FROM pairs p
@@ -270,7 +270,7 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
   });
 
   /**
-   * Align several pairs at once — the "Start all" and
+   * Align several pairs at once - the "Start all" and
    * multi-select actions. Each becomes an ordinary queued job, so the same
    * one-at-a-time lane and the same live progress apply.
    */
@@ -304,7 +304,7 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
    *
    * A library where most books are owned twice produces dozens of
    * candidates, and confirming them one at a time is dozens of taps on a
-   * phone — for a decision that is usually "yes, all of these". Each
+   * phone - for a decision that is usually "yes, all of these". Each
    * confirmation is the same one the single endpoint makes, alignment
    * included, so nothing here is a shortcut around the review; it is the
    * same review, answered in one go.
