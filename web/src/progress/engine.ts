@@ -21,21 +21,47 @@ import { idbAll, idbClear, idbDelete, idbGet, idbPut, STORES } from './idb';
  * the same decision function the server uses (shared/reconcile).
  */
 
+/**
+ * A v4 UUID, on any origin.
+ *
+ * `crypto.randomUUID` exists only in a secure context, so on a plain-HTTP LAN
+ * address — `http://server.lan:8383`, which is exactly what the self-hosting
+ * guide tells people to open — it is undefined. This module is imported by
+ * App.tsx, so calling it unguarded threw during module evaluation and the app
+ * rendered nothing at all: a white screen with one line in the console, on the
+ * documented URL. `crypto.getRandomValues` has no such gate.
+ *
+ * The shape matters as much as the randomness: progress events are validated
+ * with `z.uuid()` on the way in, so anything else here would be rejected by
+ * the server rather than merely looking odd.
+ */
+function randomUuid(): string {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  const b = crypto.getRandomValues(new Uint8Array(16));
+  b[6] = (b[6]! & 0x0f) | 0x40;
+  b[8] = (b[8]! & 0x3f) | 0x80;
+  const h = [...b].map((x) => x.toString(16).padStart(2, '0')).join('');
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
+
 function getDeviceId(): string {
   try {
     let id = localStorage.getItem('rp-device-id');
     if (!id) {
-      id = crypto.randomUUID();
+      id = randomUuid();
       localStorage.setItem('rp-device-id', id);
     }
     return id;
   } catch {
-    return 'device-unknown';
+    // Private mode, or storage blocked. A per-load id keeps this browser
+    // distinguishable from every other one; a shared constant would make two
+    // devices look like one and let a stale tab argue with a live one.
+    return randomUuid();
   }
 }
 
 export const deviceId = getDeviceId();
-export const sessionId = crypto.randomUUID();
+export const sessionId = randomUuid();
 let seq = 0;
 
 /**
@@ -142,7 +168,7 @@ function sanitizeLocator(locator: Locator): Locator {
 function buildEvent(bookId: string, intent: ProgressIntent, locator: Locator): ProgressEvent {
   seq += 1;
   return {
-    eventId: crypto.randomUUID(),
+    eventId: randomUuid(),
     bookId,
     deviceId,
     sessionId,
