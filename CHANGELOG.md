@@ -4,6 +4,17 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.9.1 — 2026-09-13
+
+### Fixed
+
+- **Alignments could not be saved into a mounted alignment folder.** The
+  entrypoint took ownership of the data, cache and model volumes but not of
+  the folders named by `RP_ALIGNMENT_DIRS`, so a folder created with `mkdir`
+  on the host stayed root-owned and every save failed. Setup's preflight
+  reported it, but there was nothing to do about it short of a manual
+  `chown`. Read-only alignment mounts are still left alone.
+
 ## 0.9.0 — 2026-09-13
 
 The first public release. Everything before this was development under an
