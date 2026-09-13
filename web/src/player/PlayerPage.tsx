@@ -92,7 +92,7 @@ export function PlayerPage() {
    * Where the thumb is while a drag is in progress.
    *
    * Dragging fires an input event per pixel, and each one used to seek the
-   * audio element and queue a progress write — hundreds of seeks and hundreds
+   * audio element and queue a progress write - hundreds of seeks and hundreds
    * of writes for one gesture, on a phone, over a network. The thumb follows
    * the finger from here, and the audio is moved once, when the finger lifts.
    */
@@ -135,8 +135,8 @@ export function PlayerPage() {
   /**
    * The current locator, readable from a cleanup that must not re-run.
    *
-   * `locatorNow` is rebuilt on every position change — four times a second
-   * while playing — so an effect that depends on it tears down that often. A
+   * `locatorNow` is rebuilt on every position change - four times a second
+   * while playing - so an effect that depends on it tears down that often. A
    * checkpoint in such a cleanup would write four times a second; a ref lets
    * the mount-only effect below read the latest value and write exactly once.
    */
@@ -148,7 +148,7 @@ export function PlayerPage() {
    *
    * Heartbeats are fifteen seconds apart and Back is a route change, not a
    * pause event, so closing the player mid-chapter could drop a quarter of a
-   * minute of listening — and on a phone, Back is how everyone leaves.
+   * minute of listening - and on a phone, Back is how everyone leaves.
    */
   useEffect(() => {
     return () => {
@@ -339,7 +339,7 @@ export function PlayerPage() {
 
   /**
    * Pick up playback settings changed on another device, once, on open.
-   * Applied only where this session has not already made a choice of its own —
+   * Applied only where this session has not already made a choice of its own -
    * a rate the listener just set here must not be undone by a slower answer.
    */
   useEffect(() => {
@@ -413,7 +413,7 @@ export function PlayerPage() {
     } else {
       setPlaying(false);
       void recordCheckpoint(id, 'finish', { ...locatorNow(), pct: 1 });
-      toast.show('Finished — nicely done');
+      toast.show('Finished - nicely done');
     }
   };
 
@@ -453,14 +453,14 @@ export function PlayerPage() {
   const togglePlay = useCallback(() => {
     const el = audioRef.current;
     if (!el) return;
-    if (el.paused) void el.play().catch(() => toast.show('Playback blocked — tap play again'));
+    if (el.paused) void el.play().catch(() => toast.show('Playback blocked - tap play again'));
     else el.pause();
   }, [toast]);
 
   // Play → durable checkpoint with explicit intent. Pressing play is a
   // deliberate act, so it takes the progress claim back for this session:
   // without it, a tab that lost the claim to another device only emits
-  // heartbeats, which are recorded and never applied — a whole listening
+  // heartbeats, which are recorded and never applied - a whole listening
   // session would vanish if the tab is killed before it can pause.
   const onPlay = () => {
     setPlaying(true);
@@ -615,7 +615,7 @@ export function PlayerPage() {
         }&handoff=1&granularity=${res.resolution.granularity}`,
       );
     } catch {
-      toast.show('Switching failed — server unreachable?');
+      toast.show('Switching failed - server unreachable?');
     }
   }, [detail, locatorNow, id, navigate, toast]);
 
@@ -633,7 +633,7 @@ export function PlayerPage() {
       await api(`/api/annotations/${annId}`, { method: 'DELETE' });
       setAnnotations((a) => a.filter((x) => x.id !== annId));
     } catch {
-      toast.show('Could not delete — are you offline?');
+      toast.show('Could not delete - are you offline?');
     }
   };
 
@@ -753,7 +753,7 @@ export function PlayerPage() {
               : detail.book.format.toUpperCase()}
         </span>
         {/* Same split control as the reader: the ribbon marks this moment, and
-            the caret beside it opens the list — shown only once there is a
+            the caret beside it opens the list - shown only once there is a
             list to open. */}
         <div className="bm-split">
           <button
@@ -932,7 +932,7 @@ export function PlayerPage() {
             title={
               pair.switchable
                 ? 'Open the ebook at this sentence'
-                : 'Alignment not ready — switching unavailable'
+                : 'Alignment not ready - switching unavailable'
             }
           >
             <IconBookOpen size={18} />
@@ -978,7 +978,7 @@ export function PlayerPage() {
       {sheet === 'playback' && (
         <Sheet title="Playback" onClose={() => setSheet('none')}>
           <div className="rs-group">
-            <div className="rs-label">Speed — {speed}×</div>
+            <div className="rs-label">Speed - {speed}×</div>
             <input
               className="slider"
               style={{ color: 'var(--rp-interactive)' }}
@@ -1108,7 +1108,7 @@ export function PlayerPage() {
         <Sheet title="Bookmarks" onClose={() => setSheet('none')}>
           {audioBookmarks.length === 0 && (
             <p style={{ color: 'var(--rp-text-soft)', margin: 0 }}>
-              No bookmarks yet. Tap the ribbon icon at the top while listening — tap it again at the
+              No bookmarks yet. Tap the ribbon icon at the top while listening - tap it again at the
               same spot to remove the mark.
             </p>
           )}

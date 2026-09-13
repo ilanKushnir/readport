@@ -15,7 +15,7 @@ import { NgramIndex } from './ngram-index.js';
  *  1. Concatenate the sentences into one book string, remembering which span
  *     belongs to which sentence.
  *  2. Take every N-gram (N=14) of both strings and keep only the grams that
- *     occur EXACTLY ONCE on each side. Those pairs are candidate anchors —
+ *     occur EXACTLY ONCE on each side. Those pairs are candidate anchors -
  *     unambiguous by construction, so no similarity threshold is needed.
  *  3. A longest increasing subsequence over the heard positions throws away the
  *     candidates that would require the narrator to jump backwards.
@@ -84,7 +84,7 @@ export interface MatchStats {
   alignedSentences: number;
   /**
    * The pairing is not credible: too few monotone anchors for the book's
-   * length. This is the refusal signal — a wrong book/audio pairing produces
+   * length. This is the refusal signal - a wrong book/audio pairing produces
    * near-zero anchors, where a correct one produced ~386 per 1000 characters.
    */
   implausible: boolean;
@@ -134,7 +134,7 @@ const DEFAULT_MIN_ANCHORS_PER_KILOCHAR = 2;
  * Uncertainty slope and floor, measured rather than chosen. Against a
  * contiguous decode of a real hour-long audiobook, sampled every 150 seconds:
  * signed error ran from -19.8 s to +8.8 s with a median of -0.5 s, and this
- * slope covered all but 11 of 817 sentences. The floor covers the rest — the
+ * slope covered all but 11 of 817 sentences. The floor covers the rest - the
  * sentences sitting right on an anchor, where the residual is frame
  * quantisation, the seek, and the reference's own imprecision rather than
  * anything this module can model.
@@ -145,7 +145,7 @@ const DEFAULT_UNCERTAINTY_BASE_MS = 2_000;
  * Cap on the DECODED side only. Each indexed position costs sixteen bytes of
  * typed array at a load factor of one half, so this ceiling is ~130 MB and is
  * only ever approached by a whole-book decode of a book of about 180 hours.
- * Sampling a six-hour audiobook indexes about 90,000 characters — under 3 MB.
+ * Sampling a six-hour audiobook indexes about 90,000 characters - under 3 MB.
  * The ebook is streamed past the index rather than indexed, so its length is
  * unbounded.
  */
@@ -251,7 +251,7 @@ export function matchChars(
    * Not the average above: that is total time over total characters, so every
    * pause in the book is folded into it. A book with a fifteen-second break
    * between chapters reports a rate that already "expects" those breaks, and
-   * then no individual span looks unusual — which is precisely how a pause
+   * then no individual span looks unusual - which is precisely how a pause
    * hides. The median across consecutive anchor pairs is immune: a pause
    * inflates the one span that contains it and leaves the other several
    * hundred alone.
@@ -302,7 +302,7 @@ export function matchChars(
       readingMsPerChar,
       uncertaintyRate,
     );
-    // Inside the anchored range `reach.ms` is already the whole doubt — rate
+    // Inside the anchored range `reach.ms` is already the whole doubt - rate
     // drift plus whatever time the span cannot account for. Outside it, the
     // timing is not an interpolation at all: it is the edge anchor's time,
     // held, while the narration kept going, so the entire extrapolated
@@ -381,7 +381,7 @@ function msAtBookPos(anchorBook: number[], anchorMs: number[], pos: number): num
 
 /**
  * Milliseconds of audio between `pos` and the nearer of its two bracketing
- * anchors — the span over which the interpolation is unverified.
+ * anchors - the span over which the interpolation is unverified.
  *
  * Character distance is not a usable proxy: 500 characters is two seconds of
  * brisk narration or twenty across a chapter break, and it is the seconds that
@@ -422,12 +422,12 @@ function anchorTimeDistance(
   // doubt is their sum.
   //
   // The first is drift in reading rate, which grows with distance from a
-  // verified point — that is the `rate` term below.
+  // verified point - that is the `rate` term below.
   //
   // The second is time the narrator spent NOT reading: a pause at a chapter
   // break, a silence, a musical sting. Interpolating at a constant rate
   // spreads that time evenly across the span, so a pause displaces EVERY
-  // position in the span by up to its own length — including positions that
+  // position in the span by up to its own length - including positions that
   // sit right next to an anchor. Measuring only the distance to the nearer
   // anchor missed this completely: a fifteen-second chapter break placed the
   // sentence after it fifteen seconds early while reporting a couple of

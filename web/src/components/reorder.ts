@@ -13,8 +13,8 @@ import {
  * pointer path built on the same state machine. Drag is the alternative, not
  * the requirement: grab with Space, move with the arrows, drop with Space.
  *
- * The hook owns only order. What a drop means — one PATCH naming the item's
- * new neighbour — is the caller's `onCommit`.
+ * The hook owns only order. What a drop means - one PATCH naming the item's
+ * new neighbour - is the caller's `onCommit`.
  */
 
 /** Move `id` so that it sits at `to` in the array. Pure, and the unit under test. */
@@ -57,7 +57,7 @@ export interface ReorderApi {
     onPointerUp: (e: ReactPointerEvent) => void;
     onPointerCancel: (e: ReactPointerEvent) => void;
   };
-  /** The overflow menu's four moves — the fastest route from 20th to 1st. */
+  /** The overflow menu's four moves - the fastest route from 20th to 1st. */
   moveTo: (id: string, to: 'top' | 'up' | 'down' | 'bottom') => void;
   /** Register the DOM node of a row so drag distances can be measured. */
   register: (id: string, el: HTMLElement | null) => void;

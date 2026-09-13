@@ -18,10 +18,10 @@ import { formatBytes } from '../lib/format';
 /**
  * Setup wizard, in two modes.
  *
- * `first-run` — nobody exists yet: Welcome (bootstrap token) → Admin account
+ * `first-run` - nobody exists yet: Welcome (bootstrap token) → Admin account
  * → Books → Ready.
  *
- * `libraries` — an admin already exists but no library folders are set. This
+ * `libraries` - an admin already exists but no library folders are set. This
  * is the normal path behind reverse-proxy SSO, where the first user is
  * provisioned automatically and never sees a first-run screen: the same
  * wizard resumes at Books, authenticated by the session instead of the token.
@@ -30,7 +30,7 @@ import { formatBytes } from '../lib/format';
  * That last rule is why the model download is a CHOICE here and a POST inside
  * `finish()`: during first run there is no session yet, and
  * `/api/models/:id/download` is admin-only. Finishing keeps the operator on
- * the Ready screen — it turns into the live scan and download progress rather
+ * the Ready screen - it turns into the live scan and download progress rather
  * than advancing to a step of its own.
  */
 
@@ -210,7 +210,7 @@ export function SetupWizard({
 
   /**
    * Server self-check. All three folder lists are sent with it because on
-   * first run they exist only in this form — the server has not been told
+   * first run they exist only in this form - the server has not been told
    * about them yet. `alignmentDirs` is the one the app will write to, so the
    * writable probe needs it; a server whose /api/preflight body schema
    * predates that field ignores the key rather than rejecting the request.
@@ -265,7 +265,7 @@ export function SetupWizard({
         err instanceof ApiError && err.code === 'bad-setup-token'
           ? 'That token does not match the one in the server log.'
           : err instanceof ApiError && err.status === 429
-            ? 'Too many attempts — wait a few minutes.'
+            ? 'Too many attempts - wait a few minutes.'
             : 'Could not verify the token. Is the server reachable?',
       );
     } finally {
@@ -344,7 +344,7 @@ export function SetupWizard({
         err instanceof ApiError && err.code === 'invalid'
           ? err.message.replace(/^invalid:?\s*/, '')
           : err instanceof ApiError && err.code === 'already-configured'
-            ? 'This server was already set up — reload to sign in.'
+            ? 'This server was already set up - reload to sign in.'
             : 'Setup failed. Is the server reachable?',
       );
     } finally {
@@ -396,7 +396,7 @@ export function SetupWizard({
                 className="input"
                 autoComplete="off"
                 // iOS capitalises and autocorrects a text field by default,
-                // and the token is case-sensitive — it arrives as "Abc…"
+                // and the token is case-sensitive - it arrives as "Abc…"
                 // when the log said "abc…", and setup refuses it.
                 autoCapitalize="none"
                 autoCorrect="off"
@@ -645,7 +645,7 @@ export function SetupWizard({
               </p>
             ) : aligner?.download ? (
               <p className="hint" style={{ marginBlockStart: 'var(--sp-4)' }}>
-                The alignment model is downloading — {Math.round(aligner.download.progress * 100)}%.
+                The alignment model is downloading - {Math.round(aligner.download.progress * 100)}%.
               </p>
             ) : (
               <label className="rs-toggle" style={{ maxWidth: 620 }}>
@@ -790,7 +790,7 @@ function CheckList({ report, checking }: { report: PreflightReport | null; check
             </span>
             <span className="folders__meta">
               {c.detail}
-              {c.fix ? ` — ${c.fix}` : ''}
+              {c.fix ? ` - ${c.fix}` : ''}
             </span>
           </span>
         </li>
@@ -856,17 +856,17 @@ function InitStep({
     <div className="wizard__body">
       <h1 tabIndex={-1}>{done ? 'All set' : hasRoots ? 'Reading your shelves' : 'All set'}</h1>
       {!hasRoots ? (
-        <p className="lede">No folders yet — add them any time under Settings → Libraries.</p>
+        <p className="lede">No folders yet - add them any time under Settings → Libraries.</p>
       ) : (
         <>
           <p className="lede">
             {done
               ? `${books} titles are in.${
                   aligningLater
-                    ? ` ${aligningLater} book${aligningLater === 1 ? ' is' : 's are'} being timed against their audio in the background — that takes a few minutes each, and reading and listening work now regardless.`
+                    ? ` ${aligningLater} book${aligningLater === 1 ? ' is' : 's are'} being timed against their audio in the background - that takes a few minutes each, and reading and listening work now regardless.`
                     : ' Pairing suggestions appear once indexing settles; confirm them on the Pairing page.'
                 }`
-              : `Scanning folders and indexing what they hold. ${books} title${books === 1 ? '' : 's'} so far${indexing ? `, ${indexing} being indexed` : ''}. You can go in now — it keeps running.`}
+              : `Scanning folders and indexing what they hold. ${books} title${books === 1 ? '' : 's'} so far${indexing ? `, ${indexing} being indexed` : ''}. You can go in now - it keeps running.`}
           </p>
           <div className="progressbar" style={{ height: 6 }}>
             <span
@@ -885,7 +885,7 @@ function InitStep({
       )}
       {alignerFailed && (
         <p className="hint" style={{ marginTop: 14, color: 'var(--rp-danger)' }}>
-          The download could not be started. Fetch the model under Settings → Alignment — everything
+          The download could not be started. Fetch the model under Settings → Alignment - everything
           else is set up.
         </p>
       )}
@@ -895,7 +895,7 @@ function InitStep({
             <IconDownload size={16} /> Alignment model
           </h2>
           {aligner.installed ? (
-            <p className="hint">Installed — your books can be aligned now.</p>
+            <p className="hint">Installed - your books can be aligned now.</p>
           ) : aligner.download ? (
             <>
               <div className="progressbar" style={{ height: 6 }}>
@@ -909,14 +909,14 @@ function InitStep({
               <p className="hint" style={{ marginTop: 8 }}>
                 {aligner.download.detail ??
                   (aligner.download.state === 'queued' ? 'Queued…' : 'Starting…')}{' '}
-                — it keeps downloading while you use ReadPort.
+                - it keeps downloading while you use ReadPort.
               </p>
             </>
           ) : (
             <p className="hint">
               {aligner.lastError
                 ? `Download failed: ${aligner.lastError}. Retry under Settings → Alignment.`
-                : 'Queued — watch it under Settings → Alignment.'}
+                : 'Queued - watch it under Settings → Alignment.'}
             </p>
           )}
         </div>

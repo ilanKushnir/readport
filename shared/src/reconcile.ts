@@ -9,7 +9,7 @@ import { EXPLICIT_INTENTS, type ProgressEvent, type ProgressState } from './prog
  * absolute truth. Every timestamp is clamped to the deciding party's own
  * clock plus a small allowed skew, so one device with a clock years in the
  * future cannot poison the claim and lock out every other device. Causal
- * ordering (baseRevision — "I saw revision N before acting") beats clock
+ * ordering (baseRevision - "I saw revision N before acting") beats clock
  * ordering when available.
  */
 
@@ -82,7 +82,7 @@ export function decideApply(
 
   // Heartbeats: only the claiming session may advance state. A stale
   // background tab (different session) can keep sending heartbeats after the
-  // user explicitly rewound elsewhere — those must be recorded but not applied.
+  // user explicitly rewound elsewhere - those must be recorded but not applied.
   if (event.sessionId !== claim.sessionId) {
     return { apply: false, reason: 'unclaimed-session' };
   }

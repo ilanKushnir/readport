@@ -24,7 +24,7 @@ import {
  * have, instead of transcribing it from scratch.
  *
  * Free-form speech recognition is the wrong tool for this job. We are not
- * trying to discover the words — they are sitting in the EPUB. We only need to
+ * trying to discover the words - they are sitting in the EPUB. We only need to
  * know *when* each one is spoken. So the engine runs a CTC acoustic model over
  * the audio, greedy-decodes its emissions into a stream of romanized characters
  * with 20 ms timestamps, and then finds where that stream and the book's own
@@ -46,8 +46,8 @@ import {
  * Measured on a real human-narrated audiobook (about an hour long):
  * nearly nineteen thousand candidate anchors, all but a handful of them monotone, about 94% of sentences timed, and
  * every spot check landed on the correct sentence. The alternative that was
- * tried first — synthesising the text with espeak and warping it onto the
- * narration with DTW — looked superb against a synthetic fixture and failed
+ * tried first - synthesising the text with espeak and warping it onto the
+ * narration with DTW - looked superb against a synthetic fixture and failed
  * completely against a real narrator, so it is not in the codebase.
  */
 
@@ -91,8 +91,8 @@ export interface CtcAlignRequest {
   plan?: SparsePlan;
   /**
    * The acoustic front ends, defaulting to the real ones. The only reason they
-   * are injectable is testing: everything this module actually decides —
-   * refusal, refinement, gaps, how timings become segments — is downstream of
+   * are injectable is testing: everything this module actually decides -
+   * refusal, refinement, gaps, how timings become segments - is downstream of
    * the decode, and a test that had to carry the 317 MB model (and onnxruntime,
    * which CI does not install) could not cover any of it.
    */
@@ -267,7 +267,7 @@ async function listenSparsely(
     // The refinement budget is counted from the start, before a single round
     // is scheduled. Counting only the grid put the bar at 97% with up to 60%
     // of the probes still to come, and then dragged it BACKWARDS each time a
-    // round was added — which is precisely the shape that makes a thirteen
+    // round was added - which is precisely the shape that makes a thirteen
     // minute alignment announce eight. Planning for the worst case means the
     // bar can only move forward, and a book that needs little refinement
     // finishes early instead of late, which is the direction to be wrong in.
@@ -318,7 +318,7 @@ async function listenSparsely(
       // What the decoder actually heard, not what it was asked for: probes
       // are clipped at track ends and skipped when a sliver remains, and
       // counting the request would understate how much of the book went
-      // unheard — which is the number the abridgement check divides by.
+      // unheard - which is the number the abridgement check divides by.
       decodedMs: decoder.decodedMs,
       probes: runs.length,
     };

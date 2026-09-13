@@ -185,7 +185,7 @@ describe('runAlign without the alignment model installed', () => {
 
   it('has already settled the language before it asks for the model', async () => {
     // Language resolution used to need a speech model of its own. It now reads
-    // the ebook, so it must complete even on a server with nothing installed —
+    // the ebook, so it must complete even on a server with nothing installed -
     // and the answer is recorded whether or not the alignment can proceed.
     const pairId = makePair();
 

@@ -6,7 +6,7 @@ import type { JobCount } from '@readport/shared';
  * Two things make this less obvious than counting rows.
  *
  * `/api/jobs` returns only the newest 100 jobs. Indexing queues one job per
- * book, so on any library worth setting up the oldest job — the scan itself —
+ * book, so on any library worth setting up the oldest job - the scan itself -
  * is pushed out of that window, and a client looking for it finds nothing.
  * The totals cover the whole table, so they are what this reads.
  *
@@ -19,7 +19,7 @@ import type { JobCount } from '@readport/shared';
 export interface SetupProgress {
   /** Scanning and indexing have finished; alignment may still be running. */
   done: boolean;
-  /** 0–100, by books indexed — the part of the wait a person actually feels. */
+  /** 0–100, by books indexed - the part of the wait a person actually feels. */
   percent: number;
   /** Index jobs still queued or running. */
   indexing: number;
@@ -29,7 +29,7 @@ export interface SetupProgress {
 
 const PENDING = new Set(['queued', 'running']);
 
-/** Scan, pairing and indexing are setup. Alignment is not — see above. */
+/** Scan, pairing and indexing are setup. Alignment is not - see above. */
 function isSetupWork(type: string): boolean {
   return type === 'scan' || type === 'pair-scan' || type.startsWith('index');
 }

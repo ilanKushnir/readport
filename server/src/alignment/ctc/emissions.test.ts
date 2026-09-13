@@ -13,7 +13,7 @@ import {
   parseVocab,
 } from './emissions.js';
 
-/** Blank at 0, one special, two letters — the shape of the real 31-token vocab. */
+/** Blank at 0, one special, two letters - the shape of the real 31-token vocab. */
 const VOCAB = ['<blank>', 'a', 'b', '<unk>'];
 const FRAME_HOP = 320;
 
@@ -29,8 +29,8 @@ function emissionOf(ids: number[], vocab = VOCAB.length): CtcEmission {
 /**
  * Fake acoustic model: every sample carries the token id of the frame it
  * belongs to, so the session can reconstruct the scripted path from whatever
- * segment the decoder hands it. That makes the chunk/context arithmetic — not
- * a mock's call order — the thing under test.
+ * segment the decoder hands it. That makes the chunk/context arithmetic - not
+ * a mock's call order - the thing under test.
  */
 function samplesForScript(frames: number, idAt: (frame: number) => number): Float32Array {
   const n = (frames - 1) * FRAME_HOP + 400;

@@ -24,7 +24,7 @@ import { LANGUAGES } from '@readport/shared';
 /**
  * Function words chosen for how badly they overlap: `il` and `gli` are only
  * Italian, `het` only Dutch, `los`/`las` only Spanish. Content words would be
- * a worse signal — a translated novel shares its proper nouns with every
+ * a worse signal - a translated novel shares its proper nouns with every
  * edition of itself.
  */
 const MARKERS: Record<string, string[]> = {
@@ -163,7 +163,7 @@ const MARKERS: Record<string, string[]> = {
 
 /**
  * A script that belongs to exactly one supported language. Latin is absent on
- * purpose — it is shared by seven of them and settles nothing.
+ * purpose - it is shared by seven of them and settles nothing.
  */
 const SCRIPTS: [RegExp, string][] = [
   [/\p{Script=Cyrillic}/gu, 'ru'],

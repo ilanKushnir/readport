@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
  *
  * `crypto.randomUUID` exists only in a secure context. This module is imported
  * by App.tsx, so an unguarded call to it at module scope threw during module
- * evaluation and the whole app rendered nothing — a white screen on
+ * evaluation and the whole app rendered nothing - a white screen on
  * `http://server.lan:8383`, which is the URL the self-hosting guide tells
  * people to open. Nothing else in the app noticed, because nothing else got
  * far enough to run.

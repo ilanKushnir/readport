@@ -3,9 +3,9 @@
 This is the research the project was designed from, kept as it was written. It
 is a record, not a description of the running system, and two of its
 conclusions have since been overtaken by what was actually built: the
-alignment pipeline no longer transcribes the audio at all — it forced-aligns
+alignment pipeline no longer transcribes the audio at all - it forced-aligns
 it against the text the EPUB already contains, with one model for every
-language and no per-language packs — and finished alignments are written out
+language and no per-language packs - and finished alignments are written out
 as portable files rather than living only in the database. Where this document
 and [alignment.md](alignment.md) disagree, alignment.md is the code.
 
@@ -141,7 +141,7 @@ A single mutable `currentTime` row is not enough.
 ## Offline PWA
 
 - `display: standalone`, icons and masks, theme/background colors, viewport-fit and safe-area CSS.
-- App-shell precache; per-title offline package stored in IndexedDB/Cache Storage with size estimate, download progress, cancellation, integrity hashes, and removal. Audio tracks carry an immutable per-track source version plus one SHA-256 per 8 MiB chunk; every ranged response is verified (status, exact Content-Range, length, ETag = source version, chunk digest) before storage, resumes re-verify kept chunks and discard any downloaded under a different source version, and hashing is streaming/per-chunk — never one whole-file browser buffer.
+- App-shell precache; per-title offline package stored in IndexedDB/Cache Storage with size estimate, download progress, cancellation, integrity hashes, and removal. Audio tracks carry an immutable per-track source version plus one SHA-256 per 8 MiB chunk; every ranged response is verified (status, exact Content-Range, length, ETag = source version, chunk digest) before storage, resumes re-verify kept chunks and discard any downloaded under a different source version, and hashing is streaming/per-chunk - never one whole-file browser buffer.
 - Ebook assets and selected audio tracks are explicit downloads. Never imply an entire large audiobook is offline when only streamed chunks are cached.
 - Local auth/session behavior must be honest: already-downloaded books remain readable offline; privileged server actions wait for reconnect.
 - Queue progress/highlight/bookmark mutations idempotently and reconcile on reconnect.

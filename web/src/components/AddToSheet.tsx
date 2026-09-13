@@ -81,7 +81,7 @@ export function AddToSheet({
         });
       }
     } catch {
-      toast.show('That did not save — check the connection.');
+      toast.show('That did not save - check the connection.');
     } finally {
       setBusy(null);
     }
@@ -115,7 +115,7 @@ export function AddToSheet({
         );
       }
     } catch {
-      toast.show('That did not save — check the connection.');
+      toast.show('That did not save - check the connection.');
     } finally {
       setBusy(null);
     }
@@ -175,7 +175,7 @@ export function AddToSheet({
 
         {shelves.length === 0 && !creating && (
           <p className="addto__empty">
-            No shelves yet — a shelf is just a name and a pile of books.
+            No shelves yet - a shelf is just a name and a pile of books.
           </p>
         )}
         {shelves.map((s) => {

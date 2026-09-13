@@ -124,7 +124,7 @@ export function LibraryFolders({
                       ? c.problem
                       : kind === 'alignment'
                         ? c.matches === 0
-                          ? 'Empty — new alignments will be saved here'
+                          ? 'Empty - new alignments will be saved here'
                           : `${c.matches} saved alignment${c.matches === 1 ? '' : 's'} here`
                         : c.matches === 0
                           ? (c.problem ?? 'No books found in this folder')

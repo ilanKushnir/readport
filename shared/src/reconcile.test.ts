@@ -153,7 +153,7 @@ describe('clock-skew poisoning and causal ordering', () => {
 
   it('an event whose OWN clock is in the future is clamped at decision time', () => {
     const claim = claimOf(ev({ intent: 'seek', occurredAt: '2026-01-01T10:04:00.000Z' }));
-    // Attacker time far ahead — clamped to now+skew, which is < claim time.
+    // Attacker time far ahead - clamped to now+skew, which is < claim time.
     const d = decideApply(
       ev({ intent: 'seek', sessionId: 'sessZ', occurredAt: '2030-01-01T00:00:00.000Z' }),
       claim,

@@ -31,7 +31,7 @@ import {
   type DownloadState,
 } from '../offline/downloads';
 import { bookAudioSupport } from '../lib/audioSupport';
-import { pairStatusLabel } from '../lib/pairLabel';
+import { switchNote } from '../lib/pairLabel';
 import { ambientColorFromImage } from '../lib/ambient';
 import { recordCheckpoint } from '../progress/engine';
 
@@ -158,7 +158,7 @@ export function BookPage() {
         // answers for this book, so the handoff lands where it would online.
         const stored = await cachedSwitch(id, progress.locator);
         if (!stored) {
-          toast.show('This spot was not stored for offline switching — opening the other edition.');
+          toast.show('This spot was not stored for offline switching - opening the other edition.');
           navigate(otherRoute);
           return;
         }
@@ -166,7 +166,7 @@ export function BookPage() {
       }
       if (!res.to) {
         toast.show(
-          res.resolution.reason ?? 'No aligned position here — opening the other edition.',
+          res.resolution.reason ?? 'No aligned position here - opening the other edition.',
         );
         navigate(otherRoute);
         return;
@@ -186,7 +186,7 @@ export function BookPage() {
         );
       }
     } catch {
-      toast.show('Could not resolve the position — opening the other edition.');
+      toast.show('Could not resolve the position - opening the other edition.');
       navigate(otherRoute);
     } finally {
       setSwitching(false);
@@ -230,7 +230,7 @@ export function BookPage() {
   /**
    * Discovered but not yet indexed, and with nothing usable from a previous
    * pass. A scan inserts every book it finds up front and then indexes them a
-   * couple at a time, so on a real library this state lasts the whole run —
+   * couple at a time, so on a real library this state lasts the whole run -
    * and the grid already says "Indexing…" on the card while the detail page
    * offered a Read button that leads nowhere.
    */
@@ -283,7 +283,7 @@ export function BookPage() {
 
   /**
    * The paired edition's size is not part of this book's detail, and the
-   * sheet must quote it before the user commits — so it is fetched when the
+   * sheet must quote it before the user commits - so it is fetched when the
    * sheet opens. Offline the fetch fails and the sheet simply says the
    * edition is not on this device without a number.
    */
@@ -375,7 +375,7 @@ export function BookPage() {
           <div className="book-hero__actions">
             {notReadyYet ? (
               // Opening one of these lands on "Cannot open book" for an ebook,
-              // or on a player with no audio at all — a dead end whose only
+              // or on a player with no audio at all - a dead end whose only
               // exit is back to a page that looks perfectly healthy.
               <button className="btn" disabled title="Still being indexed">
                 {isEbook ? <IconBookOpen size={18} /> : <IconHeadphones size={18} />} Indexing…
@@ -393,11 +393,46 @@ export function BookPage() {
                 <IconHeadphones size={18} /> {pct > 0.001 ? 'Continue listening' : 'Listen'}
               </Link>
             )}
+            {pair && (
+              // Owning the book both ways is a reading option, not an
+              // announcement: it belongs in this row beside Read and Listen.
+              <button
+                className="btn btn--secondary"
+                onClick={() => void openOtherEdition()}
+                disabled={switching}
+              >
+                {isEbook ? <IconHeadphones size={17} /> : <IconBookOpen size={17} />}
+                {switching
+                  ? 'Opening…'
+                  : pair.switchable && pct > 0.001
+                    ? isEbook
+                      ? 'Listen from here'
+                      : 'Read from here'
+                    : isEbook
+                      ? 'Listen'
+                      : 'Read'}
+              </button>
+            )}
             <button className="btn btn--secondary" onClick={() => setAddTo(true)}>
               <IconShelf size={17} /> Add to…
             </button>
             <OfflineButton dl={dl} onClick={() => void openOfflineSheet()} />
           </div>
+          {pair && (
+            // One quiet line, not a card. What it says is the only thing a
+            // reader needs to know: what happens when they switch.
+            <p className="book-hero__pairnote">
+              <IconSwitch size={14} />
+              <span>
+                {switchNote(pair, isEbook)}{' '}
+                {dl?.status === 'done' &&
+                  companionDl !== undefined &&
+                  companionDl?.status !== 'done' &&
+                  `The ${isEbook ? 'audiobook' : 'ebook'} is not on this device, so switching needs a connection. `}
+                <Link to="/pairs">Review pairing</Link>
+              </span>
+            </p>
+          )}
           <MembershipChips
             member={member}
             shelfNames={new Map((overview?.shelves ?? []).map((s) => [s.id, s.name]))}
@@ -423,47 +458,6 @@ export function BookPage() {
         </div>
       </div>
 
-      {pair && (
-        <section className="tandem-card" aria-label="Paired edition">
-          <div className="tandem-card__icon">
-            <IconSwitch size={22} />
-          </div>
-          <div className="tandem-card__body">
-            <div className="tandem-card__title">
-              {pair.switchable
-                ? `Sync ready — switch to the ${isEbook ? 'audiobook' : 'ebook'} at the same sentence`
-                : `${isEbook ? 'Audiobook' : 'Ebook'} edition paired`}
-            </div>
-            <div className="tandem-card__sub">
-              {pairStatusLabel(pair)} <Link to="/pairs">Review pairing</Link>
-            </div>
-            {dl?.status === 'done' &&
-              companionDl !== undefined &&
-              companionDl?.status !== 'done' && (
-                <div className="tandem-card__sub">
-                  The {isEbook ? 'audiobook' : 'ebook'} is not on this device — switching to it
-                  needs a connection.
-                </div>
-              )}
-          </div>
-          <button
-            className="btn btn--secondary"
-            onClick={() => void openOtherEdition()}
-            disabled={switching}
-          >
-            {isEbook ? <IconHeadphones size={17} /> : <IconBookOpen size={17} />}
-            {switching
-              ? 'Resolving…'
-              : pair.switchable && pct > 0.001
-                ? isEbook
-                  ? 'Listen from here'
-                  : 'Read from here'
-                : isEbook
-                  ? 'Open audiobook'
-                  : 'Open ebook'}
-          </button>
-        </section>
-      )}
       {book.pair && book.pair.status === 'candidate' && (
         <div className="banner" role="note">
           <IconLink size={16} />
@@ -640,7 +634,7 @@ function MembershipChips({
 }
 
 /**
- * The one entry point to offline downloads, so it carries a visible word — an
+ * The one entry point to offline downloads, so it carries a visible word - an
  * icon alone has no tooltip on touch, which is where most reading and most
  * flights happen.
  */
@@ -655,11 +649,11 @@ function OfflineButton({ dl, onClick }: { dl: DownloadState | null; onClick: () 
       onClick={onClick}
       aria-label={
         done
-          ? 'Available offline — manage the download'
+          ? 'Available offline - manage the download'
           : downloading
             ? `Downloading for offline, ${pctDone}%`
             : failed
-              ? 'Download for offline — the last attempt failed'
+              ? 'Download for offline - the last attempt failed'
               : 'Download for offline'
       }
     >
@@ -696,7 +690,7 @@ function OfflineButton({ dl, onClick }: { dl: DownloadState | null; onClick: () 
 
 /**
  * One sheet for the whole offline lifecycle: explain + confirm the download,
- * show progress with a cancel, or offer removal — of a finished copy or of
+ * show progress with a cancel, or offer removal - of a finished copy or of
  * whatever a stopped attempt left behind.
  */
 function OfflineSheet({
@@ -783,7 +777,7 @@ function OfflineSheet({
       ) : (
         <>
           <p className="sheet__lede">
-            Keep <strong>{book.title}</strong> on this device for flights and dead zones — about{' '}
+            Keep <strong>{book.title}</strong> on this device for flights and dead zones - about{' '}
             <strong>{formatBytes(book.sizeBytes)}</strong>
             {isEbook ? ' including images' : ' of audio'}. {isEbook ? 'Reading' : 'Listening'} works
             fully offline and your position syncs back when you reconnect. Signing out removes
@@ -807,7 +801,7 @@ function OfflineSheet({
             <div className="banner banner--error" role="alert">
               <IconAlert size={15} />
               <span>
-                The download was interrupted — starting again continues from where it stopped.
+                The download was interrupted - starting again continues from where it stopped.
                 {dl.error && <small className="hint"> {dl.error}</small>}
               </span>
             </div>

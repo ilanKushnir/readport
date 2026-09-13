@@ -97,7 +97,7 @@
 .reader-content {
   /* The chapter body is arbitrary publisher XHTML. A bare URL or a code
      block is wider than the column, and the scroller's overflow-x computes
-     to auto — so one long token used to let the whole chapter be dragged
+     to auto - so one long token used to let the whole chapter be dragged
      sideways (and in paginated mode simply cut the words off). */
   overflow-wrap: break-word;
   font-family: var(--rd-font, var(--rp-font-reading));
@@ -181,6 +181,19 @@
 /* A confident anchor: lit briefly, then gone. Fades rather than blinks. */
 ::highlight(rp-speaking) {
   transition: background-color 200ms ease;
+}
+
+/* Auto-scrolling: the page is being driven, so the reader is not fighting it
+   for the same gesture. `overflow: hidden` still permits the programmatic
+   scrolling that drives it, and the toggle in the bar is lit so it is obvious
+   what is moving the page and how to stop it. */
+.reader-scroller.is-autoscrolling {
+  overflow-y: hidden;
+  touch-action: pan-x;
+  scrollbar-width: none;
+}
+.reader-scroller.is-autoscrolling::-webkit-scrollbar {
+  display: none;
 }
 
 .reader-ribbon {
@@ -404,7 +417,7 @@
 .reader-footer-row > *:not(:first-child) {
   flex: none;
 }
-/* Compact: one thin line — bar, (optional) listen pill, percentage. */
+/* Compact: one thin line - bar, (optional) listen pill, percentage. */
 .immersive-chrome--bar-compact {
   padding-block-start: 6px;
 }
@@ -470,8 +483,8 @@
    selection, so the reader "selects" the page-turn zone instead of the
    sentence. That was fixed for the mouse first, but it is worse on a phone:
    a long-press-and-drag to highlight is the ONLY way to mark a passage
-   there, and the outer 18% of both edges — where the start of every line
-   on the left page lives — would not take one.
+   there, and the outer 18% of both edges - where the start of every line
+   on the left page lives - would not take one.
 
    The zones drop behind the page box and still catch taps in the gutter
    beside it. Nothing is lost: ReaderPage's pointerup handler treats a plain
@@ -520,7 +533,7 @@
 }
 
 /* Marks. Five tints from the same warm family as the rest of the app, all
-   muted enough to read through — a highlight has to leave the text legible,
+   muted enough to read through - a highlight has to leave the text legible,
    which rules out the saturated yellows every other reader uses. A note is
    underlined rather than filled: it marks a place to return to, not a passage
    worth re-reading, and the two must be tellable apart at a glance. */
@@ -644,7 +657,7 @@
 
 /* Where a search landed. Warmer and stronger than a reader's own highlight,
    because it is an answer to a question they just asked rather than something
-   they made — and it goes away on its own. */
+   they made - and it goes away on its own. */
 ::highlight(rp-found) {
   background-color: color-mix(in srgb, var(--rd-link) 26%, transparent);
   text-decoration: underline 2px;
@@ -666,7 +679,7 @@
   margin-block-start: var(--sp-3);
   opacity: 0.8;
 }
-/* What the mode means, in a sentence — so the two options are a decision
+/* What the mode means, in a sentence - so the two options are a decision
    rather than two words. */
 .rs-note {
   margin: var(--sp-2) 0 0;
@@ -1238,7 +1251,7 @@
 }
 .player-page .player-cover--book {
   /* Placeholder covers reuse .book-card__fallback, whose absolute inset:0
-     positioning must not escape into the fixed player page — the scoped
+     positioning must not escape into the fixed player page - the scoped
      selector outweighs it regardless of stylesheet order, keeping the hero
      cover in flow below the top bar. */
   aspect-ratio: 2/3;
@@ -1295,7 +1308,7 @@
 }
 /* The skip buttons are meant to be smaller than the chapter ones. The rule
    saying so is earlier in the file and carries the same specificity, so it
-   lost and every button in the row rendered at 56px — which is wider than
+   lost and every button in the row rendered at 56px - which is wider than
    the row and clipped the outer two against an overflow:hidden edge. */
 .player-controls .icon-btn.icon-btn--small {
   width: 44px;
@@ -1352,7 +1365,7 @@
 /* ------------------------------------------------------------- read along */
 
 /* The transport: one row inside the reader's bottom chrome. Deliberately
-   small — play, back, speed, stop — because everything else a listener wants
+   small - play, back, speed, stop - because everything else a listener wants
    already lives in the player, one tap away. */
 .readalong {
   display: flex;
@@ -1396,6 +1409,13 @@
   background: transparent;
   color: var(--rd-text);
   cursor: pointer;
+}
+/* Engaged: this button is currently driving the page, so it reads as on
+   rather than as merely available. */
+.readalong__btn[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--rd-link) 18%, transparent);
+  color: var(--rd-link);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rd-link) 45%, transparent);
 }
 .readalong__btn:hover:not(:disabled) {
   background: color-mix(in srgb, var(--rd-text) 8%, transparent);
@@ -1516,7 +1536,7 @@
 }
 
 /* Narrow screens: the icons carry the meaning, and the titles stay for anyone
-   with a pointer. Read along keeps its label — it is the one being offered. */
+   with a pointer. Read along keeps its label - it is the one being offered. */
 @media (max-width: 560px) {
   .reader-page .tandem-pill:not(.tandem-pill--lead) > span {
     display: none;
@@ -1535,7 +1555,7 @@
 
 /* The reader's own empty and error states.
    They render inside .reader-page, which paints the reader's theme, but the
-   shared .empty-state uses app tokens — so on the night theme it was dark
+   shared .empty-state uses app tokens - so on the night theme it was dark
    grey text on near-black, and in contrast mode invisible. */
 .reader-page .empty-state {
   color: var(--rd-soft);
@@ -1592,7 +1612,7 @@
    size only where the pointer is coarse. */
 @media (pointer: coarse) {
   /* The selection menu appears under a finger that has just selected text,
-     and its buttons sat 2px apart — Highlight and Note were one pixel of
+     and its buttons sat 2px apart - Highlight and Note were one pixel of
      travel from each other. */
   .selection-menu {
     gap: 6px;
@@ -1619,7 +1639,7 @@
     min-height: 44px;
   }
   /* A missed grab on a scrubber seeks instead of dragging, which loses your
-     place — so the bar itself is the target, not just the thumb. */
+     place - so the bar itself is the target, not just the thumb. */
   .reader-slider,
   .player-scrubber,
   input[type='range'] {

@@ -6,16 +6,16 @@ licensed the same way.
 ## Repo layout
 
 ```
-shared/   @readport/shared — canonical contracts (locators, progress
+shared/   @readport/shared - canonical contracts (locators, progress
           events + reconciliation, alignment types, the language list,
           API DTOs; zod schemas)
-server/   @readport/server — Fastify API + background worker
+server/   @readport/server - Fastify API + background worker
   src/epub        EPUB parse / sanitize / derived-index extraction
   src/scanner     read-only library scans
   src/audio       ffprobe wrappers, offline-chunk integrity
   src/pairing     candidate scoring
   src/alignment   timing a book against its narration, and what follows:
-    ctc/            the forced aligner — romanize, emissions, sparse
+    ctc/            the forced aligner - romanize, emissions, sparse
                     probing, anchors, and ngram-index, which indexes the
                     decoded side and streams the book past it so the book
                     is never truncated
@@ -28,7 +28,7 @@ server/   @readport/server — Fastify API + background worker
   src/jobs        SQLite job queue + handlers + worker loop
   src/progress    append-only progress pipeline
   src/api         routes, guards (auth/CSRF), app assembly
-web/      @readport/web — React PWA (reader, player, library, pairing,
+web/      @readport/web - React PWA (reader, player, library, pairing,
           notes and marks, settings, offline downloads, sw.js)
 fixtures/ committed sample library (original stories, synthetic narration)
 alignments/  empty and committed, so the stock compose file has somewhere
@@ -83,7 +83,7 @@ imported again on the next scan after you wipe the database.
 Production-style run: `npm run build` then `node server/dist/index.js`
 (serves the built web app itself).
 
-Computing timings additionally needs the model — 317 MB into
+Computing timings additionally needs the model - 317 MB into
 `./models/mms-fa/`, from Settings → Alignment or copied in by hand
 (docs/self-hosting.md). Everything else works without it: scanning, pairing,
 the reader, the player, and the whole test suite, which stubs the acoustic
@@ -102,23 +102,23 @@ npm run qa               # Playwright sweep against a running server
 CI runs the first four as format check, lint, tests, typecheck, and only then
 builds. Tests come before the build on purpose: `npm test` has to pass from a
 clean `npm ci`, building the shared workspace itself rather than inheriting a
-`dist/` from an earlier step. The Playwright sweep is not part of CI — it wants
-a running server — so it is on whoever changes the surfaces it walks.
+`dist/` from an earlier step. The Playwright sweep is not part of CI - it wants
+a running server - so it is on whoever changes the surfaces it walks.
 
 The integration suite boots the real Fastify app against `fixtures/` in a temp
 data dir and exercises setup→scan→pairing→alignment→two-way switch, plus
 security paths (CSRF, rate limits, traversal attempts). The alignment it
 switches against is a stored one, not a computed one. The aligner's own
-decisions — romanization, anchoring, refusal, gaps, the handover to the timing
-layer — are tested in `server/src/alignment/ctc/engine.test.ts` against a
+decisions - romanization, anchoring, refusal, gaps, the handover to the timing
+layer - are tested in `server/src/alignment/ctc/engine.test.ts` against a
 synthetic character stream built from the book's own text, which is what makes
 per-sentence millisecond assertions possible without the model.
 
 ## Regenerating bundled assets
 
-- `npm run fixtures` — rebuilds the sample library (needs ffmpeg; speech via
+- `npm run fixtures` - rebuilds the sample library (needs ffmpeg; speech via
   the `text2wav` espeak-ng WASM package).
-- `npm run icons` — re-rasterizes the favicon and PWA icons from
+- `npm run icons` - re-rasterizes the favicon and PWA icons from
   `design/logo/mark.mjs` (needs any installed Chrome or Chromium).
 
 Both outputs are committed so users and CI never need these tools.

@@ -9,8 +9,8 @@ import { EPUB_ZIP_LIMITS, type ZipDirIndex } from './zip.js';
  * metadata, and TOC (EPUB3 nav or NCX fallback). Read-only; never mutates
  * the source file.
  *
- * Parsing operates over an EpubStore — a bounded view of entries that were
- * stream-extracted to disk — so only the small metadata documents
+ * Parsing operates over an EpubStore - a bounded view of entries that were
+ * stream-extracted to disk - so only the small metadata documents
  * (container/OPF/nav/NCX) are ever read into memory here. Chapters and
  * assets are read/copied one at a time by the extract stage.
  */
@@ -137,7 +137,7 @@ function asText(node: unknown): string {
 }
 
 /**
- * Calibre stores a rating out of ten — five stars in half-star steps — in a
+ * Calibre stores a rating out of ten - five stars in half-star steps - in a
  * `calibre:rating` meta element. Everything outside that range is somebody
  * else's convention and is better ignored than guessed at.
  */

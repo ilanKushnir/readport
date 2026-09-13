@@ -29,12 +29,12 @@ exact two-way switching immediately.
 
 | Mount                 | Purpose                                            | Notes                                                                                                                       |
 | --------------------- | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `/data`               | SQLite database, derived reading indexes, progress | **Local disk only.** Never place it on SMB/NFS — SQLite in WAL mode is unsafe on network filesystems.                       |
+| `/data`               | SQLite database, derived reading indexes, progress | **Local disk only.** Never place it on SMB/NFS - SQLite in WAL mode is unsafe on network filesystems.                       |
 | `/cache`              | Covers and alignment working files                 | Safe to delete; rebuilt on demand.                                                                                          |
 | `/models`             | The alignment model                                | Holds the 317 MB aligner (`mms-fa/`) once downloaded. One model, every language.                                            |
-| `/library/ebooks`     | Your ebook library                                 | `:ro` — read-only, required posture.                                                                                        |
+| `/library/ebooks`     | Your ebook library                                 | `:ro` - read-only, required posture.                                                                                        |
 | `/library/audiobooks` | Your audiobook library                             | `:ro`                                                                                                                       |
-| `/library/alignments` | Finished alignments, one `.rpalign` file per pair  | **Read-write**, on purpose — never `:ro`. The only folder ReadPort writes into, and the one worth keeping across a rebuild. |
+| `/library/alignments` | Finished alignments, one `.rpalign` file per pair  | **Read-write**, on purpose - never `:ro`. The only folder ReadPort writes into, and the one worth keeping across a rebuild. |
 
 Your libraries can be the folders already used by Calibre / Calibre-Web
 Automated (`.../Calibre Library`), Kavita, Audiobookshelf
@@ -42,7 +42,7 @@ Automated (`.../Calibre Library`), Kavita, Audiobookshelf
 ReadPort detects `.epub` files and `.m4b/.mp3/.m4a/.flac/.ogg/.opus` audio
 (one directory per multi-file book).
 
-The alignment folder is one you make yourself, anywhere you like — beside the
+The alignment folder is one you make yourself, anywhere you like - beside the
 books, or on the same share. It is the one library mount without `:ro`, and it
 has to be writable by the container user: the entrypoint takes ownership of `/data`,
 `/cache` and `/models` and deliberately never touches anything under
@@ -58,8 +58,8 @@ sentence-exact switch possible needs one thing: the alignment model.
 
 Settings → Alignment downloads 317 MB into `/models/mms-fa/`. There is one
 model and it covers every language, because it works on a romanized character
-stream rather than on words — narration in Cyrillic costs it no more than
-narration in English. Its licence is **CC-BY-NC-4.0 — non-commercial**, shown on the
+stream rather than on words - narration in Cyrillic costs it no more than
+narration in English. Its licence is **CC-BY-NC-4.0 - non-commercial**, shown on the
 card before the download starts; it is the only non-permissive component in
 the project, so do not install it if you are running ReadPort commercially.
 
@@ -100,14 +100,14 @@ aligner refuses and why, is in [alignment.md](alignment.md).
 Aligning is the only expensive thing this server ever does, and a container is
 a disposable thing. So a finished alignment is not only a row in the database:
 it is also written into the alignment folder as one self-contained file,
-`<author> - <title> [<key>].rpalign` — gzipped JSON, readable with
+`<author> - <title> [<key>].rpalign` - gzipped JSON, readable with
 `gunzip -c` if you ever want to see what you are keeping.
 
 Those files find their way back to books by fingerprint, never by path,
 filename or database id, none of which survive a reinstall. One fingerprint is
 taken from the ebook's sentence ids, the other from the audiobook's per-track
-durations, which is why retagging an audiobook — fixing the narrator,
-embedding cover art, renaming chapters — costs you nothing: it moves no
+durations, which is why retagging an audiobook - fixing the narrator,
+embedding cover art, renaming chapters - costs you nothing: it moves no
 narration and changes no duration. Re-encoding the audio, or swapping in a
 different EPUB of the same title, does change them, and should: the timings
 would no longer be about that file.
@@ -120,7 +120,7 @@ half-applied alignment would leave the reader with silent holes and a coverage
 figure that lied about them; and files whose book is not in this library are
 passed over without comment.
 
-Settings → Libraries → Alignment folder has the two manual buttons — **Save
+Settings → Libraries → Alignment folder has the two manual buttons - **Save
 all alignments to this folder**, for an install that has been aligning books
 since before it had anywhere to put them, and **Import what is already
 there**, for a folder you have just mounted and do not want to wait a scan
@@ -141,7 +141,7 @@ is used, and `no-new-privileges` is enabled in the compose file.
 
 The compose file builds from source, which works on any architecture and is
 the default. The published image at `ghcr.io/ilankushnir/readport` is built
-for **linux/amd64** only — on an arm64 host (a Pi, an Apple Silicon VM, an ARM
+for **linux/amd64** only - on an arm64 host (a Pi, an Apple Silicon VM, an ARM
 VPS) keep `build: .` rather than switching to `image:`.
 
 ## Reverse proxy and HTTPS (required for the PWA)
@@ -155,7 +155,7 @@ TLS-terminating proxy in front and set **both**:
 
 The second one matters more than it looks. Without it every request appears to
 come from the proxy, so the per-address limit on failed sign-ins becomes a
-single server-wide bucket — and a stranger guessing at one account can lock
+single server-wide bucket - and a stranger guessing at one account can lock
 everybody out. With it set, `X-Forwarded-For` is honoured only from the
 addresses you name, so a client hitting the port directly still cannot forge
 one.
@@ -170,7 +170,7 @@ books.example.com {
 
 nginx: proxy `/` to `readport:8383` with `proxy_set_header Host $host;`
 and websocket defaults are not needed (no websockets). Body size defaults are
-fine — clients never upload media.
+fine - clients never upload media.
 
 After that, iPhone Safari → Share → **Add to Home Screen** gives a
 standalone, offline-capable app.
@@ -209,7 +209,7 @@ account there first if you want a break-glass path.
   Alignment, not a per-book one.
 - `RP_ALIGN_THREADS` (default 4) caps the threads the model may use. Past the
   container's CPU allowance it gets slower rather than faster, so set it to
-  that allowance and not to the host's core count — and remember that it
+  that allowance and not to the host's core count - and remember that it
   multiplies with `RP_JOB_CONCURRENCY`, since each alignment asks for that many
   threads of its own.
 - Nothing heavy runs until a pair is actually aligned: an idle instance
@@ -251,7 +251,7 @@ docker compose up -d --build
 ```
 
 Database schema migrations run automatically at startup (append-only,
-recorded in `schema_migrations`). Downgrades are not supported — restore the
+recorded in `schema_migrations`). Downgrades are not supported - restore the
 `/data` backup taken before upgrading instead.
 
 ## Troubleshooting
@@ -260,14 +260,14 @@ recorded in `schema_migrations`). Downgrades are not supported — restore the
 | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Library is empty after setup                              | Check the `:ro` mounts exist inside the container (`docker compose exec readport ls /library/ebooks`) and rescan from Settings.                                                                                                                                                                                                                |
 | Books stuck in "Indexing…"                                | See Settings → Background activity for the job error; `docker compose logs readport`.                                                                                                                                                                                                                                                          |
-| Nothing ever starts aligning                              | The model is not downloaded (Settings → Alignment), or unattended alignment is off (Settings → Alignment → _Align new matches automatically_), or the metadata match was not confident enough to run without being asked — confirm it on the Pairing page and it aligns immediately.                                                           |
+| Nothing ever starts aligning                              | The model is not downloaded (Settings → Alignment), or unattended alignment is off (Settings → Alignment → _Align new matches automatically_), or the metadata match was not confident enough to run without being asked - confirm it on the Pairing page and it aligns immediately.                                                           |
 | Alignment fails with "model is not installed"             | Download the alignment model in Settings → Alignment, or run `readport-model install`; the Pairing page turns the error into a one-click download and re-queues the alignment when the files land.                                                                                                                                             |
-| Pairing says the narration is not the same work           | The aligner found almost no matching passages. That usually means an abridged, dramatized or differently translated edition — a correct pair produces hundreds of anchors per thousand characters. Confirm the pair manually only if you are sure.                                                                                             |
-| Nothing appears in the alignment folder                   | The mount is `:ro`, or the host folder is not writable by `PUID`/`PGID`. Settings → Libraries → Alignment folder says which, and the alignments are safe in `<data>/alignments` meanwhile — fix the mount and press _Save all alignments to this folder_.                                                                                      |
+| Pairing says the narration is not the same work           | The aligner found almost no matching passages. That usually means an abridged, dramatized or differently translated edition - a correct pair produces hundreds of anchors per thousand characters. Confirm the pair manually only if you are sure.                                                                                             |
+| Nothing appears in the alignment folder                   | The mount is `:ro`, or the host folder is not writable by `PUID`/`PGID`. Settings → Libraries → Alignment folder says which, and the alignments are safe in `<data>/alignments` meanwhile - fix the mount and press _Save all alignments to this folder_.                                                                                      |
 | A rebuilt install did not take its alignments back        | The saved files no longer describe these files: a re-encoded audiobook (different track durations) or a different EPUB of the same title (different sentence ids) is a different pair, and its timings would be wrong. Aligning again is the only honest fix.                                                                                  |
 | A book shows "Indexing failed"                            | The EPUB may be malformed or DRM-protected. ReadPort does not remove DRM.                                                                                                                                                                                                                                                                      |
 | "Add to Home Screen" gives a browser shortcut, not an app | You are not on HTTPS. See the reverse-proxy section.                                                                                                                                                                                                                                                                                           |
 | m4b won't play in Firefox/Chromium                        | AAC decoding is missing from some open-source browser builds. Chrome, Edge and Safari play m4b/m4a; mp3/flac/ogg play everywhere.                                                                                                                                                                                                              |
 | Progress didn't sync from my phone                        | It is queued locally (IndexedDB) and reconciles on the next reachable sync; nothing is lost.                                                                                                                                                                                                                                                   |
 | Login says "Too many attempts"                            | Login throttle: 10 tries per account from one IP, 30 from that IP across all accounts, both over 5 minutes. Wait a few minutes.                                                                                                                                                                                                                |
-| Reset the admin password                                  | Stop the stack, delete the `users`/`sessions` rows: `docker compose run --rm readport node -e "const {DatabaseSync}=require('node:sqlite');const d=new DatabaseSync('/data/readport.db');d.exec('DELETE FROM sessions; DELETE FROM users;')"` — the next visit shows first-run setup again. Reading progress and pair decisions are preserved. |
+| Reset the admin password                                  | Stop the stack, delete the `users`/`sessions` rows: `docker compose run --rm readport node -e "const {DatabaseSync}=require('node:sqlite');const d=new DatabaseSync('/data/readport.db');d.exec('DELETE FROM sessions; DELETE FROM users;')"` - the next visit shows first-run setup again. Reading progress and pair decisions are preserved. |

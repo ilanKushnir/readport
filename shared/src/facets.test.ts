@@ -11,9 +11,9 @@ import {
 import { normaliseLanguage } from './languages.js';
 
 /**
- * The two rules that decide what a reader sees in Browse — what their choice
+ * The two rules that decide what a reader sees in Browse - what their choice
  * means, and what "no choice yet" means in a library that cannot support the
- * defaults — and the wire format that carries a filter through a URL.
+ * defaults - and the wire format that carries a filter through a URL.
  */
 
 describe('formatFacet / parseFacet', () => {

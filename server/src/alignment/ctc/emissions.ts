@@ -12,7 +12,7 @@ import { probeAudio } from '../../audio/probe.js';
  * of the acoustic frame that emitted it.
  *
  * This replaces ASR (whisper) as the acoustic side of alignment. We do not
- * need a transcript — we need a *timed character stream* that the matcher can
+ * need a transcript - we need a *timed character stream* that the matcher can
  * anchor against the ebook's own characters. A 300M CTC forced-aligner model
  * produces that ~6x faster than whisper and, measured on real human narration,
  * with far better anchor quality (see docs/alignment.md and the validation
@@ -22,7 +22,7 @@ import { probeAudio } from '../../audio/probe.js';
  * per 320 input samples (20.0 ms at 16 kHz) over a 400-sample window. The
  * vocabulary has ~31 entries: a blank at id 0, a few `<...>` specials, and the
  * romanized letters. There is no space token, so the decode is one
- * uninterrupted character stream — exactly what the n-gram matcher wants.
+ * uninterrupted character stream - exactly what the n-gram matcher wants.
  *
  * Streaming is not an optimisation here, it is a requirement: a 6-hour book is
  * 1.4 GB of float32 PCM. ffmpeg's output is consumed chunk-by-chunk and only a
@@ -161,7 +161,7 @@ export interface CollapseInput {
   idToToken: readonly string[];
   /** Argmax id of the previous kept frame (-1 at the start of a track). */
   prevId: number;
-  /** Appended in place — a book decodes to ~50k characters and copying adds up. */
+  /** Appended in place - a book decodes to ~50k characters and copying adds up. */
   out: DecodedChar[];
 }
 
@@ -174,7 +174,7 @@ export interface CollapseInput {
  * as "the previous id", so a repeat across one of them stays suppressed.
  *
  * Context frames are skipped before the argmax, so `prevId` only ever tracks
- * frames that were actually kept — the same continuity a whole-file decode has.
+ * frames that were actually kept - the same continuity a whole-file decode has.
  */
 export function collapseChunk(input: CollapseInput): number {
   const { emission, segStartMs, coreLoMs, coreHiMs, idToToken, out } = input;
@@ -416,8 +416,8 @@ const ORT_PACKAGE: string = 'onnxruntime-node';
 /**
  * Roots to `require` from when a bare import fails. In the container the
  * runtime is installed outside the app tree (it is a large optional native
- * dep) and, measured on node:26-slim, ESM resolution does not find it there —
- * neither a bare import nor NODE_PATH — while a CommonJS require rooted at the
+ * dep) and, measured on node:26-slim, ESM resolution does not find it there -
+ * neither a bare import nor NODE_PATH - while a CommonJS require rooted at the
  * install directory does.
  */
 function ortRequireRoots(): string[] {
@@ -458,7 +458,7 @@ async function loadOnnxRuntimeOnce(): Promise<OrtModule> {
       tried.push(`require(${root}): ${(err as Error).message}`);
     }
   }
-  throw new Error(`onnxruntime-node is not installed or failed to load — ${tried.join('; ')}`);
+  throw new Error(`onnxruntime-node is not installed or failed to load - ${tried.join('; ')}`);
 }
 
 export interface EngineStatus {
@@ -675,7 +675,7 @@ export interface ProbeWindow {
  * position that is nowhere near either probe. A space is outside the model's
  * alphabet (`a`-`z` and an apostrophe) and outside anything romanization can
  * produce, so every gram containing one fails to match the book by
- * construction — no matcher change, no boundary bookkeeping to get wrong.
+ * construction - no matcher change, no boundary bookkeeping to get wrong.
  */
 export const PROBE_BREAK = ' ';
 
@@ -687,7 +687,7 @@ export interface ProbeDecoderOptions {
   /**
    * Each track's length, if the caller already knows it. The library scan
    * measured these when it indexed the book, and asking ffprobe again costs a
-   * process per file — thirty-one of them on a long audiobook, over whatever
+   * process per file - thirty-one of them on a long audiobook, over whatever
    * mount the library lives on. Omit an entry and it is measured.
    */
   trackDurationMs?: (number | undefined)[];
@@ -704,7 +704,7 @@ export interface ProbeDecoder {
    * Decode `windows`, returning one character run per window, in the order the
    * windows were given. Runs are kept apart rather than concatenated because
    * probes arrive in schedule order, not playback order, and only the caller
-   * knows how to interleave a refinement round with what it already has —
+   * knows how to interleave a refinement round with what it already has -
    * see `assembleProbes` in sparse.ts.
    */
   decode(
@@ -717,7 +717,7 @@ export interface ProbeDecoder {
    * Not the same as the windows that were asked for: a probe is clipped to its
    * track's end and skipped entirely when less than a second of it remains.
    * The difference matters because the abridgement check divides the character
-   * ratio by the fraction of audio heard — over-reporting that fraction makes
+   * ratio by the fraction of audio heard - over-reporting that fraction makes
    * an ordinary book look abridged.
    */
   readonly decodedMs: number;
@@ -739,7 +739,7 @@ interface Track {
  * Open a decoder that reads only the parts of the audio it is asked for.
  *
  * {@link decodeBook} streams every sample through the model, which costs about
- * a fifth of real time — over an hour of compute for a six-hour book.
+ * a fifth of real time - over an hour of compute for a six-hour book.
  * Alignment does not need every sample. It needs enough anchors to pin the
  * text to the timeline, and those come from short probes spread across the
  * narration; everything between two anchors is interpolation, and interpolation
@@ -777,8 +777,8 @@ export async function openProbeDecoder(opts: ProbeDecoderOptions): Promise<Probe
     },
     async decode(windows, onWindow) {
       const runs: DecodedChar[][] = [];
-      // ffmpeg and the model take turns on different resources — one seeks and
-      // decodes an mp3, the other saturates the CPU — so reading the next
+      // ffmpeg and the model take turns on different resources - one seeks and
+      // decodes an mp3, the other saturates the CPU - so reading the next
       // probe while the model works on this one is free. Exactly one read runs
       // ahead: two would double the memory for no further gain, since the
       // model is always the slower of the pair.
@@ -895,7 +895,7 @@ async function decodeProbe(
  * Decode `durationMs` of mono 16 kHz audio starting `startMs` into `filePath`.
  *
  * `-ss` before `-i` so ffmpeg seeks rather than decoding and discarding the
- * whole head — that is the entire point of probing. Measured against a
+ * whole head - that is the entire point of probing. Measured against a
  * contiguous decode of the same book, the seek costs no timestamp accuracy
  * worth correcting for.
  */

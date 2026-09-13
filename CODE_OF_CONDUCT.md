@@ -41,7 +41,7 @@ deliberate behaviour will get the last of those without much ceremony.
 
 If you believe a decision was wrong, say so at the same address; it will be
 reconsidered by the maintainer, who is also the person who made it. That is the
-honest limit of a project this size — there is no committee.
+honest limit of a project this size - there is no committee.
 
 ## Attribution
 

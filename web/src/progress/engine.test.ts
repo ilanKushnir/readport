@@ -81,7 +81,7 @@ describe('lifecycle persistence (visibilitychange/pagehide path)', () => {
     persistActiveLocatorAndFlush();
     await flushMicro();
     const pending = [...store('pending-events').values()] as ProgressEvent[];
-    // The current position — inside the debounce/heartbeat window — is durable.
+    // The current position - inside the debounce/heartbeat window - is durable.
     expect(pending.some((e) => e.bookId === 'bookX' && e.locator.pct === 0.3)).toBe(true);
     unregister();
   });

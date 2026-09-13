@@ -13,12 +13,12 @@ export interface CoverageBar {
  *
  * A ten-hour audiobook is six hundred of them. Each bar needs a pixel or two
  * plus a gap, so the strip grew to roughly 2,400px inside a 309px card and
- * took the whole Pairing page with it — the reader could swipe the page two
+ * took the whole Pairing page with it - the reader could swipe the page two
  * thousand pixels sideways into empty space, dragging every other pair card
  * off screen. Nothing in the ancestor chain clipped it.
  *
  * Averaging neighbouring minutes into a fixed number of buckets keeps the
- * shape of the data — where the alignment is weak is still visible — while
+ * shape of the data - where the alignment is weak is still visible - while
  * making the strip's width independent of how long the book is.
  */
 export const MAX_COVERAGE_BARS = 96;

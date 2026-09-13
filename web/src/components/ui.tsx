@@ -20,7 +20,7 @@ const FOCUSABLE =
  * Dialog focus-trap Tab handling, extracted for direct testing. Wrapping
  * treats the DIALOG CONTAINER ITSELF as a boundary: when initial focus is
  * the container (tabIndex=-1), Shift+Tab wraps to the LAST focusable
- * control and Tab enters at the first — focus can never escape the dialog.
+ * control and Tab enters at the first - focus can never escape the dialog.
  */
 export function trapTabFocus(
   e: { shiftKey: boolean; preventDefault: () => void },
@@ -56,7 +56,7 @@ export function trapTabFocus(
  * Stop the page behind a dialog from scrolling.
  *
  * Without this, a flick anywhere on a sheet that is not itself scrollable
- * scrolls the library underneath it — so closing the sheet drops you
+ * scrolls the library underneath it - so closing the sheet drops you
  * somewhere else entirely. Counted, because a sheet can open another one and
  * the first to close must not unlock the page for the second.
  */
@@ -256,20 +256,34 @@ export function Cover({
   className?: string;
 }) {
   const [failed, setFailed] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  let hash = 0;
+  for (const c of book.id) hash = (hash * 31 + c.charCodeAt(0)) >>> 0;
+  const tint = COVER_TINTS[hash % COVER_TINTS.length];
+
   if (book.hasCover && !failed) {
     return (
       <img
-        className={className}
+        // The book's own colour stands in until the cover arrives, and the
+        // cover resolves out of it rather than replacing a blank rectangle.
+        // Kept on the <img> itself: wrapping it would change the layout of
+        // every place a cover appears.
+        className={`cover-img ${loaded ? 'is-loaded' : ''} ${className ?? ''}`}
+        style={{ backgroundColor: tint }}
         src={`/api/books/${book.id}/cover`}
         alt=""
         loading="lazy"
+        decoding="async"
+        ref={(el) => {
+          // Already in the cache: it is on screen this frame, so do not play
+          // a transition for something that never looked any other way.
+          if (el?.complete) setLoaded(true);
+        }}
+        onLoad={() => setLoaded(true)}
         onError={() => setFailed(true)}
       />
     );
   }
-  let hash = 0;
-  for (const c of book.id) hash = (hash * 31 + c.charCodeAt(0)) >>> 0;
-  const tint = COVER_TINTS[hash % COVER_TINTS.length];
   return (
     <span
       className={`book-card__fallback ${className ?? ''}`}

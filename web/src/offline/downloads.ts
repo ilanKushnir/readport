@@ -19,7 +19,7 @@ export const OFFLINE_CACHE = 'rp-offline-v1';
 /** Per-chunk audio buffer bound (max bytes in memory at once per download). */
 export const AUDIO_CHUNK_BYTES = 8 * 1024 * 1024;
 
-/* Cache-key conventions — MUST stay in sync with web/public/sw-range.js
+/* Cache-key conventions - MUST stay in sync with web/public/sw-range.js
    (asserted by web/src/offline/downloads.test.ts). */
 export const chunkPrefix = (url: string) => `${url}${url.includes('?') ? '&' : '?'}rpchunk=`;
 export const chunkKey = (url: string, i: number) => `${chunkPrefix(url)}${i}`;
@@ -61,7 +61,7 @@ export interface DownloadState {
  *
  * Bytes, not files. A paired audiobook is a handful of very large tracks, so
  * counting finished URLs leaves the bar on 0% for minutes and then jumps it to
- * a half — which reads as nothing happening. `storedBytes` is updated every
+ * a half - which reads as nothing happening. `storedBytes` is updated every
  * chunk, so it actually moves. The URL count is the fallback for the moment
  * before the manifest's size is known.
  */
@@ -101,7 +101,7 @@ export async function listDownloads(): Promise<DownloadState[]> {
 }
 
 /**
- * The book summary embedded in a downloaded title's cached detail JSON —
+ * The book summary embedded in a downloaded title's cached detail JSON -
  * enough to render a library card with no network at all.
  */
 export async function cachedBookSummary(bookId: string): Promise<BookSummary | null> {
@@ -140,8 +140,8 @@ interface OfflineSwitchTable {
  * Every answer here was computed by the SERVER's resolver when the package
  * was built, so an offline handoff lands exactly where an online one would;
  * this only picks the right entry. Returns null when the position has no
- * stored answer — an unaligned passage, or a saved position with no sentence
- * id — and the caller should say so rather than guess.
+ * stored answer - an unaligned passage, or a saved position with no sentence
+ * id - and the caller should say so rather than guess.
  */
 export async function cachedSwitch(
   bookId: string,
@@ -261,7 +261,7 @@ async function cacheKeyPaths(cache: Cache): Promise<string[]> {
  *
  * Deletion must ENUMERATE rather than count upwards from zero: chunks go
  * missing out of order (a failed resume, an eviction under storage
- * pressure), and a scan that stops at — or a fixed window past — the first
+ * pressure), and a scan that stops at - or a fixed window past - the first
  * gap orphans everything beyond it, with nothing else in the app that would
  * ever collect it.
  */
@@ -282,17 +282,17 @@ async function deleteTrackChunks(cache: Cache, url: string, paths?: string[]): P
  * Download one audio track as verified fixed-size chunks. Memory use is
  * bounded by the chunk size regardless of the track size (a whole-file
  * ArrayBuffer of a large M4B would OOM an iPhone tab), and hashing is
- * per-chunk — the file is never digested through one giant buffer.
+ * per-chunk - the file is never digested through one giant buffer.
  *
  * Integrity: the manifest supplies an immutable sourceVersion plus a
  * SHA-256 per chunk. Every fetched chunk must arrive as an exact 206 with
  * the exact Content-Range, the expected byte count, an ETag matching the
- * sourceVersion, and a matching chunk digest — otherwise the download
+ * sourceVersion, and a matching chunk digest - otherwise the download
  * fails without storing the chunk. A resume first checks the stored
  * partial marker: chunks downloaded under a DIFFERENT source version are
  * discarded wholesale (old and new bytes are never combined), and chunks
  * kept from a matching earlier attempt are re-hashed before being trusted.
- * The completion meta — which makes the track servable offline — is
+ * The completion meta - which makes the track servable offline - is
  * written only after every chunk verified.
  */
 export async function downloadTrackChunked(
@@ -425,8 +425,8 @@ function isQuotaError(err: unknown): boolean {
 
 /**
  * Purge generation: bumped by purgeOfflineData() once every registered
- * writer has settled. A download continuation from before the bump — e.g.
- * a manifest request that resolves only after logout completed — belongs
+ * writer has settled. A download continuation from before the bump - e.g.
+ * a manifest request that resolves only after logout completed - belongs
  * to a dead generation and must not write to Cache Storage or IndexedDB.
  */
 let purgeGeneration = 0;
@@ -458,7 +458,7 @@ function raceAbort<T>(p: Promise<T>, signal: AbortSignal): Promise<T> {
  * Ask the browser to keep this origin's storage.
  *
  * Without it Safari evicts everything after seven days of not opening the app
- * — the downloaded books AND the queue of unsent reading positions — which is
+ * - the downloaded books AND the queue of unsent reading positions - which is
  * precisely the interval between packing for a trip and getting on the plane.
  * Asked at the moment someone downloads a book, because that is the clearest
  * possible statement that they want it kept, and because Chrome grants it on
@@ -484,7 +484,7 @@ export async function startDownload(
   void requestPersistentStorage();
   // Register the controller and in-flight marker BEFORE the first await: a
   // purge that begins while the manifest request is still pending must see
-  // this attempt, abort it, and wait for it to settle — otherwise the
+  // this attempt, abort it, and wait for it to settle - otherwise the
   // resolved manifest would repopulate caches after logout.
   const generation = purgeGeneration;
   const controller = new AbortController();
@@ -509,7 +509,7 @@ export async function startDownload(
       );
     } catch (err) {
       // Aborted (logout or cancel) before anything was stored: settle
-      // silently and store NOTHING — nothing may outlive the purge.
+      // silently and store NOTHING - nothing may outlive the purge.
       if (controller.signal.aborted || invalidated()) return;
       throw err;
     }
@@ -625,7 +625,7 @@ export async function abortAllDownloads(): Promise<void> {
 
 /**
  * Logout-as-revocation: remove every copy of server CONTENT this browser
- * profile holds — downloaded books (Cache Storage), the download registry
+ * profile holds - downloaded books (Cache Storage), the download registry
  * and the cached server progress state. Active download controllers are
  * aborted and AWAITED first, so a logout/download race cannot leave freshly
  * written content behind. Called on logout and whenever the session is
@@ -646,8 +646,8 @@ export async function purgeOfflineData(): Promise<void> {
     /* no active downloads */
   }
   // Every registered writer has settled. Anything still pending beyond
-  // this point — a manifest request that survived the abort, or a
-  // download started mid-purge — now belongs to a dead generation and
+  // this point - a manifest request that survived the abort, or a
+  // download started mid-purge - now belongs to a dead generation and
   // refuses to write to Cache Storage or IndexedDB.
   purgeGeneration += 1;
   try {

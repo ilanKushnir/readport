@@ -22,6 +22,6 @@ qa-output/
 
 .claude/
 
-# iCloud Drive conflict copies ("file 2.ts") — never source of truth
+# iCloud Drive conflict copies ("file 2.ts") - never source of truth
 *\ [0-9].*
 *\ [0-9][0-9].*

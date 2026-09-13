@@ -60,7 +60,7 @@ export function JoinPage({ token }: { token: string }) {
     } catch (err) {
       setError(
         err instanceof ApiError && err.code === 'username-taken'
-          ? 'That username is taken — pick another.'
+          ? 'That username is taken - pick another.'
           : err instanceof ApiError && err.code === 'invalid-invite'
             ? 'This invitation is no longer valid.'
             : err instanceof ApiError && err.code === 'invalid'
@@ -86,7 +86,7 @@ export function JoinPage({ token }: { token: string }) {
           <>
             <h1>Could not check this invitation</h1>
             <p className="lede">
-              The server did not answer. Your link is probably fine — try again in a moment.
+              The server did not answer. Your link is probably fine - try again in a moment.
             </p>
             <button className="btn" type="button" onClick={() => window.location.reload()}>
               Try again

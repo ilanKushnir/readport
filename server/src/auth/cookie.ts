@@ -7,7 +7,7 @@ export const SESSION_COOKIE = 'rp_session';
  * How the session cookie is written.
  *
  * One definition, used by sign-in, by accepting an invitation, and by the
- * request hook that slides a live session forward — three places that must
+ * request hook that slides a live session forward - three places that must
  * agree about `secure` and `maxAge` or a session survives on the server while
  * the browser quietly drops it.
  */

@@ -36,7 +36,7 @@ export interface ModelSpec {
  * Pinned to a commit, not to a branch.
  *
  * `resolve/main` is whatever the upstream repository points at today, and the
- * only integrity check on the download is its size — so a changed upstream is
+ * only integrity check on the download is its size - so a changed upstream is
  * a changed model with no signal at all. A revision cannot move underneath us.
  */
 const MMS_BASE =
@@ -109,7 +109,7 @@ export class ModelMissingError extends Error {
   constructor(readonly modelId: string = ALIGNER_MODEL_ID) {
     super(
       `model-missing:${modelId}|The alignment model is not installed yet. ` +
-        `It is one download that covers every language — get it in Settings.`,
+        `It is one download that covers every language - get it in Settings.`,
     );
     this.name = 'ModelMissingError';
   }

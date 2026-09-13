@@ -166,7 +166,7 @@ describe('extractZipToDir', () => {
       return m.heapUsed + m.external + m.arrayBuffers;
     };
     // What this test is really about is RETENTION, not transient garbage.
-    // Sampling peak heap during extraction cannot tell the two apart —
+    // Sampling peak heap during extraction cannot tell the two apart -
     // inflating 48MB produces 48MB of garbage whether or not anything keeps a
     // reference to it, and whether the sample lands before or after a GC is
     // luck. That made the old peak bound flaky on CI. So force a collection

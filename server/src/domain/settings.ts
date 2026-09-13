@@ -24,7 +24,7 @@ const DEFAULTS: Settings = {
  * Confidence at which two files are taken to be the same work without being
  * asked. Fixed rather than exposed: nobody can pick a better number than this
  * one without data they do not have, and the alignment itself is the real
- * check — a wrong pairing produces no matches and is handed back undecided.
+ * check - a wrong pairing produces no matches and is handed back undecided.
  */
 export const AUTO_PAIR_THRESHOLD = 0.92;
 
@@ -38,7 +38,7 @@ export function recordAlignSpeed(db: DB, audioMs: number, wallMs: number): void 
   const sample = audioMs / wallMs;
   if (!Number.isFinite(sample) || sample <= 0 || sample > 500) return;
   const stored = getStoredSettings(db).alignSpeedRatio ?? 0;
-  // A sample this far from the average is not noise — the precision setting
+  // A sample this far from the average is not noise - the precision setting
   // changed, or the machine did. Blending would leave the estimate wrong for
   // the next several books, so start again from the truth.
   const changed = stored > 0 && (sample > stored * 3 || sample * 3 < stored);
@@ -78,7 +78,7 @@ export function libraryRoots(
  * Always at least one, so no caller ever has an "if configured" branch: an
  * unset list resolves to a folder inside the app's own data directory. That is
  * enough to keep alignments across a container restart, but not across a
- * rebuild that discards the volume — which is why the setup wizard asks for a
+ * rebuild that discards the volume - which is why the setup wizard asks for a
  * folder in the library instead, and why this one is the fallback rather than
  * the recommendation.
  */

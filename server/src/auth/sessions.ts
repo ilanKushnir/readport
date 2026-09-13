@@ -78,7 +78,7 @@ export function resolveSession(
   }
   // Sliding expiry. A fixed thirty days meant a session that was in use every
   // day still died on schedule, and signing back in purges this browser's
-  // downloads — so ordinary use cost people every book they had taken offline.
+  // downloads - so ordinary use cost people every book they had taken offline.
   // Extended only in the last day of its life, so this is one extra write a
   // month rather than one per request.
   const remaining = Date.parse(row.expires_at) - Date.now();

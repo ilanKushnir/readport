@@ -11,7 +11,7 @@ import { type DB } from '../db/index.js';
  * Reading the library's own metadata back out as ways to browse it.
  *
  * Nothing here invents a category. Every value comes from a tag somebody
- * already wrote — in Calibre, in Audiobookshelf, or by hand in a tag editor —
+ * already wrote - in Calibre, in Audiobookshelf, or by hand in a tag editor -
  * and ReadPort's only contributions are folding case so one genre is one
  * shelf, and refusing to offer a grouping the library cannot actually support.
  */
@@ -23,8 +23,8 @@ export interface ExtractedFacet {
 }
 
 /**
- * Fold a value for grouping. Case and surrounding punctuation are noise —
- * "Science Fiction", "science fiction" and "Science Fiction " are one genre —
+ * Fold a value for grouping. Case and surrounding punctuation are noise -
+ * "Science Fiction", "science fiction" and "Science Fiction " are one genre -
  * but nothing inside the value is touched, so a value can always be shown
  * back in the spelling its owner chose.
  */
@@ -96,7 +96,7 @@ function labelFor(kind: FacetKind, value: string): string {
  * Every grouping this library can actually support, with its values and
  * counts, in the order FACET_SPECS declares.
  *
- * Books the scanner has marked missing are left out throughout — a drive that
+ * Books the scanner has marked missing are left out throughout - a drive that
  * is unplugged should not put a genre in the sidebar that leads to an empty
  * list. A grouping with fewer than two distinct values is dropped for the same
  * reason it would not be worth a shelf.
@@ -157,7 +157,7 @@ export function facetGroups(db: DB): FacetGroup[] {
   for (const [kind, values] of byKind) {
     if (values.length < MIN_FACET_VALUES) continue;
     const spec = facetSpec(kind as FacetKind);
-    // Years and ratings read backwards — newest and best first — because that
+    // Years and ratings read backwards - newest and best first - because that
     // is the end of those lists anyone actually opens.
     values.sort((a, b) =>
       spec.ordered
@@ -182,7 +182,7 @@ function facetOrder(): FacetKind[] {
  * caller should answer from the book row itself.
  *
  * Returning ids rather than a SQL fragment keeps the caller's filtering in
- * one place — the library route already loads and filters in memory — and
+ * one place - the library route already loads and filters in memory - and
  * makes the one query here easy to read.
  */
 export function bookIdsWithFacet(db: DB, kind: FacetKind, value: string): Set<string> | null {

@@ -197,7 +197,7 @@ export interface UpsertResult {
  * The generation of facet extraction the current code writes.
  *
  * A book indexed under an older generation carries tags this build would have
- * read differently — or, at generation 0, none at all. Bumping this re-indexes
+ * read differently - or, at generation 0, none at all. Bumping this re-indexes
  * every book once, without touching `scan_state`, so the library stays
  * readable and pairable while the backfill works through it.
  */
@@ -212,7 +212,7 @@ function facetsStale(existing: { facets_rev?: unknown }): boolean {
  * A book that vanished from one path and reappeared at another.
  *
  * Book ids are derived from the path, so renaming a file or reorganising a
- * folder used to mint a brand new book and mark the old one missing — and
+ * folder used to mint a brand new book and mark the old one missing - and
  * every highlight, note, bookmark, shelf membership and reading position
  * hangs off the old id. Matching on the content hash of a book the scanner
  * has already marked missing reunites them, which is the difference between

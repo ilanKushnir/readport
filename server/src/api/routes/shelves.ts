@@ -27,7 +27,7 @@ import { bookRowToSummary } from './library.js';
  *
  * No route here calls requireRole. Every /api/* path is already behind
  * requireUser + csrfCheck in the global onRequest hook, and these are
- * reader-level by nature — an admin's extra powers are about the library, not
+ * reader-level by nature - an admin's extra powers are about the library, not
  * about somebody else's shelves. The guard is OWNERSHIP, and it is
  * structural: every statement is scoped `WHERE user_id = ?`, and every shelf
  * sub-resource resolves through ownedShelf(). No route ever selects a shelf
@@ -73,7 +73,7 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
    * and the key of whatever follows THAT, then mints one key between them.
    * `afterId` null means the item goes first.
    *
-   * ORDER BY sort_key is BINARY throughout this file — the rank alphabet is
+   * ORDER BY sort_key is BINARY throughout this file - the rank alphabet is
    * case-significant and a NOCASE comparison would make the order
    * non-deterministic.
    */
@@ -110,8 +110,8 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
       .all(userId) as { id: string; sort_key: string }[];
 
   /**
-   * Ranking uses every row — a book on an unplugged drive still holds its
-   * place in the queue — but a POSITION quoted back to the reader has to
+   * Ranking uses every row - a book on an unplugged drive still holds its
+   * place in the queue - but a POSITION quoted back to the reader has to
    * count what the reading list page actually shows them, or the book page
    * says "3rd" above a list where the book is second.
    */
@@ -599,7 +599,7 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
       .prepare('SELECT 1 FROM reading_list WHERE user_id = ? AND book_id = ?')
       .get(userId, id);
     // Where in the queue, so the book page can say "3rd" rather than merely
-    // "queued" — and it must be the third row of the list the reader can
+    // "queued" - and it must be the third row of the list the reader can
     // open, so books on an unmounted drive are not counted past.
     const position = queued ? visiblePosition(userId, id) : null;
     return {

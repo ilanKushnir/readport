@@ -45,7 +45,7 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
               audiobookDirs: config.envPinned.includes('audiobookDirs'),
               alignmentDirs: config.envPinned.includes('alignmentDirs'),
               // The wizard already renders a disabled language step and the
-              // RP_DEFAULT_LANGUAGE note, but the pin was never reported — so
+              // RP_DEFAULT_LANGUAGE note, but the pin was never reported - so
               // on every compose first run that sets it, the operator picked a
               // language and the choice was silently discarded.
               defaultLanguage: config.envPinned.includes('defaultLanguage'),
@@ -190,7 +190,7 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
     // Throttle by (account, client IP) AND by client IP alone. req.ip only
     // reflects forwarded headers when RP_TRUST_PROXY explicitly trusts the
     // proxy, so a direct attacker cannot rotate X-Forwarded-For past the
-    // limits — and a remote attacker cannot lock the real owner out of a
+    // limits - and a remote attacker cannot lock the real owner out of a
     // known username by burning its attempts from elsewhere.
     const acctKey = `acct:${body.data.username.toLowerCase()}@${req.ip}`;
     const ipKey = `ip:${req.ip}`;

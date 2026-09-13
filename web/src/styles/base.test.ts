@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
  *
  * The reading list shipped with its container class named `.queue`, which the
  * processing panel had already used for a year. The second definition, six
- * hundred lines further down, quietly reset the panel's padding and margin —
+ * hundred lines further down, quietly reset the panel's padding and margin -
  * a feature breaking a page it never touched, invisible to every test and to
  * anyone who did not open Settings after building a reading list.
  *

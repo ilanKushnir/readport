@@ -40,7 +40,7 @@ export const bookSummarySchema = z.object({
       otherKind: bookKindSchema,
       otherFormat: z.string(),
       status: pairStatusSchema,
-      /** Handoff is available (does NOT claim sentence exactness — see handoff). */
+      /** Handoff is available (does NOT claim sentence exactness - see handoff). */
       switchable: z.boolean(),
       handoff: handoffStatusSchema.nullable(),
     })
@@ -149,8 +149,8 @@ export type Job = z.infer<typeof jobSchema>;
  *
  * `/api/jobs` returns only the newest 100 rows, which is fine for a queue
  * display and useless for "is the first scan finished?": one book makes one
- * index job, so a library of a couple of hundred books pushes the `scan` job — the oldest of the
- * lot — straight out of the window. Anything reasoning about overall progress
+ * index job, so a library of a couple of hundred books pushes the `scan` job - the oldest of the
+ * lot - straight out of the window. Anything reasoning about overall progress
  * has to read these totals instead of counting rows.
  */
 export const jobCountSchema = z.object({
@@ -298,7 +298,7 @@ export const pathCheckSchema = z.object({
   readable: z.boolean(),
   /**
    * Whether the server can create a file here. Only asked of an alignment
-   * folder, and asked by writing rather than by permission bits — a bind mount
+   * folder, and asked by writing rather than by permission bits - a bind mount
    * can report the bits and still refuse.
    */
   writable: z.boolean().nullable().default(null),
@@ -335,7 +335,7 @@ export const settingsSchema = z.object({
    * Adopt alignments already sitting in the alignment folder.
    *
    * On by default, because the usual reason a folder has files in it is that
-   * this library computed them and the container was rebuilt — hours of work
+   * this library computed them and the container was rebuilt - hours of work
    * that should not be repeated. Turned off, the folder is left untouched and
    * every pair is timed again from the audio, which is what someone wants
    * when they suspect the saved files are wrong or belong to other editions.

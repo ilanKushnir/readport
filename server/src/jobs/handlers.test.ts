@@ -347,7 +347,7 @@ describe('overlapping lease attempts are fully isolated', () => {
     // Only the owner published: the pointer names attempt 2's directory.
     const active = activeDerivedDir(ctx, bookId);
     expect(path.basename(active)).toBe(rev2);
-    // The active directory holds ONLY the owner's output — no chapter of
+    // The active directory holds ONLY the owner's output - no chapter of
     // the stale 30-chapter edition leaked in (no shared/mixed output).
     expect(loadManifest(active)!.title).toBe('Owner Edition');
     expect(loadManifest(active)!.chapters.length).toBe(1);
@@ -402,7 +402,7 @@ describe('deferred derived-version garbage collection', () => {
     expect(fs.readFileSync(path.join(resolvedDir, 'sentences.json'), 'utf8')).toBeTruthy();
 
     // After the grace period the deferred sweep removes the retired
-    // version — and leaves the active one untouched.
+    // version - and leaves the active one untouched.
     sweepPastGrace(bookId);
     expect(fs.existsSync(resolvedDir)).toBe(false);
     const active = activeDerivedDir(ctx, bookId);
@@ -444,8 +444,8 @@ describe('audio cover extraction (attempt-isolated, lease-guarded)', () => {
     expect(published).toBe(coverFile('bk_cover_ovl.jpg'));
     expect(fs.readFileSync(published!)).toEqual(OWNER);
 
-    // The stale attempt's ffmpeg finishes afterwards — into its OWN
-    // attempt-unique temp file — and ownership validation refuses the
+    // The stale attempt's ffmpeg finishes afterwards - into its OWN
+    // attempt-unique temp file - and ownership validation refuses the
     // publication.
     await expect(
       extractCoverAtomic(
@@ -544,7 +544,7 @@ describe('lease ownership gates handler side effects', () => {
       .get(bookId) as { c: number };
 
     // Second attempt starts (synchronous prelude runs: state -> indexing),
-    // then — while the async extraction is in flight — the lease expires and
+    // then - while the async extraction is in flight - the lease expires and
     // another worker reclaims the job.
     fs.writeFileSync(epubPath, makeEpub('Hijacked Edition', ['Replacement text.']));
     enqueueJob(ctx.db, 'index-ebook', { bookId });
@@ -629,7 +629,7 @@ describe('lease ownership gates handler side effects', () => {
     expect(a.c).toBe(0);
 
     // Retried by the worker that does hold the lease, the same job writes the
-    // detected language before the missing model stops it — so the emptiness
+    // detected language before the missing model stops it - so the emptiness
     // above is the ownership check, not runAlign giving up first.
     enqueueJob(ctx.db, 'align', { pairId: 'pair_al' });
     const held = claimWithGuard();

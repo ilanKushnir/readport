@@ -1,6 +1,6 @@
 /**
  * The languages whose numbers and abbreviations the romanizer knows how to
- * spell out, which is the only thing a book's language decides — script
+ * spell out, which is the only thing a book's language decides - script
  * transliteration is keyed on the characters themselves, so a book in a
  * language not listed here still aligns, it just loses the anchors around its
  * numerals. Offered in the pairing dropdown and as the server-wide fallback.
@@ -54,7 +54,7 @@ export function languageByCode(code: string | null | undefined): LanguageSpec | 
  *
  * ffmpeg reports ISO 639-2 ("eng"), EPUBs declare ISO 639-1 ("en"), and a
  * library holding both formats of one book would otherwise show that book's
- * language twice — once as English and once as ENG. Covers the languages
+ * language twice - once as English and once as ENG. Covers the languages
  * this build knows plus the bibliographic variants that differ from the
  * terminological ones, which is where most of the surprises live.
  */

@@ -10,7 +10,7 @@ import { nowIso } from '../db/index.js';
  *
  * When RP_PROXY_AUTH_HEADER names a request header (e.g.
  * `x-authentik-username`), a request that arrives WITHOUT a ReadPort session
- * cookie is authenticated from that header — but only if the TCP peer that
+ * cookie is authenticated from that header - but only if the TCP peer that
  * delivered it is one of RP_PROXY_AUTH_SOURCES (the reverse proxy's
  * addresses/CIDRs). A client that reaches ReadPort directly (LAN port,
  * break-glass URL) is never a trusted source, so it cannot forge the

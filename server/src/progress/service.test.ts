@@ -86,7 +86,7 @@ describe('applyProgressEvents', () => {
 
   it('merely opening a finished book at the end leaves it finished', () => {
     // Opening a finished book resumes at the saved position, which for a
-    // finished book is the end — so the old rule (any explicit intent clears
+    // finished book is the end - so the old rule (any explicit intent clears
     // the flag) un-finished it just by looking at it, and nothing in the app
     // can set the flag again short of reading to the end a second time.
     applyProgressEvents(db, uid, [

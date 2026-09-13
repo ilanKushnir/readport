@@ -8,7 +8,7 @@ import { PLAY, RIBBON } from '../../../design/logo/mark.mjs';
 /**
  * The mark's geometry lives in design/logo/mark.mjs, which the icon script
  * rasterizes. The React component carries the same two paths inline so it
- * needs no build step — which means the two can drift, and a drift would ship
+ * needs no build step - which means the two can drift, and a drift would ship
  * one logo in the tab and a different one in the header. This catches it.
  */
 

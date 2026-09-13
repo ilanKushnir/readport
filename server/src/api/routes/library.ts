@@ -83,7 +83,7 @@ export function bookRowToSummary(
  *
  * The ebook side is kept because that is the side with the cover, the fuller
  * title and the page count; the audio side stands in when there is no ebook
- * row to keep. Order is preserved — the survivor sits where it already was,
+ * row to keep. Order is preserved - the survivor sits where it already was,
  * so an alphabetical shelf stays alphabetical.
  *
  * Only settled pairs collapse. A `candidate` is a guess the user has not
@@ -122,7 +122,7 @@ const libraryQuerySchema = z.object({
     .optional(),
   sort: z.enum(['title', 'author', 'recent', 'added']).optional(),
   /**
-   * One of the library's own groupings, as `kind:value` — see shared/facets.
+   * One of the library's own groupings, as `kind:value` - see shared/facets.
    * A value here, not an endpoint of its own, for the same reason the
    * automatic shelves are: one code path owns filtering, sorting, the
    * missing-book exclusion and the continue rail.
@@ -172,7 +172,7 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
       // Only the open shelf (and the facet views, which are the same shelf
       // narrowed by author or series) collapses. Every named filter keeps its
       // own meaning: `paired` is about pairs and wants both halves, and
-      // `in-progress` / `finished` are per-book — finishing the audiobook is
+      // `in-progress` / `finished` are per-book - finishing the audiobook is
       // not finishing the ebook, and merging them would hide one of the two.
       books = onePerPair(books);
     }

@@ -1,5 +1,5 @@
 /* ReadPort app shell: layout, controls, and every surface that is not the
-   reader or the player — those two are full-screen and live in immersive.css.
+   reader or the player - those two are full-screen and live in immersive.css.
    Colours, spacing and type come from tokens.css. */
 
 /* Literata (@font-face rules) is vendored at /fonts/literata.css (OFL). */
@@ -249,11 +249,15 @@ select.input {
   border: 1px solid var(--rp-border);
 }
 .segmented > button {
-  flex: 1;
-  /* A flex item will not shrink below its own text by default, and these
-     labels do not wrap — so four of them ("Everything · Notes · Highlights ·
-     Bookmarks") pushed the whole Notes page wider than the screen. Allow the
-     shrink, and ellipsise rather than overflow if it ever comes to that. */
+  /* `1 1 auto`, not `1`: sizing from a zero basis makes every button the same
+     width regardless of its label, so the longest one is clipped while the
+     control still has room to spare. From `auto` each starts at its own text
+     and then shares out whatever is left.
+     `min-width: 0` lets them shrink when there genuinely is not enough room -
+     without it, four labels ("All · Notes · Highlights · Bookmarks") pushed
+     the whole Notes page wider than the screen - and the ellipsis is the
+     last resort rather than the normal case. */
+  flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -337,7 +341,7 @@ select.input {
   align-items: center;
   gap: var(--sp-4);
   /* The inset belongs on the element that sticks, not on the scroll
-     container above it — there it only holds the header clear of the notch
+     container above it - there it only holds the header clear of the notch
      until the first scroll, after which the header slides under it. */
   padding: calc(var(--sp-3) + var(--rp-safe-top)) max(var(--sp-4), var(--rp-safe-right)) var(--sp-3)
     max(var(--sp-4), var(--rp-safe-left));
@@ -845,7 +849,7 @@ select.input {
   min-height: 44px;
 }
 
-/* A hairline between the two formats inside one badge — quieter than a
+/* A hairline between the two formats inside one badge - quieter than a
    bullet, and it does not get read out as a word. */
 .badge__sep {
   width: 1px;
@@ -1049,8 +1053,8 @@ select.input {
 
 .toast {
   position: fixed;
-  /* 96px is the plain tab bar. Surfaces with taller chrome — the reader with
-     the narration transport open — publish their own height, so the toast
+  /* 96px is the plain tab bar. Surfaces with taller chrome - the reader with
+     the narration transport open - publish their own height, so the toast
      never sits on top of the controls it is reporting on. */
   bottom: calc(var(--rp-toast-bottom, 96px) + var(--rp-safe-bottom));
   inset-inline: 0;
@@ -1366,7 +1370,7 @@ select.input {
 }
 .coverage-strip > span {
   /* No min-width: the bar count is bucketed to fit, and a floor here would
-     let a long book push the strip — and the whole page — sideways again. */
+     let a long book push the strip - and the whole page - sideways again. */
   flex: 1 1 0;
   min-width: 0;
   border-radius: 1px;
@@ -1469,7 +1473,7 @@ select.input {
 .auth-page {
   position: relative;
   /* `clip`, not `hidden`. The glow below bleeds 10% past both edges, and
-     `hidden` still makes this a scroll container — so focusing the step
+     `hidden` still makes this a scroll container - so focusing the step
      heading (h1 tabIndex={-1}) scrolled the card sideways by that bleed and
      clipped it. `clip` clips identically but cannot be scrolled at all.
      `hidden` first, as a fallback for browsers without `clip`. */
@@ -2716,7 +2720,7 @@ select.input {
 
 /* The two alignment choices, on the same card as the queue they govern.
    Full width below the summary and the Start button, so the row reads
-   "here is the work — here is how it runs", not as two competing actions. */
+   "here is the work - here is how it runs", not as two competing actions. */
 .worksum__choices {
   flex: 1 1 100%;
   display: flex;
@@ -3209,7 +3213,7 @@ select.input {
     opacity: 1;
     pointer-events: auto;
   }
-  /* Being always visible, it is always ON TOP of the row — it covered the
+  /* Being always visible, it is always ON TOP of the row - it covered the
      book count and the end of any shelf name long enough to reach it. Give
      the row that width back so the two do not share it. */
   .sidebar__item--own .sidebar__row {
@@ -3359,7 +3363,7 @@ select.input {
   z-index: 41;
   inset-block: 0;
   /* In landscape the notch is on one side, and this list is the only way to
-     the shelves on a phone — it cannot start underneath it. */
+     the shelves on a phone - it cannot start underneath it. */
   inset-inline-start: var(--rp-safe-left);
   width: min(300px, 86vw);
   display: flex;
@@ -3673,7 +3677,7 @@ select.input {
   box-shadow: var(--rp-shadow-2);
   overflow: hidden;
 }
-/* No room below — the tab bar is there. Hang it from the button instead. */
+/* No room below - the tab bar is there. Hang it from the button instead. */
 .queue-menu.is-up {
   top: auto;
   bottom: calc(100% - var(--sp-2));
@@ -3901,7 +3905,7 @@ select.input {
 }
 
 /* A smaller button, for a secondary action beside a heading. Still a real
-   target on a phone — an inline style of `minHeight: 32` defeated every
+   target on a phone - an inline style of `minHeight: 32` defeated every
    override the rest of the app makes. */
 .btn--tight {
   min-height: 36px;
@@ -3914,9 +3918,54 @@ select.input {
   }
 }
 
+/* The paired-edition note: a line under the actions, not a card competing
+   with them. */
+.book-hero__pairnote {
+  display: flex;
+  align-items: start;
+  gap: 8px;
+  margin: var(--sp-3) 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--rp-text-soft);
+}
+.book-hero__pairnote svg {
+  flex: none;
+  margin-block-start: 2px;
+  color: var(--rp-accent);
+}
+.book-hero__pairnote a {
+  color: var(--rp-accent);
+  white-space: nowrap;
+}
+
+/* Covers arrive one at a time over a phone connection, and a grid of them
+   snapping in one by one is the harshest thing on the shelf. Each starts as
+   the book's own colour and resolves out of it: soft, quick, and never a
+   blank rectangle. */
+.cover-img {
+  filter: blur(14px);
+  transform: scale(1.04);
+  transition:
+    filter 420ms var(--rp-ease),
+    transform 420ms var(--rp-ease);
+}
+.cover-img.is-loaded {
+  filter: none;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cover-img,
+  .cover-img.is-loaded {
+    filter: none;
+    transform: none;
+    transition: none;
+  }
+}
+
 /* ------------------------------------------------- touch target sizing
    A fingertip needs ~44px. These controls are sized for a mouse, and the
-   phone is where most of this app is used — so the sizes are raised only
+   phone is where most of this app is used - so the sizes are raised only
    where the pointer is coarse, leaving the desktop density alone. */
 @media (pointer: coarse) {
   .chip,
@@ -3929,8 +3978,8 @@ select.input {
     min-height: 44px;
     padding-inline: var(--sp-2);
   }
-  /* The grip is the reliable way to reorder — long-pressing the row competes
-     with the browser's own scroll — so it must be a full target. */
+  /* The grip is the reliable way to reorder - long-pressing the row competes
+     with the browser's own scroll - so it must be a full target. */
   .queue-handle {
     width: 44px;
   }
@@ -3988,7 +4037,7 @@ select.input {
     min-height: 44px;
   }
   /* A search result is a jump target, and the excerpt makes the row tall
-     enough already — this only guards the short ones. */
+     enough already - this only guards the short ones. */
   .search-hit {
     min-height: 44px;
   }

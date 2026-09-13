@@ -43,7 +43,7 @@ export function checkLibraryPath(p: string, kind?: FolderKind): PathCheck {
   base.readable = true;
 
   // An alignment folder is the one place ReadPort writes, and a read-only bind
-  // mount is the likeliest mistake in the whole setup — every other library
+  // mount is the likeliest mistake in the whole setup - every other library
   // line in the stock compose file ends in `:ro` and people copy the pattern.
   // Permission bits are not enough to tell: the only honest test is to write.
   if (kind === 'alignment') {

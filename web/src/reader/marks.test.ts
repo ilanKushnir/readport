@@ -67,7 +67,7 @@ describe('marksInChapter', () => {
     expect(got.map((a) => spanOf(a)!.start)).toEqual([50, 100, 300]);
   });
 
-  it('leaves bookmarks out — a bookmark marks a page, not a passage', () => {
+  it('leaves bookmarks out - a bookmark marks a page, not a passage', () => {
     expect(marksInChapter(all, 1).some((a) => a.kind === 'bookmark')).toBe(false);
   });
 
@@ -83,7 +83,7 @@ describe('colorOf', () => {
 
   it('falls back rather than losing a highlight to an unknown colour', () => {
     // Older versions wrote 'leaf'. A highlight whose colour we cannot paint
-    // must still appear — an invisible highlight reads as lost data.
+    // must still appear - an invisible highlight reads as lost data.
     expect(colorOf(mark('highlight', 0, 0, 5, 'leaf'))).toBe('amber');
     expect(colorOf(mark('highlight', 0, 0, 5, null))).toBe('amber');
   });

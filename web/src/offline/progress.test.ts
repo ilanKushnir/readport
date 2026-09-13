@@ -5,8 +5,8 @@ import { downloadFraction, downloadPercent } from './downloads';
  * Why progress is measured in bytes.
  *
  * A downloaded audiobook is a handful of very large files. Counting finished
- * URLs leaves the bar on zero for the whole of the first track — minutes, over
- * a phone connection — and then jumps it to a third. `storedBytes` is written
+ * URLs leaves the bar on zero for the whole of the first track - minutes, over
+ * a phone connection - and then jumps it to a third. `storedBytes` is written
  * once per 8 MB chunk, so it actually moves while you watch it.
  */
 

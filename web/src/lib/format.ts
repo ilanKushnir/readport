@@ -37,7 +37,7 @@ export function formatDate(iso: string): string {
 
 /**
  * A rough span in words, for time estimates: "about 3 h", "about 2 days".
- * Deliberately coarse — these come from a measured average, not a promise.
+ * Deliberately coarse - these come from a measured average, not a promise.
  */
 export function formatSpan(ms: number | null | undefined): string {
   if (ms == null || !Number.isFinite(ms) || ms <= 0) return 'unknown';
@@ -52,7 +52,7 @@ export function formatSpan(ms: number | null | undefined): string {
 
 /**
  * "1st", "2nd", "13th". Used wherever a reading-list place is spoken back to
- * the reader — the book page chip and the Add-to confirmation, which have to
+ * the reader - the book page chip and the Add-to confirmation, which have to
  * agree with each other.
  */
 export function ordinal(n: number): string {
@@ -64,7 +64,7 @@ export function ordinal(n: number): string {
 /**
  * A rough "when was this" for a timestamp, falling back to a date once the
  * distance stops being useful. `whenNever` is what to say for no timestamp at
- * all — "never" reads right beside a last-seen column, an empty string reads
+ * all - "never" reads right beside a last-seen column, an empty string reads
  * right inside a sentence.
  */
 export function ago(iso: string | null | undefined, whenNever = 'never'): string {

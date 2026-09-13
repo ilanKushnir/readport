@@ -6,7 +6,7 @@ import fs from 'node:fs';
  * every track in an offline package carries an immutable source version and
  * a cryptographic digest for EACH fixed-size chunk, so the client can verify
  * every ranged response before storing it and can detect a replaced source
- * file mid-download or across resumes. Hashing is streamed — the file is
+ * file mid-download or across resumes. Hashing is streamed - the file is
  * never buffered whole.
  */
 

@@ -8,7 +8,7 @@ import path from 'node:path/posix';
  * inline styles. Internal links become data attributes the reader resolves;
  * internal images are rewritten to authenticated asset routes.
  *
- * Publisher CSS is intentionally not loaded in V1 — the reader applies its
+ * Publisher CSS is intentionally not loaded in V1 - the reader applies its
  * own typography while semantic elements (em/strong/blockquote/headings…)
  * survive. This is documented as a limitation in docs/reader.md.
  */
@@ -140,7 +140,7 @@ interface P5Node {
 export interface SanitizeResult {
   /** Inert HTML for the reader (children of <body>, wrapped in the reader). */
   html: string;
-  /** Plain text with block boundaries as \n — offsets match the DOM walk. */
+  /** Plain text with block boundaries as \n - offsets match the DOM walk. */
   text: string;
   /** Internal image asset paths referenced (zip paths, normalized). */
   assets: string[];

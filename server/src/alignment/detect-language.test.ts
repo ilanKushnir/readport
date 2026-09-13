@@ -3,7 +3,7 @@ import { detectLanguageFromText } from './detect-language.js';
 
 /**
  * The detector replaced a speech model, so the bar it has to clear is "at
- * least as good as running whisper over a clip of the narration" — which, on a
+ * least as good as running whisper over a clip of the narration" - which, on a
  * book that declares no language, was itself a guess. What matters most is the
  * abstention: a wrong confident answer spells numbers in the wrong language and
  * costs anchors, while abstaining falls back to the operator's own default.
@@ -122,7 +122,7 @@ describe('detectLanguageFromText', () => {
 
   it('reads only the head of a very long book', () => {
     // A million characters of Spanish behind a first page of English must not
-    // change the answer, because only the head is sampled — and must not take
+    // change the answer, because only the head is sampled - and must not take
     // meaningfully longer to answer either.
     const long = SAMPLES.en + ' ' + SAMPLES.es!.repeat(4000);
     const started = performance.now();

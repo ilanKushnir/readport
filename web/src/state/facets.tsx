@@ -25,7 +25,7 @@ import { useSession } from './session';
  * rescanned.
  *
  * Two separate things live here on purpose. `groups` is what the library can
- * support — computed by the server from the books themselves, the same for
+ * support - computed by the server from the books themselves, the same for
  * everyone. `prefs` is what one person chose to look at. Conflating them
  * would mean one reader hiding Narrators took it from everyone else.
  */
@@ -33,7 +33,7 @@ import { useSession } from './session';
 interface FacetsCtx {
   /** Every grouping this library supports, with counts. */
   groups: FacetGroup[];
-  /** The kinds to show, in order — the reader's choice, or the defaults. */
+  /** The kinds to show, in order - the reader's choice, or the defaults. */
   shown: FacetKind[];
   /** False until the reader has saved a choice of their own. */
   chosen: boolean;

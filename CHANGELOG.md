@@ -4,12 +4,12 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
-## 0.9.5 — 2026-09-13
+## 0.9.5 - 2026-09-13
 
 ### Changed
 
 - **The reading settings are ordered.** "Layout" held the mode, the progress
-  bar, and then — under the heading "Progress bar", unlabelled — the column
+  bar, and then - under the heading "Progress bar", unlabelled - the column
   count. It is now _How it reads_ (Pages or Scroll) with each mode's own
   options nested under it, and the progress bar as its own group.
 - **Page turns**: Slide, Fade or Instant. Reduced-motion settings override
@@ -23,7 +23,7 @@ anything that does is called out under **Upgrading**.
 - The reader footer's chapter label pushed the Listen pill over the
   percentage until it truncated.
 - The return pill's dismiss was a `<span role="button">` nested inside a
-  `<button>` — invalid, keyboard-unreachable, and a 14px target.
+  `<button>` - invalid, keyboard-unreachable, and a 14px target.
 - The reading-list row menu opened behind the tab bar on the last rows.
 - The audiobook scrubber seeked on every input event of a drag; it now moves
   the audio once, when the finger lifts.
@@ -31,20 +31,20 @@ anything that does is called out under **Upgrading**.
 - On touch, the shelf tools covered the book count and the end of the name.
 - A sheet that did not clear the notch in landscape.
 
-## 0.9.4 — 2026-09-13
+## 0.9.4 - 2026-09-13
 
 ### Fixed
 
 - **The reader could hide the end of a chapter.** Pagination was measured the
-  instant the chapter was injected — before its images had any height — so a
+  instant the chapter was injected - before its images had any height - so a
   chapter with figures measured as a single page, paging switched off, and
   the text that arrived with the images was trapped in a box that cannot
   scroll. It is measured again once images and fonts settle; and if a chapter
   still will not divide into pages, it scrolls and says so rather than hiding
   its own text.
 - **The wrong book was suggested as a match.** Sharing an author was worth a
-  quarter of the pairing score — worthless as evidence when you own a dozen
-  books by one writer — and a length ratio of 0.56 passed a band that ran to
+  quarter of the pairing score - worthless as evidence when you own a dozen
+  books by one writer - and a length ratio of 0.56 passed a band that ran to
   1.9 and scored full marks. Titles now carry the pair, the ratio is a curve
   centred on 1.0, and candidates compete: a book has one audiobook, so a pair
   is offered only when nothing clearly better wants either half.
@@ -58,19 +58,19 @@ anything that does is called out under **Upgrading**.
 - **Auto-scroll**: a toggle that holds the marker at the middle of the screen
   and eases the page along with the narration.
 
-## 0.9.3 — 2026-09-13
+## 0.9.3 - 2026-09-13
 
 ### Added
 
 - **"Link all" on the Pairing page.** A library owned mostly in both formats
   produces dozens of suggestions, and each one was a separate tap on the very
   page whose purpose is to get them linked. Confirming in bulk makes exactly
-  the same decision as confirming one at a time — alignment queued included —
+  the same decision as confirming one at a time - alignment queued included -
   and leaves anything already settled untouched.
 
-## 0.9.2 — 2026-09-13
+## 0.9.2 - 2026-09-13
 
-### Fixed — mobile
+### Fixed - mobile
 
 - **The setup wizard never finished.** "Reading your shelves" waited for
   every queued job, including the alignments that are queued as soon as a
@@ -85,7 +85,7 @@ hidden` still makes a scroll container, and focusing the step heading
   buttons 36px, under the 44px minimum, with no gap between rows.
 - **Username validation never ran.** `pattern="[a-zA-Z0-9._-]+"` is invalid
   under the `v` flag browsers compile `pattern` with, so it was ignored.
-- **A setup token typed on a phone was rejected** — iOS capitalised its
+- **A setup token typed on a phone was rejected** - iOS capitalised its
   first character. Usernames had the same problem.
 - **Alignments could not be highlighted near either page edge**, because
   the page-turn zones sat on top of the text on touch.
@@ -110,7 +110,7 @@ hidden` still makes a scroll container, and focusing the step heading
 - **Download progress is visible**: bytes rather than files on the book
   page, and a live section on the On-this-device shelf with a stop.
 
-## 0.9.1 — 2026-09-13
+## 0.9.1 - 2026-09-13
 
 ### Fixed
 
@@ -121,7 +121,7 @@ hidden` still makes a scroll container, and focusing the step heading
   reported it, but there was nothing to do about it short of a manual
   `chown`. Read-only alignment mounts are still left alone.
 
-## 0.9.0 — 2026-09-13
+## 0.9.0 - 2026-09-13
 
 The first public release. Everything before this was development under an
 earlier working name and is not documented here.
@@ -155,8 +155,8 @@ earlier working name and is not documented here.
 - Notes carried by a dashed underline in the text rather than being invisible,
   and a **Notes & marks** page that collects every mark across every book and
   searches note, quoted passage, title and author at once.
-- A sidebar of shelves — automatic ones (Reading now, Finished, Both formats,
-  Recently added, On this device) alongside shelves you make yourself — and a
+- A sidebar of shelves - automatic ones (Reading now, Finished, Both formats,
+  Recently added, On this device) alongside shelves you make yourself - and a
   **reading list** you can order by hand.
 - **Browse by what the library already says**: groups built from Calibre tags,
   audiobook genre tags, narrators, publishers, years, Calibre ratings, series,
@@ -170,14 +170,14 @@ earlier working name and is not documented here.
   already in the EPUB, so one CTC acoustic model (317 MB, one download, every
   language) is run over the narration and matched against the book's own
   characters.
-- `standard` precision puts about 7% of the audio through the model — roughly
+- `standard` precision puts about 7% of the audio through the model - roughly
   six minutes for a six-hour audiobook on a 6-CPU host. `exact` decodes
   everything and takes some fifteen times as long.
 - Every finished alignment is written to a mounted **alignment folder** as one
   gzipped JSON document per pair (`.rpalign`). Files are matched back to books
   by a fingerprint of the ebook's sentences and the audiobook's track lengths
-  — never by path — so a from-scratch reinstall imports whatever it
-  recognises after its first scan.
+  - never by path - so a from-scratch reinstall imports whatever it
+    recognises after its first scan.
 - The book's language is read off the book's own text, by script and then by
   function words. Nothing is downloaded to answer that.
 

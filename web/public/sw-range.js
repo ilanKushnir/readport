@@ -1,5 +1,5 @@
 /* Byte-range / chunk math shared by the service worker (importScripts) and
-   unit tests (CommonJS require). Pure functions only — no browser APIs. */
+   unit tests (CommonJS require). Pure functions only - no browser APIs. */
 (function (root, factory) {
   const api = factory();
   if (typeof module === 'object' && module && module.exports) module.exports = api;
@@ -46,7 +46,7 @@
     return size === 0 ? 0 : Math.ceil(size / chunkSize);
   }
 
-  /** Cache key for chunk `i` of `url` (query param — fragments are stripped by Cache API). */
+  /** Cache key for chunk `i` of `url` (query param - fragments are stripped by Cache API). */
   function chunkKey(url, i) {
     return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'rpchunk=' + i;
   }

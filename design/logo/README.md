@@ -7,7 +7,7 @@ so the mark works in one colour on any ground.
 
 ## The source of truth
 
-[`mark.mjs`](mark.mjs) holds the geometry — two path strings built from named
+[`mark.mjs`](mark.mjs) holds the geometry - two path strings built from named
 numbers, not a trace of a bitmap. Everything else is generated from it:
 
 ```bash

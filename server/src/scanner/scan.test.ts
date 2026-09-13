@@ -6,7 +6,7 @@ import { openDatabase, type DB } from '../db/index.js';
 import { FACETS_REV, applyScan, type ScanReport } from './scan.js';
 
 /**
- * What a rescan decides to re-index, and — just as important — what it leaves
+ * What a rescan decides to re-index, and - just as important - what it leaves
  * alone.
  *
  * The dangerous mistake here is taking a book out of service to refresh
@@ -59,7 +59,7 @@ function stateOf(id: string): string {
 describe('applyScan', () => {
   it('reunites a renamed file with the book it already was', () => {
     // Ids are derived from the path, so a rename used to mint a new book and
-    // mark the old one missing — abandoning every highlight, note, bookmark,
+    // mark the old one missing - abandoning every highlight, note, bookmark,
     // shelf membership and reading position, all of which hang off the id.
     const id = seedReadyBook(FACETS_REV);
     applyScan(db, {
@@ -109,7 +109,7 @@ describe('applyScan', () => {
 
   it('still takes a book out of service when the file itself changed', () => {
     // A different hash means the text may be different, so what is derived
-    // from it is not merely stale — it is potentially wrong.
+    // from it is not merely stale - it is potentially wrong.
     const id = seedReadyBook(FACETS_REV);
     const out = applyScan(db, report('hash-2'));
     expect(out.needsIndex.map((n) => n.bookId)).toEqual([id]);

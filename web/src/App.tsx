@@ -55,7 +55,7 @@ function useSidebarCollapsed(): [boolean, (v: boolean) => void] {
 /**
  * The shelf list, in whichever container this width calls for: the rail is
  * rendered in the layout grid, and this is the overlay the header button
- * opens — a drawer with room for it, a bottom sheet on a phone, which is the
+ * opens - a drawer with room for it, a bottom sheet on a phone, which is the
  * object this app already uses for everything that slides in.
  */
 function ShelfOverlay({ onClose }: { onClose: () => void }) {
@@ -138,7 +138,7 @@ function Shell() {
   if (phase === 'setup') return <SetupWizard onDone={() => setSetupSkipped(true)} />;
   const join = /^\/join\/([A-Za-z0-9_-]+)$/.exec(location.pathname);
   if (phase === 'login') return join ? <JoinPage token={join[1]!} /> : <LoginPage />;
-  // Signed in as an admin with no libraries configured — finish setup. Behind
+  // Signed in as an admin with no libraries configured - finish setup. Behind
   // reverse-proxy SSO this is the first thing the first user ever sees.
   if (phase === 'ready' && needsLibraries && !setupSkipped) {
     return <SetupWizard mode="libraries" onDone={() => setSetupSkipped(true)} />;
@@ -198,8 +198,8 @@ function Shell() {
         <nav className="tabbar" aria-label="Primary">
           {/* Shelves is a button rather than a link because it opens the same
               overlay the header button does. On a phone the rail is not on
-              screen, so without this the whole sidebar — shelves, the reading
-              list, browsing by genre — has no way in. */}
+              screen, so without this the whole sidebar - shelves, the reading
+              list, browsing by genre - has no way in. */}
           <button
             type="button"
             className="tabbar__shelves"
@@ -226,7 +226,7 @@ const router = createBrowserRouter([
       { path: '/shelf/u/:shelfId', element: <LibraryPage /> },
       { path: '/shelf/:autoShelf', element: <LibraryPage /> },
       // One value of one of the library's own groupings. Same page, same
-      // search and sort — a genre is a shelf the library already had.
+      // search and sort - a genre is a shelf the library already had.
       { path: '/browse/:facetKind/:facetValue', element: <LibraryPage /> },
       { path: '/reading-list', element: <ReadingListPage /> },
       { path: '/book/:id', element: <BookPage /> },

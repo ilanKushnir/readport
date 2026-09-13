@@ -5,9 +5,9 @@ import { type AlignmentGap, type AlignmentSegment } from '@readport/shared';
  *
  * An alignment engine answers exactly one question per sentence:
  * "where in the audio is this, and how much do you believe it?". Turning those
- * raw answers into an `AlignmentSegment` — enforcing monotonicity, deciding
+ * raw answers into an `AlignmentSegment` - enforcing monotonicity, deciding
  * what may be called `exact`, interpolating small holes, refusing to guess
- * across large ones — happens here and nowhere else.
+ * across large ones - happens here and nowhere else.
  *
  * That single-constructor rule is deliberate. Confidence and `source` are the
  * values the reader's switch decisions are built on, so an engine must not be
@@ -265,8 +265,8 @@ function round3(v: number): number {
  * One `alignment_segments` row as an `AlignmentSegment`.
  *
  * Here rather than beside each query because three call sites read this table
- * — resolving a switch, exporting a portable file, and serving one chapter's
- * timings to read-along — and three hand-written copies of the same eight
+ * - resolving a switch, exporting a portable file, and serving one chapter's
+ * timings to read-along - and three hand-written copies of the same eight
  * conversions is three chances for one of them to forget `uncertaintyMs` and
  * quietly hand back a segment that claims to be certain.
  */

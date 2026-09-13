@@ -53,7 +53,7 @@ import {
 /**
  * Job handler registry. Each handler receives the attempt's LeaseGuard and
  * calls `guard.assertHeld()` immediately before every filesystem/database
- * side effect — so an attempt whose lease expired (blocked heartbeat, long
+ * side effect - so an attempt whose lease expired (blocked heartbeat, long
  * synchronous work, reclaim by another worker) aborts with LeaseLostError
  * instead of clobbering the new owner's run.
  */
@@ -240,7 +240,7 @@ export async function runModelDownload(
   fs.renameSync(part, dest);
   jobProgress(db, job.id, job.lease_token, 1, `${spec.label}: installed (${fmt(size)})`);
   // The model IS installed at this point. Re-queuing the alignments that were
-  // waiting for it is bookkeeping — never let it turn a successful download
+  // waiting for it is bookkeeping - never let it turn a successful download
   // into a failed job.
   try {
     requeueAlignmentsWaitingFor(ctx, [spec.id]);
@@ -253,7 +253,7 @@ export async function runModelDownload(
 
 /**
  * Alignments that stopped only because the model was not here yet go again as
- * soon as it lands — whether it arrived through the in-app download, the CLI,
+ * soon as it lands - whether it arrived through the in-app download, the CLI,
  * or a file dropped into the models volume.
  */
 export function requeueAlignmentsWaitingFor(ctx: AppContext, modelIds?: string[]): number {
@@ -301,7 +301,7 @@ export async function runScan(ctx: AppContext, job: JobRow, guard: LeaseGuard): 
     );
   }
   // Pair scan runs after indexing; it is cheap and idempotent, so enqueue at
-  // lower priority — it will see whatever is ready by the time it runs.
+  // lower priority - it will see whatever is ready by the time it runs.
   enqueueJob(db, 'pair-scan', {}, { dedupeKey: 'pair-scan', priority: -1 });
   if (report.errors.length) {
     jobProgress(
@@ -394,7 +394,7 @@ function getBook(ctx: AppContext, bookId: string): Record<string, unknown> {
 
 /**
  * Guarded failure-state write: an attempt that lost its lease must not even
- * write the error state — the job's new owner manages the book row now.
+ * write the error state - the job's new owner manages the book row now.
  */
 function markBookError(ctx: AppContext, guard: LeaseGuard, bookId: string, err: unknown): void {
   if (err instanceof LeaseLostError || guard.isLost()) return;
@@ -411,8 +411,8 @@ function markBookError(ctx: AppContext, guard: LeaseGuard, bookId: string, err: 
 /**
  * Derived revision for ONE lease attempt. The job id alone is not unique
  * enough: a reclaimed job keeps its id while receiving a fresh lease token,
- * and two overlapping attempts (one stale, one owning) must never share —
- * let alone delete — each other's extraction directory. The token slice
+ * and two overlapping attempts (one stale, one owning) must never share -
+ * let alone delete - each other's extraction directory. The token slice
  * makes every attempt's directory its own; only the attempt that still
  * holds the lease at commit time gets to point `books.derived_rev` at its
  * directory, so losers merely leave an orphan for the deferred sweep.
@@ -424,7 +424,7 @@ export function derivedRevForAttempt(job: Pick<JobRow, 'id' | 'lease_token'>): s
 /**
  * Grace period before a RETIRED derived version is deleted. The pointer
  * switch is atomic in the database, but route handlers resolve
- * `books.derived_rev` to a path first and open files second — a request
+ * `books.derived_rev` to a path first and open files second - a request
  * that resolved the old revision just before the switch may open its files
  * shortly after. Retired versions therefore stay on disk for a conservative
  * grace period (far longer than any request lifetime) before deletion.
@@ -504,8 +504,8 @@ export function sweepDerivedVersions(
 /**
  * Best-effort in-process follow-up sweep: marks retire immediately (via the
  * post-commit sweep) and actually deletes shortly after the grace period.
- * Re-resolves the ACTIVE revision from the database at fire time — never
- * the captured one — so a version that became active in the meantime is
+ * Re-resolves the ACTIVE revision from the database at fire time - never
+ * the captured one - so a version that became active in the meantime is
  * untouched. If the process dies first, the next successful re-index's
  * sweep finishes the job.
  */
@@ -551,7 +551,7 @@ export async function runIndexEbook(
     // their own directory (never each other's), old versions are retired
     // only after the switch committed and deleted only after a grace
     // period, and a crash at any point leaves either the old version
-    // active or the new one — never neither.
+    // active or the new one - never neither.
     const rev = derivedRevForAttempt(job);
     const root = derivedRoot(ctx, bookId);
     const newDir = derivedVersionDir(ctx, bookId, rev);
@@ -608,7 +608,7 @@ export async function runIndexEbook(
       const prevMeta = JSON.parse(String(book.meta_json ?? '{}'));
       // What a saved alignment recognises this book by. Computed here because
       // this is where the sentence index is built, and it is the sentence ids
-      // — not the file's bytes — that a stored timing actually depends on.
+      // - not the file's bytes - that a stored timing actually depends on.
       const textFp = textFingerprint(
         result.sentencesByChapter.flatMap((chapter) => chapter.map((sent) => sent.id)),
       );
@@ -679,7 +679,7 @@ export const COVER_FFMPEG_TIMEOUT_MS = 60_000;
  * attempt-unique temp file, the run is bounded by a timeout and aborted if
  * the lease is lost mid-flight, ownership is revalidated immediately
  * before publication, and publication is an atomic rename. A stale attempt
- * cleans up only its OWN temp output — never another attempt's file and
+ * cleans up only its OWN temp output - never another attempt's file and
  * never the published cover.
  */
 export async function extractCoverAtomic(
@@ -711,7 +711,7 @@ export async function extractCoverAtomic(
       timeoutMs: opts.timeoutMs ?? COVER_FFMPEG_TIMEOUT_MS,
       signal: abort.signal,
     });
-    // Ownership is validated BEFORE the output can become visible — a
+    // Ownership is validated BEFORE the output can become visible - a
     // reclaimed attempt (including one whose ffmpeg was just aborted)
     // throws here and publishes nothing.
     guard.assertHeld();
@@ -884,7 +884,7 @@ export async function runPairScan(ctx: AppContext, job: JobRow, guard: LeaseGuar
     `Comparing ${ebooks.length} ebooks x ${audios.length} audiobooks`,
   );
 
-  // A candidate is a guess, not a decision — and a guess made by an older
+  // A candidate is a guess, not a decision - and a guess made by an older
   // version of the scorer outlives the fix that should have retired it.
   // (Confirmed, auto and rejected pairs ARE decisions and are never touched.)
   //
@@ -959,7 +959,7 @@ export async function runPairScan(ctx: AppContext, job: JobRow, guard: LeaseGuar
    * and the crossed ones are indistinguishable on the shelf.
    *
    * A book has one audiobook. So a pair is only offered when it is the best
-   * on BOTH sides — or close enough to the best to be a genuine toss-up,
+   * on BOTH sides - or close enough to the best to be a genuine toss-up,
    * which is what two editions of the same book look like. Anything a clearly
    * better partner outbids is dropped: the right pair is still suggested, and
    * the crossed one is not.
@@ -983,7 +983,7 @@ export async function runPairScan(ctx: AppContext, job: JobRow, guard: LeaseGuar
     const pairId = stableId('pair', eId, aId);
     guard.assertHeld();
     if (autoEligible) {
-      evidence.notes.push('Strong metadata match — waiting to be checked against the narration.');
+      evidence.notes.push('Strong metadata match - waiting to be checked against the narration.');
     }
     db.prepare(
       `INSERT INTO pairs (id, ebook_id, audio_id, status, score, evidence_json, created_at)
@@ -998,7 +998,7 @@ export async function runPairScan(ctx: AppContext, job: JobRow, guard: LeaseGuar
   // one of these pairs is hours of work this server does not have to redo.
   // Higher priority than the align jobs just queued, so a redeploy restores
   // rather than recomputes. Skipped entirely when the operator has said they
-  // would rather start fresh — in which case the files are left alone, not
+  // would rather start fresh - in which case the files are left alone, not
   // deleted, so the decision stays reversible.
   if (settings.importSavedAlignments) {
     enqueueJob(db, 'import-alignments', {}, { dedupeKey: 'import-alignments', priority: 5 });
@@ -1037,8 +1037,8 @@ export async function runAlign(ctx: AppContext, job: JobRow, guard: LeaseGuard):
   // Which language this is: the pair's override, then what the ebook says,
   // then the audio tags, then the ebook's own prose, then the instance
   // default. The language decides only how numbers and abbreviations are
-  // spelled out for matching — script transliteration is keyed on the
-  // characters themselves — so a wrong answer costs anchors around numbers
+  // spelled out for matching - script transliteration is keyed on the
+  // characters themselves - so a wrong answer costs anchors around numbers
   // and nothing else.
   let language = languageCode(pair.language as string | null);
   let languageSource = 'set by you';
@@ -1095,8 +1095,8 @@ export async function runAlign(ctx: AppContext, job: JobRow, guard: LeaseGuard):
     const aligner = resolveAligner(config.modelsDir);
     if (!aligner) throw new ModelMissingError();
 
-    // Listening is very nearly the whole job — minutes of it against seconds
-    // of everything else — so it gets very nearly the whole bar. The old 0.18
+    // Listening is very nearly the whole job - minutes of it against seconds
+    // of everything else - so it gets very nearly the whole bar. The old 0.18
     // floor meant the bar showed a fifth done before the model had heard a
     // second, and the client's remaining-time estimate divides elapsed by
     // progress: a fifth of the bar for none of the time told the reader the
@@ -1131,7 +1131,7 @@ export async function runAlign(ctx: AppContext, job: JobRow, guard: LeaseGuard):
         // where the operator will see it and leave the pair undecided.
         const ev = JSON.parse(String(pair.evidence_json ?? '{}'));
         ev.notes = (ev.notes ?? []).filter((n: string) => !n.startsWith('Narration'));
-        ev.notes.push(`Narration check failed — ${refusal.message}`);
+        ev.notes.push(`Narration check failed - ${refusal.message}`);
         ev.contentScore = 0;
         guard.assertHeld();
         db.prepare('UPDATE pairs SET evidence_json = ? WHERE id = ?').run(
@@ -1143,7 +1143,7 @@ export async function runAlign(ctx: AppContext, job: JobRow, guard: LeaseGuard):
           job.id,
           job.lease_token,
           1,
-          'Not the same work — waiting for your decision',
+          'Not the same work - waiting for your decision',
         );
         return;
       }
@@ -1166,7 +1166,7 @@ export async function runAlign(ctx: AppContext, job: JobRow, guard: LeaseGuard):
       (n: string) => !n.startsWith('Narration') && !n.startsWith('Strong metadata match'),
     );
     ev.notes.push(
-      `Narration matched the text at ${ctc.stats.monotoneAnchors.toLocaleString()} points — linked automatically.`,
+      `Narration matched the text at ${ctc.stats.monotoneAnchors.toLocaleString()} points - linked automatically.`,
     );
     const compat = {
       contentScore: ev.contentScore,
@@ -1174,7 +1174,7 @@ export async function runAlign(ctx: AppContext, job: JobRow, guard: LeaseGuard):
       meanConfidence: ctc.result.meanConfidence,
       warning:
         ctc.narrationRatio < 0.7
-          ? 'The narration covers noticeably less text than the ebook — it may be abridged, or the ebook may carry a lot of unnarrated matter.'
+          ? 'The narration covers noticeably less text than the ebook - it may be abridged, or the ebook may carry a lot of unnarrated matter.'
           : null,
     };
     guard.assertHeld();

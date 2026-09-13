@@ -21,7 +21,7 @@ function proxySources(ctx: AppContext): BlockList | null {
     const list = buildSourceList(ctx.config.proxyAuthSources);
     if (ctx.config.proxyAuthHeader && !list) {
       ctx.log.warn(
-        'RP_PROXY_AUTH_HEADER is set but RP_PROXY_AUTH_SOURCES is empty — proxy sign-in stays disabled (fail closed).',
+        'RP_PROXY_AUTH_HEADER is set but RP_PROXY_AUTH_SOURCES is empty - proxy sign-in stays disabled (fail closed).',
       );
     }
     sourceLists.set(ctx, list);
@@ -65,7 +65,7 @@ export function attachUser(ctx: AppContext, req: FastifyRequest, reply?: Fastify
   if (req.user) {
     req.authVia = 'session';
     // The server slid this session forward, so the browser's copy has to move
-    // with it — otherwise the cookie expires on the original schedule and the
+    // with it - otherwise the cookie expires on the original schedule and the
     // sign-out still happens, taking this device's downloads with it.
     if (req.user.renewedUntil && reply) {
       reply.setCookie(SESSION_COOKIE, token!, sessionCookieOpts(ctx.config));

@@ -7,7 +7,7 @@ Please report security issues privately, through
 rather than as a public issue.
 
 Include what you did, what happened, and what you expected. A proof of concept
-helps but is not required — a clear description of the flaw is enough to start.
+helps but is not required - a clear description of the flaw is enough to start.
 
 You will get an acknowledgement within a few days. ReadPort is maintained by
 one person in their spare time, so a fix may take longer than that; you will be

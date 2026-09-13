@@ -315,7 +315,7 @@ describe('chunked audio download (bounded memory, 206 + integrity required)', ()
       signal,
       async () => {},
     );
-    // ALL THREE chunks were refetched — the old ones were discarded, and
+    // ALL THREE chunks were refetched - the old ones were discarded, and
     // every stored byte belongs to the new version.
     expect(newFetch).toHaveBeenCalledTimes(3);
     const c0 = new Uint8Array(await (await cache.match(chunkKey(TRACK_URL, 0)))!.arrayBuffer());
@@ -407,7 +407,7 @@ describe('logout/download race', () => {
             },
           });
         }
-        // Second chunk hangs until aborted — the race window.
+        // Second chunk hangs until aborted - the race window.
         return new Promise<Response>((_res, rej) => {
           init?.signal?.addEventListener('abort', () =>
             rej(new DOMException('aborted', 'AbortError')),
@@ -457,7 +457,7 @@ describe('logout/download pre-registration race', () => {
     const { api } = await import('../api/client');
 
     // The manifest request hangs; it will resolve only AFTER the purge has
-    // fully completed — the exact pre-registration race window.
+    // fully completed - the exact pre-registration race window.
     let resolveManifest!: (v: unknown) => void;
     vi.mocked(api).mockReturnValue(
       new Promise((r) => {
@@ -504,7 +504,7 @@ describe('logout/download pre-registration race', () => {
       ],
       totalBytes: SIZE,
     });
-    await downloadP; // settles silently — nothing was stored, nothing throws
+    await downloadP; // settles silently - nothing was stored, nothing throws
     await new Promise((r) => setTimeout(r, 20));
     expect(open).not.toHaveBeenCalled();
     expect(fetch).not.toHaveBeenCalled();
@@ -551,7 +551,7 @@ describe('removing a download reclaims every stored chunk', () => {
     const idb = await import('../progress/idb');
     // A track whose chunks were evicted non-contiguously: 0 and 1 survive, 2
     // is gone, and 3 and 200 are still occupying space. Counting upwards
-    // from zero — or sweeping a fixed window past the first gap — leaves the
+    // from zero - or sweeping a fixed window past the first gap - leaves the
     // far one orphaned with nothing in the app that would ever collect it.
     for (const i of [0, 1, 3, 200]) {
       await cache.put(chunkKey(TRACK_URL, i), new Response(new Uint8Array(8)));

@@ -12,7 +12,7 @@ import { alignmentRoots, libraryRoots } from '../../domain/settings.js';
 import { checkLibraryPath } from '../../setup/paths.js';
 
 /**
- * "Is this container actually able to align a book?" — one answer, in plain
+ * "Is this container actually able to align a book?" - one answer, in plain
  * language, for the setup wizard and for a self-hoster reading the logs.
  *
  * Everything here is READ-ONLY: it probes binaries with `-version`, stats
@@ -49,7 +49,7 @@ const bodySchema = z
 /**
  * Binary probes spawn a process, and the wizard polls this route while a
  * download runs. A binary does not appear or vanish mid-setup, so the result
- * is memoised briefly — long enough to make polling free, short enough that
+ * is memoised briefly - long enough to make polling free, short enough that
  * an operator who fixes their PATH and retries sees the truth.
  */
 const PROBE_TTL_MS = 30_000;
@@ -100,7 +100,7 @@ async function probeBinary(bin: string): Promise<BinaryProbe> {
   return value;
 }
 
-/** Nearest existing ancestor of `p` — what a writability test can actually stat. */
+/** Nearest existing ancestor of `p` - what a writability test can actually stat. */
 function nearestExisting(p: string): string {
   let dir = path.resolve(p);
   for (let i = 0; i < 32; i++) {
@@ -136,7 +136,7 @@ export function registerPreflightRoutes(app: FastifyInstance, ctx: AppContext): 
 
   /**
    * Same gate as the other wizard helpers (see routes/auth.ts): an admin
-   * session, or — only while no account exists at all — the bootstrap token
+   * session, or - only while no account exists at all - the bootstrap token
    * in a header. The report names paths and binaries, so it is never public.
    */
   const allowed = (req: { user: { role: string } | null; headers: Record<string, unknown> }) => {
@@ -200,7 +200,7 @@ export function registerPreflightRoutes(app: FastifyInstance, ctx: AppContext): 
       label: 'Audio tools',
       state: missingAudio.length ? 'fail' : 'ok',
       detail: missingAudio.length
-        ? `${missingAudio.join(' and ')} not runnable — ${ffmpeg.found ? ffprobe.detail : ffmpeg.detail}`
+        ? `${missingAudio.join(' and ')} not runnable - ${ffmpeg.found ? ffprobe.detail : ffmpeg.detail}`
         : ffmpeg.detail,
       ...(missingAudio.length
         ? {
@@ -222,7 +222,7 @@ export function registerPreflightRoutes(app: FastifyInstance, ctx: AppContext): 
       ...(engine.available
         ? {}
         : {
-            fix: 'Reinstall dependencies for this platform (npm ci) — the Docker image ships a matching build. Without it, nothing can be aligned.',
+            fix: 'Reinstall dependencies for this platform (npm ci) - the Docker image ships a matching build. Without it, nothing can be aligned.',
           }),
     });
 
@@ -235,7 +235,7 @@ export function registerPreflightRoutes(app: FastifyInstance, ctx: AppContext): 
       detail: alignerInstalled
         ? `Installed in ${config.modelsDir}`
         : download
-          ? `Downloading — ${Math.round(download.progress * 100)}%`
+          ? `Downloading - ${Math.round(download.progress * 100)}%`
           : `Not downloaded (${formatBytes(spec.sizeBytes)}, one time, covers every language)`,
       ...(alignerInstalled || download
         ? {}
@@ -289,7 +289,7 @@ export function registerPreflightRoutes(app: FastifyInstance, ctx: AppContext): 
         : {}),
     });
 
-    // 6. Library folders — the ones the wizard is about to save, when it sends
+    // 6. Library folders - the ones the wizard is about to save, when it sends
     // them, otherwise whatever the server would use today.
     const roots = libraryRoots(db, config);
     const ebookDirs = body.data?.ebookDirs ?? roots.ebookDirs;
@@ -323,7 +323,7 @@ export function registerPreflightRoutes(app: FastifyInstance, ctx: AppContext): 
           : {}),
     });
 
-    // 7. The alignment folder. Never a failure — alignment works without one,
+    // 7. The alignment folder. Never a failure - alignment works without one,
     // the timings simply do not survive rebuilding the container. But it is
     // the likeliest mistake in the whole setup: every other library line in
     // the stock compose file ends in `:ro`, and people copy the pattern.
@@ -338,7 +338,7 @@ export function registerPreflightRoutes(app: FastifyInstance, ctx: AppContext): 
       detail: notWritable.length
         ? `Cannot save into ${notWritable.map((c) => c.path).join(', ')}`
         : saved > 0
-          ? `${alignDirs.join(', ')} — ${saved} already saved`
+          ? `${alignDirs.join(', ')} - ${saved} already saved`
           : alignDirs.join(', '),
       ...(notWritable.length
         ? {

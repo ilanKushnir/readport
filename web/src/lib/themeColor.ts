@@ -3,8 +3,8 @@
  * status bar from the `theme-color` meta; WebKit watches the meta element,
  * but standalone launches have been seen to keep the launch value when only
  * the `content` attribute of a media-scoped meta changes. So ReadPort keeps
- * a SINGLE un-scoped meta and replaces the element on every change — the
- * form WebKit is documented to observe — and mirrors the colour onto the
+ * a SINGLE un-scoped meta and replaces the element on every change - the
+ * form WebKit is documented to observe - and mirrors the colour onto the
  * root background so nothing behind the bar can flash the old colour.
  */
 const APP_LIGHT = '#f6f1e8';

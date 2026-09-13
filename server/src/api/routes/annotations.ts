@@ -27,7 +27,7 @@ export function registerAnnotationRoutes(app: FastifyInstance, ctx: AppContext):
    * Separate from the per-book list because it answers a different question:
    * not "what did I mark in this book" but "where was that thing I wrote
    * down". So it carries enough of the book with it to be readable on its own,
-   * and it is ordered newest first — the note you are looking for is almost
+   * and it is ordered newest first - the note you are looking for is almost
    * always a recent one.
    */
   app.get('/api/annotations', async (req) => {

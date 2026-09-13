@@ -15,7 +15,7 @@
  * the source offset it came from:
  *
  *  1. `findExpansions` scans for runs that must be *said differently than they
- *     are written* — digits, currency, percent, abbreviations, "&" — and records
+ *     are written* - digits, currency, percent, abbreviations, "&" - and records
  *     a replacement written in the source language's own script.
  *  2. `romanizeInto` walks the text, emitting an expansion's replacement when it
  *     reaches one and otherwise transliterating character by character.
@@ -31,21 +31,21 @@
  * still produce letters. `language` only selects number words, abbreviations and
  * decimal-separator conventions.
  *
- *  - **Latin** — NFKD, drop combining marks, lowercase, keep `[a-z']`. Letters
+ *  - **Latin** - NFKD, drop combining marks, lowercase, keep `[a-z']`. Letters
  *    that NFKD does not decompose get an explicit expansion (ß→ss, æ→ae, œ→oe,
  *    ø→o, þ→th, ð→d, đ→d, ł→l, ŋ→ng, …). This is orthographic, not phonetic:
  *    French "garçon" becomes "garcon" while the narrator says /ɡaʁsɔ̃/. Deep
  *    orthographies (fr, en) therefore anchor on fewer, longer words.
- *  - **Cyrillic** — BGN/PCGN (1947) romanization of Russian, simplified: ё→yo
+ *  - **Cyrillic** - BGN/PCGN (1947) romanization of Russian, simplified: ё→yo
  *    (BGN writes "ë"), ъ and ь are dropped (BGN writes primes, which are not in
  *    the alphabet and are not spoken), and the positional "ye" rule for е is not
  *    applied (е→e everywhere) because it costs a rule and buys one character.
  *    A handful of non-Russian Cyrillic letters (і ї є ґ ў џ љ њ) are included so
  *    Ukrainian/Belarusian/Serbian quotations do not vanish.
- *  - **Greek** — ISO 843 type-2 style transcription of Modern Greek (η→i, υ→y,
+ *  - **Greek** - ISO 843 type-2 style transcription of Modern Greek (η→i, υ→y,
  *    χ→ch, ω→o). Greek is not a supported book language; this exists so that
  *    quotations and loanwords do not leave holes.
- *  - **Hebrew** — consonantal skeleton, after the Academy of the Hebrew Language
+ *  - **Hebrew** - consonantal skeleton, after the Academy of the Hebrew Language
  *    2006 simplified transliteration, with deliberate deviations toward Modern
  *    Israeli *pronunciation* (which is what the acoustic model heard):
  *      א, ע → nothing (both are realised as zero in Modern Israeli Hebrew, and
@@ -53,18 +53,18 @@
  *      ח → kh (Academy writes "h", but ח and כ are homophones today);
  *      ך → kh and ף → f, because the final forms are unambiguous where their
  *      non-final counterparts are not (bare כ/פ are written as k/p);
- *      ב, כ, פ → b, k, p — the plosive reading, since niqqud (and with it the
+ *      ב, כ, פ → b, k, p - the plosive reading, since niqqud (and with it the
  *      dagesh that would decide b/v, k/kh, p/f) is stripped as combining marks.
  *    Geresh digraphs (ג׳ ז׳ צ׳) map to j, zh, ch. We do NOT restore vowels: the
  *    aligner anchors on the consonant skeleton, which is enough for long words
  *    but does mean Hebrew yields fewer anchors than Latin-script books.
- *  - **Arabic** — ALA-LC romanization with its diacritics dropped (so emphatic
+ *  - **Arabic** - ALA-LC romanization with its diacritics dropped (so emphatic
  *    and plain consonants merge: ص/س→s, ض/د→d, ط/ت→t, ظ/ز→z). ع and ء are
  *    dropped, ة→a (pausal reading, which is how a narrator says it), ى→a,
  *    tatweel is dropped. Presentation forms (U+FB50–U+FEFF, including the لا
  *    ligature) are handled by the NFKD step before the table is consulted.
  *
- * ## Numbers and abbreviations — what is and is not expanded
+ * ## Numbers and abbreviations - what is and is not expanded
  *
  * The measured decode/ebook character ratio on a real audiobook was about 0.94, and
  * unexpanded digits are a large part of that gap: the narrator says "twenty
@@ -73,7 +73,7 @@
  * Expanded:
  *  - Integers 0–9999, in every supported language (en de nl fr es it pt ru he ar).
  *  - Group separators: "1,234" (en) / "1.234" (de) / "1 234" with NBSP-class
- *    spaces. A plain ASCII space never joins digit groups — "100 200" in a table
+ *    spaces. A plain ASCII space never joins digit groups - "100 200" in a table
  *    must not become one hundred million.
  *  - Decimals: "3.5" → "three point five", fraction digits read one by one,
  *    with the decimal separator chosen per language (comma for de nl fr es it
@@ -106,7 +106,7 @@
  *    that those few characters produce no anchor.
  *  - Numbers whose separators do not form 1–3 then 3-digit groups ("12,34" in
  *    an English book). They are consumed and emitted as nothing: the whole run
- *    is skipped so a later group cannot be re-read on its own — otherwise the
+ *    is skipped so a later group cannot be re-read on its own - otherwise the
  *    tail of "1,250,000" would come back as "zero".
  *  - Roman numerals ("Chapter IV"), because "I" is also an English word.
  *  - Times ("3:30"), phone numbers, version strings and ISBNs: the digits are
@@ -118,7 +118,7 @@
  * Both English readings of a hundreds value exist ("one hundred five" vs "one
  * hundred and five"); we emit the American form without "and", the more common
  * reading. Where an expansion guesses wrong the region
- * simply produces no anchor, which the matcher already tolerates — it makes no
+ * simply produces no anchor, which the matcher already tolerates - it makes no
  * proportionality assumption about un-anchored text.
  */
 
@@ -134,7 +134,7 @@ export function isModelAlphabet(s: string): boolean {
 }
 
 export interface RomanizedText {
-  /** Romanized characters, no spaces — the model emits none. */
+  /** Romanized characters, no spaces - the model emits none. */
   chars: string;
   /**
    * `sourceIndex[i]` is the UTF-16 offset in the ORIGINAL string that produced
@@ -273,8 +273,8 @@ function mapChar(ch: string): string {
 function computeChar(ch: string): string {
   const direct = SCRIPTS.get(ch);
   if (direct !== undefined) return direct;
-  // NFKD both strips diacritics and unfolds compatibility forms — Arabic
-  // presentation forms, the ﬁ ligature, fullwidth Latin — into characters the
+  // NFKD both strips diacritics and unfolds compatibility forms - Arabic
+  // presentation forms, the ﬁ ligature, fullwidth Latin - into characters the
   // tables above do know.
   const decomposed = ch.normalize('NFKD').replace(MARKS_RE, '');
   if (decomposed === ch) return '';
@@ -1114,7 +1114,7 @@ function spellHe(n: number): string {
   ].filter((p) => p.length > 0);
   const last = parts[parts.length - 1];
   if (parts.length < 2 || last === undefined) return parts.join(' ');
-  // ו ("and") attaches to the final group — unless heBelow100 already put it
+  // ו ("and") attaches to the final group - unless heBelow100 already put it
   // there (שלושים וארבע), in which case a second one would be ungrammatical.
   const head = parts.slice(0, -1).join(' ');
   return `${head} ${last.includes(' ו') ? last : `ו${last}`}`;
@@ -1293,7 +1293,7 @@ const RULES: Record<string, LanguageRules> = {
     code: 'de',
     decimalComma: true,
     spellCardinal: spellDe,
-    // German ordinals are written "1." — indistinguishable from a sentence end.
+    // German ordinals are written "1." - indistinguishable from a sentence end.
     spellOrdinal: spellDe,
     ordinalMarkers: [],
     decimalPoint: 'komma',

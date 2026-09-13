@@ -133,7 +133,7 @@ export type { Annotation, BookSummary, Locator };
 export interface ModelInfo {
   id: string;
   label: string;
-  /** Shown BEFORE the download button — the aligner is non-commercial. */
+  /** Shown BEFORE the download button - the aligner is non-commercial. */
   licence: string;
   file: string;
   sizeBytes: number;

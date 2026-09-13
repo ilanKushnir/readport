@@ -78,7 +78,7 @@ export function scorePair(input: PairInputs): { score: number; evidence: PairEvi
   const aLang = languageCode(input.audio.language);
   if (eLang && aLang) {
     languageMatch = eLang === aLang;
-    if (!languageMatch) notes.push('Languages differ — possible translation mismatch.');
+    if (!languageMatch) notes.push('Languages differ - possible translation mismatch.');
   }
 
   let seriesMatch: boolean | null = null;
@@ -93,9 +93,9 @@ export function scorePair(input: PairInputs): { score: number; evidence: PairEvi
     const expectedMs = (input.ebook.totalChars / NARRATION_CHARS_PER_SEC) * 1000;
     durationPagesRatio = input.audio.durationMs / expectedMs;
     if (durationPagesRatio < 0.7) {
-      notes.push('Audio much shorter than the text suggests — possibly abridged.');
+      notes.push('Audio much shorter than the text suggests - possibly abridged.');
     } else if (durationPagesRatio > 1.45) {
-      notes.push('Audio much longer than the text suggests — possibly a different edition.');
+      notes.push('Audio much longer than the text suggests - possibly a different edition.');
     }
   }
 
@@ -120,7 +120,7 @@ export function scorePair(input: PairInputs): { score: number; evidence: PairEvi
   // Contradictory languages are a hard damper regardless of titles.
   if (languageMatch === false) score = Math.min(score, 0.4);
   // Two different titles are two different books. Nothing but a shared
-  // identifier — an ISBN or ASIN, which names the work itself — may carry a
+  // identifier - an ISBN or ASIN, which names the work itself - may carry a
   // pair past this, however well everything else agrees.
   if (titleScore < TITLE_FLOOR && !identifierMatch) {
     score = Math.min(score, CANDIDATE_THRESHOLD - 0.01);
@@ -203,7 +203,7 @@ export interface RivalPair<T> {
  *
  * Scoring each pair on its own lets one ebook be suggested against several
  * audiobooks and vice versa. Someone who owns two books by one author in both
- * formats gets the two right pairs AND the two crossed ones — and on the
+ * formats gets the two right pairs AND the two crossed ones - and on the
  * shelf the crossed ones look just as plausible, because everything except
  * the title agrees.
  *

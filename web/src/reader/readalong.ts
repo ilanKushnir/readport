@@ -6,7 +6,7 @@ import { type SentenceIndexEntry } from '../lib/types';
  *
  * A chapter gives us sentences with character spans; an alignment gives us
  * the same sentences with time spans. Joined by sentence id they become
- * *cues* — the one object that knows both where a sentence is on the page and
+ * *cues* - the one object that knows both where a sentence is on the page and
  * when it is spoken. Everything the feature does is a lookup in that list, so
  * it lives here, pure and tested, rather than inside a component.
  *
@@ -28,14 +28,14 @@ export interface AlignedSegment {
 /** A sentence that has both a place on the page and a place in the narration. */
 export interface Cue {
   id: string;
-  /** Chapter character offsets — what the highlight and the tap target use. */
+  /** Chapter character offsets - what the highlight and the tap target use. */
   charStart: number;
   charEnd: number;
-  /** Book-absolute milliseconds — what the audio element is seeked to. */
+  /** Book-absolute milliseconds - what the audio element is seeked to. */
   startMs: number;
   endMs: number;
   /**
-   * How far off this timing may be, in ms — carried through from the aligner.
+   * How far off this timing may be, in ms - carried through from the aligner.
    * A cue the aligner is sure of can be shown to the reader as a fact; one it
    * is guessing at should only ever move a pace marker.
    */
@@ -58,7 +58,7 @@ export const HOLD_MS = 2_500;
  * what the highlight trusts, and a made-up cue would put the highlight on the
  * wrong line with the same confidence as a real one. Order comes from the
  * clock, not from the page, because that is the order the lookup binary
- * searches — a book whose narration reorders a passage would otherwise break
+ * searches - a book whose narration reorders a passage would otherwise break
  * the search rather than merely look odd.
  */
 export function buildCues(sentences: SentenceIndexEntry[], segments: AlignedSegment[]): Cue[] {
@@ -77,7 +77,7 @@ export function buildCues(sentences: SentenceIndexEntry[], segments: AlignedSegm
       // smallest span that can be.
       endMs: Math.max(seg.endMs, seg.startMs + 1),
       // No stated uncertainty means the aligner did not measure one, which is
-      // not the same as being certain — treat it as unknown, not as zero.
+      // not the same as being certain - treat it as unknown, not as zero.
       uncertaintyMs: Number.isFinite(seg.uncertaintyMs)
         ? Math.max(0, seg.uncertaintyMs!)
         : Number.POSITIVE_INFINITY,
@@ -157,7 +157,7 @@ export function cueAt(cues: Cue[], bookMs: number): CueLookup {
 }
 
 /**
- * The cue to start narrating for a place on the page — used when the reader
+ * The cue to start narrating for a place on the page - used when the reader
  * taps a sentence, and when read-along is switched on where they are reading.
  *
  * Falls forward, never back: given an offset in an unaligned stretch, the
@@ -190,7 +190,7 @@ export function leadInFor(uncertaintyMs: number | undefined): number {
 /**
  * Whether the page should follow the narration to `cue`.
  *
- * Auto-follow is given up the moment the reader moves the page themselves —
+ * Auto-follow is given up the moment the reader moves the page themselves -
  * looking ahead is a normal thing to do while listening, and a page that
  * snatches itself back is the single most irritating thing a read-along can
  * do. It comes back when they ask for it, or, without anyone pressing
@@ -198,11 +198,25 @@ export function leadInFor(uncertaintyMs: number | undefined): number {
  *
  * `cueOnScreen` is geometry the reader measures: whether the sentence's own
  * rectangle is inside the page box right now. Offsets would be the wrong
- * question — a two-column spread shows two ranges that are not contiguous.
+ * question - a two-column spread shows two ranges that are not contiguous.
  */
-export function shouldFollow(following: boolean, cue: Cue | null, cueOnScreen: boolean): boolean {
+export function shouldFollow(
+  following: boolean,
+  cue: Cue | null,
+  cueOnScreen: boolean,
+  /**
+   * Whether the voice has been off the screen at all since the reader took
+   * over. Resuming purely because the sentence is still visible means a
+   * deliberate scroll is undone by the very next tick of the clock - in
+   * scrolling mode "on screen" is most of a chapter, so the page fought the
+   * reader and "Back to the voice" blinked in and out as it went. Once they
+   * have taken over, following resumes when the voice comes BACK to them.
+   */
+  cueLeftSinceTakeover = true,
+): boolean {
   if (!cue) return false;
-  return following || cueOnScreen;
+  if (following) return true;
+  return cueOnScreen && cueLeftSinceTakeover;
 }
 
 /** The tracks of an audiobook, as the book detail reports them. */
@@ -252,7 +266,7 @@ export function isConfident(cue: Cue | null): boolean {
 }
 
 /**
- * Where the narration has got to, as a character offset — including between
+ * Where the narration has got to, as a character offset - including between
  * sentences.
  *
  * The pace marker needs a position at every instant, not once a sentence. A
@@ -261,7 +275,7 @@ export function isConfident(cue: Cue | null): boolean {
  * the gap at the rate the gap implies. It is an estimate and is drawn as one:
  * a marker beside the text, never a mark on it.
  *
- * Returns null when there is nothing to estimate from — before the first cue,
+ * Returns null when there is nothing to estimate from - before the first cue,
  * after the last, or in a stretch with no timings at all.
  */
 export function paceOffset(cues: Cue[], bookMs: number): number | null {

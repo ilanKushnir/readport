@@ -1,11 +1,11 @@
-/* ReadPort design tokens — "ink & ember".
+/* ReadPort design tokens - "ink & ember".
    Reading is paper and ink; listening is a warm lamp. Light: cream paper,
    ink text, ember-copper primary, plum for audio. Dark: warm near-black
    with a lighter ember for interactive text and a plum-lavender accent.
    Every text/bg pairing below is ≥ 4.5:1; UI pairings ≥ 3:1. */
 
 :root {
-  /* palette — light */
+  /* palette - light */
   --rp-text: #1c1917;
   --rp-text-soft: #5f574d;
   --rp-bg: #f6f1e8;
@@ -14,7 +14,7 @@
   --rp-primary: #b4532a;
   --rp-primary-hover: #9c4622;
   --rp-on-primary: #fff8f2;
-  --rp-accent: #5e4a8a; /* plum — audio */
+  --rp-accent: #5e4a8a; /* plum - audio */
   --rp-border: #ddd3c4;
   --rp-border-strong: #c4b8a5;
   --rp-interactive: #944320;
@@ -25,7 +25,7 @@
   --rp-scrim: rgb(28 25 23 / 0.45);
 
   /* Highlight hues. Defined app-wide because swatches appear outside the
-     reader — on the Notes page and the book page — where no reader theme is
+     reader - on the Notes page and the book page - where no reader theme is
      in scope and a color-mix against an undefined token renders nothing at
      all. The four [data-reader-theme] blocks below override them per theme. */
   --rd-mark-amber: #d6a034;

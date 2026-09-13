@@ -4,7 +4,7 @@
  * Ordered collections here (the reading list, the books inside a shelf, the
  * shelves themselves) store a TEXT rank rather than a position integer, so
  * moving one item writes exactly one row. A position column would rewrite
- * every row below the insertion point — a transaction whose size grows with
+ * every row below the insertion point - a transaction whose size grows with
  * the list, and one that can half-apply if the process dies mid-drag.
  *
  * Keys are minted only on the server. The client sends the gesture ("put
