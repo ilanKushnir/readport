@@ -3872,6 +3872,17 @@ select.input {
   }
 }
 
+/* A bulk action belongs on the heading of the group it acts on, pushed to
+   the far end so it never reads as part of the count. */
+.section-title__action {
+  margin-inline-start: auto;
+  /* The heading aligns on the baseline; a 44px button on that baseline sits
+     far too low. */
+  align-self: center;
+  min-height: 44px;
+  font-size: 14px;
+}
+
 /* ------------------------------------------------- touch target sizing
    A fingertip needs ~44px. These controls are sized for a mouse, and the
    phone is where most of this app is used — so the sizes are raised only

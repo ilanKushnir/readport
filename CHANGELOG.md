@@ -4,6 +4,16 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.9.3 — 2026-09-13
+
+### Added
+
+- **"Link all" on the Pairing page.** A library owned mostly in both formats
+  produces dozens of suggestions, and each one was a separate tap on the very
+  page whose purpose is to get them linked. Confirming in bulk makes exactly
+  the same decision as confirming one at a time — alignment queued included —
+  and leaves anything already settled untouched.
+
 ## 0.9.2 — 2026-09-13
 
 ### Fixed — mobile

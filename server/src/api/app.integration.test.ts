@@ -1117,6 +1117,52 @@ describe('ReadPort API', () => {
     expect(ebooks.books.length + audio.books.length).toBe(all.books.length + pairIds.length);
   });
 
+  it('confirms suggestions in bulk without re-deciding anything already settled', async () => {
+    // A library owned mostly in both formats produces dozens of candidates,
+    // and confirming them one at a time is dozens of taps. The bulk route
+    // must still be the same decision: only a `candidate` may be confirmed,
+    // so a pair someone already linked — or rejected — is left alone.
+    const before = (await authed({ url: '/api/pairs' })).json() as {
+      pairs: { id: string; status: string }[];
+    };
+    const settled = before.pairs.filter((p) => p.status !== 'candidate').map((p) => p.id);
+    const candidates = before.pairs.filter((p) => p.status === 'candidate').map((p) => p.id);
+
+    const res = (
+      await authed({
+        method: 'POST',
+        url: '/api/pairs/confirm-many',
+        payload: { pairIds: [...settled, ...candidates, 'no-such-pair'] },
+      })
+    ).json() as { confirmed: number; skipped: number };
+
+    // Every candidate confirmed; everything already decided, and the bogus
+    // id, skipped rather than silently re-linked.
+    expect(res.confirmed).toBe(candidates.length);
+    expect(res.skipped).toBe(settled.length + 1);
+
+    const after = (await authed({ url: '/api/pairs' })).json() as {
+      pairs: { id: string; status: string }[];
+    };
+    expect(after.pairs.filter((p) => p.status === 'candidate')).toHaveLength(0);
+    // A pair that was already confirmed still reads as confirmed, not 'auto'
+    // or anything else the bulk path might have overwritten.
+    for (const id of settled) {
+      const was = before.pairs.find((p) => p.id === id)!.status;
+      expect(after.pairs.find((p) => p.id === id)!.status).toBe(was);
+    }
+  });
+
+  it('refuses a bulk confirm from someone who may not curate', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/pairs/confirm-many',
+      headers: { 'x-rp-csrf': '1' },
+      payload: { pairIds: ['x'] },
+    });
+    expect(res.statusCode).toBeGreaterThanOrEqual(400);
+  });
+
   it('shelves belong to one person: nobody else can read, move or delete them', async () => {
     const mine = (
       await authed({ method: 'POST', url: '/api/shelves', payload: { name: 'Private' } })

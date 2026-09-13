@@ -299,6 +299,37 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
     return { queued, skipped };
   });
 
+  /**
+   * Confirm several suggestions at once.
+   *
+   * A library where most books are owned twice produces dozens of
+   * candidates, and confirming them one at a time is dozens of taps on a
+   * phone — for a decision that is usually "yes, all of these". Each
+   * confirmation is the same one the single endpoint makes, alignment
+   * included, so nothing here is a shortcut around the review; it is the
+   * same review, answered in one go.
+   */
+  app.post('/api/pairs/confirm-many', async (req, reply) => {
+    if (!requireRole(req, reply, 'curator')) return reply;
+    const parsed = alignManySchema.safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: 'invalid' });
+    let confirmed = 0;
+    let skipped = 0;
+    for (const id of parsed.data.pairIds) {
+      // Only a suggestion can be confirmed; anything already decided is left
+      // exactly as it is rather than being silently re-linked.
+      const row = db.prepare('SELECT status FROM pairs WHERE id = ?').get(id) as
+        { status: string } | undefined;
+      if (!row || row.status !== 'candidate' || !decide(id, 'confirmed', req.user!.id)) {
+        skipped += 1;
+        continue;
+      }
+      enqueueJob(db, 'align', { pairId: id }, { dedupeKey: `align:${id}` });
+      confirmed += 1;
+    }
+    return { confirmed, skipped };
+  });
+
   /** Resolve a locator across media: the two-way switch. */
   app.post('/api/pairs/:id/resolve', async (req, reply) => {
     const { id } = req.params as { id: string };

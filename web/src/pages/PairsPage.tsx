@@ -39,6 +39,7 @@ export function PairsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [confirmingAll, setConfirmingAll] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
   const [howOpen, setHowOpen] = useState(false);
   /**
@@ -121,6 +122,34 @@ export function PairsPage() {
       toast.show('Action failed');
     } finally {
       setBusyId(null);
+    }
+  };
+
+  /**
+   * Say yes to every suggestion at once.
+   *
+   * A library owned mostly in both formats produces dozens of candidates,
+   * and each one was a separate tap — on the page whose whole purpose is to
+   * get them linked and aligned.
+   */
+  const confirmAll = async (ids: string[]) => {
+    if (ids.length === 0) return;
+    setConfirmingAll(true);
+    try {
+      const res = await api<{ confirmed: number; skipped: number }>('/api/pairs/confirm-many', {
+        method: 'POST',
+        body: { pairIds: ids },
+      });
+      toast.show(
+        res.confirmed > 0
+          ? `Linked ${res.confirmed} book${res.confirmed === 1 ? '' : 's'} — alignment queued`
+          : 'Nothing left to link',
+      );
+      await load();
+    } catch (err) {
+      toast.show(actionFailed(err, 'Could not link those pairs.'));
+    } finally {
+      setConfirmingAll(false);
     }
   };
 
@@ -337,6 +366,15 @@ export function PairsPage() {
             <section aria-label="Needs review">
               <h2 className="section-title">
                 Needs review <span className="section-title__count">{candidates.length}</span>
+                {isAdmin && candidates.length > 1 && (
+                  <button
+                    className="btn btn--ghost section-title__action"
+                    disabled={confirmingAll}
+                    onClick={() => void confirmAll(candidates.map((p) => p.id))}
+                  >
+                    {confirmingAll ? 'Linking…' : `Link all ${candidates.length}`}
+                  </button>
+                )}
               </h2>
               {candidates.map((p) => (
                 <PairCard
