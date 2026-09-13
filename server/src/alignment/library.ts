@@ -1,11 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { type AlignmentSegment } from '@readport/shared';
 import { activeDerivedDir, type AppContext } from '../context.js';
 import { loadSentences } from '../epub/extract.js';
 import { nowIso } from '../db/index.js';
 import { alignmentRoots } from '../domain/settings.js';
 import { latestAlignment, storeAlignment } from './service.js';
+import { rowToSegment } from './timings.js';
 import {
   ALIGNMENT_FILE_EXT,
   buildAlignmentDocument,
@@ -167,19 +167,6 @@ export function saveAlignmentFile(ctx: AppContext, pairId: string): string | nul
     ctx.log.warn(`Could not save the alignment file for ${pairId}: ${(err as Error).message}`);
     return null;
   }
-}
-
-function rowToSegment(r: Record<string, unknown>): AlignmentSegment {
-  return {
-    sentenceId: String(r.sentence_id),
-    spineIdx: Number(r.spine_idx),
-    sentenceOrd: Number(r.sentence_ord),
-    startMs: Number(r.start_ms),
-    endMs: Number(r.end_ms),
-    confidence: Number(r.confidence),
-    source: String(r.source) as AlignmentSegment['source'],
-    uncertaintyMs: Number(r.uncertainty_ms ?? 0),
-  };
 }
 
 export interface ImportOutcome {

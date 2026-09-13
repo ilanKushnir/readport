@@ -409,4 +409,21 @@ CREATE TABLE user_prefs (
 );
 `,
   },
+  {
+    version: 10,
+    sql: `
+-- Which generation of facet extraction a book was last indexed under.
+--
+-- Books indexed before facets existed carry no tags, so an upgraded library
+-- would show an empty Browse section until every book happened to change on
+-- disk. A marker column lets the scanner re-index each of them exactly once,
+-- and bumping the constant in the scanner does the same again if a later
+-- version learns to read a field this one ignores.
+--
+-- Deliberately NOT done by resetting scan_state: 'discovered' is not a
+-- readable state, so that would make every ebook 404 from the reader until
+-- its re-index finished, and pairing skips anything that is not 'ready'.
+ALTER TABLE books ADD COLUMN facets_rev INTEGER NOT NULL DEFAULT 0;
+`,
+  },
 ];

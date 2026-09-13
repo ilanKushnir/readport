@@ -315,7 +315,11 @@ async function listenSparsely(
       match,
       audioMs,
       model: decoder.model,
-      decodedMs: runs.reduce((a, r) => a + r.window.durationMs, 0),
+      // What the decoder actually heard, not what it was asked for: probes
+      // are clipped at track ends and skipped when a sliver remains, and
+      // counting the request would understate how much of the book went
+      // unheard — which is the number the abridgement check divides by.
+      decodedMs: decoder.decodedMs,
       probes: runs.length,
     };
   } finally {

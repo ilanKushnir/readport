@@ -711,6 +711,16 @@ export interface ProbeDecoder {
     windows: ProbeWindow[],
     onWindow?: (done: number, total: number) => void,
   ): Promise<DecodedChar[][]>;
+  /**
+   * Audio actually put through the model so far, in ms.
+   *
+   * Not the same as the windows that were asked for: a probe is clipped to its
+   * track's end and skipped entirely when less than a second of it remains.
+   * The difference matters because the abridgement check divides the character
+   * ratio by the fraction of audio heard — over-reporting that fraction makes
+   * an ordinary book look abridged.
+   */
+  readonly decodedMs: number;
   close(): Promise<void>;
 }
 
@@ -757,10 +767,14 @@ export async function openProbeDecoder(opts: ProbeDecoderOptions): Promise<Probe
   }
   const audioMs = tracks.reduce((a, t) => Math.max(a, t.startMs + t.durationMs), 0);
   const { session, close } = await createOrtSession(opts.modelPath, opts.threads);
+  let decodedMs = 0;
 
   return {
     model: modelId(opts.modelPath),
     audioMs,
+    get decodedMs() {
+      return decodedMs;
+    },
     async decode(windows, onWindow) {
       const runs: DecodedChar[][] = [];
       // ffmpeg and the model take turns on different resources — one seeks and
@@ -774,7 +788,10 @@ export async function openProbeDecoder(opts: ProbeDecoderOptions): Promise<Probe
         const pcm = await ahead;
         ahead = readProbe(tracks, windows[i + 1], opts.signal);
         const out: DecodedChar[] = [];
-        if (pcm) await decodeProbe(session, idToToken, pcm, out);
+        if (pcm) {
+          decodedMs += pcm.coreHiMs - pcm.coreLoMs;
+          await decodeProbe(session, idToToken, pcm, out);
+        }
         runs.push(out);
         onWindow?.(i + 1, windows.length);
       }
