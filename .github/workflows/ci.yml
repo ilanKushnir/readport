@@ -84,6 +84,27 @@ jobs:
           [ "$code" = "409" ] || (echo "second setup returned $code"; exit 1)
           docker rm -f tl
 
+      - name: Alignment folder is claimed for the app user
+        run: |
+          # People create this folder with `mkdir` on the host, so it arrives
+          # root-owned. The entrypoint must take it over, or every alignment
+          # silently fails to save.
+          mkdir -p /tmp/rp-align && sudo chown 0:0 /tmp/rp-align
+          docker run -d --name al -p 8384:8383 \
+            -e RP_SESSION_SECRET=ci-align-secret-0123456789 \
+            -e RP_SETUP_TOKEN=ci-align-token \
+            -e RP_ALIGNMENT_DIRS=/library/alignments \
+            -v /tmp/rp-align:/library/alignments readport:ci
+          ok=""
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8384/api/health >/dev/null; then ok=1; break; fi
+            sleep 1
+          done
+          [ "$ok" = "1" ] || (docker logs al; exit 1)
+          docker exec -u 1000:1000 al sh -c 'touch /library/alignments/.w' \
+            || (echo "alignment dir is not writable by the app user"; docker logs al; exit 1)
+          docker rm -f al
+
   # Publishing is a job of this workflow, not a workflow of its own, so it
   # cannot run against a red main: a separate workflow on the same trigger
   # raced the checks and could tag :latest from a commit that never passed.
