@@ -5,7 +5,7 @@ import path from 'node:path';
 import { z } from 'zod';
 import { type FastifyInstance } from 'fastify';
 import { type AppContext } from '../../context.js';
-import { hasRole } from '../../auth/roles.js';
+import { setupHelperAllowed } from '../../auth/setupGate.js';
 import { checkCtcEngine } from '../../alignment/ctc/emissions.js';
 import { ALIGNER, isInstalled, modelFiles, modelPath } from '../../alignment/model.js';
 import { alignmentRoots, libraryRoots } from '../../domain/settings.js';
@@ -132,20 +132,15 @@ function writable(dir: string): boolean {
 
 export function registerPreflightRoutes(app: FastifyInstance, ctx: AppContext): void {
   const { db, config } = ctx;
-  const userCount = () => (db.prepare('SELECT COUNT(*) AS c FROM users').get() as { c: number }).c;
 
   /**
-   * Same gate as the other wizard helpers (see routes/auth.ts): an admin
-   * session, or - only while no account exists at all - the bootstrap token
-   * in a header. The report names paths and binaries, so it is never public.
+   * The same gate as the other wizard helpers - literally the same function
+   * now (auth/setupGate.ts). The report names paths and binaries, so it is
+   * never public: an admin session, or the wizard's own audience while no
+   * account exists at all.
    */
-  const allowed = (req: { user: { role: string } | null; headers: Record<string, unknown> }) => {
-    if (req.user) return hasRole(req.user.role, 'admin');
-    if (userCount() > 0) return false;
-    const raw = req.headers['x-rp-setup-token'];
-    const token = Array.isArray(raw) ? raw[0] : raw;
-    return typeof token === 'string' && !!ctx.setupToken && ctx.setupToken.matches(token);
-  };
+  const allowed = (req: { user: { role: string } | null; headers: Record<string, unknown> }) =>
+    setupHelperAllowed(ctx, req);
 
   /** The aligner's own download job, if one is queued or running right now. */
   const alignerDownload = (): { state: string; progress: number; detail: string | null } | null => {

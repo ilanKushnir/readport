@@ -170,7 +170,7 @@ afterAll(async () => {
 describe('ReadPort API', () => {
   it('requires setup on first run, gates it on the bootstrap token, creates admin', async () => {
     const status = await app.inject({ url: '/api/setup/status' });
-    expect(status.json()).toMatchObject({ needsSetup: true, setupTokenSource: 'env' });
+    expect(status.json()).toMatchObject({ needsSetup: true, setupTokenRequired: true });
 
     // Wizard helpers are gated on the bootstrap token while no admin exists.
     const noTokenPaths = await app.inject({
@@ -201,14 +201,17 @@ describe('ReadPort API', () => {
       expect.arrayContaining(['ebooks', 'audiobooks']),
     );
 
-    // No token at all: schema rejection.
+    // No token at all, on an instance that HAS one configured: refused. The
+    // field is optional in the schema now (an unlocked instance needs none),
+    // so this must be caught by the token check, not by validation.
     const noToken = await app.inject({
       method: 'POST',
       url: '/api/setup',
       headers: { 'x-rp-csrf': '1' },
       payload: { username: 'astra', password: 'correct-horse-battery-staple' },
     });
-    expect(noToken.statusCode).toBe(400);
+    expect(noToken.statusCode).toBe(403);
+    expect(noToken.json()).toMatchObject({ error: 'bad-setup-token' });
 
     // Wrong token: refused, no user created.
     const wrongToken = await app.inject({

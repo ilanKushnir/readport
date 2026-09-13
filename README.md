@@ -147,8 +147,8 @@ installed still scans, reads, plays and pairs.
 ```bash
 cp .env.example .env    # set RP_SESSION_SECRET (openssl rand -hex 32)
 docker compose up -d --build
-# open http://localhost:8383 - the setup wizard asks for the one-time token
-# printed in the log, creates the admin, and tests your library folders
+# open http://localhost:8383 - the setup wizard creates your admin account
+# and tests your library folders. No token to fish out of the log.
 ```
 
 The wizard asks for three things: where your EPUBs are, where your

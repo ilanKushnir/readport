@@ -21,9 +21,9 @@ services:
       PGID: ${PGID:-1000}
       TZ: ${TZ:-Etc/UTC}
       RP_SESSION_SECRET: ${RP_SESSION_SECRET:?set RP_SESSION_SECRET in .env}
-      # One-time first-run bootstrap token (required to create the admin
-      # account). Leave empty to let the server generate one and print it in
-      # `docker compose logs readport` on first start.
+      # Optional lock on first-run setup. Empty (the default) means you just
+      # open the app and create your admin account. Set it if this will be
+      # reachable from somewhere hostile before you have done that.
       RP_SETUP_TOKEN: ${RP_SETUP_TOKEN:-}
       RP_TRUST_HTTPS: ${RP_TRUST_HTTPS:-0}
       # Proxy trust is OFF by default (client IPs cannot be spoofed via

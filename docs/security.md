@@ -2,11 +2,17 @@
 
 ## Authentication
 
-- **First-run setup requires a one-time bootstrap token.** Creating the
-  admin account needs `RP_SETUP_TOKEN` (or `RP_SETUP_TOKEN_FILE`); when
-  unset, the server generates a random token on first start, prints it in
-  its log, and stores it at `<data>/setup-token` (0600). Whoever merely
-  reaches a freshly started instance first therefore cannot take it over.
+- **First-run setup is open until an admin exists, then closed for good.**
+  You start the server, open it, and create your account - there is no
+  token to copy out of a log to get past your own welcome screen. The
+  window it would have protected is the seconds between a container
+  starting and its owner opening it, and there is no default account or
+  password at any point.
+- **`RP_SETUP_TOKEN` locks that window** (or `RP_SETUP_TOKEN_FILE`), for
+  anyone who will have it open somewhere hostile - a public URL with no gate
+  in front, a shared host. When it is set the wizard demands it; when it is
+  not, the server says so in its log rather than letting "open" be a
+  surprise. A token is never generated, so unset always means open.
   The token is compared in constant time, consumed atomically the moment
   the admin account is created (racing setup requests are serialized in a
   transaction), and there is no default token anywhere in the code, image,
@@ -56,8 +62,10 @@
   demoted, disabled, nor deleted, and admins cannot lock themselves out.
 - **Setup wizard helpers** (`/api/setup/test-paths`, `/api/setup/browse`,
   `/api/preflight`) answer only for an admin session or, before an admin
-  exists, a request carrying the bootstrap token in the `x-rp-setup-token`
-  header. They report what a folder is (existence, readability, a capped
+  exists, for whoever the wizard itself answers to - the `x-rp-setup-token`
+  header on a locked instance, and anyone on an unlocked one, which grants
+  nothing that finishing the wizard would not grant anyway. They close the
+  moment an account exists. They report what a folder is (existence, readability, a capped
   shallow count of book files) and what the server has (audio tools, the
   alignment runtime, free space, whether its own volumes are writable). All
   of it is read-only but for one deliberate write: asked about a folder of
@@ -331,11 +339,10 @@ Both are accepted V1 limitations of trusting a folder the operator chose.
 
 - `RP_SESSION_SECRET` supports `_FILE` (Docker secrets). If unset, a random
   secret is generated once and stored with mode 0600 in the data dir.
-- No token is logged except the one-time first-run setup token, which is
-  printed once on an instance that has no accounts and stops working the moment
-  the admin account exists - set `RP_SETUP_TOKEN` (or `RP_SETUP_TOKEN_FILE`) to
-  keep it out of the log entirely. Otherwise tokens are never logged; session cookies never reach client-side
-  JavaScript (`HttpOnly`); the web bundle contains no secrets.
+- No token is ever logged. The first-run setup token is not generated and
+  not printed; when one is configured the log says only that setup is locked,
+  and when none is it says setup is open. Session cookies never reach
+  client-side JavaScript (`HttpOnly`); the web bundle contains no secrets.
 - API error responses never carry internal messages: a global error
   handler logs 5xx details server-side and answers `{ "error": "internal" }`;
   query strings are schema-validated. Progress/history/annotation endpoints

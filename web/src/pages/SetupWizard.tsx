@@ -55,7 +55,7 @@ const ALIGNER_BYTES = 317_341_664;
 
 interface SetupStatus {
   needsSetup: boolean;
-  setupTokenSource: string | null;
+  setupTokenRequired: boolean;
   libraries: {
     ebookDirs: string[];
     audiobookDirs: string[];
@@ -168,7 +168,7 @@ export function SetupWizard({
       .then((s) => {
         setStatus({
           needsSetup: false,
-          setupTokenSource: null,
+          setupTokenRequired: false,
           libraries: {
             ebookDirs: s.paths.ebookDirs,
             audiobookDirs: s.paths.audiobookDirs,
@@ -256,8 +256,19 @@ export function SetupWizard({
     document.querySelector<HTMLElement>('.wizard__body h1')?.focus();
   }, [step, initializing]);
 
-  const verifyToken = async (e: FormEvent) => {
+  const welcomeNext = async (e: FormEvent) => {
     e.preventDefault();
+    // Not knowing yet is not the same as knowing there is no lock. Treating
+    // it as "open" would walk a locked instance straight past the only step
+    // that collects the token, and strand it at Finish with a 403.
+    if (!status) return;
+    // The ordinary case: nothing to prove, so nothing to ask.
+    if (!status.setupTokenRequired) {
+      setError(null);
+      setTokenOk(true);
+      setStep('admin');
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -330,7 +341,7 @@ export function SetupWizard({
           username,
           password,
           displayName: displayName.trim() || undefined,
-          setupToken: token.trim(),
+          setupToken: token.trim() || undefined,
           ebookDirs,
           audiobookDirs: audioDirs,
           ...(alignDirs.length ? { alignmentDirs: alignDirs } : {}),
@@ -388,38 +399,43 @@ export function SetupWizard({
         )}
 
         {step === 'welcome' && (
-          <form className="wizard__body" onSubmit={verifyToken}>
+          <form className="wizard__body" onSubmit={welcomeNext}>
             <h1 tabIndex={-1}>Welcome to your reading room</h1>
             <p className="lede">
               ReadPort reads the ebook and audiobook folders you already have, never changes them,
               and lets you switch between reading and listening at the exact sentence. Everything
               runs on this server: no cloud account, no upload. Setup takes about three minutes.
             </p>
-            <div className="field">
-              <label htmlFor="wz-token">Setup token</label>
-              <input
-                id="wz-token"
-                className="input"
-                autoComplete="off"
-                // iOS capitalises and autocorrects a text field by default,
-                // and the token is case-sensitive - it arrives as "Abc…"
-                // when the log said "abc…", and setup refuses it.
-                autoCapitalize="none"
-                autoCorrect="off"
-                required
-                autoFocus
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                spellCheck={false}
-              />
-              <span className="hint">
-                Printed in the server log on first start
-                {status?.setupTokenSource === 'file' ? ', and saved at data/setup-token' : ''}.
-              </span>
-            </div>
+            {status?.setupTokenRequired && (
+              <div className="field">
+                <label htmlFor="wz-token">Setup token</label>
+                <input
+                  id="wz-token"
+                  className="input"
+                  autoComplete="off"
+                  // iOS capitalises and autocorrects a text field by default,
+                  // and the token is case-sensitive - it arrives as "Abc…"
+                  // when the log said "abc…", and setup refuses it.
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  required
+                  autoFocus
+                  value={token}
+                  onChange={(e) => setToken(e.target.value)}
+                  spellCheck={false}
+                />
+                <span className="hint">
+                  This server was started with RP_SETUP_TOKEN set, so setup asks for it.
+                </span>
+              </div>
+            )}
             <div className="wizard__actions">
-              <button className="btn" type="submit" disabled={busy || !token.trim()}>
-                {busy ? 'Checking…' : 'Continue'}
+              <button
+                className="btn"
+                type="submit"
+                disabled={busy || !status || (status.setupTokenRequired && !token.trim())}
+              >
+                {busy ? 'Checking…' : status?.setupTokenRequired ? 'Continue' : 'Get started'}
               </button>
             </div>
           </form>

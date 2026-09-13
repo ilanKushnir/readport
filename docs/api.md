@@ -41,19 +41,19 @@ Useful reads for an agent: `/api/auth/me`, `/api/library` (supports `kind`,
 
 ## Auth & setup
 
-| Method | Path                    | Notes                                                                                |
-| ------ | ----------------------- | ------------------------------------------------------------------------------------ |
-| GET    | `/api/health`           | public; liveness - `{status, version, time}`                                         |
-| GET    | `/api/setup/status`     | public; `{needsSetup, setupTokenSource, libraries, languages, defaultLanguage}`      |
-| POST   | `/api/setup/verify`     | public until first user exists; rate limited; checks the bootstrap token             |
-| POST   | `/api/setup/test-paths` | admin, or `x-rp-setup-token` header before setup; `{paths, kind?}` folder checks     |
-| GET    | `/api/setup/browse`     | admin, or `x-rp-setup-token` header before setup; folder picker                      |
-| POST   | `/api/setup`            | public until first user exists; creates admin (+ folders, language), starts the scan |
-| POST   | `/api/auth/login`       | rate limited; `403 account-disabled` for disabled accounts                           |
-| POST   | `/api/auth/logout`      |                                                                                      |
-| GET    | `/api/auth/me`          | `{user, via, needsLibraries, librariesEnvPinned}`                                    |
-| PATCH  | `/api/auth/me`          | own display name                                                                     |
-| POST   | `/api/auth/password`    | own password (current + new); revokes other sessions                                 |
+| Method | Path                    | Notes                                                                                     |
+| ------ | ----------------------- | ----------------------------------------------------------------------------------------- |
+| GET    | `/api/health`           | public; liveness - `{status, version, time}`                                              |
+| GET    | `/api/setup/status`     | public; `{needsSetup, setupTokenRequired, libraries, languages, defaultLanguage}`         |
+| POST   | `/api/setup/verify`     | public until first user exists; checks `RP_SETUP_TOKEN` when one is set, else `{ok:true}` |
+| POST   | `/api/setup/test-paths` | admin; before setup, `x-rp-setup-token` if locked, else open; `{paths, kind?}`            |
+| GET    | `/api/setup/browse`     | admin; before setup, `x-rp-setup-token` if locked, else open; folder picker               |
+| POST   | `/api/setup`            | public until first user exists; creates admin (+ folders, language), starts the scan      |
+| POST   | `/api/auth/login`       | rate limited; `403 account-disabled` for disabled accounts                                |
+| POST   | `/api/auth/logout`      |                                                                                           |
+| GET    | `/api/auth/me`          | `{user, via, needsLibraries, librariesEnvPinned}`                                         |
+| PATCH  | `/api/auth/me`          | own display name                                                                          |
+| POST   | `/api/auth/password`    | own password (current + new); revokes other sessions                                      |
 
 `libraries` in the status payload covers all three folder lists - `ebookDirs`,
 `audiobookDirs` and `alignmentDirs` - each with a flag saying whether an
@@ -299,9 +299,9 @@ portable until the mount is fixed.
 
 ## Preflight
 
-| Method | Path             | Notes                                                                           |
-| ------ | ---------------- | ------------------------------------------------------------------------------- |
-| POST   | `/api/preflight` | admin, or `x-rp-setup-token` before setup; "can this container actually align?" |
+| Method | Path             | Notes                                                                                     |
+| ------ | ---------------- | ----------------------------------------------------------------------------------------- |
+| POST   | `/api/preflight` | admin; before setup, `x-rp-setup-token` if locked, else open; "can this container align?" |
 
 Read-only: it probes binaries with `-version`, stats directories and asks the
 catalog what is on disk. Nothing is written, downloaded or enqueued. It is a
