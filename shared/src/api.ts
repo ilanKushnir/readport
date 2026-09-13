@@ -155,11 +155,15 @@ export const ROLE_LABELS: Record<Role, { label: string; blurb: string }> = {
 
 const usernameSchema = z
   .string()
-  .min(3)
-  .max(32)
+  .min(3, 'At least 3 characters')
+  .max(32, 'At most 32 characters')
   .regex(/^[a-zA-Z0-9._-]+$/, 'Letters, digits, dots, dashes and underscores only');
 const passwordSchema = z.string().min(10, 'At least 10 characters').max(1024);
-const displayNameSchema = z.string().trim().min(1).max(80);
+const displayNameSchema = z
+  .string()
+  .trim()
+  .min(1, 'Enter a name, or leave it blank')
+  .max(80, 'At most 80 characters');
 
 export const userDtoSchema = z.object({
   id: z.string(),

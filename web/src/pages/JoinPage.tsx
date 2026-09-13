@@ -15,7 +15,7 @@ interface InvitePeek {
 /** Accept an invitation link: /join/<token>. The only self-service sign-up path. */
 export function JoinPage({ token }: { token: string }) {
   const { setUser } = useSession();
-  const [peek, setPeek] = useState<InvitePeek | null | 'invalid'>(null);
+  const [peek, setPeek] = useState<InvitePeek | null | 'invalid' | 'unreachable'>(null);
   const [displayName, setDisplayName] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -30,7 +30,16 @@ export function JoinPage({ token }: { token: string }) {
         setDisplayName(p.displayName ?? '');
         setUsername(p.username ?? '');
       })
-      .catch(() => setPeek('invalid'));
+      .catch((err) =>
+        // A server that did not answer says nothing about the invitation, and
+        // telling someone their link has expired when it has not sends them
+        // back to ask for another one that will look just as broken.
+        setPeek(
+          err instanceof ApiError && err.status >= 400 && err.status < 500
+            ? 'invalid'
+            : 'unreachable',
+        ),
+      );
   }, [token]);
 
   const submit = async (e: FormEvent) => {
@@ -73,6 +82,17 @@ export function JoinPage({ token }: { token: string }) {
         </span>
         <p className="auth-card__tagline">Read and listen in tandem</p>
         {peek === null && <p className="lede">Checking your invitation…</p>}
+        {peek === 'unreachable' && (
+          <>
+            <h1>Could not check this invitation</h1>
+            <p className="lede">
+              The server did not answer. Your link is probably fine — try again in a moment.
+            </p>
+            <button className="btn" type="button" onClick={() => window.location.reload()}>
+              Try again
+            </button>
+          </>
+        )}
         {peek === 'invalid' && (
           <>
             <h1>This link has expired</h1>
@@ -81,7 +101,7 @@ export function JoinPage({ token }: { token: string }) {
             </p>
           </>
         )}
-        {peek && peek !== 'invalid' && (
+        {peek && peek !== 'invalid' && peek !== 'unreachable' && (
           <>
             <h1>You're invited</h1>
             <p className="lede">
