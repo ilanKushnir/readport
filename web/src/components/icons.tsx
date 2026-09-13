@@ -312,6 +312,21 @@ export const IconList = (p: P) => (
     <path d="M4.4 6.5h.01M4.4 12h.01M4.4 17.5h.01" strokeWidth="2.4" />
   </I>
 );
+/**
+ * A list with a plus: "put this on that list".
+ *
+ * The plain list icon reads as "go and look at a list"; on the add-to sheet
+ * every row is an action, not a destination. The bottom rule is shortened to
+ * make room for the plus rather than the plus being laid over it, so nothing
+ * crosses at 17px.
+ */
+export const IconListPlus = (p: P) => (
+  <I {...p}>
+    <path d="M9 6.5h11M9 12h7.5M9 17.5h4.5" />
+    <path d="M4.4 6.5h.01M4.4 12h.01M4.4 17.5h.01" strokeWidth="2.4" />
+    <path d="M18 14.5v6M15 17.5h6" />
+  </I>
+);
 export const IconPlus = (p: P) => (
   <I {...p}>
     <path d="M12 5.5v13M5.5 12h13" />

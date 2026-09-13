@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LANGUAGES, languageLabel } from '@readport/shared';
+import { LANGUAGES, languageLabel, type Settings } from '@readport/shared';
 import { api, actionFailed } from '../api/client';
 import { type BookSummary, type PairDto, type ProcessingSummary } from '../lib/types';
 import { Cover, EmptyState, Sheet, useToast } from '../components/ui';
@@ -21,6 +21,15 @@ import { MANUAL_LINK_NOTE, UNALIGNED_PAIR_NOTE } from '../lib/pairLabel';
 
 type PairAction = 'confirm' | 'reject' | 'unlink' | 'align';
 
+/**
+ * Two outcomes, not two settings — the same pair of choices Settings offers,
+ * worded for the moment you are about to start a queue.
+ */
+const ACCURACY: [Settings['alignPrecision'], string, string][] = [
+  ['standard', 'Standard', 'Minutes per book · lands on the paragraph'],
+  ['exact', 'Sentence-perfect', 'Hours per book · lands on the sentence'],
+];
+
 export function PairsPage() {
   const { user } = useSession();
   const [pairs, setPairs] = useState<PairDto[] | null>(null);
@@ -31,6 +40,15 @@ export function PairsPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [linkOpen, setLinkOpen] = useState(false);
   const [howOpen, setHowOpen] = useState(false);
+  /**
+   * The two alignment choices, editable here rather than only in Settings.
+   * This is the page where someone is looking at the queue and deciding how
+   * much of it to run and how well — sending them elsewhere to answer that,
+   * then back again, is the wrong shape for the decision.
+   */
+  const [settings, setSettings] = useState<Pick<Settings, 'autoAlign' | 'alignPrecision'> | null>(
+    null,
+  );
   const toast = useToast();
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isAdmin = user?.role === 'admin' || user?.role === 'curator';
@@ -44,7 +62,24 @@ export function PairsPage() {
     } catch {
       setError('Could not load pairing data.');
     }
+    try {
+      const s = await api<{ settings: Settings }>('/api/settings');
+      setSettings({ autoAlign: s.settings.autoAlign, alignPrecision: s.settings.alignPrecision });
+    } catch {
+      /* the controls simply do not appear */
+    }
   }, []);
+
+  const saveSetting = async (patch: Partial<Settings>) => {
+    const previous = settings;
+    setSettings((s) => (s ? { ...s, ...patch } : s)); // optimistic: a toggle must feel instant
+    try {
+      await api('/api/settings', { method: 'PUT', body: patch });
+    } catch (err) {
+      setSettings(previous);
+      toast.show(actionFailed(err, 'Could not save that.'));
+    }
+  };
   useEffect(() => {
     void load();
   }, [load]);
@@ -232,6 +267,46 @@ export function PairsPage() {
                 : `Start all ${startable.length}`}
             </button>
           </div>
+          {settings && (
+            <div className="worksum__choices">
+              <label className="rs-toggle rs-toggle--tight">
+                <span>
+                  Align every new match
+                  <span className="hint" style={{ display: 'block' }}>
+                    {settings.autoAlign
+                      ? 'New matches queue themselves. Turn off to start books yourself.'
+                      : 'Nothing runs on its own — start books from here.'}
+                  </span>
+                </span>
+                <input
+                  type="checkbox"
+                  role="switch"
+                  checked={settings.autoAlign}
+                  onChange={(e) => void saveSetting({ autoAlign: e.target.checked })}
+                />
+              </label>
+              <div
+                className="seg"
+                role="radiogroup"
+                aria-label="How closely alignment listens"
+                title="How closely alignment listens to the narration"
+              >
+                {ACCURACY.map(([value, label, blurb]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={settings.alignPrecision === value}
+                    className={`seg__opt ${settings.alignPrecision === value ? 'is-on' : ''}`}
+                    onClick={() => void saveSetting({ alignPrecision: value })}
+                  >
+                    <strong>{label}</strong>
+                    <span>{blurb}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
       )}
       {linkOpen && (

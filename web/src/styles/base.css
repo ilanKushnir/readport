@@ -762,13 +762,90 @@ select.input {
   position: absolute;
   top: var(--sp-2);
   inset-inline-start: var(--sp-2);
+  /* A title owned in both formats wears both badges, and a synced one wears a
+     third. Leave room for the + button in the opposite corner and let them
+     wrap rather than run off a phone-width cover. */
+  inset-inline-end: 44px;
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
 }
 .book-card__coverwrap .book-card__fallback {
   /* The badge row overlays the cover's top edge; start placeholder titles
      below it (badge top offset + badge height + breathing room). */
   padding-block-start: calc(var(--sp-2) + 32px);
+}
+/* ---------------------------------------------- downloads in progress */
+.dls {
+  margin-block: var(--sp-4) var(--sp-5);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--rp-border);
+  border-radius: 14px;
+  background: var(--rp-surface-raised);
+}
+.dls__h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 var(--sp-2);
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--rp-text-soft);
+}
+.dls__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--sp-2);
+}
+.dls__row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 44px;
+}
+.dls__meta {
+  flex: 1;
+  min-width: 0;
+}
+.dls__title {
+  display: block;
+  color: var(--rp-text);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dls__sub {
+  display: block;
+  margin-block: 1px 5px;
+  font-size: 12.5px;
+  color: var(--rp-text-soft);
+  font-variant-numeric: tabular-nums;
+}
+.dls__row.is-bad .dls__sub {
+  color: var(--rp-danger);
+}
+.dls__bar {
+  height: 4px;
+}
+.dls__act {
+  flex: none;
+  min-height: 44px;
+}
+
+/* A hairline between the two formats inside one badge — quieter than a
+   bullet, and it does not get read out as a word. */
+.badge__sep {
+  width: 1px;
+  align-self: stretch;
+  margin-inline: 1px;
+  background: currentColor;
+  opacity: 0.35;
 }
 .book-card__progress {
   position: absolute;
@@ -1376,7 +1453,13 @@ select.input {
 /* -------------------------------------------------------------- auth polish */
 .auth-page {
   position: relative;
+  /* `clip`, not `hidden`. The glow below bleeds 10% past both edges, and
+     `hidden` still makes this a scroll container — so focusing the step
+     heading (h1 tabIndex={-1}) scrolled the card sideways by that bleed and
+     clipped it. `clip` clips identically but cannot be scrolled at all.
+     `hidden` first, as a fallback for browsers without `clip`. */
   overflow: hidden;
+  overflow: clip;
 }
 .auth-page__glow {
   position: absolute;
@@ -2317,8 +2400,13 @@ select.input {
 }
 .picker__row {
   display: flex;
+  align-items: center;
   gap: 8px;
   width: 100%;
+  /* 44px is the smallest target a fingertip hits reliably. These rows sit
+     directly on top of one another, so anything less and a slightly-low tap
+     opens the folder below the one you meant. */
+  min-height: 44px;
   padding: 8px 14px;
   border: 0;
   background: none;
@@ -2609,6 +2697,76 @@ select.input {
 .worksum__body {
   flex: 1 1 320px;
   min-width: 0;
+}
+
+/* The two alignment choices, on the same card as the queue they govern.
+   Full width below the summary and the Start button, so the row reads
+   "here is the work — here is how it runs", not as two competing actions. */
+.worksum__choices {
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3) var(--sp-5);
+  margin-block-start: var(--sp-3);
+  padding-block-start: var(--sp-3);
+  border-block-start: 1px solid color-mix(in srgb, var(--rp-accent) 25%, var(--rp-border));
+}
+.worksum__choices .rs-toggle--tight {
+  flex: 1 1 260px;
+  gap: var(--sp-3);
+  margin-block-start: 0;
+}
+.worksum__choices .rs-toggle--tight .hint {
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+
+/* A two-up segmented choice. Small enough to sit beside a toggle, and it
+   stacks to full width before either half gets too narrow to read. */
+.seg {
+  display: flex;
+  flex: 1 1 300px;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--rp-text) 6%, transparent);
+}
+.seg__opt {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 44px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--rp-text-soft);
+  text-align: start;
+  cursor: pointer;
+  transition:
+    background-color var(--rp-duration-quick) var(--rp-ease),
+    color var(--rp-duration-quick) var(--rp-ease);
+}
+.seg__opt strong {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.seg__opt span {
+  font-size: 11.5px;
+  line-height: 1.3;
+  opacity: 0.85;
+}
+.seg__opt.is-on {
+  background: var(--rp-surface-raised);
+  color: var(--rp-text);
+  box-shadow: var(--rp-shadow-1);
+}
+.seg__opt:hover:not(.is-on) {
+  color: var(--rp-text);
 }
 .worksum__title {
   margin: 0;

@@ -24,6 +24,7 @@ import { formatBytes, formatDuration, formatPct, ordinal } from '../lib/format';
 import {
   cachedSwitch,
   cancelDownload,
+  downloadPercent,
   getDownloadState,
   removeDownload,
   startDownload,
@@ -647,7 +648,7 @@ function OfflineButton({ dl, onClick }: { dl: DownloadState | null; onClick: () 
   const downloading = dl?.status === 'downloading';
   const done = dl?.status === 'done';
   const failed = dl?.status === 'error';
-  const pctDone = downloading && dl.totalUrls ? Math.round((dl.doneUrls / dl.totalUrls) * 100) : 0;
+  const pctDone = downloading ? downloadPercent(dl) : 0;
   return (
     <button
       className={`btn btn--secondary offline-btn ${done ? 'is-done' : ''} ${downloading ? 'is-busy' : ''}`}
@@ -673,7 +674,22 @@ function OfflineButton({ dl, onClick }: { dl: DownloadState | null; onClick: () 
       ) : (
         <IconDownload size={18} />
       )}
-      {downloading ? 'Downloading' : done ? 'Downloaded' : failed ? 'Retry' : 'Download'}
+      {downloading ? (
+        <span className="offline-btn__label">
+          Downloading
+          {dl.estimatedBytes > 0 && (
+            <span className="offline-btn__bytes">
+              {formatBytes(dl.storedBytes)} of {formatBytes(dl.estimatedBytes)}
+            </span>
+          )}
+        </span>
+      ) : done ? (
+        'Downloaded'
+      ) : failed ? (
+        'Retry'
+      ) : (
+        'Download'
+      )}
     </button>
   );
 }

@@ -56,6 +56,37 @@ export interface DownloadState {
   urls: string[];
 }
 
+/**
+ * How far along a download is, 0–1.
+ *
+ * Bytes, not files. A paired audiobook is a handful of very large tracks, so
+ * counting finished URLs leaves the bar on 0% for minutes and then jumps it to
+ * a half — which reads as nothing happening. `storedBytes` is updated every
+ * chunk, so it actually moves. The URL count is the fallback for the moment
+ * before the manifest's size is known.
+ */
+export function downloadFraction(
+  dl: Pick<DownloadState, 'storedBytes' | 'estimatedBytes' | 'doneUrls' | 'totalUrls'>,
+): number {
+  if (dl.estimatedBytes > 0) return Math.min(1, dl.storedBytes / dl.estimatedBytes);
+  if (dl.totalUrls > 0) return Math.min(1, dl.doneUrls / dl.totalUrls);
+  return 0;
+}
+
+/** The same thing as a whole percent, which is what every caller displays. */
+export function downloadPercent(
+  dl: Pick<DownloadState, 'storedBytes' | 'estimatedBytes' | 'doneUrls' | 'totalUrls'>,
+): number {
+  return Math.round(downloadFraction(dl) * 100);
+}
+
+/** Downloads this device is working on right now, newest first. */
+export async function listActiveDownloads(): Promise<DownloadState[]> {
+  return (await listDownloads())
+    .filter((d) => d.status === 'downloading' || d.status === 'error')
+    .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
+}
+
 export async function getDownloadState(bookId: string): Promise<DownloadState | null> {
   return (await idbGet<DownloadState>(STORES.downloads, bookId)) ?? null;
 }

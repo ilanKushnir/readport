@@ -1120,7 +1120,6 @@ export function PlayerPage() {
                 </span>
                 <button
                   className="icon-btn bm-row__delete"
-                  style={{ width: 36, height: 36 }}
                   aria-label="Delete bookmark"
                   onClick={(e) => {
                     e.stopPropagation();
