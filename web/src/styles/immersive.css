@@ -927,6 +927,10 @@
   position: absolute;
   z-index: 8;
   display: flex;
+  flex-wrap: wrap;
+  /* It is positioned from the middle of the selection, so it has to be able
+     to fit whatever is left of the screen rather than run off the edge. */
+  max-width: calc(100vw - 16px);
   gap: 2px;
   padding: 4px;
   background: var(--rp-text);
@@ -934,7 +938,11 @@
   border-radius: var(--radius-control);
   box-shadow: var(--rp-shadow-2);
 }
-.selection-menu button {
+/* `:not(.swatch)` matters. This reset is (0,1,1) and `.swatch--amber` is
+   (0,1,0), so a bare `.selection-menu button` rule won on specificity and
+   painted every colour swatch transparent - the row of colours was there,
+   sized and clickable, and completely invisible. */
+.selection-menu button:not(.swatch) {
   border: 0;
   background: transparent;
   color: inherit;
@@ -944,7 +952,7 @@
   font-weight: 600;
   cursor: pointer;
 }
-.selection-menu button:hover {
+.selection-menu button:not(.swatch):hover {
   background: color-mix(in srgb, currentColor 18%, transparent);
 }
 
@@ -1625,7 +1633,7 @@
   .selection-menu {
     gap: 6px;
   }
-  .selection-menu button {
+  .selection-menu button:not(.swatch) {
     min-height: 44px;
     padding-inline: 14px;
   }

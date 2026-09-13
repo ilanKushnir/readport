@@ -48,7 +48,7 @@ import {
   type HighlightColor,
 } from './marks';
 import { NarrationBar, useNarration } from './Narration';
-import { isConfident, paceOffset, shouldFollow } from './readalong';
+import { isConfident, nearestCue, paceOffset, shouldFollow } from './readalong';
 import { liveCheckpointOffset } from './liveOffset';
 import {
   computePageLayout,
@@ -132,6 +132,10 @@ export function ReaderPage() {
   const [autoScroll, setAutoScroll] = useState(false);
   /** Where the scroller should be so the marker sits on the anchor line. */
   const autoScrollTargetRef = useRef<number | null>(null);
+  /** Pixels per millisecond the narration is working down the page. */
+  const autoScrollSpeedRef = useRef(0);
+  /** When the target was last computed, for measuring that speed. */
+  const autoScrollAtRef = useRef<number | null>(null);
   /** Has the voice been off-screen since the reader last took over? */
   const cueLeftSinceTakeoverRef = useRef(true);
   /**
@@ -1151,11 +1155,25 @@ export function ReaderPage() {
       const scroller = scrollerRef.current;
       setPaceTop(scroller ? scroller.clientHeight * AUTO_SCROLL_ANCHOR : null);
       if (scroller) {
-        autoScrollTargetRef.current =
+        const next =
           scroller.scrollTop +
           (r.top - b.top) +
           r.height / 2 -
           scroller.clientHeight * AUTO_SCROLL_ANCHOR;
+        // How fast the narration is moving down the page, from the distance
+        // between two targets. Smoothed, because the estimate jitters and a
+        // jittering speed is exactly the stutter this replaces.
+        const prev = autoScrollTargetRef.current;
+        const at = performance.now();
+        if (prev !== null && autoScrollAtRef.current !== null) {
+          const dt = at - autoScrollAtRef.current;
+          if (dt > 80 && dt < 4000) {
+            const observed = Math.max(0, (next - prev) / dt);
+            autoScrollSpeedRef.current = autoScrollSpeedRef.current * 0.7 + observed * 0.3;
+          }
+        }
+        autoScrollAtRef.current = at;
+        autoScrollTargetRef.current = next;
       }
       return;
     }
@@ -1198,6 +1216,20 @@ export function ReaderPage() {
   }, [readAlong, prefs.mode, updatePace, html]);
 
   /**
+   * A deliberate seek means "take me with you".
+   *
+   * Rewinding fifteen seconds is a request to hear something again, and a
+   * reader who had scrolled away earlier still expects the page to come
+   * along. Without this the page stayed where it was and the marker had
+   * nothing to point at, which read as the alignment having broken.
+   */
+  useEffect(() => {
+    if (!readAlong || narration.seekNonce === 0) return;
+    setFollowing(true);
+    cueLeftSinceTakeoverRef.current = true;
+  }, [narration.seekNonce, readAlong]);
+
+  /**
    * Auto-scroll: the marker holds still and the text moves under it.
    *
    * The first version did the opposite - the marker drifted down and the page
@@ -1218,17 +1250,34 @@ export function ReaderPage() {
     if (prefs.mode === 'paginated') return;
     const scroller = scrollerRef.current;
     if (!scroller) return;
+    autoScrollSpeedRef.current = 0;
+    autoScrollAtRef.current = null;
     let raf = 0;
-    const step = () => {
+    let last = performance.now();
+    const step = (now: number) => {
       raf = requestAnimationFrame(step);
+      const dt = Math.min(64, now - last); // a backgrounded tab must not lurch
+      last = now;
       const want = autoScrollTargetRef.current;
       if (want === null) return;
+
+      // Move at a steady speed, not by easing to each new target.
+      //
+      // Easing decelerates as it arrives, so with a target that only updates
+      // a few times a second the page rushed, stopped, rushed, stopped - one
+      // lurch per line. `autoScrollSpeedRef` is how fast the narration is
+      // actually working through the page, measured between targets, so the
+      // text drifts up at the pace it is being read.
+      const speed = autoScrollSpeedRef.current; // px per ms
       const drift = want - scroller.scrollTop;
-      // Sub-pixel drift is the estimate breathing, not the page needing to
-      // move; chasing it would never settle.
-      if (Math.abs(drift) < 0.5) return;
-      // Ease toward it. Clamped so a chapter jump glides rather than lurches.
-      scroller.scrollTop += Math.max(-14, Math.min(14, drift * 0.08));
+      // A gentle correction on top, so the two never separate: at most a
+      // third of the remaining distance per second.
+      const correction = drift * Math.min(1, dt / 3000);
+      const move = speed * dt + correction;
+      if (Math.abs(move) < 0.01) return;
+      // Never faster than a comfortable read, and never backwards - the page
+      // going up under you is disorienting; the correction handles overshoot.
+      scroller.scrollTop += Math.max(0, Math.min(move, (dt / 1000) * 220));
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
@@ -1390,6 +1439,7 @@ export function ReaderPage() {
         y: Math.max(70, rect.top - 48),
       });
     };
+    let settle: ReturnType<typeof setTimeout> | null = null;
     const onSelectionChange = () => {
       // The note sheet autofocuses its textarea, which collapses the DOM
       // selection - and dropping it here would attach the note to a point
@@ -1397,11 +1447,23 @@ export function ReaderPage() {
       // with it. The sheet owns the selection until it closes.
       if (sheetRef.current === 'note') return;
       const sel = document.getSelection();
-      if (!sel || sel.isCollapsed) setSelection(null);
+      if (!sel || sel.isCollapsed) {
+        if (settle) clearTimeout(settle);
+        setSelection(null);
+        return;
+      }
+      // Showing the menu on `pointerup` alone is why it took two tries on a
+      // phone: a long-press selection is finalised by the OS AFTER the finger
+      // lifts, so the first pointerup saw nothing to offer. This fires as the
+      // selection is made and again on every handle drag, so it waits for the
+      // selection to stop moving before it offers anything.
+      if (settle) clearTimeout(settle);
+      settle = setTimeout(onUp, 180);
     };
     document.addEventListener('pointerup', onUp);
     document.addEventListener('selectionchange', onSelectionChange);
     return () => {
+      if (settle) clearTimeout(settle);
       document.removeEventListener('pointerup', onUp);
       document.removeEventListener('selectionchange', onSelectionChange);
     };
@@ -2165,7 +2227,11 @@ export function ReaderPage() {
             following={following}
             onResume={() => {
               setFollowing(true);
-              const cue = narration.cue;
+              cueLeftSinceTakeoverRef.current = true;
+              // The nearest cue, not only the current one. In a gap - which
+              // is precisely when a reader presses this - there IS no current
+              // cue, so the button used to do nothing at all.
+              const cue = narration.cue ?? nearestCue(narration.cues, narration.bookMs);
               const map = textMapRef.current;
               if (!cue || !map) return;
               if (prefs.mode === 'paginated') goToPage(pageForOffset(cue.charStart));
