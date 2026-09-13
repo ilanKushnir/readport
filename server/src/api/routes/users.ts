@@ -315,7 +315,7 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
 
   // Public: what an invite link offers (no secrets, no user enumeration).
   app.get('/api/invites/:token', { config: { public: true } }, async (req, reply) => {
-    if (!inviteThrottle.allow(`inv:${req.ip}`))
+    if (!inviteThrottle.allow(`inv:${req.clientIp}`))
       return reply.code(429).send({ error: 'rate-limited' });
     const { token } = req.params as { token: string };
     const inv = validInvite(token);
@@ -336,7 +336,7 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
   });
 
   app.post('/api/invites/:token/accept', { config: { public: true } }, async (req, reply) => {
-    if (!inviteThrottle.allow(`inv:${req.ip}`))
+    if (!inviteThrottle.allow(`inv:${req.clientIp}`))
       return reply.code(429).send({ error: 'rate-limited' });
     const { token } = req.params as { token: string };
     const parsed = acceptInviteSchema.safeParse(req.body);

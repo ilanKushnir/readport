@@ -4,6 +4,31 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.11.1 - 2026-09-13
+
+### Fixed
+
+- **Behind a tunnel, every client counted as one address**, which turned the
+  sign-in limits inside out: instead of protecting the owner they became a
+  lever against them, since ten wrong passwords against a guessed username
+  could keep the real owner locked out indefinitely, from anywhere, for as
+  long as the attacker cared to keep going. `X-Forwarded-For` is only walked
+  back through the hops named in `RP_TRUST_PROXY`, and a tunnel daemon sits
+  one hop further out than the proxy - so the walk stopped there and the
+  whole internet shared a bucket.
+- `RP_CLIENT_IP_HEADER` (with `RP_CLIENT_IP_SOURCES`) names the header that
+  carries the real address - `cf-connecting-ip` behind Cloudflare. It is read
+  only when the TCP peer is on the list, checked on the socket rather than on
+  anything forwarded, and it is used **only** as a rate-limit key: never an
+  identity, never an authorization input, and it does not feed
+  `RP_TRUST_PROXY`. Misconfigured, it falls back to the socket address and
+  logs; it can never let anybody in.
+- **The warning for this fired only in the obvious case.** It checked whether
+  proxy trust was unset at all, so the subtler configuration - naming the
+  proxy but not the tunnel in front of it, which looks correct - stayed
+  silent. It now notices what it is actually counting, and says so when that
+  is a private address.
+
 ## 0.11.0 - 2026-09-13
 
 ### Changed

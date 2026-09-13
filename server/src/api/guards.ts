@@ -13,6 +13,11 @@ declare module 'fastify' {
     user: SessionUser | null;
     /** How the request was authenticated (undefined when anonymous). */
     authVia?: 'session' | 'proxy' | 'apikey';
+    /**
+     * Who to count rate limits against - see api/clientIp.ts. Only ever a
+     * throttle key: never an identity, never an authorization input.
+     */
+    clientIp: string;
   }
 }
 

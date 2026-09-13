@@ -34,6 +34,20 @@
   of a known username. Forwarded headers (`X-Forwarded-For`) are ignored
   unless the operator explicitly trusts a proxy via `RP_TRUST_PROXY`, so a
   direct attacker cannot rotate spoofed IPs past the limit.
+- **Behind a tunnel, name every hop or the limits invert.** `X-Forwarded-For`
+  is only walked back through the addresses in `RP_TRUST_PROXY`; a hop
+  further out than that - a Cloudflare tunnel daemon, say - is where the walk
+  stops, and then every request from the internet counts as one address. That
+  is not a small inaccuracy: one bucket for the whole internet means a
+  stranger can spend the owner's login attempts and keep them locked out.
+  Either list all the hops, or set `RP_CLIENT_IP_HEADER=cf-connecting-ip`
+  together with `RP_CLIENT_IP_SOURCES` naming the peers allowed to set it.
+  That header is read **only** when the TCP peer is on the list, and it is
+  used **only** as a rate-limit key - never as an identity, never as an
+  authorization input, and it does not feed `RP_TRUST_PROXY`. With no
+  sources it is ignored and a warning is logged (fail closed). ReadPort also
+  warns, once, if it notices `X-Forwarded-For` arriving while the address it
+  is counting is itself a private one.
 - Sessions expire (default 30 days) and are deleted on logout.
 - **Route guarding is keyed on the matched route, not the raw URL.** The
   router matches the percent-decoded path, so a guard that inspected
