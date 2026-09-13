@@ -44,6 +44,10 @@ export interface NarrationApi {
   ready: boolean;
   /** Nothing in this chapter is timed — read-along has nothing to show. */
   emptyChapter: boolean;
+  /** The timings request failed, as opposed to this chapter having none. */
+  timingsFailed: boolean;
+  /** Walk forward to the next chapter, used to leave an untimed stretch. */
+  skipUntimed: () => void;
   playing: boolean;
   /** The sentence being spoken, when there is one to point at. */
   cue: Cue | null;
@@ -103,6 +107,8 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeedState] = useState(() => speedFor(loadPlayback(), audioBookId ?? ''));
   const [error, setError] = useState<string | null>(null);
+  /** The timings request failed, as opposed to returning none. */
+  const [segmentsFailed, setSegmentsFailed] = useState(false);
   const [backSeconds] = useState(() => loadPlayback().skipBack);
 
   /** Applied once the target track reports a duration. */
@@ -112,6 +118,7 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
   const lastHeartbeatRef = useRef(0);
   const startedRef = useRef(false);
 
+  const totalMs = useMemo(() => tracks.reduce((a, t) => a + t.durationMs, 0), [tracks]);
   const cues = useMemo(() => buildCues(sentences, segments ?? []), [sentences, segments]);
   const lookup = useMemo(() => cueAt(cues, bookMs), [cues, bookMs]);
 
@@ -124,7 +131,9 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
     let alive = true;
     void api<{ tracks: TrackInfo[] }>(`/api/books/${audioBookId}`)
       .then((d) => {
-        if (alive) setTracks(d.tracks ?? []);
+        if (!alive) return;
+        setTracks(d.tracks ?? []);
+        setError(null);
       })
       .catch(() => {
         if (alive) setError('The audiobook could not be loaded.');
@@ -140,14 +149,21 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
     if (!enabled || !pairId || spineIdx < 0) return;
     let alive = true;
     setSegments(null);
+    setSegmentsFailed(false);
     void api<{ segments: AlignedSegment[] }>(`/api/pairs/${pairId}/segments/${spineIdx}`)
       .then((d) => {
-        if (alive) setSegments(d.segments ?? []);
+        if (!alive) return;
+        setSegments(d.segments ?? []);
+        setError(null);
       })
       .catch(() => {
-        // A chapter with no stored alignment is a normal answer, not a fault:
-        // front matter and end matter are often unnarrated.
-        if (alive) setSegments([]);
+        if (!alive) return;
+        // A chapter with no stored alignment is a normal answer — front and
+        // end matter are often unnarrated — but a request that never arrived
+        // is not, and telling the reader "nothing is timed here" when the
+        // truth is "we could not ask" sends them looking for the wrong fault.
+        setSegments([]);
+        setSegmentsFailed(true);
       });
     return () => {
       alive = false;
@@ -180,6 +196,25 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
     [tracks, trackIdx, applyPendingSeek],
   );
 
+  /**
+   * Where the narration is, as the audiobook's own locator.
+   *
+   * Read-along advances the audiobook as surely as the player does, so it
+   * writes the audiobook's progress too — otherwise an hour of reading along
+   * leaves the player still at the start. `pct` is real rather than zero
+   * because the library's Continue rail and the finished check both read it.
+   */
+  const audioLocatorAt = useCallback(
+    (absMs: number) => ({
+      medium: 'audio' as const,
+      trackIdx: locateInTracks(tracks, absMs).trackIdx,
+      positionMs: locateInTracks(tracks, absMs).positionMs,
+      bookMs: absMs,
+      pct: totalMs > 0 ? Math.max(0, Math.min(1, absMs / totalMs)) : 0,
+    }),
+    [tracks, totalMs],
+  );
+
   /* ------------------------------------------------ starting and stopping */
 
   // On switch-on, put the needle where the reader is looking. Only once: after
@@ -194,8 +229,13 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
     const cue = cueForOffset(cues, startOffset());
     if (!cue) return;
     const lead = leadInFor(segments?.find((s) => s.sentenceId === cue.id)?.uncertaintyMs);
-    seekTo(Math.max(0, cue.startMs - lead), true);
-  }, [enabled, cues, tracks, segments, startOffset, seekTo]);
+    const at = Math.max(0, cue.startMs - lead);
+    // An explicit intent, not a heartbeat: it moves the progress claim to this
+    // session, without which every heartbeat below is discarded as coming from
+    // a session that lost the claim to another device.
+    if (audioBookId) void recordCheckpoint(audioBookId, 'seek', audioLocatorAt(at));
+    seekTo(at, true);
+  }, [enabled, cues, tracks, segments, startOffset, seekTo, audioBookId, audioLocatorAt]);
 
   // Stopping means stopping. An element left playing behind a closed bar is
   // the kind of bug people report as "my phone won't shut up".
@@ -210,6 +250,16 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
 
   const leaveRef = useRef(onLeaveChapter);
   leaveRef.current = onLeaveChapter;
+  /**
+   * The direction the last automatic chapter move went.
+   *
+   * Without it the walk ping-pongs: stepping forward into a chapter whose
+   * timings all sit earlier than the playhead reads as 'before', which steps
+   * straight back, which reads as 'after', for as long as the audio plays.
+   * A walk may continue in its own direction across any number of untimed
+   * chapters, but it may not immediately reverse.
+   */
+  const lastWalkRef = useRef<'next' | 'prev' | null>(null);
   useEffect(() => {
     if (!enabled || !playing || !following || segments === null) return;
     // A chapter with no timings at all — front matter, or one the aligner
@@ -217,13 +267,27 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
     // on, the page never moves, and nothing says why. Walking forward is both
     // the honest guess and self-terminating at the last chapter.
     if (cues.length === 0) {
-      leaveRef.current('next');
+      if (lastWalkRef.current !== 'prev') {
+        lastWalkRef.current = 'next';
+        leaveRef.current('next');
+      }
+      return;
+    }
+    // Landed somewhere the narration actually is: the walk is over.
+    if (lookup.state === 'on' || lookup.state === 'hold') {
+      lastWalkRef.current = null;
       return;
     }
     // Only while the narration still has the wheel. A reader who has gone off
     // to a different chapter must not be dragged back to this one.
-    if (lookup.state === 'after') leaveRef.current('next');
-    else if (lookup.state === 'before') leaveRef.current('prev');
+    const dir = lookup.state === 'after' ? 'next' : lookup.state === 'before' ? 'prev' : null;
+    if (!dir) return;
+    const reverses =
+      (dir === 'next' && lastWalkRef.current === 'prev') ||
+      (dir === 'prev' && lastWalkRef.current === 'next');
+    if (reverses) return;
+    lastWalkRef.current = dir;
+    leaveRef.current(dir);
   }, [enabled, playing, following, lookup.state, segments, cues.length]);
 
   /* --------------------------------------------------------- audio events */
@@ -238,13 +302,7 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
       lastHeartbeatRef.current = now;
       // The audiobook's own position, so opening the player later resumes
       // where the reading got to rather than where listening last stopped.
-      void recordCheckpoint(audioBookId, 'heartbeat', {
-        medium: 'audio',
-        trackIdx,
-        positionMs: el.currentTime * 1000,
-        bookMs: abs,
-        pct: 0,
-      });
+      void recordCheckpoint(audioBookId, 'heartbeat', audioLocatorAt(abs));
     }
   };
 
@@ -321,9 +379,11 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
       const cue = cueForOffset(cues, charOffset);
       if (!cue) return;
       const lead = leadInFor(segments?.find((s) => s.sentenceId === cue.id)?.uncertaintyMs);
-      seekTo(Math.max(0, cue.startMs - lead), true);
+      const at = Math.max(0, cue.startMs - lead);
+      if (audioBookId) void recordCheckpoint(audioBookId, 'seek', audioLocatorAt(at));
+      seekTo(at, true);
     },
-    [cues, segments, seekTo],
+    [cues, segments, seekTo, audioBookId, audioLocatorAt],
   );
 
   const src =
@@ -348,6 +408,11 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
   return {
     ready: tracks.length > 0 && segments !== null,
     emptyChapter: segments !== null && cues.length === 0,
+    timingsFailed: segmentsFailed,
+    skipUntimed: () => {
+      lastWalkRef.current = 'next';
+      leaveRef.current('next');
+    },
     playing,
     cue: lookup.cue,
     state: lookup.state,
@@ -388,22 +453,33 @@ export function NarrationBar({
     ? n.error
     : !n.ready
       ? 'Finding the narration…'
-      : n.emptyChapter
-        ? 'No narration timed for this chapter'
-        : n.state === 'gap'
-          ? 'The narration is ahead of the timed text'
-          : formatDuration(n.bookMs);
+      : n.timingsFailed
+        ? 'Could not load this chapter’s timings'
+        : n.emptyChapter
+          ? 'Nothing timed in this chapter'
+          : n.state === 'gap'
+            ? 'No timed text here'
+            : formatDuration(n.bookMs);
 
   return (
     <div className="readalong" role="group" aria-label="Read along">
       <button
         className="readalong__play"
         onClick={n.toggle}
-        disabled={!n.ready || n.emptyChapter}
+        disabled={!n.ready || (n.emptyChapter && !n.playing)}
         aria-label={n.playing ? 'Pause narration' : 'Play narration'}
       >
         {n.playing ? <IconPause size={20} /> : <IconPlay size={20} />}
       </button>
+
+      {/* Front matter and unnarrated chapters are ordinary, and a disabled
+          play button with no way on is a dead end. This is the way on. */}
+      {n.emptyChapter && !n.playing && !n.timingsFailed && (
+        <button className="readalong__resume" onClick={n.skipUntimed}>
+          <IconTarget size={15} />
+          <span>Find the narration</span>
+        </button>
+      )}
 
       <button
         className="readalong__btn"

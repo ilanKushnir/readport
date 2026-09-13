@@ -12,6 +12,7 @@ import {
   IconClose,
   IconTrash,
   IconBookmark,
+  IconChevronDown,
   IconBookOpen,
   IconChapterNext,
   IconChapterPrev,
@@ -708,14 +709,29 @@ export function PlayerPage() {
               ? `Part ${trackIdx + 1} of ${tracks.length}`
               : detail.book.format.toUpperCase()}
         </span>
-        <button
-          className={`icon-btn ${nearBookmark ? 'is-marked' : ''}`}
-          onClick={() => void toggleBookmark()}
-          aria-pressed={!!nearBookmark}
-          aria-label={nearBookmark ? 'Remove bookmark at this moment' : 'Bookmark this moment'}
-        >
-          <IconBookmark filled={!!nearBookmark} />
-        </button>
+        {/* Same split control as the reader: the ribbon marks this moment, and
+            the caret beside it opens the list — shown only once there is a
+            list to open. */}
+        <div className="bm-split">
+          <button
+            className={`icon-btn ${nearBookmark ? 'is-marked' : ''}`}
+            onClick={() => void toggleBookmark()}
+            aria-pressed={!!nearBookmark}
+            aria-label={nearBookmark ? 'Remove bookmark at this moment' : 'Bookmark this moment'}
+          >
+            <IconBookmark filled={!!nearBookmark} />
+          </button>
+          {audioBookmarks.length > 0 && (
+            <button
+              className="icon-btn bm-split__more"
+              onClick={() => setSheet('bookmarks')}
+              aria-haspopup="dialog"
+              aria-label={`Bookmarks (${audioBookmarks.length})`}
+            >
+              <IconChevronDown size={16} />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="player-main">

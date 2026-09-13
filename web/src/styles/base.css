@@ -3504,41 +3504,6 @@ select.input {
   }
 }
 
-/* --------------------------------------------------------- touch targets */
-/* A finger is not a mouse pointer. LAST in the file on purpose: a media
-   query adds no specificity, so an override placed above the rule it
-   overrides simply loses — which is how the plus on a cover stayed 30px on a
-   phone despite a `pointer: coarse` block earlier in this stylesheet.
-   These three are the controls this feature left under 44px on touch: the
-   chip row is the whole of shelf navigation on a phone, the plus on a cover
-   is the only way to shelve a book from the grid, and the × on a membership
-   chip is the only way to take it off again from the book page. */
-@media (pointer: coarse) {
-  .shelf-chips .chip {
-    min-height: 44px;
-    padding-inline: var(--sp-4);
-  }
-  .book-card__add {
-    width: 44px;
-    height: 44px;
-  }
-  .membership__chip {
-    padding: 0 0 0 12px;
-  }
-  .membership__x {
-    width: 44px;
-    height: 44px;
-  }
-  /* The header button is the ONLY way into the shelves on a phone, and the
-     two buttons below are the only way to make the first shelf and to move
-     one without a drag. */
-  .app-header__shelves,
-  .sidebar__newbtn,
-  .sidebar__moves .btn {
-    min-height: 44px;
-  }
-}
-
 /* ------------------------------------------------------- browse by facet */
 
 /* A group holds its own list of values, so it stacks rather than sitting in
@@ -3708,4 +3673,55 @@ select.input {
   padding: 0 2px;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
+}
+
+/* --------------------------------------------------------- touch targets */
+/* A finger is not a mouse pointer. This block must stay LAST in the file: a
+   media query adds no specificity, so an override placed above the rule it
+   overrides simply loses. That is how the plus on a cover stayed 30px on a
+   phone, and then how the browse rows did the same when they were appended
+   below the block that was supposed to cover them. Anything added after this
+   point needs its own entry here, not a new block. */
+@media (pointer: coarse) {
+  .shelf-chips .chip {
+    min-height: 44px;
+    padding-inline: var(--sp-4);
+  }
+  .book-card__add {
+    width: 44px;
+    height: 44px;
+  }
+  .membership__chip {
+    padding: 0 0 0 12px;
+  }
+  .membership__x {
+    width: 44px;
+    height: 44px;
+  }
+  /* The header button is the ONLY way into the shelves on a phone, and the
+     two buttons below are the only way to make the first shelf and to move
+     one without a drag. */
+  .app-header__shelves,
+  .sidebar__newbtn,
+  .sidebar__moves .btn {
+    min-height: 44px;
+  }
+
+  /* Browsing by the library's own metadata: a value row and its "show all"
+     are the whole of that navigation on a phone. */
+  .sidebar__value,
+  .sidebar__more {
+    min-height: 44px;
+  }
+  /* Making and renaming a shelf from the sheet. */
+  .sidebar__new .input,
+  .sidebar__new .btn,
+  .sidebar__edit .input {
+    min-height: 44px;
+  }
+  /* A search result is a jump target, and the excerpt makes the row tall
+     enough already — this only guards the short ones. */
+  .search-hit {
+    min-height: 44px;
+  }
 }
