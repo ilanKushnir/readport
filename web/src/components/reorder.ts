@@ -81,6 +81,8 @@ export function useReorder(opts: {
   const original = useRef<string[]>([]);
   const nodes = useRef(new Map<string, HTMLElement>());
   const pointer = useRef<{ id: string; startY: number; fromIndex: number } | null>(null);
+  /** Whether this gesture has passed the threshold and become a real grab. */
+  const begunRef = useRef(false);
   const longPress = useRef<{ id: string; timer: number; x: number; y: number } | null>(null);
 
   const ids = live ?? source;
@@ -220,12 +222,20 @@ export function useReorder(opts: {
         if (disabled || e.button !== 0) return;
         (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
         pointer.current = { id, startY: e.clientY, fromIndex: idsRef.current.indexOf(id) };
-        begin(id);
+        // A mouse press on a drag handle is unambiguous. A finger is not: the
+        // same press starts a scroll of the sheet the list is in, so grabbing
+        // on touch-down meant scrolling the Shelves sheet with a thumb
+        // silently reordered the reader's shelves. Wait for real movement.
+        begunRef.current = e.pointerType === 'mouse';
+        if (begunRef.current) begin(id);
         setDragging(true);
       },
     }),
     [begin, cancel, disabled, drop, grabbed, ids, labelOf, say, shift],
   );
+
+  /** How far a finger must travel before a press becomes a grab. */
+  const TOUCH_DRAG_THRESHOLD_PX = 8;
 
   // The pointer drag lives on the document so a fast gesture that leaves the
   // handle keeps working, and so the drop happens even if the row unmounts.
@@ -235,6 +245,12 @@ export function useReorder(opts: {
       const p = pointer.current;
       if (!p) return;
       const dy = e.clientY - p.startY;
+      // Below the threshold this is still a scroll, not a grab.
+      if (!begunRef.current) {
+        if (Math.abs(dy) < TOUCH_DRAG_THRESHOLD_PX) return;
+        begunRef.current = true;
+        begin(p.id);
+      }
       setOffset(dy);
       const list = idsRef.current;
       const at = list.indexOf(p.id);
