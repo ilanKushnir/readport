@@ -924,12 +924,11 @@
 
 /* selection menu */
 .selection-menu {
-  position: absolute;
+  position: fixed;
   z-index: 8;
   display: flex;
   flex-wrap: wrap;
-  /* It is positioned from the middle of the selection, so it has to be able
-     to fit whatever is left of the screen rather than run off the edge. */
+  /* The placement adapter also constrains this to the visual viewport. */
   max-width: calc(100vw - 16px);
   gap: 2px;
   padding: 4px;
@@ -954,6 +953,26 @@
 }
 .selection-menu button:not(.swatch):hover {
   background: color-mix(in srgb, currentColor 18%, transparent);
+}
+
+/* A compact dock keeps every action in one horizontally scrollable row. The
+   regular floating toolbar retains its larger touch targets. No reader text
+   or native callout/selection styles are changed. */
+.selection-menu[data-compact='true'] {
+  flex-wrap: nowrap;
+  align-items: center;
+  height: 40px;
+  padding-block: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.selection-menu[data-compact='true'] > * {
+  flex-shrink: 0;
+}
+.selection-menu[data-compact='true'] button:not(.swatch) {
+  min-height: 40px;
+  padding-block: 0;
 }
 
 /* ------------------------------------------------------------------ player */
@@ -1660,6 +1679,24 @@
   .player-scrubber,
   input[type='range'] {
     min-height: 44px;
+  }
+}
+
+/* Match the placement adapter's coarse-pointer policy, including hybrids.
+   Compact the gaps, never the interactive targets. */
+@media (any-pointer: coarse) {
+  .selection-menu[data-compact='true'] {
+    height: 44px;
+    gap: 2px;
+  }
+  .selection-menu[data-compact='true'] button,
+  .selection-menu[data-compact='true'] button:not(.swatch) {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .selection-menu[data-compact='true'] .swatches {
+    gap: 2px;
+    padding-block: 0;
   }
 }
 

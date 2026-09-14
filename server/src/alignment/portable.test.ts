@@ -13,6 +13,7 @@ import {
   listAlignmentFiles,
   pairKey,
   readAlignmentFile,
+  decodeAlignmentFile,
   segmentsToColumns,
   textFingerprint,
   timelineFingerprint,
@@ -111,6 +112,44 @@ function mkDoc(over: { title?: string; author?: string } = {}): PortableAlignmen
 }
 
 let dir: string;
+
+it('rejects compressed inputs above 16 MiB before decoding or reading them whole', () => {
+  const file = path.join(dir, 'oversize.rpalign');
+  const fd = fs.openSync(file, 'w');
+  fs.ftruncateSync(fd, 16 * 1024 * 1024 + 1);
+  fs.closeSync(fd);
+  expect(readAlignmentFile(file)).toMatchObject({
+    ok: false,
+    reason: expect.stringMatching(/compressed.*limit/i),
+  });
+  expect(decodeAlignmentFile(Buffer.alloc(16 * 1024 * 1024 + 1))).toMatchObject({
+    ok: false,
+    reason: expect.stringMatching(/compressed.*limit/i),
+  });
+});
+
+it('caps decompressed output at 64 MiB even for valid highly compressible JSON', () => {
+  const doc = mkDoc();
+  doc.alignment.provenance.padding = 'x'.repeat(64 * 1024 * 1024);
+  const file = plant('bomb.rpalign', doc);
+  expect(readAlignmentFile(file)).toMatchObject({
+    ok: false,
+    reason: expect.stringMatching(/decompressed.*limit/i),
+  });
+});
+
+it('rejects symlink files and symlink alignment directories', () => {
+  const real = path.join(dir, 'real');
+  const file = writeAlignmentFile(real, mkDoc());
+  const link = path.join(dir, 'linked.rpalign');
+  fs.symlinkSync(file, link);
+  expect(readAlignmentFile(link).ok).toBe(false);
+  expect(listAlignmentFiles(dir)).toEqual([]);
+  const linkedDir = path.join(dir, 'linked-dir');
+  fs.symlinkSync(real, linkedDir, 'dir');
+  expect(listAlignmentFiles(linkedDir)).toEqual([]);
+  expect(readAlignmentFile(path.join(linkedDir, path.basename(file))).ok).toBe(false);
+});
 
 beforeEach(() => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rp-portable-'));

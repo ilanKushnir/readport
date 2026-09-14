@@ -22,6 +22,8 @@ import { registerModelRoutes } from './routes/models.js';
 import { registerPreflightRoutes } from './routes/preflight.js';
 import { registerUserRoutes } from './routes/users.js';
 import { registerKeyRoutes } from './routes/keys.js';
+import { registerAgentRoutes, allowAgentRead } from './routes/agent.js';
+import { agentRoute, AGENT_BASE, AGENT_RESPONSE_BYTES } from './agent-contract.js';
 import { createRequire } from 'node:module';
 
 const APP_VERSION: string = (
@@ -77,7 +79,10 @@ export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyIn
   const clientIp = buildClientIp(ctx.config, buildSourceList(ctx.config.clientIpSources), ctx.log);
 
   const app = Fastify({
-    logger: { level: ctx.config.logLevel },
+    logger: {
+      level: ctx.config.logLevel,
+      redact: ['req.headers.authorization', 'req.headers.cookie'],
+    },
     bodyLimit: 2 * 1024 * 1024,
     // Default false: forwarded headers are ignored so clients cannot spoof
     // their IP (rate-limit keys). Operators behind a reverse proxy opt in
@@ -127,7 +132,44 @@ export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyIn
           'RP_CLIENT_IP_HEADER (+ RP_CLIENT_IP_SOURCES) behind a tunnel.',
       );
     }
+    const hasAuthorization = req.headers.authorization !== undefined;
+    const rawHeaders = req.raw.rawHeaders;
+    const authHeaderCount = rawHeaders.filter(
+      (h, i) => i % 2 === 0 && h.toLowerCase() === 'authorization',
+    ).length;
+    if (hasAuthorization || (decodedPathname(req.url) ?? '').startsWith(AGENT_BASE)) {
+      reply.header('cache-control', 'no-store');
+    }
+    if (authHeaderCount > 1) return reply.code(401).send({ error: 'unauthorized' });
     attachUser(ctx, req, reply);
+    // Authorization takes precedence over cookies, proxy SSO, public routes,
+    // static assets and the not-found handler. Never downgrade bad credentials.
+    if (hasAuthorization && req.authVia !== 'apikey') {
+      return reply.code(401).send({ error: 'unauthorized' });
+    }
+    if (req.authVia === 'apikey') {
+      // Use the unnormalized origin-form path. URL() normalizes dot segments;
+      // decoding permits aliases. Neither is appropriate for a closed grant.
+      const rawPath = req.url.split('?')[0]!;
+      if (
+        !apiKeyAllows(req.method, rawPath, req.agentScopes) ||
+        agentRoute(rawPath) !== req.routeOptions.url
+      ) {
+        return reply
+          .code(403)
+          .send({ error: 'read-only', detail: 'This API key may only read the agent API' });
+      }
+      if (!allowAgentRead(ctx.db, req.user!.id)) {
+        return reply.header('retry-after', '60').code(429).send({ error: 'rate-limited' });
+      }
+      if (
+        req.url.length > 2048 ||
+        req.headers['transfer-encoding'] !== undefined ||
+        (req.headers['content-length'] !== undefined && req.headers['content-length'] !== '0')
+      ) {
+        return reply.code(400).send({ error: 'bad-request' });
+      }
+    }
     const pathname = decodedPathname(req.url);
     if (pathname === null) return reply.code(400).send({ error: 'bad-url' });
     // Gate on BOTH the matched route pattern and the decoded path, so an
@@ -138,10 +180,50 @@ export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyIn
     if (!csrfCheck(req)) return reply.code(403).send({ error: 'csrf' });
     if (req.routeOptions?.config?.public === true) return;
     if (!requireUser(req, reply)) return reply;
-    // A key can read. That is the whole contract, and it is checked in one
-    // place so no future route can quietly opt out of it.
-    if (req.authVia === 'apikey' && !apiKeyAllows(req.method, pathname)) {
-      return reply.code(403).send({ error: 'read-only', detail: 'This API key may only read' });
+  });
+
+  app.addHook('preSerialization', async (req, reply, payload) => {
+    if (
+      (req.routeOptions.url ?? '').startsWith(AGENT_BASE) &&
+      Buffer.byteLength(JSON.stringify(payload)) > AGENT_RESPONSE_BYTES
+    ) {
+      reply.code(413);
+      return { error: 'response-too-large', detail: 'Request a smaller page' };
+    }
+    return payload;
+  });
+  app.addHook('onResponse', async (req, reply) => {
+    if (req.headers.authorization !== undefined) {
+      // Only catalog route templates and verified identities, not URLs,
+      // query strings, request bodies, credentials or book content.
+      ctx.log.info(
+        JSON.stringify({
+          event: 'agent-api',
+          keyId: req.apiKeyId ?? null,
+          userId: req.authVia === 'apikey' ? req.user?.id : null,
+          route: agentRoute(req.url.split('?')[0]!) ?? 'forbidden',
+          method: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'].includes(req.method)
+            ? req.method
+            : 'OTHER',
+          outcome:
+            reply.statusCode < 400
+              ? 'success'
+              : reply.statusCode === 401
+                ? 'unauthorized'
+                : reply.statusCode === 403
+                  ? 'forbidden'
+                  : reply.statusCode === 404
+                    ? 'not-found'
+                    : reply.statusCode === 429
+                      ? 'rate-limited'
+                      : reply.statusCode === 413
+                        ? 'too-large'
+                        : reply.statusCode < 500
+                          ? 'bad-request'
+                          : 'server-error',
+          status: reply.statusCode,
+        }),
+      );
     }
   });
 
@@ -176,6 +258,7 @@ export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyIn
   registerJobRoutes(app, ctx);
   registerSettingsRoutes(app, ctx);
   registerKeyRoutes(app, ctx);
+  registerAgentRoutes(app, ctx);
   registerOfflineRoutes(app, ctx);
   registerModelRoutes(app, ctx);
   registerPreflightRoutes(app, ctx);

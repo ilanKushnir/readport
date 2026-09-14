@@ -52,6 +52,23 @@ import { isConfident, nearestCue, paceOffset } from './readalong';
 import { autoScrollDelta, markerPosition, canResumeAt, ScrollOwnership } from './motion';
 import { liveCheckpointOffset } from './liveOffset';
 import {
+  checkpointDue,
+  continuedAtDestination,
+  landingOffset,
+  markerOpacity,
+  returnAfterJump,
+  type JumpReason,
+  type ReadingPoint,
+  type ReturnPoint,
+} from './continuity';
+import { ResumeMarker } from './ResumeMarker';
+import {
+  placeSelectionToolbar,
+  selectionGeometry,
+  type SelectionGeometry,
+  type PlacementMode,
+} from './selectionPlacement';
+import {
   computePageLayout,
   effectiveTheme,
   FONTS,
@@ -148,8 +165,7 @@ export function ReaderPage() {
     start: number;
     end: number;
     text: string;
-    x: number;
-    y: number;
+    geometry: SelectionGeometry;
   } | null>(null);
   const [noteDraft, setNoteDraft] = useState('');
   /** Set while the note sheet is editing an existing note rather than making one. */
@@ -157,11 +173,17 @@ export function ReaderPage() {
   /** Mirror of currentOffsetRef for rendering: page turns set it, scroll updates it live. */
   const [liveOffset, setLiveOffset] = useState(0);
   /** Where the reader was before a jump (bookmark, contents, search, slider). */
-  const [returnPoint, setReturnPoint] = useState<{
-    spineIdx: number;
-    charOffset: number;
-    label: string;
-  } | null>(null);
+  const [returnPoint, setReturnPoint] = useState<ReturnPoint | null>(null);
+  const [resumeMark, setResumeMark] = useState<(ReadingPoint & { opacity: number }) | null>(null);
+  const narrationOffsetRef = useRef<() => number | null>(() => null);
+  const readingMoved = useCallback((current: ReadingPoint) => {
+    setReturnPoint((point) => (point && continuedAtDestination(point, current) ? null : point));
+    setResumeMark((mark) => {
+      if (!mark) return null;
+      const opacity = Math.min(mark.opacity, markerOpacity(mark, current));
+      return opacity <= 0 ? null : opacity === mark.opacity ? mark : { ...mark, opacity };
+    });
+  }, []);
   const [contentsTab, setContentsTab] = useState<'toc' | 'marks'>('toc');
   /** Read-along: the narration playing over the page the reader is on. */
   const [readAlong, setReadAlong] = useState(false);
@@ -218,8 +240,10 @@ export function ReaderPage() {
   const layoutRef = useRef<PageLayout | null>(null);
   const currentOffsetRef = useRef(0);
   const pendingTargetRef = useRef<{
-    charOffset: number;
+    charOffset?: number;
     sentenceId?: string;
+    initialIntent?: 'open' | 'switch';
+    resume?: boolean;
     /** Element id inside the chapter (TOC sub-entries, footnotes). */
     fragment?: string;
     handoff?: boolean;
@@ -265,6 +289,8 @@ export function ReaderPage() {
         setAnnotations(anns.annotations);
 
         // Initial position: URL params > saved progress > beginning.
+        const resume = await resumeLocator(id);
+        if (!alive) return;
         const spineParam = searchParams.get('spine');
         const charParam = searchParams.get('char');
         const sentenceParam = searchParams.get('sentence');
@@ -272,42 +298,27 @@ export function ReaderPage() {
         if (spineParam !== null) {
           const s = Math.min(Math.max(0, Number(spineParam) || 0), m.chapters.length - 1);
           pendingTargetRef.current = {
-            charOffset: Number(charParam) || 0,
+            charOffset: charParam === null ? undefined : Number(charParam) || 0,
             sentenceId: sentenceParam ?? undefined,
+            initialIntent: handoff ? 'switch' : 'open',
             handoff,
             granularity: searchParams.get('granularity') ?? undefined,
           };
           setSpineIdx(s);
-          void recordCheckpoint(id, handoff ? 'switch' : 'open', {
-            medium: 'ebook',
-            spineIdx: s,
-            charOffset: Number(charParam) || 0,
-            sentenceId: sentenceParam ?? undefined,
-            pct: pctFor(m, s, Number(charParam) || 0),
-          });
         } else {
-          const resume = await resumeLocator(id);
-          if (!alive) return;
           if (resume && resume.locator.medium === 'ebook') {
             const l = resume.locator;
-            pendingTargetRef.current = { charOffset: l.charOffset ?? 0, sentenceId: l.sentenceId };
+            pendingTargetRef.current = {
+              charOffset: l.charOffset,
+              sentenceId: l.sentenceId,
+              resume: true,
+              initialIntent: 'open',
+            };
             setSpineIdx(Math.min(l.spineIdx, m.chapters.length - 1));
           } else {
-            pendingTargetRef.current = { charOffset: 0 };
+            pendingTargetRef.current = { charOffset: 0, initialIntent: 'open' };
             setSpineIdx(0);
           }
-          const openSpine = Math.min(
-            (resume?.locator as EbookLocator | undefined)?.spineIdx ?? 0,
-            m.chapters.length - 1,
-          );
-          const openChar = pendingTargetRef.current?.charOffset ?? 0;
-          void recordCheckpoint(id, 'open', {
-            medium: 'ebook',
-            spineIdx: openSpine,
-            charOffset: openChar,
-            sentenceId: (resume?.locator as EbookLocator | undefined)?.sentenceId,
-            pct: pctFor(m, openSpine, openChar),
-          });
         }
       } catch {
         if (alive) setLoadError('Could not open this book. It may still be indexing.');
@@ -433,7 +444,7 @@ export function ReaderPage() {
   );
 
   const goToPage = useCallback(
-    (n: number, intent: 'heartbeat' | 'seek' = 'heartbeat') => {
+    (n: number, intent: 'heartbeat' | 'seek' = 'heartbeat', record = true) => {
       const pages = pagesRef.current;
       const content = contentRef.current;
       const layout = layoutRef.current;
@@ -446,6 +457,7 @@ export function ReaderPage() {
       const tx = currentTx(content);
       content.style.transform = `translateX(${targetTx}px)`;
       setPage(clamped);
+      if (!record) return;
       const map = textMapRef.current;
       if (map) {
         const rect = pages.getBoundingClientRect();
@@ -463,6 +475,7 @@ export function ReaderPage() {
         if (off !== null) {
           currentOffsetRef.current = off;
           setLiveOffset(off);
+          readingMoved({ spineIdx, charOffset: off });
           // A page turn is a deliberate act: the first one after this surface
           // (re)gained focus is recorded as an explicit intent so this
           // session holds the progress claim again (heartbeats from a
@@ -483,7 +496,7 @@ export function ReaderPage() {
       if (document.visibilityState !== 'visible' || !manifest) return;
       needsClaimRef.current = true;
       try {
-        const resume = await resumeLocator(id);
+        const resume = await resumeLocator(id, { activate: false });
         const l = resume?.locator;
         if (!l || l.medium !== 'ebook') return;
         const here = pctFor(manifest, spineIdx, currentOffsetRef.current);
@@ -494,13 +507,10 @@ export function ReaderPage() {
           toast.show(`Another device is at ${formatPct(l.pct)}`, {
             label: 'Jump there',
             onClick: () => {
-              pendingTargetRef.current = {
-                charOffset: l.charOffset ?? 0,
-                sentenceId: l.sentenceId,
-              };
-              if (l.spineIdx === spineIdx)
-                gotoChapterRef.current(spineIdx, l.charOffset ?? 0, 'seek');
-              else setSpineIdx(Math.min(l.spineIdx, manifest.chapters.length - 1));
+              void resumeLocator(id).then(() => {
+                gotoChapterRef.current(l.spineIdx, l.charOffset ?? 0, 'open', undefined, 'resume');
+                setResumeMark({ spineIdx: l.spineIdx, charOffset: l.charOffset ?? 0, opacity: 1 });
+              });
             },
           });
         }
@@ -531,17 +541,23 @@ export function ReaderPage() {
     const target = pendingTargetRef.current;
     pendingTargetRef.current = null;
     const map = textMapRef.current;
-    let charOffset = target?.charOffset ?? 0;
-    if (target?.sentenceId) {
-      const s = sentences.find((x) => x.id === target.sentenceId);
-      if (s) charOffset = s.start;
-    }
+    let charOffset = target ? landingOffset(target, sentences) : currentOffsetRef.current;
     if (target?.fragment && map) {
       const off = offsetForFragment(content, map, target.fragment);
       if (off !== null) charOffset = off;
     }
     currentOffsetRef.current = charOffset;
     setLiveOffset(charOffset);
+
+    // Resolve legacy sentence-only locators before publishing either the
+    // marker or the initial durable checkpoint. Zero is an explicit offset.
+    if (target?.resume || target?.handoff) setResumeMark({ spineIdx, charOffset, opacity: 1 });
+    if (target?.initialIntent && manifest)
+      void recordCheckpoint(
+        id,
+        target.initialIntent,
+        locatorAt(manifest, sentences, spineIdx, charOffset),
+      );
 
     if (prefs.mode === 'paginated' && layoutRef.current) {
       // Find the page containing charOffset (transition-safe measurement).
@@ -775,16 +791,25 @@ export function ReaderPage() {
   useEffect(() => {
     if (!manifest) return;
     return setActiveLocatorProvider(() => {
-      const off = liveCheckpointOffset(
-        prefs.mode,
-        currentOffsetRef.current,
-        textMapRef.current,
-        scrollerRef.current,
-      );
+      if (chapterLoadingRef.current || spineIdx < 0) return null;
+      const stillAtResume =
+        resumeMark &&
+        (prefs.mode === 'paginated' ||
+          (scrollerRef.current && scrollOwnership.current.matches(scrollerRef.current)));
+      const off =
+        narrationOffsetRef.current() ??
+        (stillAtResume
+          ? currentOffsetRef.current
+          : liveCheckpointOffset(
+              prefs.mode,
+              currentOffsetRef.current,
+              textMapRef.current,
+              scrollerRef.current,
+            ));
       currentOffsetRef.current = off;
       return { bookId: id, locator: locatorAt(manifest, sentences, spineIdx, off) };
     });
-  }, [manifest, sentences, spineIdx, id, prefs.mode]);
+  }, [manifest, sentences, spineIdx, id, prefs.mode, resumeMark]);
 
   // Scroll-mode position tracking.
   useEffect(() => {
@@ -794,7 +819,8 @@ export function ReaderPage() {
     let timer: ReturnType<typeof setTimeout> | null = null;
     let footerTimer: ReturnType<typeof setTimeout> | null = null;
     const onScroll = () => {
-      if (!scrollOwnership.current.matches(scroller)) detachFollowing();
+      if (scrollOwnership.current.matches(scroller)) return;
+      detachFollowing();
       // Footer: cheap, throttled to ~12 updates/s (a timer, not rAF, so a
       // backgrounded tab still lands on the right value when it returns).
       if (!footerTimer) {
@@ -807,7 +833,10 @@ export function ReaderPage() {
             scroller.getBoundingClientRect(),
             hintForOffset(map, currentOffsetRef.current),
           );
-          if (off !== null) setLiveOffset(off);
+          if (off !== null) {
+            setLiveOffset(off);
+            readingMoved({ spineIdx, charOffset: off });
+          }
         }, 80);
       }
       // Progress checkpoint: debounced.
@@ -851,23 +880,44 @@ export function ReaderPage() {
   /* ----------------------------------------------------------- actions */
 
   const gotoChapter = useCallback(
-    (s: number, charOffset = 0, intent: 'seek' | 'open' = 'seek', fragment?: string) => {
+    (
+      s: number,
+      charOffset: number,
+      intent: 'seek' | 'open',
+      fragment: string | undefined,
+      reason: JumpReason,
+    ) => {
       if (!manifest) return;
       // Jumping by hand - contents, search, a bookmark, the slider - takes the
       // wheel back from the narration, exactly as turning a page does. The one
       // caller that must not is the narration itself, which re-arms after.
       detachFollowing();
       const clamped = Math.max(0, Math.min(s, manifest.chapters.length - 1));
-      // A jump of more than a page away leaves a way back.
-      if (
-        intent === 'seek' &&
-        (clamped !== spineIdx || Math.abs(charOffset - currentOffsetRef.current) > 400)
-      ) {
-        const fromTitle = manifest.chapters[spineIdx]?.title ?? `Chapter ${spineIdx + 1}`;
-        setReturnPoint(
-          (rp) => rp ?? { spineIdx, charOffset: currentOffsetRef.current, label: fromTitle },
-        );
+      const owned = scrollerRef.current && scrollOwnership.current.matches(scrollerRef.current);
+      const origin = {
+        spineIdx,
+        charOffset: owned
+          ? currentOffsetRef.current
+          : liveCheckpointOffset(
+              prefs.mode,
+              currentOffsetRef.current,
+              textMapRef.current,
+              scrollerRef.current,
+            ),
+        label: manifest.chapters[spineIdx]?.title ?? `Chapter ${spineIdx + 1}`,
+      };
+      if (fragment && clamped === spineIdx && contentRef.current && textMapRef.current) {
+        charOffset =
+          offsetForFragment(contentRef.current, textMapRef.current, fragment) ?? charOffset;
       }
+      setReturnPoint(
+        returnAfterJump(
+          origin,
+          { spineIdx: clamped, charOffset },
+          intent === 'open' ? 'resume' : reason,
+        ),
+      );
+      setResumeMark(null);
       handoffCleanupRef.current?.();
       pendingTargetRef.current = { charOffset, fragment };
       if (clamped === spineIdx) {
@@ -882,7 +932,7 @@ export function ReaderPage() {
           }
           currentOffsetRef.current = charOffset;
           if (prefs.mode === 'paginated') {
-            goToPage(pageForOffset(charOffset), 'seek');
+            goToPage(pageForOffset(charOffset), 'seek', false);
           } else {
             const range = rangeForSpan(map, charOffset, charOffset + 1);
             const scroller = scrollerRef.current;
@@ -894,9 +944,15 @@ export function ReaderPage() {
           }
         }
       } else {
+        chapterLoadingRef.current = true;
         setSpineIdx(clamped);
       }
-      void recordCheckpoint(id, intent, locatorAt(manifest, sentences, clamped, charOffset));
+      setLiveOffset(charOffset);
+      void recordCheckpoint(
+        id,
+        intent,
+        locatorAt(manifest, clamped === spineIdx ? sentences : [], clamped, charOffset),
+      );
     },
     [manifest, spineIdx, prefs.mode, goToPage, pageForOffset, sentences, id],
   );
@@ -931,7 +987,8 @@ export function ReaderPage() {
       return;
     }
     if (page < pageCount - 1) goToPage(page + 1);
-    else if (manifest && spineIdx < manifest.chapters.length - 1) gotoChapter(spineIdx + 1, 0);
+    else if (manifest && spineIdx < manifest.chapters.length - 1)
+      gotoChapter(spineIdx + 1, 0, 'seek', undefined, 'progression');
     else if (manifest) finishBook();
   }, [
     prefs.mode,
@@ -956,6 +1013,7 @@ export function ReaderPage() {
     }
     if (page > 0) goToPage(page - 1);
     else if (spineIdx > 0 && manifest) {
+      readingMoved({ spineIdx: spineIdx - 1, charOffset: 0 });
       // Land on the previous chapter's end.
       const back = Math.max(0, (manifest.chapters[spineIdx - 1]?.charCount ?? 1) - 2);
       pendingTargetRef.current = { charOffset: back };
@@ -992,6 +1050,7 @@ export function ReaderPage() {
       // behind, and must not release auto-follow the way a jump does.
       handoffCleanupRef.current?.();
       pendingTargetRef.current = { charOffset: offset };
+      readingMoved({ spineIdx: target, charOffset: offset });
       chapterLoadingRef.current = true;
       setSpineIdx(target);
       needsClaimRef.current = false;
@@ -1010,6 +1069,30 @@ export function ReaderPage() {
     startOffset,
     onLeaveChapter,
   });
+
+  // Read the media element clock at capture time, not React's last timeupdate.
+  narrationOffsetRef.current = () =>
+    readAlong && followingRef.current
+      ? paceOffset(narration.cues, narration.currentBookMs?.() ?? narration.bookMs)
+      : null;
+  useEffect(() => {
+    if (!readAlong || !manifest) return;
+    let last = performance.now();
+    let saved = currentOffsetRef.current;
+    const timer = setInterval(() => {
+      if (chapterLoadingRef.current || !followingRef.current || !narration.playing) return;
+      const at = narrationOffsetRef.current();
+      if (at === null) return;
+      const off = Math.round(at);
+      readingMoved({ spineIdx, charOffset: off });
+      if (!checkpointDue(last, performance.now(), off !== saved)) return;
+      saved = off;
+      last = performance.now();
+      currentOffsetRef.current = off;
+      void recordCheckpoint(id, 'heartbeat', locatorAt(manifest, sentences, spineIdx, off));
+    }, 500);
+    return () => clearInterval(timer);
+  }, [readAlong, manifest, spineIdx, sentences, id, narration.playing, readingMoved]);
 
   /** Relocate first, verify the rendered cue, then give the voice control. */
   const resumeFollowing = useCallback(
@@ -1033,7 +1116,7 @@ export function ReaderPage() {
         // Explicit relocation is atomic, not an attachment to a page mid-slide.
         const transition = content.style.transition;
         content.style.transition = 'none';
-        goToPage(target);
+        goToPage(target, 'heartbeat', false);
         content.getBoundingClientRect();
         content.style.transition = transition;
       } else {
@@ -1116,7 +1199,7 @@ export function ReaderPage() {
     if (onScreen) return;
     if (prefs.mode === 'paginated') {
       const target = pageForOffset(cue.charStart);
-      if (target !== page) goToPage(target);
+      if (target !== page) goToPage(target, 'heartbeat', false);
     } else {
       const range = rangeForSpan(map, cue.charStart, cue.charStart + 1);
       const scroller = scrollerRef.current;
@@ -1521,6 +1604,8 @@ export function ReaderPage() {
   // Selection handling.
   useEffect(() => {
     const onUp = () => {
+      if (sheetRef.current === 'note') return;
+      selMenuSettlingRef.current = false;
       const sel = document.getSelection();
       const content = contentRef.current;
       const map = textMapRef.current;
@@ -1528,31 +1613,42 @@ export function ReaderPage() {
         setSelection(null);
         return;
       }
-      if (!content.contains(sel.anchorNode) || !content.contains(sel.focusNode)) return;
+      if (!content.contains(sel.anchorNode) || !content.contains(sel.focusNode)) {
+        setSelection(null);
+        return;
+      }
       const range = sel.getRangeAt(0);
       const start = domToOffset(map, range.startContainer, range.startOffset);
       const end = domToOffset(map, range.endContainer, range.endOffset);
       if (start === null || end === null || end <= start) return;
-      const rect = range.getBoundingClientRect();
+      const geometry = selectionGeometry(
+        Array.from(range.getClientRects()),
+        getComputedStyle(content).direction === 'rtl' ? 'rtl' : 'ltr',
+      );
+      if (!geometry) {
+        setSelection(null);
+        return;
+      }
       setSelection({
         start,
         end,
         text: sel.toString().slice(0, 500),
-        // The raw centre of the selection. Clamping here and then offsetting
-        // by half a guessed width at render time overshot both edges - the
-        // menu ran off the right of a phone for most selections and off the
-        // left for any near the start of a line.
-        x: rect.left + rect.width / 2,
-        y: Math.max(70, rect.top - 48),
+        geometry,
       });
     };
     let settle: ReturnType<typeof setTimeout> | null = null;
-    const onSelectionChange = () => {
+    const onSelectionChange = (event: Event) => {
       // The note sheet autofocuses its textarea, which collapses the DOM
       // selection - and dropping it here would attach the note to a point
       // instead of to the passage the reader had chosen, losing the quotation
       // with it. The sheet owns the selection until it closes.
       if (sheetRef.current === 'note') return;
+      if (event.type === 'selectionchange' && selMenuRef.current) {
+        // Hide stale geometry while the OS drags a handle; the settled
+        // snapshot restores the toolbar once, before paint.
+        selMenuRef.current.style.visibility = 'hidden';
+      }
+      selMenuSettlingRef.current = true;
       const sel = document.getSelection();
       if (!sel || sel.isCollapsed) {
         if (settle) clearTimeout(settle);
@@ -1567,11 +1663,11 @@ export function ReaderPage() {
       if (settle) clearTimeout(settle);
       settle = setTimeout(onUp, 180);
     };
-    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointerup', onSelectionChange);
     document.addEventListener('selectionchange', onSelectionChange);
     return () => {
       if (settle) clearTimeout(settle);
-      document.removeEventListener('pointerup', onUp);
+      document.removeEventListener('pointerup', onSelectionChange);
       document.removeEventListener('selectionchange', onSelectionChange);
     };
   }, []);
@@ -1637,7 +1733,8 @@ export function ReaderPage() {
    * keep it on screen.
    */
   const selMenuRef = useRef<HTMLDivElement>(null);
-  const [selMenuLeft, setSelMenuLeft] = useState<number | null>(null);
+  const selMenuModeRef = useRef<PlacementMode | null>(null);
+  const selMenuSettlingRef = useRef(false);
 
   /**
    * Where the position slider's thumb is while it is being dragged.
@@ -1675,25 +1772,129 @@ export function ReaderPage() {
     [annotations, spineIdx],
   );
 
-  /**
-   * Keep the selection menu centred on the selection and on the screen.
-   *
-   * Measured rather than assumed: clamping the centre and then subtracting a
-   * guessed half-width put the menu off the right edge of a phone for most
-   * selections, and off the left for any near the start of a line.
-   */
+  // Read native geometry without ever cancelling contextmenu, callout or
+  // selection gestures. Layout measurement and placement happen before paint.
   useLayoutEffect(() => {
     if (!selection) {
-      setSelMenuLeft(null);
+      selMenuModeRef.current = null;
+      selMenuSettlingRef.current = false;
       return;
     }
     const el = selMenuRef.current;
     if (!el) return;
-    const w = el.offsetWidth;
-    const margin = 8;
-    const max = Math.max(margin, window.innerWidth - w - margin);
-    setSelMenuLeft(Math.min(Math.max(margin, selection.x - w / 2), max));
-  }, [selection]);
+    let raf = 0;
+    let moving = false;
+    const mq = window.matchMedia('(any-pointer: coarse)');
+    const measure = () => {
+      const sel = document.getSelection();
+      const content = contentRef.current;
+      if (
+        selMenuSettlingRef.current ||
+        sheetRef.current !== 'none' ||
+        !sel?.rangeCount ||
+        sel.isCollapsed ||
+        !content?.contains(sel.anchorNode) ||
+        !content.contains(sel.focusNode)
+      ) {
+        el.style.visibility = 'hidden';
+        return;
+      }
+      const geometry = selectionGeometry(
+        Array.from(sel.getRangeAt(0).getClientRects()),
+        selection.geometry.direction,
+      );
+      if (!geometry) {
+        el.style.visibility = 'hidden';
+        return;
+      }
+      const vv = window.visualViewport;
+      const root = getComputedStyle(document.documentElement);
+      const safe = (edge: string) => parseFloat(root.getPropertyValue(`--rp-safe-${edge}`)) || 0;
+      const viewport = {
+        left: (vv?.offsetLeft ?? 0) + safe('left'),
+        top: (vv?.offsetTop ?? 0) + safe('top'),
+        right: (vv?.offsetLeft ?? 0) + (vv?.width ?? window.innerWidth) - safe('right'),
+        bottom: (vv?.offsetTop ?? 0) + (vv?.height ?? window.innerHeight) - safe('bottom'),
+      };
+      el.style.maxWidth = `${Math.max(0, viewport.right - viewport.left - 16)}px`;
+      el.dataset.compact = selMenuModeRef.current === 'dock' ? 'true' : 'false';
+      const input = {
+        selection: geometry,
+        viewport,
+        toolbar: el.getBoundingClientRect(),
+        topBoundary: topChromeRef.current?.getBoundingClientRect().bottom ?? viewport.top,
+        bottomBoundary: bottomChromeRef.current?.getBoundingClientRect().top ?? viewport.bottom,
+        coarse: mq.matches,
+        previous: selMenuModeRef.current,
+      };
+      let placement = placeSelectionToolbar(input);
+      if (!placement || placement.mode === 'dock') {
+        // Compact dock is a single scrollable row, never a wrapped panel over
+        // the text. Measure its real height before checking the dock clearance.
+        el.dataset.compact = 'true';
+        placement = placeSelectionToolbar({
+          ...input,
+          toolbar: el.getBoundingClientRect(),
+          previous: 'dock',
+        });
+      }
+      if (!placement) {
+        el.style.visibility = 'hidden';
+        return;
+      }
+      selMenuModeRef.current = placement.mode;
+      el.dataset.placement = placement.mode;
+      el.style.left = `${placement.left}px`;
+      el.style.top = `${placement.top}px`;
+      el.style.visibility = 'visible';
+    };
+    const schedule = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        measure();
+        if (moving) schedule();
+      });
+    };
+    const start = () => {
+      moving = true;
+      schedule();
+    };
+    const end = () => {
+      moving = false;
+      schedule();
+    };
+    measure();
+    const ro = new ResizeObserver(schedule);
+    for (const node of [el, contentRef.current, topChromeRef.current, bottomChromeRef.current])
+      if (node) ro.observe(node);
+    const content = contentRef.current;
+    const mo = new MutationObserver(schedule);
+    if (content) mo.observe(content, { attributes: true, attributeFilter: ['style', 'class'] });
+    content?.addEventListener('transitionrun', start);
+    content?.addEventListener('transitionend', end);
+    content?.addEventListener('transitioncancel', end);
+    window.addEventListener('scroll', schedule, true);
+    window.addEventListener('resize', schedule);
+    window.addEventListener('orientationchange', schedule);
+    window.visualViewport?.addEventListener('resize', schedule);
+    window.visualViewport?.addEventListener('scroll', schedule);
+    mq.addEventListener('change', schedule);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+      mo.disconnect();
+      content?.removeEventListener('transitionrun', start);
+      content?.removeEventListener('transitionend', end);
+      content?.removeEventListener('transitioncancel', end);
+      window.removeEventListener('scroll', schedule, true);
+      window.removeEventListener('resize', schedule);
+      window.removeEventListener('orientationchange', schedule);
+      window.visualViewport?.removeEventListener('resize', schedule);
+      window.visualViewport?.removeEventListener('scroll', schedule);
+      mq.removeEventListener('change', schedule);
+    };
+  }, [selection, page, loadSeq, chrome, chromeInset, sheet, prefs.mode]);
 
   /**
    * Keep the mark's popover on the screen, vertically.
@@ -1845,9 +2046,14 @@ export function ReaderPage() {
       }
       return;
     }
-    // Bookmark the first sentence on this page, keeping its text so the
-    // list is readable later.
-    const start = currentOffsetRef.current;
+    // Capture live geometry, even before scroll tracking's debounce. The
+    // sentence supplies an excerpt/recovery hint, never the exact position.
+    const viewport = prefs.mode === 'paginated' ? pagesRef.current : scrollerRef.current;
+    const start =
+      viewport && textMapRef.current
+        ? (firstVisibleOffset(textMapRef.current, viewport.getBoundingClientRect()) ??
+          currentOffsetRef.current)
+        : currentOffsetRef.current;
     const sent =
       sentences.find((s) => start >= s.start && start < s.end) ??
       sentences.find((s) => s.start >= start);
@@ -1861,9 +2067,9 @@ export function ReaderPage() {
       locator: {
         medium: 'ebook',
         spineIdx,
-        charOffset: sent?.start ?? start,
+        charOffset: start,
         sentenceId: sent?.id,
-        pct: pctFor(manifest, spineIdx, sent?.start ?? start),
+        pct: pctFor(manifest, spineIdx, start),
       },
       selectedText: excerpt,
     };
@@ -2074,6 +2280,15 @@ export function ReaderPage() {
             <path d="M0 0h22v34l-11-8-11 8z" fill="currentColor" />
           </svg>
         )}
+        {resumeMark && resumeMark.spineIdx === spineIdx && (
+          <ResumeMarker
+            target={resumeMark}
+            map={() => textMapRef.current}
+            container={() => viewportRef.current}
+            scroller={() => scrollerRef.current}
+            layoutKey={`${loadSeq}:${page}:${prefs.mode}:${prefs.size}:${chromeInset.bottom}`}
+          />
+        )}
         {pace !== null && (
           // Beside the text, never on it: an estimate drawn as one.
           <span
@@ -2173,7 +2388,7 @@ export function ReaderPage() {
                 {spineIdx < manifest.chapters.length - 1 ? (
                   <button
                     className="btn btn--secondary"
-                    onClick={() => gotoChapter(spineIdx + 1, 0)}
+                    onClick={() => gotoChapter(spineIdx + 1, 0, 'seek', undefined, 'progression')}
                   >
                     {/* Spine items are files, not chapters: a cover, a title
                         page and a dedication are each one, and only some are
@@ -2200,7 +2415,8 @@ export function ReaderPage() {
         )}
       </div>
 
-      {returnPoint && (
+      {/* Selection actions take precedence; retain the return origin until selection clears. */}
+      {returnPoint && !selection && (
         // Two buttons side by side, not a button inside a button: nesting
         // them is invalid, unreachable by keyboard, and left the dismiss as
         // a 14px target inside a much larger tap area that did the opposite.
@@ -2209,14 +2425,12 @@ export function ReaderPage() {
             type="button"
             className="return-pill__go"
             onClick={() => {
-              const rp = returnPoint;
+              const rp = returnPoint.origin;
               setReturnPoint(null);
-              pendingTargetRef.current = { charOffset: rp.charOffset };
-              if (rp.spineIdx === spineIdx) gotoChapter(spineIdx, rp.charOffset, 'seek');
-              else setSpineIdx(rp.spineIdx);
+              gotoChapter(rp.spineIdx, rp.charOffset, 'seek', undefined, 'return');
             }}
           >
-            <IconBack size={15} /> Back to where you were · {returnPoint.label}
+            <IconBack size={15} /> Back to {returnPoint.origin.label}
           </button>
           <button
             type="button"
@@ -2237,11 +2451,8 @@ export function ReaderPage() {
           ref={selMenuRef}
           className="selection-menu"
           style={{
-            left: selMenuLeft ?? Math.max(8, selection.x - 150),
-            top: selection.y,
-            // Hidden for the one frame before it has been measured, so it
-            // never appears in the wrong place and jumps.
-            visibility: selMenuLeft === null ? 'hidden' : 'visible',
+            // The layout effect measures and positions before the first paint.
+            visibility: 'hidden',
           }}
           role="menu"
         >
@@ -2383,7 +2594,7 @@ export function ReaderPage() {
                   0,
                   Math.floor(targetChars - manifest.chapters[s]!.cumChars),
                 );
-                gotoChapter(s, within);
+                gotoChapter(s, within, 'seek', undefined, 'slider');
                 setDragPct(null);
               }, 160);
             }}
@@ -2498,12 +2709,24 @@ export function ReaderPage() {
                     onClick={() => {
                       if (a.locator.medium !== 'ebook') return;
                       setSheet('none');
-                      gotoChapter(a.locator.spineIdx, a.locator.charOffset ?? 0, 'seek');
+                      gotoChapter(
+                        a.locator.spineIdx,
+                        a.locator.charOffset ?? 0,
+                        'seek',
+                        undefined,
+                        'bookmark',
+                      );
                     }}
                     onKeyDown={(e) => {
                       if ((e.key === 'Enter' || e.key === ' ') && a.locator.medium === 'ebook') {
                         setSheet('none');
-                        gotoChapter(a.locator.spineIdx, a.locator.charOffset ?? 0, 'seek');
+                        gotoChapter(
+                          a.locator.spineIdx,
+                          a.locator.charOffset ?? 0,
+                          'seek',
+                          undefined,
+                          'bookmark',
+                        );
                       }
                     }}
                   >
@@ -2552,7 +2775,7 @@ export function ReaderPage() {
                 aria-current={t.spineIdx === spineIdx ? 'true' : undefined}
                 onClick={() => {
                   setSheet('none');
-                  gotoChapter(t.spineIdx, 0, 'seek', t.fragment ?? undefined);
+                  gotoChapter(t.spineIdx, 0, 'seek', t.fragment ?? undefined, 'toc');
                 }}
               >
                 <span className="grow">{t.title}</span>
@@ -2580,7 +2803,7 @@ export function ReaderPage() {
           onJump={(s, off, text) => {
             setSheet('none');
             setFound({ spineIdx: s, charOffset: off, text });
-            gotoChapter(s, off);
+            gotoChapter(s, off, 'seek', undefined, 'search');
           }}
         />
       )}
@@ -2595,6 +2818,8 @@ export function ReaderPage() {
             if (noteDraft.trim() && !window.confirm('Discard this note?')) return;
             setSheet('none');
             setEditingNote(null);
+            setSelection(null);
+            document.getSelection()?.removeAllRanges();
           }}
         >
           {selection && !editingNote && (
@@ -2629,6 +2854,8 @@ export function ReaderPage() {
                 if (!ok) return;
                 setSheet('none');
                 setEditingNote(null);
+                setSelection(null);
+                document.getSelection()?.removeAllRanges();
               })();
             }}
           >
@@ -2672,7 +2899,13 @@ function interceptLink(
   e: React.MouseEvent,
   manifest: ReaderManifest | null,
   currentSpine: number,
-  gotoChapter: (s: number, off: number, intent?: 'seek' | 'open', fragment?: string) => void,
+  gotoChapter: (
+    s: number,
+    off: number,
+    intent: 'seek' | 'open',
+    fragment: string | undefined,
+    reason: JumpReason,
+  ) => void,
 ): void {
   const a = (e.target as Element).closest('a');
   if (!a) return;
@@ -2683,11 +2916,11 @@ function interceptLink(
     // "#fn3" (same document) or "chapter.xhtml#fn3" (cross-chapter).
     const target = file ? manifest?.chapters.find((c) => c.href === file) : undefined;
     const spine = target ? target.idx : file ? -1 : currentSpine;
-    if (spine >= 0) gotoChapter(spine, 0, 'seek', frag || undefined);
+    if (spine >= 0) gotoChapter(spine, 0, 'seek', frag || undefined, 'link');
   } else if ((a.getAttribute('href') ?? '').startsWith('#')) {
     e.preventDefault();
     const frag = (a.getAttribute('href') ?? '').slice(1);
-    if (frag) gotoChapter(currentSpine, 0, 'seek', frag);
+    if (frag) gotoChapter(currentSpine, 0, 'seek', frag, 'link');
   }
 }
 

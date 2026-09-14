@@ -1,11 +1,12 @@
 /** Minimal typed IndexedDB wrapper for the progress queue and offline state. */
 
 const DB_NAME = 'readport';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 export const STORES = {
   pendingEvents: 'pending-events', // key: eventId
   serverState: 'server-state', // key: bookId
+  progressMeta: 'progress-meta', // server reset generation, key: bookId
   downloads: 'downloads', // key: bookId
   prefs: 'prefs', // key: string
 } as const;

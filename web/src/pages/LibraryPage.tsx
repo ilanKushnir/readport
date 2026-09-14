@@ -11,6 +11,7 @@ import {
 } from '@readport/shared';
 import { api, ApiError } from '../api/client';
 import { useShelves } from '../state/shelves';
+import { ReadingNow } from './ReadingNow';
 import { AddToSheet } from '../components/AddToSheet';
 import { Cover, EmptyState } from '../components/ui';
 import {
@@ -68,7 +69,7 @@ function useDebounced<T>(value: T, ms: number): T {
 
 export function LibraryPage() {
   const params = useParams();
-  const { overview, refreshDownloads } = useShelves();
+  const { overview, refresh, refreshDownloads } = useShelves();
   const showing = useMemo<Showing>(() => {
     if (params.shelfId) return { kind: 'user', id: params.shelfId };
     if (params.facetKind && params.facetValue && isFacetKind(params.facetKind)) {
@@ -110,6 +111,8 @@ export function LibraryPage() {
   // Arriving at a different shelf starts fresh. Inside "Recently added" the
   // point IS recency, so that is where its sort starts.
   useEffect(() => {
+    setData(null);
+    setOfflineBooks(null);
     setSort(shelfKey === 'auto:recently-added' ? 'added' : 'title');
     setQuery('');
     setKind('all');
@@ -167,6 +170,15 @@ export function LibraryPage() {
       setOfflineBooks(null);
     } catch (err) {
       if (seq !== requestSeq.current) return;
+      if (showing.kind === 'auto' && showing.id === 'reading-now') {
+        // An unavailable filtered shelf must never masquerade as the whole library.
+        setData(null);
+        setOfflineBooks([]);
+        setError(
+          'Reading Now could not be refreshed. Reconnect and retry; your progress is kept on this device.',
+        );
+        return;
+      }
       // A shelf that is not there is not a connection problem. Deleting a
       // shelf on another device used to leave this page telling you to check
       // the server.
@@ -474,6 +486,19 @@ export function LibraryPage() {
             gone={gone}
             scanning={data?.scanActive ?? false}
           />
+        ) : showing.kind === 'auto' && showing.id === 'reading-now' ? (
+          <ReadingNow
+            books={books}
+            onReset={(id) => {
+              requestSeq.current++;
+              setData((current) =>
+                current
+                  ? { ...current, books: current.books.filter((book) => book.id !== id) }
+                  : current,
+              );
+              void refresh();
+            }}
+          />
         ) : (
           <div className="book-grid">
             {books.map((b) => (
@@ -588,7 +613,8 @@ function ShelfEmpty({
   }
   if (showing.kind === 'auto') {
     const copy: Record<AutoShelfId, string> = {
-      'reading-now': 'Open anything and it appears here until you finish it.',
+      'reading-now':
+        'Start reading or listening and that edition appears here until you finish it.',
       finished: 'Books you read to the end collect here on their own.',
       'both-formats':
         'This fills up as ReadPort matches an ebook to its audiobook. The Pairing page shows what it is considering.',

@@ -8,7 +8,8 @@ import {
   type ProgressState,
 } from '@readport/shared';
 import { api, ApiError, isOffline } from '../api/client';
-import { idbAll, idbClear, idbDelete, idbGet, idbPut, STORES } from './idb';
+import { idbAll, idbClear, idbDelete, STORES } from './idb';
+import { enqueueProgressEvent, mergeProgressSnapshot, readProgressSnapshot } from './storage';
 
 /**
  * Local-first progress engine.
@@ -105,8 +106,13 @@ function writeOwner(id: string | null): void {
  *  only - never session revocation. */
 export async function purgeProgressQueue(): Promise<void> {
   writeOwner(null);
+  writeStash([]);
+  knownRevision.clear();
+  activeGenerations.clear();
   try {
     await idbClear(STORES.pendingEvents);
+    await idbClear(STORES.serverState);
+    await idbClear(STORES.progressMeta);
   } catch {
     /* indexeddb unavailable */
   }
@@ -144,6 +150,32 @@ let flushing = false;
 /** Last server revision seen per book, mirrored in memory so an event can be
  *  built synchronously (pagehide gives us no time for an IndexedDB read). */
 const knownRevision = new Map<string, number>();
+// Bound at open/resume, NEVER advanced by an ack arriving at an old live surface.
+const activeGenerations = new Map<string, number>();
+const resetting = new Set<string>();
+
+/** Never optimistically erase progress: offline reset fails without hiding anything. */
+export async function resetBookProgress(bookId: string): Promise<void> {
+  resetting.add(bookId);
+  try {
+    const result = await api<{ generation: number }>(
+      `/api/progress/${encodeURIComponent(bookId)}`,
+      { method: 'DELETE' },
+    );
+    if (!Number.isSafeInteger(result.generation) || result.generation < 1)
+      throw new Error('Reset was not confirmed by this server');
+    await mergeProgressSnapshot(bookId, result.generation, null);
+    writeStash(
+      readStash().filter(
+        (event) => event.bookId !== bookId || (event.generation ?? 0) >= result.generation,
+      ),
+    );
+    knownRevision.delete(bookId);
+    listeners.forEach((listener) => listener());
+  } finally {
+    resetting.delete(bookId);
+  }
+}
 
 /** Locators are validated server-side; keep them in range at the source so a
  *  slightly-over-duration audio position can never poison the queue. */
@@ -177,6 +209,7 @@ function buildEvent(bookId: string, intent: ProgressIntent, locator: Locator): P
     // Declare which server revision this action was based on (causal ordering
     // beats clock ordering during reconciliation; clocks are just a hint).
     baseRevision: knownRevision.get(bookId),
+    generation: activeGenerations.get(bookId) ?? 0,
     intent,
     locator: sanitizeLocator(locator),
   };
@@ -188,17 +221,21 @@ export async function recordCheckpoint(
   locator: Locator,
   opts: { flush?: boolean } = {},
 ): Promise<void> {
+  // Capture intent, generation and locator before asynchronous storage reads.
+  const event = buildEvent(bookId, intent, locator);
   if (!knownRevision.has(bookId)) {
     try {
-      const known = await idbGet<ProgressState>(STORES.serverState, bookId);
-      if (known) knownRevision.set(bookId, known.revision);
+      const known = await readProgressSnapshot(bookId);
+      if (known.state && known.generation === event.generation) {
+        knownRevision.set(bookId, known.state.revision);
+        event.baseRevision = known.state.revision;
+      }
     } catch {
       /* no cached state */
     }
   }
-  const event = buildEvent(bookId, intent, locator);
   // IndexedDB first - never lose a checkpoint to a dropped connection.
-  await idbPut(STORES.pendingEvents, event.eventId, event);
+  await enqueueProgressEvent(event);
   if (opts.flush !== false) scheduleFlush(intent !== 'heartbeat');
 }
 
@@ -268,8 +305,7 @@ export async function drainLastGasp(): Promise<number> {
   let restored = 0;
   for (const event of stashed) {
     try {
-      await idbPut(STORES.pendingEvents, event.eventId, event);
-      restored += 1;
+      if (await enqueueProgressEvent(event)) restored += 1;
     } catch {
       return restored; // storage is down; keep the stash for the next start
     }
@@ -286,11 +322,12 @@ export async function drainLastGasp(): Promise<number> {
  * server acknowledges it. Everything already queued is flushed the same way.
  */
 export function persistActiveLocatorAndFlush(): void {
+  if (queueSuspended) return;
   const current = activeLocatorProvider?.();
-  if (current) {
+  if (current && !resetting.has(current.bookId)) {
     const event = buildEvent(current.bookId, 'heartbeat', current.locator);
     stashEvent(event);
-    const stored = idbPut(STORES.pendingEvents, event.eventId, event)
+    const stored = enqueueProgressEvent(event)
       .then(() => unstashEvent(event.eventId))
       .catch(() => {});
     void api<ProgressAck>('/api/progress/events', {
@@ -318,9 +355,17 @@ async function handleAck(ack: ProgressAck): Promise<void> {
   // Every book the batch touched, not just the last: falling back to `state`
   // keeps this working against a server that predates `states`.
   const states = ack.states?.length ? ack.states : ack.state ? [ack.state] : [];
+  for (const { bookId, generation } of ack.generations ?? []) {
+    await mergeProgressSnapshot(
+      bookId,
+      generation,
+      states.find((state) => state.bookId === bookId) ?? null,
+    );
+  }
   for (const state of states) {
-    knownRevision.set(state.bookId, state.revision);
-    await idbPut(STORES.serverState, state.bookId, state);
+    await mergeProgressSnapshot(state.bookId, state.generation ?? 0, state);
+    if ((activeGenerations.get(state.bookId) ?? 0) === (state.generation ?? 0))
+      knownRevision.set(state.bookId, state.revision);
   }
   listeners.forEach((l) => l());
 }
@@ -410,24 +455,34 @@ export async function flushPending(
 /** Resume position: newest acked server state + newer local pending events. */
 export async function resumeLocator(
   bookId: string,
+  opts: { activate?: boolean } = {},
 ): Promise<{ locator: Locator; source: 'server' | 'local' } | null> {
-  let server: ProgressState | null = null;
   try {
-    const res = await api<{ state: ProgressState | null }>(`/api/progress/${bookId}`);
-    server = res.state;
-    if (server) {
-      knownRevision.set(bookId, server.revision);
-      await idbPut(STORES.serverState, bookId, server);
-    }
+    const res = await api<{ state: ProgressState | null; generation?: number }>(
+      `/api/progress/${bookId}`,
+    );
+    await mergeProgressSnapshot(
+      bookId,
+      res.generation ?? res.state?.generation ?? 0,
+      res.state ?? null,
+    );
   } catch {
-    server = (await idbGet<ProgressState>(STORES.serverState, bookId)) ?? null;
+    // Offline uses the durable snapshot, including its reset generation.
   }
   // A position stashed as the app was killed must be part of THIS resume,
   // not only of the next background flush.
   await drainLastGasp();
+  const snapshot = await readProgressSnapshot(bookId);
+  if (opts.activate !== false) {
+    activeGenerations.set(bookId, snapshot.generation);
+    if (snapshot.state) knownRevision.set(bookId, snapshot.state.revision);
+    else knownRevision.delete(bookId);
+  }
   const pendingAll = await idbAll<ProgressEvent>(STORES.pendingEvents);
-  const pending = pendingAll.map((p) => p.value).filter((e) => e.bookId === bookId);
-  return resolveResume(server, pending);
+  const pending = pendingAll
+    .map((p) => p.value)
+    .filter((e) => e.bookId === bookId && (e.generation ?? 0) === snapshot.generation);
+  return resolveResume(snapshot.state, pending);
 }
 
 export function startProgressLifecycle(): () => void {

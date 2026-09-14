@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   createBrowserRouter,
   Link,
@@ -110,6 +110,36 @@ function Shell() {
   );
   const [collapsed, setCollapsed] = useSidebarCollapsed();
   const [overlay, setOverlay] = useState(false);
+  const shell = useRef<HTMLDivElement>(null);
+  const immersive = /^\/(read|listen)\//.test(location.pathname);
+
+  // dvh follows browser chrome, but not every keyboard/visual viewport change.
+  // Measure only the library shell; never resize the reader or fight pinch zoom.
+  useLayoutEffect(() => {
+    const el = shell.current;
+    const viewport = window.visualViewport;
+    if (!el || immersive || !viewport) return;
+    const update = () => {
+      if (viewport.scale !== 1) {
+        el.style.removeProperty('--app-viewport-height');
+        el.style.removeProperty('--app-viewport-top');
+        return;
+      }
+      el.style.setProperty('--app-viewport-height', `${viewport.height}px`);
+      el.style.setProperty('--app-viewport-top', `${viewport.offsetTop}px`);
+    };
+    update();
+    viewport.addEventListener('resize', update);
+    viewport.addEventListener('scroll', update);
+    window.addEventListener('resize', update);
+    return () => {
+      viewport.removeEventListener('resize', update);
+      viewport.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+      el.style.removeProperty('--app-viewport-height');
+      el.style.removeProperty('--app-viewport-top');
+    };
+  }, [immersive, phase, needsLibraries, setupSkipped]);
 
   useEffect(() => startProgressLifecycle(), []);
 
@@ -146,7 +176,6 @@ function Shell() {
   // 'offline' still renders the app: downloaded titles remain readable, and
   // privileged actions surface their own errors until reconnect.
 
-  const immersive = /^\/(read|listen)\//.test(location.pathname);
   const nav = (
     <>
       <NavLink to="/" end>
@@ -165,7 +194,7 @@ function Shell() {
   );
 
   return (
-    <div className={`app-shell${collapsed ? ' is-railhidden' : ''}`}>
+    <div ref={shell} className={`app-shell${collapsed ? ' is-railhidden' : ''}`}>
       {!immersive && (
         <>
           <a className="skip-link" href="#main-content">

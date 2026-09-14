@@ -339,9 +339,17 @@ and is immediately as capable as the install that was wiped.
 The write target is the first configured folder (`alignmentDirs` /
 `RP_ALIGNMENT_DIRS`) that will actually accept a file. If none will, the
 alignment is not lost - it falls back to `alignments/` inside the data
-directory and logs what to fix. That fallback survives a container restart but
-not a rebuild that discards the volume, which is exactly why the setup wizard
-asks for a folder in the library instead.
+directory and logs what to fix. With no external folder configured, this is
+also the normal destination. In the image it is `/data/alignments`, inside
+Compose's durable `rp-data:/data` volume: container replacement and image
+rebuilds do not erase it. Deleting the data volume does, so back it up (and do
+not use `docker compose down -v` to perform an ordinary upgrade).
+
+Import and the folder summary inspect the durable fallback as well as external
+folders, including after a failed mount recovers or configuration changes.
+Files are not silently moved to the external folder. Portable `.rpalign`
+documents remain files, not database blobs; the existing indexed segment rows
+in SQLite serve runtime lookups. No alignment algorithm changes are involved.
 
 ### The file
 

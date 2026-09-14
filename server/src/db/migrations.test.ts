@@ -47,6 +47,24 @@ function databaseAtVersion(upTo: number): void {
 }
 
 describe('schema migrations', () => {
+  it('upgrades v14 reset barriers without changing generations and cascades account deletion', () => {
+    databaseAtVersion(14);
+    const old = new DatabaseSync(path.join(dir, 'readport.db'));
+    old.exec("INSERT INTO progress_resets VALUES ('u1', 'b1', 7), ('deleted-user', 'b1', 3)");
+    old.close();
+    const db = openDatabase(dir);
+    try {
+      expect(db.prepare('SELECT * FROM progress_resets').all()).toEqual([
+        { user_id: 'u1', book_id: 'b1', generation: 7 },
+      ]);
+      expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+      db.prepare("DELETE FROM users WHERE id = 'u1'").run();
+      expect(db.prepare('SELECT * FROM progress_resets').all()).toEqual([]);
+    } finally {
+      db.close();
+    }
+  });
+
   it('are numbered once and in order', () => {
     const versions = MIGRATIONS.map((m) => m.version);
     expect(versions).toEqual([...versions].sort((a, b) => a - b));

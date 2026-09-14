@@ -56,6 +56,8 @@ export const progressEventSchema = z.object({
    * newer than the claim regardless of clock skew.
    */
   baseRevision: z.number().int().min(0).optional(),
+  /** Server-issued reset generation. Omitted legacy events belong to generation zero. */
+  generation: z.number().int().min(0).optional(),
   intent: progressIntentSchema,
   locator: locatorSchema,
 });
@@ -68,6 +70,7 @@ export type ProgressBatch = z.infer<typeof progressBatchSchema>;
 
 export const progressStateSchema = z.object({
   bookId: z.string(),
+  generation: z.number().int().min(0).optional(),
   revision: z.number().int().min(0),
   locator: locatorSchema,
   intent: progressIntentSchema,
@@ -101,5 +104,9 @@ export const progressAckSchema = z.object({
    * the others' revisions stale, so the next write for them raced.
    */
   states: z.array(progressStateSchema).default([]),
+  /** Includes reset books with no remaining state. */
+  generations: z
+    .array(z.object({ bookId: z.string(), generation: z.number().int().min(0) }))
+    .optional(),
 });
 export type ProgressAck = z.infer<typeof progressAckSchema>;

@@ -125,10 +125,10 @@ describe('a key can read', () => {
   it('sees the library, a book and the reading list', async () => {
     const key = await mintKey();
     for (const url of [
-      '/api/library',
-      `/api/books/${bookId}`,
-      '/api/reading-list',
-      '/api/shelves',
+      '/api/agent/v1/books',
+      `/api/agent/v1/books/${bookId}`,
+      '/api/agent/v1/reading-list',
+      '/api/agent/v1/shelves',
     ]) {
       const res = await withKey(key, { url });
       expect(res.statusCode, url).toBe(200);
@@ -137,7 +137,7 @@ describe('a key can read', () => {
 
   it('sees who it is acting as', async () => {
     const key = await mintKey();
-    const me = (await withKey(key, { url: '/api/auth/me' })).json() as {
+    const me = (await withKey(key, { url: '/api/agent/v1/me' })).json() as {
       user: { username: string };
     };
     expect(me.user.username).toBe('admin');
@@ -181,25 +181,25 @@ describe('a key cannot write', () => {
 describe('a key that should not work', () => {
   it('is refused once revoked', async () => {
     const key = await mintKey('short lived');
-    expect((await withKey(key, { url: '/api/library' })).statusCode).toBe(200);
+    expect((await withKey(key, { url: '/api/agent/v1/books' })).statusCode).toBe(200);
     const list = (await withSession({ url: '/api/keys' })).json() as {
       keys: { id: string; name: string }[];
     };
     const id = list.keys.find((k) => k.name === 'short lived')!.id;
     expect((await withSession({ method: 'DELETE', url: `/api/keys/${id}` })).statusCode).toBe(200);
-    expect((await withKey(key, { url: '/api/library' })).statusCode).toBe(401);
+    expect((await withKey(key, { url: '/api/agent/v1/books' })).statusCode).toBe(401);
   });
 
   it('is refused when it is nonsense, rather than falling back to anonymous', async () => {
     for (const bad of ['rp_deadbeef_' + 'f'.repeat(48), 'not-a-key', 'rp_zz_1']) {
-      expect((await withKey(bad, { url: '/api/library' })).statusCode, bad).toBe(401);
+      expect((await withKey(bad, { url: '/api/agent/v1/books' })).statusCode, bad).toBe(401);
     }
   });
 
   it('stops working when the account is disabled', async () => {
     const key = await mintKey('disabled owner');
     db.prepare("UPDATE users SET status = 'disabled' WHERE username = 'admin'").run();
-    expect((await withKey(key, { url: '/api/library' })).statusCode).toBe(401);
+    expect((await withKey(key, { url: '/api/agent/v1/books' })).statusCode).toBe(401);
     db.prepare("UPDATE users SET status = 'active' WHERE username = 'admin'").run();
   });
 });

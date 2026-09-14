@@ -11,10 +11,8 @@ import { type SessionUser } from './sessions.js';
  * it the power to change all of that; an API key that can only ever perform a
  * GET gives it exactly what it needs and nothing else.
  *
- * The read-only part is enforced at the request hook rather than route by
- * route. An allowlist of safe routes is a list somebody has to remember to
- * update, and the day they forget is the day a key can write. "This request
- * was authenticated by a key, so it is a GET or it is refused" cannot rot.
+ * The request hook grants only the fixed agent:read scope and a closed
+ * versioned route catalog. Existing and future legacy GETs are not grants.
  */
 
 /** `rp_<prefix>_<secret>`: the prefix is public, the secret never stored. */
@@ -72,7 +70,11 @@ export function createApiKey(
  *
  * A disabled account's keys stop working, like its sessions do.
  */
-export function resolveApiKey(db: DB, presented: string, now: string): SessionUser | null {
+export function resolveApiKey(
+  db: DB,
+  presented: string,
+  now: string,
+): (SessionUser & { apiKeyId: string }) | null {
   const m = KEY_RE.exec(presented.trim());
   if (!m) return null;
   const row = db
@@ -99,6 +101,7 @@ export function resolveApiKey(db: DB, presented: string, now: string): SessionUs
   }
 
   return {
+    apiKeyId: row.id,
     id: user.id,
     username: user.username,
     role: user.role,
@@ -108,7 +111,8 @@ export function resolveApiKey(db: DB, presented: string, now: string): SessionUs
 
 /** The bearer token on a request, if it looks like one of ours. */
 export function bearerToken(header: string | string[] | undefined): string | null {
-  const raw = Array.isArray(header) ? header[0] : header;
+  if (Array.isArray(header)) return null;
+  const raw = header;
   if (!raw) return null;
   const m = /^Bearer\s+(\S+)$/i.exec(raw.trim());
   return m ? m[1]! : null;

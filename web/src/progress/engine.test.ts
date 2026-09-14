@@ -10,6 +10,7 @@ vi.mock('./idb', () => ({
   STORES: {
     pendingEvents: 'pending-events',
     serverState: 'server-state',
+    progressMeta: 'progress-meta',
     downloads: 'downloads',
     prefs: 'prefs',
   },
@@ -22,7 +23,32 @@ vi.mock('./idb', () => ({
   ),
 }));
 
-const apiMock = vi.fn(async () => ({ results: [], state: null }));
+vi.mock('./storage', () => ({
+  readProgressSnapshot: async (id: string) => ({
+    generation: store('progress-meta').get(id) ?? 0,
+    state: store('server-state').get(id) ?? null,
+  }),
+  enqueueProgressEvent: async (event: ProgressEvent) => {
+    if ((event.generation ?? 0) !== (store('progress-meta').get(event.bookId) ?? 0)) return false;
+    await idbPut('pending-events', event.eventId, event);
+    return true;
+  },
+  mergeProgressSnapshot: async (id: string, generation: number, state: unknown) => {
+    const current = Number(store('progress-meta').get(id) ?? 0);
+    if (generation < current) return;
+    if (generation > current) {
+      store('progress-meta').set(id, generation);
+      store('server-state').delete(id);
+      for (const [key, value] of store('pending-events')) {
+        const event = value as ProgressEvent;
+        if (event.bookId === id && (event.generation ?? 0) < generation)
+          store('pending-events').delete(key);
+      }
+    }
+    if (state) store('server-state').set(id, state);
+  },
+}));
+const apiMock = vi.fn(async (): Promise<Record<string, unknown>> => ({ results: [], state: null }));
 vi.mock('../api/client', () => ({
   api: (...args: unknown[]) => apiMock(...(args as [])),
   isOffline: () => false,
@@ -35,6 +61,8 @@ import {
   flushPending,
   persistActiveLocatorAndFlush,
   recordCheckpoint,
+  resetBookProgress,
+  resumeLocator,
   setActiveLocatorProvider,
   withinKeepaliveBudget,
 } from './engine';
@@ -57,7 +85,8 @@ class MemoryStorage {
 
 beforeEach(() => {
   stores.clear();
-  apiMock.mockClear();
+  apiMock.mockReset();
+  apiMock.mockResolvedValue({ results: [], state: null });
   vi.stubGlobal('localStorage', new MemoryStorage());
 });
 
@@ -140,6 +169,28 @@ describe('baseRevision propagation', () => {
 });
 
 describe('queue ownership (a revoked session must not cost the reader their writing)', () => {
+  it('a different account cannot inherit a last-gasp stash or cached progress', async () => {
+    localStorage.setItem('rp-progress-owner', 'user-a');
+    store('server-state').set('private', { revision: 4 });
+    localStorage.setItem(
+      'rp-progress-stash',
+      JSON.stringify([
+        {
+          eventId: crypto.randomUUID(),
+          bookId: 'private',
+          deviceId: 'a',
+          sessionId: 'a',
+          seq: 1,
+          occurredAt: new Date().toISOString(),
+          intent: 'open',
+          locator: audio(0.4),
+        },
+      ]),
+    );
+    await claimProgressQueue('user-b');
+    expect(await drainLastGasp()).toBe(0);
+    expect(store('server-state').size).toBe(0);
+  });
   it('the same account signing back in keeps its un-synced backlog', async () => {
     localStorage.setItem('rp-progress-owner', 'user-a');
     await recordCheckpoint('bookQ', 'pause', audio(0.4), { flush: false });
@@ -213,6 +264,60 @@ describe('last-gasp stash (page killed before IndexedDB commits)', () => {
     expect(await drainLastGasp()).toBe(0);
   });
 
+  it('does not discard pending progress when the server cannot confirm reset', async () => {
+    await recordCheckpoint('reset-fail', 'open', audio(0.3), { flush: false });
+    apiMock.mockRejectedValueOnce(new Error('offline'));
+    await expect(resetBookProgress('reset-fail')).rejects.toThrow('offline');
+    expect(store('pending-events').size).toBe(1);
+  });
+  it('clears only the selected edition after server acknowledgement', async () => {
+    await recordCheckpoint('reset-ok', 'open', audio(0.3), { flush: false });
+    await recordCheckpoint('paired', 'open', audio(0.7), { flush: false });
+    store('server-state').set('reset-ok', { revision: 1 });
+    store('downloads').set('reset-ok', { status: 'done' });
+    apiMock.mockResolvedValueOnce({ generation: 1 });
+    await resetBookProgress('reset-ok');
+    expect([...store('pending-events').values()].map((v) => (v as ProgressEvent).bookId)).toEqual([
+      'paired',
+    ]);
+    expect(store('server-state').has('reset-ok')).toBe(false);
+    expect(store('downloads').has('reset-ok')).toBe(true);
+  });
+  it('reopen after another device reset cannot promote an old offline locator into a fresh open', async () => {
+    await recordCheckpoint('remote-reset', 'open', audio(0.8), { flush: false });
+    apiMock.mockResolvedValueOnce({ state: null, generation: 1 });
+    expect(await resumeLocator('remote-reset')).toBeNull();
+    await recordCheckpoint('remote-reset', 'open', audio(0.2), { flush: false });
+    const pending = [...store('pending-events').values()] as ProgressEvent[];
+    expect(pending).toHaveLength(1);
+    expect(pending[0]).toMatchObject({ generation: 1, locator: { pct: 0.2 } });
+  });
+  it('an in-flight pre-reset ack cannot restore cached progress', async () => {
+    await recordCheckpoint('ack-race', 'open', audio(0.8), { flush: false });
+    let respond!: (value: Record<string, unknown>) => void;
+    apiMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          respond = resolve;
+        }),
+    );
+    const flushing = flushPending();
+    await flushMicro();
+    apiMock.mockResolvedValueOnce({ generation: 1 });
+    await resetBookProgress('ack-race');
+    respond({
+      results: [],
+      state: {
+        bookId: 'ack-race',
+        revision: 100,
+        generation: 0,
+        locator: audio(0.8),
+        occurredAt: '2099-01-01T00:00:00Z',
+      },
+    });
+    await flushing;
+    expect(store('server-state').has('ack-race')).toBe(false);
+  });
   it('a committed write leaves nothing stashed to replay', async () => {
     const unregister = setActiveLocatorProvider(() => ({ bookId: 'bookL', locator: audio(0.5) }));
     persistActiveLocatorAndFlush();
