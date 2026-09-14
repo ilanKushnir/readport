@@ -48,7 +48,8 @@ import {
   type HighlightColor,
 } from './marks';
 import { NarrationBar, useNarration } from './Narration';
-import { isConfident, nearestCue, paceOffset, shouldFollow } from './readalong';
+import { isConfident, nearestCue, paceOffset } from './readalong';
+import { autoScrollDelta, markerPosition, canResumeAt, ScrollOwnership } from './motion';
 import { liveCheckpointOffset } from './liveOffset';
 import {
   computePageLayout,
@@ -126,8 +127,8 @@ export function ReaderPage() {
   const lastCountRef = useRef(1);
   /** Timer clearing the last confident flash, so flashes never stack up. */
   const flashTimerRef = useRef<number | null>(null);
-  /** Where the narration is, as a fraction down the visible text. */
-  const [paceTop, setPaceTop] = useState<number | null>(null);
+  /** The active column's margin and narrated line, in viewport pixels. */
+  const [pace, setPace] = useState<{ left: number; top: number } | null>(null);
   /** Keep the pace marker still and scroll the page under it. */
   const [autoScroll, setAutoScroll] = useState(false);
   /** Where the scroller should be so the marker sits on the anchor line. */
@@ -136,8 +137,7 @@ export function ReaderPage() {
   const autoScrollSpeedRef = useRef(0);
   /** When the target was last computed, for measuring that speed. */
   const autoScrollAtRef = useRef<number | null>(null);
-  /** Has the voice been off-screen since the reader last took over? */
-  const cueLeftSinceTakeoverRef = useRef(true);
+
   /**
    * This chapter would not divide into pages, so it scrolls instead.
    * Per-chapter, not a preference: the next chapter gets a fresh chance.
@@ -181,6 +181,24 @@ export function ReaderPage() {
 
   /** Whether the page still moves itself to keep up with the voice. */
   const [following, setFollowing] = useState(true);
+  const followingRef = useRef(following);
+  const scrollOwnership = useRef(new ScrollOwnership());
+  const manualScrollEpoch = useRef(0);
+  followingRef.current = following;
+  const [reduceMotion, setReduceMotion] = useState(
+    () =>
+      typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches,
+  );
+  /** Cancel the driver synchronously, before React commits the gesture. */
+  const detachFollowing = useCallback(() => {
+    manualScrollEpoch.current++;
+    followingRef.current = false;
+    setFollowing(false);
+    setAutoScroll(false);
+    autoScrollTargetRef.current = null;
+    autoScrollSpeedRef.current = 0;
+    autoScrollAtRef.current = null;
+  }, []);
   /** The passage a search jumped to: landed on, marked, and then let go. */
   const [found, setFound] = useState<{
     spineIdx: number;
@@ -538,13 +556,13 @@ export function ReaderPage() {
         // to, and if anything about the measurement is off by a little the
         // reader lands somewhere in the middle of the new chapter with no
         // idea why.
-        if (scroller) scroller.scrollTop = 0;
+        if (scroller) scrollOwnership.current.write(scroller, 0);
       } else {
         const range = rangeForSpan(map, charOffset, charOffset + 1);
         if (range && scroller) {
           const r = range.getBoundingClientRect();
           const base = scroller.getBoundingClientRect();
-          scroller.scrollTop += r.top - base.top - 96;
+          scrollOwnership.current.write(scroller, scroller.scrollTop + r.top - base.top - 96);
         }
       }
     }
@@ -619,7 +637,7 @@ export function ReaderPage() {
         if (range && scroller) {
           const r = range.getBoundingClientRect();
           const base = scroller.getBoundingClientRect();
-          scroller.scrollTop += r.top - base.top - 96;
+          scrollOwnership.current.write(scroller, scroller.scrollTop + r.top - base.top - 96);
         }
       }
     },
@@ -776,6 +794,7 @@ export function ReaderPage() {
     let timer: ReturnType<typeof setTimeout> | null = null;
     let footerTimer: ReturnType<typeof setTimeout> | null = null;
     const onScroll = () => {
+      if (!scrollOwnership.current.matches(scroller)) detachFollowing();
       // Footer: cheap, throttled to ~12 updates/s (a timer, not rAF, so a
       // backgrounded tab still lands on the right value when it returns).
       if (!footerTimer) {
@@ -815,10 +834,7 @@ export function ReaderPage() {
     // Listening for the gesture rather than for `scroll` is deliberate - the
     // follow effect scrolls too, and a scroll event cannot say who caused it.
     const onUserScroll = () => {
-      setFollowing(false);
-      // They are where they want to be; the voice being visible here is not a
-      // reason to drag them back.
-      cueLeftSinceTakeoverRef.current = false;
+      detachFollowing();
     };
     scroller.addEventListener('scroll', onScroll, { passive: true });
     scroller.addEventListener('wheel', onUserScroll, { passive: true });
@@ -840,7 +856,7 @@ export function ReaderPage() {
       // Jumping by hand - contents, search, a bookmark, the slider - takes the
       // wheel back from the narration, exactly as turning a page does. The one
       // caller that must not is the narration itself, which re-arms after.
-      setFollowing(false);
+      detachFollowing();
       const clamped = Math.max(0, Math.min(s, manifest.chapters.length - 1));
       // A jump of more than a page away leaves a way back.
       if (
@@ -873,7 +889,7 @@ export function ReaderPage() {
             if (range && scroller) {
               const r = range.getBoundingClientRect();
               const base = scroller.getBoundingClientRect();
-              scroller.scrollTop += r.top - base.top - 96;
+              scrollOwnership.current.write(scroller, scroller.scrollTop + r.top - base.top - 96);
             }
           }
         }
@@ -907,9 +923,8 @@ export function ReaderPage() {
 
   const nextPage = useCallback(() => {
     if (chapterLoadingRef.current) return;
-    // Moving the page by hand takes the wheel from the narration; it is given
-    // back on its own once the voice reaches wherever the reader went.
-    setFollowing(false);
+    // Only an explicit successful relocation gives the voice control again.
+    detachFollowing();
     if (prefs.mode === 'scroll') {
       const s = scrollerRef.current;
       if (s) s.scrollTop += s.clientHeight * 0.9;
@@ -933,7 +948,7 @@ export function ReaderPage() {
 
   const prevPage = useCallback(() => {
     if (chapterLoadingRef.current) return;
-    setFollowing(false);
+    detachFollowing();
     if (prefs.mode === 'scroll') {
       const s = scrollerRef.current;
       if (s) s.scrollTop -= s.clientHeight * 0.9;
@@ -996,12 +1011,73 @@ export function ReaderPage() {
     onLeaveChapter,
   });
 
+  /** Relocate first, verify the rendered cue, then give the voice control. */
+  const resumeFollowing = useCallback(
+    (enableAuto = false): boolean => {
+      const cue = narration.cue ?? nearestCue(narration.cues, narration.bookMs);
+      const map = textMapRef.current;
+      const content = contentRef.current;
+      if (!readAlong || !narration.ready || chapterLoadingRef.current || !cue || !map || !content)
+        return false;
+      if (!canResumeAt(narration.state, narration.bookMs, narration.playing)) return false;
+      // rangeForSpan clamps offsets; a clamped invalid cue is not a relocation.
+      if (cue.charStart < 0 || cue.charStart >= map.totalChars) return false;
+      const range = rangeForSpan(map, cue.charStart, cue.charStart + 1);
+      if (!range || range.getBoundingClientRect().height <= 0) return false;
+      const box = prefs.mode === 'paginated' ? pagesRef.current : scrollerRef.current;
+      if (!box) return false;
+      if (prefs.mode === 'paginated') {
+        if (!layoutRef.current || paginationFailed) return false;
+        const target = pageForOffset(cue.charStart);
+        if (target >= pageCount) return false;
+        // Explicit relocation is atomic, not an attachment to a page mid-slide.
+        const transition = content.style.transition;
+        content.style.transition = 'none';
+        goToPage(target);
+        content.getBoundingClientRect();
+        content.style.transition = transition;
+      } else {
+        const r = range.getBoundingClientRect();
+        const b = box.getBoundingClientRect();
+        const anchor = enableAuto ? AUTO_SCROLL_ANCHOR : 0.34;
+        scrollOwnership.current.write(
+          box,
+          box.scrollTop + r.top - b.top + r.height / 2 - b.height * anchor,
+        );
+      }
+      if (!spanOnScreen(map, cue.charStart, box.getBoundingClientRect())) return false;
+      // Late layout/image passes must preserve this relocation, not the old landing.
+      currentOffsetRef.current = cue.charStart;
+      setLiveOffset(cue.charStart);
+      autoScrollTargetRef.current = null;
+      autoScrollSpeedRef.current = 0;
+      autoScrollAtRef.current = null;
+      followingRef.current = true;
+      setFollowing(true);
+      if (enableAuto) setAutoScroll(!reduceMotion);
+      return true;
+    },
+    [
+      narration.cue,
+      narration.cues,
+      narration.bookMs,
+      narration.ready,
+      narration.playing,
+      reduceMotion,
+      readAlong,
+      prefs.mode,
+      paginationFailed,
+      pageCount,
+      pageForOffset,
+      goToPage,
+    ],
+  );
+
   /**
    * Wash the sentence being spoken, and bring the page to it.
    *
-   * Following is abandoned as soon as the reader turns a page themselves and
-   * picked up again the moment the voice reaches whatever page they went to,
-   * so looking ahead costs nothing and needs no undoing.
+   * Following is abandoned as soon as the reader moves the page. Only an
+   * explicit relocation gives control back, so the return target stays put.
    */
   useEffect(() => {
     const map = textMapRef.current;
@@ -1035,11 +1111,8 @@ export function ReaderPage() {
         : scrollerRef.current
       )?.getBoundingClientRect(),
     );
-    // Once the reader has taken over, the voice has to leave the screen and
-    // come back before the page starts following it again.
-    if (!onScreen) cueLeftSinceTakeoverRef.current = true;
-    if (!shouldFollow(following, cue, onScreen, cueLeftSinceTakeoverRef.current)) return;
-    if (!following) setFollowing(true);
+    // Merely crossing a visible cue must not hide the detached target.
+    if (!following || !followingRef.current) return;
     if (onScreen) return;
     if (prefs.mode === 'paginated') {
       const target = pageForOffset(cue.charStart);
@@ -1052,7 +1125,10 @@ export function ReaderPage() {
         const base = scroller.getBoundingClientRect();
         // A third of the way down, not at the very top: the eye wants to see
         // where the sentence is going as well as where it started.
-        scroller.scrollTop += r.top - base.top - base.height * 0.34;
+        scrollOwnership.current.write(
+          scroller,
+          scroller.scrollTop + r.top - base.top - base.height * 0.34,
+        );
       }
     }
   }, [
@@ -1129,31 +1205,50 @@ export function ReaderPage() {
    */
   const updatePace = useCallback(() => {
     if (!readAlong || !narration.playing) {
-      setPaceTop(null);
+      setPace(null);
       return;
     }
     const map = textMapRef.current;
     const at = paceOffset(narration.cues, narration.bookMs);
     if (at === null || !map) {
-      setPaceTop(null);
+      setPace(null);
       return;
     }
     const offset = Math.round(at);
     const range = rangeForSpan(map, offset, offset + 1);
     const box = (prefs.mode === 'paginated' ? pagesRef.current : scrollerRef.current) ?? null;
     if (!range || !box) {
-      setPaceTop(null);
+      setPace(null);
       return;
     }
     const r = range.getBoundingClientRect();
     const b = box.getBoundingClientRect();
+    const origin = viewportRef.current?.getBoundingClientRect();
+    const textBox = (
+      prefs.mode === 'paginated' ? box : contentRef.current
+    )?.getBoundingClientRect();
+    if (!origin || !textBox) return;
+    const position = markerPosition(
+      r,
+      b,
+      origin,
+      textBox,
+      rtl,
+      prefs.mode === 'paginated' && layoutRef.current
+        ? layoutRef.current
+        : { columns: 1, pad: MARGINS[prefs.margin].padding, columnGap: 0 },
+    );
 
     // Auto-scrolling: the marker is nailed to the anchor line and the text is
     // moved to meet it. Its position is therefore a constant, and what varies
     // is where the page has to be.
-    if (autoScroll && prefs.mode !== 'paginated') {
+    if (autoScroll && following && !reduceMotion && prefs.mode !== 'paginated') {
       const scroller = scrollerRef.current;
-      setPaceTop(scroller ? scroller.clientHeight * AUTO_SCROLL_ANCHOR : null);
+      setPace(
+        position && scroller
+          ? { ...position, top: b.top - origin.top + scroller.clientHeight * AUTO_SCROLL_ANCHOR }
+          : null,
+      );
       if (scroller) {
         const next =
           scroller.scrollTop +
@@ -1180,12 +1275,19 @@ export function ReaderPage() {
     autoScrollTargetRef.current = null;
 
     // Off the current page or scrolled out of view: nothing to point at.
-    if (r.height === 0 || r.bottom < b.top || r.top > b.bottom) {
-      setPaceTop(null);
-      return;
-    }
-    setPaceTop(r.top - b.top + r.height / 2);
-  }, [readAlong, narration.playing, narration.bookMs, narration.cues, prefs.mode, autoScroll]);
+    setPace(position);
+  }, [
+    readAlong,
+    narration.playing,
+    narration.bookMs,
+    narration.cues,
+    prefs.mode,
+    prefs.margin,
+    autoScroll,
+    following,
+    reduceMotion,
+    rtl,
+  ]);
 
   // The clock moves the marker; so does the reader. Recomputing only on the
   // clock left it pinned to a stale screen position during a scroll - it sat
@@ -1225,8 +1327,7 @@ export function ReaderPage() {
    */
   useEffect(() => {
     if (!readAlong || narration.seekNonce === 0) return;
-    setFollowing(true);
-    cueLeftSinceTakeoverRef.current = true;
+    resumeFollowing();
   }, [narration.seekNonce, readAlong]);
 
   /**
@@ -1246,7 +1347,7 @@ export function ReaderPage() {
    * Scrolling mode only: in paginated mode the page already turns itself.
    */
   useEffect(() => {
-    if (!autoScroll || !readAlong || !narration.playing) return;
+    if (!autoScroll || !following || reduceMotion || !readAlong || !narration.playing) return;
     if (prefs.mode === 'paginated') return;
     const scroller = scrollerRef.current;
     if (!scroller) return;
@@ -1255,6 +1356,11 @@ export function ReaderPage() {
     let raf = 0;
     let last = performance.now();
     const step = (now: number) => {
+      if (!followingRef.current) return;
+      if (!scrollOwnership.current.matches(scroller)) {
+        detachFollowing();
+        return;
+      }
       raf = requestAnimationFrame(step);
       const dt = Math.min(64, now - last); // a backgrounded tab must not lurch
       last = now;
@@ -1269,19 +1375,15 @@ export function ReaderPage() {
       // actually working through the page, measured between targets, so the
       // text drifts up at the pace it is being read.
       const speed = autoScrollSpeedRef.current; // px per ms
-      const drift = want - scroller.scrollTop;
-      // A gentle correction on top, so the two never separate: at most a
-      // third of the remaining distance per second.
-      const correction = drift * Math.min(1, dt / 3000);
-      const move = speed * dt + correction;
-      if (Math.abs(move) < 0.01) return;
-      // Never faster than a comfortable read, and never backwards - the page
-      // going up under you is disorienting; the correction handles overshoot.
-      scroller.scrollTop += Math.max(0, Math.min(move, (dt / 1000) * 220));
+      scrollOwnership.current.write(
+        scroller,
+        scroller.scrollTop +
+          autoScrollDelta(scroller.scrollTop, want, speed, dt, followingRef.current, reduceMotion),
+      );
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [autoScroll, readAlong, narration.playing, prefs.mode]);
+  }, [autoScroll, following, reduceMotion, readAlong, narration.playing, prefs.mode]);
 
   /**
    * The page turn actually used.
@@ -1290,10 +1392,15 @@ export function ReaderPage() {
    * preference says - the preference is a taste, that is an accessibility
    * setting, and it wins.
    */
-  const [reduceMotion, setReduceMotion] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const sync = () => setReduceMotion(mq.matches);
+    const sync = () => {
+      setReduceMotion(mq.matches);
+      if (mq.matches) {
+        setAutoScroll(false);
+        autoScrollTargetRef.current = null;
+      }
+    };
     sync();
     mq.addEventListener('change', sync);
     return () => mq.removeEventListener('change', sync);
@@ -1631,12 +1738,14 @@ export function ReaderPage() {
     // Only while they have not moved themselves: re-landing someone who has
     // started reading is worse than the drift.
     const landing = currentOffsetRef.current;
+    const epoch = manualScrollEpoch.current;
     let alive = true;
     const settle = () => {
       if (!alive || scrollerRef.current !== scroller) return;
+      if (manualScrollEpoch.current !== epoch) return;
       if (Math.abs(currentOffsetRef.current - landing) > 40) return;
       if (landing <= 0) {
-        scroller.scrollTop = 0;
+        scrollOwnership.current.write(scroller, 0);
         return;
       }
       const map = textMapRef.current;
@@ -1644,7 +1753,7 @@ export function ReaderPage() {
       if (!range) return;
       const r = range.getBoundingClientRect();
       const base = scroller.getBoundingClientRect();
-      scroller.scrollTop += r.top - base.top - 96;
+      scrollOwnership.current.write(scroller, scroller.scrollTop + r.top - base.top - 96);
     };
     const pending = Array.from(content.querySelectorAll('img')).filter((i) => !i.complete);
     for (const img of pending) {
@@ -1953,17 +2062,23 @@ export function ReaderPage() {
         </button>
       </div>
 
-      <div className="reader-viewport" ref={viewportRef} dir={rtl ? 'rtl' : 'ltr'}>
+      <div
+        className="reader-viewport"
+        ref={viewportRef}
+        dir={rtl ? 'rtl' : 'ltr'}
+        onWheelCapture={detachFollowing}
+        onTouchMoveCapture={detachFollowing}
+      >
         {currentBookmark && (
           <svg className="reader-ribbon" viewBox="0 0 22 34" aria-hidden="true">
             <path d="M0 0h22v34l-11-8-11 8z" fill="currentColor" />
           </svg>
         )}
-        {paceTop !== null && (
+        {pace !== null && (
           // Beside the text, never on it: an estimate drawn as one.
           <span
             className="pace-marker"
-            style={{ top: paceTop }}
+            style={pace}
             aria-hidden="true"
             data-auto={autoScroll ? 'on' : undefined}
           />
@@ -2226,28 +2341,20 @@ export function ReaderPage() {
             n={narration}
             following={following}
             onResume={() => {
-              setFollowing(true);
-              cueLeftSinceTakeoverRef.current = true;
-              // The nearest cue, not only the current one. In a gap - which
-              // is precisely when a reader presses this - there IS no current
-              // cue, so the button used to do nothing at all.
-              const cue = narration.cue ?? nearestCue(narration.cues, narration.bookMs);
-              const map = textMapRef.current;
-              if (!cue || !map) return;
-              if (prefs.mode === 'paginated') goToPage(pageForOffset(cue.charStart));
+              resumeFollowing();
+            }}
+            onClose={() => {
+              detachFollowing();
+              setReadAlong(false);
+            }}
+            autoScroll={prefs.mode === 'paginated' ? null : autoScroll}
+            onAutoScroll={(enabled) => {
+              if (enabled) resumeFollowing(true);
               else {
-                const range = rangeForSpan(map, cue.charStart, cue.charStart + 1);
-                const scroller = scrollerRef.current;
-                if (range && scroller) {
-                  const r = range.getBoundingClientRect();
-                  const base = scroller.getBoundingClientRect();
-                  scroller.scrollTop += r.top - base.top - base.height * 0.34;
-                }
+                autoScrollTargetRef.current = null;
+                setAutoScroll(false);
               }
             }}
-            onClose={() => setReadAlong(false)}
-            autoScroll={prefs.mode === 'paginated' ? null : autoScroll}
-            onAutoScroll={setAutoScroll}
           />
         )}
         {prefs.progressBar === 'full' && (
