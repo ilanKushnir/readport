@@ -578,7 +578,7 @@ export function NarrationBar({
           moment the reader is MOST lost is when the voice has wandered into a
           chapter they cannot see, which is exactly when there is no cue here
           and the way back used to disappear. */}
-      {!following && n.playing && (
+      {!following && (
         <button className="readalong__resume" onClick={onResume}>
           <IconTarget size={15} />
           <span>Back to the voice</span>
