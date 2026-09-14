@@ -4,6 +4,7 @@ import { type AppContext } from '../context.js';
 import { resolveSession, type SessionUser } from '../auth/sessions.js';
 import { buildSourceList, proxyAuthUser } from '../auth/proxyAuth.js';
 import { bearerToken, resolveApiKey } from '../auth/apikeys.js';
+import { AGENT_SCOPE, agentRoute } from './agent-contract.js';
 
 export { SESSION_COOKIE, sessionCookieOpts } from '../auth/cookie.js';
 import { SESSION_COOKIE, sessionCookieOpts } from '../auth/cookie.js';
@@ -13,6 +14,8 @@ declare module 'fastify' {
     user: SessionUser | null;
     /** How the request was authenticated (undefined when anonymous). */
     authVia?: 'session' | 'proxy' | 'apikey';
+    apiKeyId?: string;
+    agentScopes?: readonly string[];
     /**
      * Who to count rate limits against - see api/clientIp.ts. Only ever a
      * throttle key: never an identity, never an authorization input.
@@ -67,11 +70,13 @@ export function attachUser(ctx: AppContext, req: FastifyRequest, reply?: Fastify
   // An API key first: an agent sends no cookies, and a request carrying a key
   // is a key request even if a browser session happens to exist alongside it.
   const bearer = bearerToken(req.headers.authorization);
-  if (bearer) {
-    const keyUser = resolveApiKey(ctx.db, bearer, new Date().toISOString());
+  if (req.headers.authorization !== undefined) {
+    const keyUser = bearer ? resolveApiKey(ctx.db, bearer, new Date().toISOString()) : null;
     if (keyUser) {
       req.user = keyUser;
       req.authVia = 'apikey';
+      req.apiKeyId = keyUser.apiKeyId;
+      req.agentScopes = [AGENT_SCOPE];
       return;
     }
     // A presented-but-invalid key is not silently downgraded to anonymous:
@@ -109,22 +114,11 @@ export function requireUser(req: FastifyRequest, reply: FastifyReply): boolean {
   return true;
 }
 
-/**
- * What an API key may do: read, and nothing else.
- *
- * Enforced here rather than route by route. An allowlist of "safe" routes is
- * a list somebody has to remember to extend, and the day they forget is the
- * day a key can write.
- *
- * Two things a GET still must not do:
- *  - `/api/books/:id/export` hands over the book file itself. An agent that
- *    can read a reading list has no business pulling the library down.
- *  - `/api/keys*` would let a key enumerate or (via a future route) mint
- *    others. Keys do not manage keys.
- */
-export function apiKeyAllows(method: string, pathname: string): boolean {
-  if (!['GET', 'HEAD'].includes(method)) return false;
-  if (/^\/api\/books\/[^/]+\/export\b/.test(pathname)) return false;
-  if (pathname === '/api/keys' || pathname.startsWith('/api/keys/')) return false;
-  return true;
+/** Missing grants, unknown routes and every non-GET fail closed. */
+export function apiKeyAllows(
+  method: string,
+  pathname: string,
+  scopes: readonly string[] = [],
+): boolean {
+  return method === 'GET' && scopes.includes(AGENT_SCOPE) && agentRoute(pathname) !== undefined;
 }

@@ -40,6 +40,7 @@ function readProgressRow(
   try {
     const parsed = progressStateSchema.safeParse({
       bookId,
+      generation: getProgressGeneration(db, userId, bookId),
       revision: Number(row.revision),
       locator: JSON.parse(String(row.locator_json)),
       intent: String(row.intent),
@@ -58,6 +59,34 @@ function readProgressRow(
 
 export function getProgressState(db: DB, userId: string, bookId: string): ProgressState | null {
   return readProgressRow(db, userId, bookId).state;
+}
+
+/** Selected edition only. A barrier prevents an old offline queue restoring deleted progress. */
+export function getProgressGeneration(db: DB, userId: string, bookId: string): number {
+  return (
+    (
+      db
+        .prepare('SELECT generation FROM progress_resets WHERE user_id = ? AND book_id = ?')
+        .get(userId, bookId) as { generation: number } | undefined
+    )?.generation ?? 0
+  );
+}
+
+export function resetProgress(db: DB, userId: string, bookId: string): number {
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    db.prepare('DELETE FROM progress_events WHERE user_id = ? AND book_id = ?').run(userId, bookId);
+    db.prepare('DELETE FROM progress_state WHERE user_id = ? AND book_id = ?').run(userId, bookId);
+    db.prepare(
+      'INSERT INTO progress_resets (user_id, book_id, generation) VALUES (?, ?, 1) ON CONFLICT(user_id, book_id) DO UPDATE SET generation = generation + 1',
+    ).run(userId, bookId);
+    const generation = getProgressGeneration(db, userId, bookId);
+    db.exec('COMMIT');
+    return generation;
+  } catch (error) {
+    db.exec('ROLLBACK');
+    throw error;
+  }
 }
 
 /**
@@ -97,6 +126,15 @@ export function applyProgressEvents(
       // occurredAt is preserved in the event log as diagnostics only.
       const effectiveAt = new Date(clampEventTime(Date.parse(ev.occurredAt), nowMs)).toISOString();
       const { exists, state } = readProgressRow(db, userId, ev.bookId);
+      const generation = getProgressGeneration(db, userId, ev.bookId);
+      if (
+        (ev.generation ?? 0) !== generation ||
+        (generation > 0 && !state && !isExplicit(ev.intent))
+      ) {
+        // Do not rebuild history that the reader explicitly erased.
+        results.push({ eventId: ev.eventId, status: 'recorded', reason: 'progress-reset' });
+        continue;
+      }
       const claim: ClaimView | null = state
         ? {
             sessionId: state.sessionId,
@@ -196,7 +234,15 @@ export function applyProgressEvents(
     if (state) states.push(state);
   }
   const lastBook = events[events.length - 1]?.bookId;
-  return { results, state: states.find((s) => s.bookId === lastBook) ?? null, states };
+  return {
+    results,
+    state: states.find((s) => s.bookId === lastBook) ?? null,
+    states,
+    generations: [...books].map((bookId) => ({
+      bookId,
+      generation: getProgressGeneration(db, userId, bookId),
+    })),
+  };
 }
 
 /**

@@ -1,10 +1,16 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { type AudioLocator, type EbookLocator } from '@readport/shared';
 import { api, isOffline } from '../api/client';
 import { cachedSwitch } from '../offline/downloads';
 import { type Annotation, type BookDetail, type ResolveResponse } from '../lib/types';
 import { recordCheckpoint, resumeLocator, setActiveLocatorProvider } from '../progress/engine';
+import {
+  audioReturnAfterJump,
+  audioContinued,
+  type AudioReturnPoint,
+  type JumpReason,
+} from '../reader/continuity';
 import { bookAudioSupport } from '../lib/audioSupport';
 import { Cover, Sheet, useToast } from '../components/ui';
 import {
@@ -70,8 +76,7 @@ export function PlayerPage() {
   const [sleepTick, setSleepTick] = useState(0);
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   /** Position before a deliberate jump (bookmark, chapter list, scrubber drag). */
-  const [returnPoint, setReturnPoint] = useState<{ absMs: number } | null>(null);
-  const returnArmedRef = useRef(true);
+  const [returnPoint, setReturnPoint] = useState<AudioReturnPoint | null>(null);
   const [handoffMarkerPct, setHandoffMarkerPct] = useState<number | null>(null);
   const [ambient, setAmbient] = useState<string | null>(null);
 
@@ -122,16 +127,29 @@ export function PlayerPage() {
       ? Math.min(1, Math.max(0, (bookMs - chapterStartMs) / (chapterEndMs - chapterStartMs)))
       : 0;
 
-  const locatorNow = useCallback(
-    (): AudioLocator => ({
+  const locatorNow = useCallback((): AudioLocator => {
+    const pending = pendingSeekRef.current;
+    const index = pending?.trackIdx ?? trackIdx;
+    const track = tracks[index];
+    const live = audioRef.current?.currentTime;
+    // A queued seek belongs to the next track, not the old element clock.
+    const within =
+      pending?.positionMs ?? (live != null && Number.isFinite(live) ? live * 1000 : positionMs);
+    const duration = track?.durationMs ?? 0;
+    const position = Math.round(
+      Math.min(Math.max(0, duration), Math.max(0, Number.isFinite(within) ? within : 0)),
+    );
+    const absolute = Math.round(
+      Math.min(totalMs, Math.max(0, (track?.startMsAbsolute ?? 0) + position)),
+    );
+    return {
       medium: 'audio',
-      trackIdx,
-      positionMs: Math.max(0, Math.round(positionMs)),
-      bookMs: Math.max(0, Math.round(bookMs)),
-      pct: totalMs > 0 ? Math.min(1, Math.max(0, bookMs / totalMs)) : 0,
-    }),
-    [trackIdx, positionMs, bookMs, totalMs],
-  );
+      trackIdx: index,
+      positionMs: position,
+      bookMs: absolute,
+      pct: totalMs > 0 ? absolute / totalMs : 0,
+    };
+  }, [trackIdx, positionMs, tracks, totalMs]);
   /**
    * The current locator, readable from a cleanup that must not re-run.
    *
@@ -140,8 +158,8 @@ export function PlayerPage() {
    * checkpoint in such a cleanup would write four times a second; a ref lets
    * the mount-only effect below read the latest value and write exactly once.
    */
-  const locatorNowRef = useRef<AudioLocator | null>(null);
-  locatorNowRef.current = detail ? locatorNow() : null;
+  const locatorNowRef = useRef<(() => AudioLocator) | null>(null);
+  locatorNowRef.current = detail ? locatorNow : null;
 
   /**
    * Leaving the player records where you got to.
@@ -150,9 +168,11 @@ export function PlayerPage() {
    * pause event, so closing the player mid-chapter could drop a quarter of a
    * minute of listening - and on a phone, Back is how everyone leaves.
    */
-  useEffect(() => {
+  useLayoutEffect(() => {
     return () => {
-      const at = locatorNowRef.current;
+      // Layout cleanup runs before React clears the audio DOM ref. Passive
+      // cleanup would lose the live clock even with a capture function.
+      const at = locatorNowRef.current?.();
       if (at) void recordCheckpoint(id, 'pause', at);
     };
   }, [id]);
@@ -208,6 +228,8 @@ export function PlayerPage() {
         if (alive) setAnnotations(anns.annotations);
 
         const trackParam = searchParams.get('track');
+        const resume = await resumeLocator(id);
+        if (!alive) return;
         const posParam = searchParams.get('pos');
         const handoff = searchParams.get('handoff') === '1';
         if (posParam !== null) {
@@ -246,8 +268,6 @@ export function PlayerPage() {
             pct: pctOf(t, p),
           });
         } else {
-          const resume = await resumeLocator(id);
-          if (!alive) return;
           if (resume && resume.locator.medium === 'audio') {
             pendingSeekRef.current = {
               trackIdx: Math.min(resume.locator.trackIdx, Math.max(0, d.tracks.length - 1)),
@@ -397,6 +417,8 @@ export function PlayerPage() {
       toast.show('Sleep timer: paused');
     }
     const abs = (tracks[trackIdx]?.startMsAbsolute ?? 0) + ms;
+    if (!scrubbing.current && !pendingSeekRef.current)
+      setReturnPoint((point) => (point && audioContinued(point, abs) ? null : point));
     if (sleepChapterEnd && currentChapter && abs >= chapterEndMs - 400) {
       el.pause();
       setSleepChapterEnd(false);
@@ -418,17 +440,11 @@ export function PlayerPage() {
   };
 
   const seekTo = useCallback(
-    (absMs: number, intent: 'seek' | 'heartbeat' = 'seek') => {
+    (absMs: number, reason: JumpReason) => {
       if (tracks.length === 0) return;
       const clamped = Math.max(0, Math.min(absMs, Math.max(0, totalMs - 200)));
-      if (
-        intent === 'seek' &&
-        returnArmedRef.current &&
-        Math.abs(clamped - bookMsRef.current) > 90_000
-      ) {
-        const from = bookMsRef.current;
-        setReturnPoint((rp) => rp ?? { absMs: from });
-      }
+      setReturnPoint(audioReturnAfterJump(bookMsRef.current, clamped, reason));
+      bookMsRef.current = clamped;
       let t = 0;
       for (let i = 0; i < tracks.length; i++) {
         if (clamped >= tracks[i]!.startMsAbsolute) t = i;
@@ -443,7 +459,7 @@ export function PlayerPage() {
         setSeekVersion((v) => v + 1);
       }
       setPositionMs(within);
-      if (intent === 'seek') void recordCheckpoint(id, 'seek', locatorFor(t, within));
+      void recordCheckpoint(id, 'seek', locatorFor(t, within));
     },
     [tracks, totalMs, trackIdx, playing, id, locatorFor],
   );
@@ -486,7 +502,7 @@ export function PlayerPage() {
       if (delta < 0 && currentChapter && bookMs - chapterStartMs > 4000) target = chapterIndex;
       target = Math.max(0, Math.min(chapters.length - 1, target));
       const c = chapters[target];
-      if (c?.startMs != null) seekTo(c.startMs);
+      if (c?.startMs != null) seekTo(c.startMs, 'progression');
     },
     [chapters, chapterIndex, currentChapter, bookMs, chapterStartMs, seekTo],
   );
@@ -520,17 +536,17 @@ export function PlayerPage() {
     set('play', () => void audioRef.current?.play());
     set('pause', () => audioRef.current?.pause());
     set('seekbackward', (d) =>
-      seekToRef.current(bookMsRef.current - (d.seekOffset ?? skip.back) * 1000),
+      seekToRef.current(bookMsRef.current - (d.seekOffset ?? skip.back) * 1000, 'progression'),
     );
     set('seekforward', (d) =>
-      seekToRef.current(bookMsRef.current + (d.seekOffset ?? skip.fwd) * 1000),
+      seekToRef.current(bookMsRef.current + (d.seekOffset ?? skip.fwd) * 1000, 'progression'),
     );
     set('previoustrack', () => goChapterRef.current(-1));
     set('nexttrack', () => goChapterRef.current(1));
     set('seekto', (d) => {
       if (d.seekTime != null) {
         const start = tracks[trackIdx]?.startMsAbsolute ?? 0;
-        seekToRef.current(start + d.seekTime * 1000);
+        seekToRef.current(start + d.seekTime * 1000, 'slider');
       }
     });
     return () => {
@@ -563,9 +579,9 @@ export function PlayerPage() {
         e.preventDefault();
         togglePlay();
       } else if (e.key === 'ArrowLeft' || e.key === 'j') {
-        seekTo(bookMs - skip.back * 1000);
+        seekTo(bookMs - skip.back * 1000, 'progression');
       } else if (e.key === 'ArrowRight' || e.key === 'l') {
-        seekTo(bookMs + skip.fwd * 1000);
+        seekTo(bookMs + skip.fwd * 1000, 'progression');
       } else if (e.key === 'Escape') {
         navigate(`/book/${id}`);
       }
@@ -706,7 +722,7 @@ export function PlayerPage() {
     scrubbing.current = false;
     if (dragMs === null) return;
     setPositionMs(dragMs - (tracks[trackIdx]?.startMsAbsolute ?? 0));
-    seekTo(dragMs);
+    seekTo(dragMs, 'slider');
     setDragMs(null);
   };
   const chapterLeftMs = Math.max(0, chapterEndMs - bookMs);
@@ -845,7 +861,7 @@ export function PlayerPage() {
               if (scrubbing.current) setDragMs(v);
               else {
                 setPositionMs(v - (tracks[trackIdx]?.startMsAbsolute ?? 0));
-                seekTo(v);
+                seekTo(v, 'slider');
               }
             }}
           />
@@ -874,7 +890,7 @@ export function PlayerPage() {
           </button>
           <button
             className="icon-btn"
-            onClick={() => seekTo(bookMs - skip.back * 1000)}
+            onClick={() => seekTo(bookMs - skip.back * 1000, 'progression')}
             aria-label={`Back ${skip.back} seconds`}
           >
             <IconSkipBack size={36} label={String(skip.back)} />
@@ -884,7 +900,7 @@ export function PlayerPage() {
           </button>
           <button
             className="icon-btn"
-            onClick={() => seekTo(bookMs + skip.fwd * 1000)}
+            onClick={() => seekTo(bookMs + skip.fwd * 1000, 'progression')}
             aria-label={`Forward ${skip.fwd} seconds`}
           >
             <IconSkipFwd size={36} label={String(skip.fwd)} />
@@ -957,7 +973,7 @@ export function PlayerPage() {
               aria-current={i === chapterIndex ? 'true' : undefined}
               onClick={() => {
                 setSheet('none');
-                if (c.startMs != null) seekTo(c.startMs);
+                if (c.startMs != null) seekTo(c.startMs, 'toc');
               }}
             >
               <span className="soft" style={{ width: 24, textAlign: 'end' }}>
@@ -1080,20 +1096,19 @@ export function PlayerPage() {
         </Sheet>
       )}
       {returnPoint && (
-        <button
-          className="return-pill"
-          onClick={() => {
-            const rp = returnPoint;
-            setReturnPoint(null);
-            returnArmedRef.current = false;
-            seekTo(rp.absMs);
-            returnArmedRef.current = true;
-          }}
-        >
-          <IconBack size={15} /> Back to {formatDuration(returnPoint.absMs)}
-          <span
+        <div className="return-pill">
+          <button
+            className="return-pill__go"
+            onClick={() => {
+              const rp = returnPoint;
+              setReturnPoint(null);
+              seekTo(rp.originMs, 'return');
+            }}
+          >
+            <IconBack size={15} /> Back to {formatDuration(returnPoint.originMs)}
+          </button>
+          <button
             className="return-pill__x"
-            role="button"
             aria-label="Dismiss"
             onClick={(e) => {
               e.stopPropagation();
@@ -1101,8 +1116,8 @@ export function PlayerPage() {
             }}
           >
             <IconClose size={14} />
-          </span>
-        </button>
+          </button>
+        </div>
       )}
       {sheet === 'bookmarks' && (
         <Sheet title="Bookmarks" onClose={() => setSheet('none')}>
@@ -1122,12 +1137,12 @@ export function PlayerPage() {
                 tabIndex={0}
                 onClick={() => {
                   setSheet('none');
-                  seekTo(bookmarkAbsMs(a));
+                  seekTo(bookmarkAbsMs(a), 'bookmark');
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     setSheet('none');
-                    seekTo(bookmarkAbsMs(a));
+                    seekTo(bookmarkAbsMs(a), 'bookmark');
                   }
                 }}
               >

@@ -7,7 +7,12 @@ import { type AppContext } from '../context.js';
 import { loadConfig } from '../config.js';
 import { nowIso, openMemoryDatabase } from '../db/index.js';
 import { latestAlignment, storeAlignment } from './service.js';
-import { exportAlignments, importAlignments, saveAlignmentFile } from './library.js';
+import {
+  alignmentFolderSummary,
+  exportAlignments,
+  importAlignments,
+  saveAlignmentFile,
+} from './library.js';
 import { listAlignmentFiles, readAlignmentFile, textFingerprint } from './portable.js';
 
 /**
@@ -156,6 +161,33 @@ afterEach(() => {
 });
 
 describe('saving an alignment as a file', () => {
+  it('keeps files in the durable data directory when no external folder is configured', () => {
+    ctx.config.alignmentDirs = [];
+    const { pairId } = seedPair(ctx);
+    seedAlignment(ctx, pairId);
+    const written = saveAlignmentFile(ctx, pairId)!;
+    expect(path.dirname(written)).toBe(path.join(ctx.config.dataDir, 'alignments'));
+    expect(readAlignmentFile(written).ok).toBe(true);
+    expect(alignmentFolderSummary(ctx).files).toBe(1);
+  });
+
+  it('recognises durable fallback files after an unavailable external folder recovers', () => {
+    const external = ctx.config.alignmentDirs[0]!;
+    // A regular file is a deterministic unavailable mount, even when tests run as root.
+    fs.writeFileSync(external, 'not a directory');
+    const { pairId } = seedPair(ctx);
+    seedAlignment(ctx, pairId);
+    const written = saveAlignmentFile(ctx, pairId)!;
+    expect(path.dirname(written)).toBe(path.join(ctx.config.dataDir, 'alignments'));
+    expect(readAlignmentFile(written).ok).toBe(true);
+    fs.unlinkSync(external);
+    fs.mkdirSync(external);
+    ctx.db.exec('DELETE FROM alignment_segments; DELETE FROM alignments;');
+    expect(importAlignments(ctx).imported).toBe(1);
+    expect(alignmentFolderSummary(ctx).files).toBe(1);
+    expect(listAlignmentFiles(external)).toHaveLength(0);
+  });
+
   it('writes one file, named after the book and readable on its own', () => {
     const { pairId } = seedPair(ctx);
     seedAlignment(ctx, pairId);

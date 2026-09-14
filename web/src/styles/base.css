@@ -368,7 +368,23 @@ select.input {
   display: flex;
   flex-direction: column;
 }
+/* Only the library shell owns the viewport. Auth and immersive readers keep
+   their own layout. The header takes its measured (safe-area-aware) height;
+   the remaining grid track, not the document, owns the two scroll panes. */
+html:has(.app-body),
+body:has(.app-body) {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+.app-shell:has(> .app-body) {
+  position: fixed;
+  inset: 0;
+  top: var(--app-viewport-top, 0px);
+  height: var(--app-viewport-height, 100dvh);
+  overflow: hidden;
+}
 .app-header {
+  flex-shrink: 0;
   position: sticky;
   top: 0;
   z-index: 20;
@@ -474,7 +490,7 @@ select.input {
     display: none;
   }
   .app-main {
-    padding-block-end: var(--sp-8);
+    padding-block-end: max(var(--sp-8), var(--rp-safe-bottom));
   }
 }
 
@@ -3096,8 +3112,19 @@ select.input {
 
 .app-body {
   flex: 1;
+  min-height: 0;
   display: grid;
+  grid-template-rows: minmax(0, 1fr);
   grid-template-columns: minmax(0, 1fr);
+  overflow: hidden;
+}
+.app-body > .app-main {
+  /* Keep absolutely positioned accessibility content inside this scroll owner. */
+  position: relative;
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .app-rail {
   display: none;
@@ -3366,7 +3393,7 @@ select.input {
 
 /* Persistent rail. Chrome in this app is a hairline, never a raised slab:
    a full-height surface would out-weigh the covers it exists to serve. */
-@media (min-width: 1080px) {
+@media (min-width: 760px) {
   .app-body {
     grid-template-columns: 260px minmax(0, 1fr);
   }
@@ -3375,17 +3402,15 @@ select.input {
   }
   .app-rail {
     display: block;
-    position: sticky;
-    top: 0;
-    align-self: start;
-    max-height: 100dvh;
+    min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
     border-inline-end: 1px solid var(--rp-border);
-    padding: var(--sp-4) var(--sp-3) var(--sp-6);
+    padding: var(--sp-4) var(--sp-3) max(var(--sp-6), var(--rp-safe-bottom))
+      max(var(--sp-3), var(--rp-safe-left));
   }
   .app-rail > .sidebar {
-    min-height: calc(100dvh - 140px);
+    min-height: 100%;
   }
   .app-shell.is-railhidden .app-rail {
     display: none;
@@ -3418,7 +3443,7 @@ select.input {
   }
 }
 
-/* Tablet: the grid needs the pixels, so the same list slides in instead. */
+/* The same list slides in when the persistent rail has been collapsed. */
 .drawer {
   position: fixed;
   z-index: 41;
@@ -3640,6 +3665,15 @@ select.input {
   cursor: grab;
   /* The browser must not claim this gesture, or a drag becomes a scroll. */
   touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.readlist.is-dragging,
+.readlist.is-dragging * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 .queue-handle[aria-pressed='true'] {
   background: var(--rp-surface);

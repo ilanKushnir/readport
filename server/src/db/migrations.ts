@@ -489,4 +489,34 @@ CREATE TABLE api_keys (
 CREATE INDEX idx_api_keys_user ON api_keys(user_id);
 `,
   },
+  {
+    version: 14,
+    sql: `
+-- Reset barriers contain no locator/history. Old offline events cannot undo a reset.
+CREATE TABLE progress_resets (
+  user_id TEXT NOT NULL,
+  book_id TEXT NOT NULL,
+  generation INTEGER NOT NULL,
+  PRIMARY KEY (user_id, book_id)
+);
+`,
+  },
+  {
+    version: 15,
+    sql: `
+-- SQLite cannot add a foreign key to an existing table. Rebuild without
+-- changing surviving users' reset generations; discard already-deleted users.
+CREATE TABLE progress_resets_owned (
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  book_id TEXT NOT NULL,
+  generation INTEGER NOT NULL,
+  PRIMARY KEY (user_id, book_id)
+);
+INSERT INTO progress_resets_owned (user_id, book_id, generation)
+SELECT r.user_id, r.book_id, r.generation FROM progress_resets r
+JOIN users u ON u.id = r.user_id;
+DROP TABLE progress_resets;
+ALTER TABLE progress_resets_owned RENAME TO progress_resets;
+`,
+  },
 ];

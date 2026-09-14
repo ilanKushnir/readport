@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type TrackInfo } from '@readport/shared';
 import { api } from '../api/client';
 import { type SentenceIndexEntry } from '../lib/types';
-import { recordCheckpoint } from '../progress/engine';
+import { recordCheckpoint, resumeLocator } from '../progress/engine';
 import { loadPlayback, setBookSpeed, speedFor } from '../player/prefs';
 import { formatDuration } from '../lib/format';
 import {
@@ -58,6 +58,8 @@ export interface NarrationApi {
   seekNonce: number;
   state: FollowState;
   bookMs: number;
+  /** Synchronous lifecycle capture, including time since the last timeupdate. */
+  currentBookMs: () => number;
   speed: number;
   error: string | null;
   toggle: () => void;
@@ -165,8 +167,11 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
   useEffect(() => {
     if (!enabled || !audioBookId) return;
     let alive = true;
-    void api<{ tracks: TrackInfo[] }>(`/api/books/${audioBookId}`)
-      .then((d) => {
+    void Promise.all([
+      api<{ tracks: TrackInfo[] }>(`/api/books/${audioBookId}`),
+      resumeLocator(audioBookId),
+    ])
+      .then(([d]) => {
         if (!alive) return;
         setTracks(d.tracks ?? []);
         setError(null);
@@ -468,6 +473,10 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
     state: lookup.state,
     bookMs,
     speed,
+    currentBookMs: () =>
+      audioRef.current
+        ? (tracks[trackIdx]?.startMsAbsolute ?? 0) + audioRef.current.currentTime * 1000
+        : bookMs,
     error,
     backSeconds,
     toggle,

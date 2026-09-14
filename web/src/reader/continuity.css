@@ -1,0 +1,15 @@
+.resume-marker {
+  position: absolute;
+  pointer-events: none;
+  z-index: 5;
+  border-bottom: 2px dotted currentColor;
+  border-inline-start: 3px solid currentColor;
+  border-radius: 2px;
+  color: var(--rd-fg, currentColor);
+  transition: opacity 400ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .resume-marker {
+    transition: none !important;
+  }
+}

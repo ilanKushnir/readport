@@ -1251,7 +1251,13 @@ describe('ReadPort API', () => {
     // key, not through the route's hand-written table list.
     await asNadia({ method: 'POST', url: '/api/shelves', payload: { name: 'Hers' } });
     await asNadia({ method: 'PUT', url: `/api/reading-list/${lanternAudioId}` });
+    ctx.db
+      .prepare('INSERT INTO progress_resets (user_id, book_id, generation) VALUES (?, ?, 4)')
+      .run(nadiaId, lanternAudioId);
     expect((await authed({ method: 'DELETE', url: `/api/users/${nadiaId}` })).statusCode).toBe(200);
+    expect(ctx.db.prepare('SELECT * FROM progress_resets WHERE user_id = ?').all(nadiaId)).toEqual(
+      [],
+    );
     const left = ctx.db
       .prepare(
         'SELECT (SELECT COUNT(*) FROM shelves WHERE user_id = ?) AS s, (SELECT COUNT(*) FROM reading_list WHERE user_id = ?) AS r',

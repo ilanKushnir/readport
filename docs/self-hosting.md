@@ -48,8 +48,11 @@ has to be writable by the container user: the entrypoint takes ownership of `/da
 `/cache` and `/models` and deliberately never touches anything under
 `/library`, so `chown` it to your `PUID`/`PGID` on the host. Leave
 `RP_ALIGNMENT_DIRS` unset and alignments are kept in `<data>/alignments`
-instead, which survives a restart but goes down with the volume when you
-rebuild from scratch.
+instead. In the image that is `/data/alignments`, persisted by the `rp-data`
+named volume in Compose. It survives container replacement and image rebuilds;
+only deleting/replacing that volume loses it. Back up the volume, and avoid
+`docker compose down -v` for upgrades. Files saved there during an external
+mount outage are still recognised after the mount recovers.
 
 ## Turning on alignment
 

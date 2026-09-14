@@ -154,7 +154,8 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
     const readingNow = one(
       `SELECT COUNT(*) AS c FROM progress_state p JOIN books b ON b.id = p.book_id
        WHERE p.user_id = ? AND p.finished = 0 AND b.scan_state != 'missing'
-         AND json_extract(p.locator_json, '$.pct') > 0.001`,
+         AND json_extract(p.locator_json, '$.pct') > 0
+         AND json_extract(p.locator_json, '$.pct') < 1`,
       userId,
     );
     const finished = one(

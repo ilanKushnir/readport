@@ -69,6 +69,16 @@ function topLevelSelectors(css: string): string[] {
 const PRE_EXISTING = ['continue-rail', 'book-card', 'auth-page', 'auth-card', 'pair-card'];
 
 describe('base.css', () => {
+  it('suppresses iOS selection and callout on the queue grip, not ordinary rows', () => {
+    const grip = /\.queue-handle\s*\{([^}]+)\}/.exec(CSS)?.[1];
+    expect(grip).toMatch(/-webkit-user-select:\s*none/);
+    expect(grip).toMatch(/user-select:\s*none/);
+    expect(grip).toMatch(/-webkit-touch-callout:\s*none/);
+    expect(grip).toMatch(/touch-action:\s*none/);
+    const row = /\.queue-row\s*\{([^}]+)\}/.exec(CSS)?.[1];
+    expect(row).not.toMatch(/user-select:\s*none/);
+  });
+
   it('gives every component root class exactly one top-level rule', () => {
     const counts = new Map<string, number>();
     for (const selector of topLevelSelectors(CSS)) {

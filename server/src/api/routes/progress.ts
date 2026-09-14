@@ -2,12 +2,22 @@ import { type FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { progressEventSchema, type ProgressAck, type ProgressEvent } from '@readport/shared';
 import { type AppContext } from '../../context.js';
-import { applyProgressEvents, getProgressState } from '../../progress/service.js';
+import {
+  applyProgressEvents,
+  getProgressState,
+  getProgressGeneration,
+  resetProgress,
+} from '../../progress/service.js';
 
 /** The envelope must hold, but each event stands or falls on its own. */
 const progressEnvelopeSchema = z.object({ events: z.array(z.unknown()).min(1).max(200) });
 
 export function registerProgressRoutes(app: FastifyInstance, ctx: AppContext): void {
+  app.delete('/api/progress/:bookId', async (req) => {
+    const { bookId } = req.params as { bookId: string };
+    return { bookId, generation: resetProgress(ctx.db, req.user!.id, bookId) };
+  });
+
   app.post('/api/progress/events', async (req, reply) => {
     const envelope = progressEnvelopeSchema.safeParse(req.body);
     if (!envelope.success) {
@@ -42,7 +52,10 @@ export function registerProgressRoutes(app: FastifyInstance, ctx: AppContext): v
 
   app.get('/api/progress/:bookId', async (req) => {
     const { bookId } = req.params as { bookId: string };
-    return { state: getProgressState(ctx.db, req.user!.id, bookId) };
+    return {
+      state: getProgressState(ctx.db, req.user!.id, bookId),
+      generation: getProgressGeneration(ctx.db, req.user!.id, bookId),
+    };
   });
 
   app.get('/api/progress/:bookId/history', async (req) => {

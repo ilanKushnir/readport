@@ -36,6 +36,20 @@ import { z } from 'zod';
  */
 
 export const ALIGNMENT_FILE_EXT = '.rpalign';
+// Generous per-book budgets, enforced before JSON allocation/parsing.
+export const ALIGNMENT_COMPRESSED_LIMIT = 16 * 1024 * 1024;
+export const ALIGNMENT_DECOMPRESSED_LIMIT = 64 * 1024 * 1024;
+
+/** Reject symlinks in both the file and its expanded directory path. */
+function hasSymlink(file: string): boolean {
+  let current = path.resolve(file);
+  for (;;) {
+    if (fs.lstatSync(current).isSymbolicLink()) return true;
+    const parent = path.dirname(current);
+    if (parent === current) return false;
+    current = parent;
+  }
+}
 
 /** The `format` tag every file carries, so a stray .rpalign is caught early. */
 export const ALIGNMENT_FORMAT = 'readport-alignment';
@@ -385,6 +399,7 @@ function keySuffix(key: string): string {
 export function listAlignmentFiles(dir: string): string[] {
   let entries: fs.Dirent[];
   try {
+    if (hasSymlink(dir)) return [];
     entries = fs.readdirSync(dir, { withFileTypes: true });
   } catch {
     return [];
@@ -392,9 +407,7 @@ export function listAlignmentFiles(dir: string): string[] {
   return entries
     .filter(
       (e) =>
-        !e.name.startsWith('.') &&
-        e.name.toLowerCase().endsWith(ALIGNMENT_FILE_EXT) &&
-        (e.isFile() || e.isSymbolicLink()),
+        !e.name.startsWith('.') && e.name.toLowerCase().endsWith(ALIGNMENT_FILE_EXT) && e.isFile(),
     )
     .map((e) => path.join(dir, e.name))
     .sort();
@@ -483,10 +496,14 @@ function reject(reason: string): ReadAlignmentResult {
 
 /** Decode an already-loaded file. Split out so an upload can reuse the checks. */
 export function decodeAlignmentFile(bytes: Buffer | Uint8Array): ReadAlignmentResult {
+  if (bytes.byteLength > ALIGNMENT_COMPRESSED_LIMIT)
+    return reject('This alignment exceeds the compressed size limit (16 MiB).');
   let json: string;
   try {
-    json = gunzipSync(bytes).toString('utf8');
-  } catch {
+    json = gunzipSync(bytes, { maxOutputLength: ALIGNMENT_DECOMPRESSED_LIMIT }).toString('utf8');
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ERR_BUFFER_TOO_LARGE')
+      return reject('This alignment exceeds the decompressed size limit (64 MiB).');
     return reject(
       'This file is not readable as gzip, so it is either truncated or not an alignment file at all. Export the alignment again to replace it.',
     );
@@ -578,7 +595,34 @@ export function decodeAlignmentFile(bytes: Buffer | Uint8Array): ReadAlignmentRe
 export function readAlignmentFile(file: string): ReadAlignmentResult {
   let bytes: Buffer;
   try {
-    bytes = fs.readFileSync(file);
+    if (hasSymlink(file))
+      return reject('Symbolic links are not accepted as alignment files or directories.');
+    // NOFOLLOW closes the final-component check/open race. NONBLOCK prevents
+    // a substituted FIFO from hanging before fstat can reject it.
+    const fd = fs.openSync(
+      file,
+      fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK,
+    );
+    try {
+      const stat = fs.fstatSync(fd);
+      if (!stat.isFile())
+        return reject('An alignment must be a regular file, not a directory or special device.');
+      if (stat.size > ALIGNMENT_COMPRESSED_LIMIT)
+        return reject('This alignment exceeds the compressed size limit (16 MiB).');
+      // One extra byte detects growth without ever reading an unbounded file.
+      const buffer = Buffer.alloc(stat.size + 1);
+      let length = 0;
+      while (length < buffer.length) {
+        const read = fs.readSync(fd, buffer, length, buffer.length - length, null);
+        if (read === 0) break;
+        length += read;
+      }
+      if (length > stat.size)
+        return reject('This alignment changed size while being read. Retry the import.');
+      bytes = buffer.subarray(0, length);
+    } finally {
+      fs.closeSync(fd);
+    }
   } catch (err) {
     const code = (err as NodeJS.ErrnoException).code;
     return reject(

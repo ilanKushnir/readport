@@ -257,26 +257,43 @@ export function useReorder(opts: {
       const height = nodes.current.get(p.id)?.getBoundingClientRect().height ?? 64;
       const target = Math.max(0, Math.min(list.length - 1, p.fromIndex + Math.round(dy / height)));
       if (target !== at) shift(p.id, target);
-      // Auto-scroll near the viewport edges, or a long queue cannot be
-      // crossed in one gesture.
+      // Scroll the nearest overflow owner, not the document behind the pane.
+      let scroller = nodes.current.get(p.id)?.parentElement ?? null;
+      while (scroller && !/(auto|scroll)/.test(getComputedStyle(scroller).overflowY)) {
+        scroller = scroller.parentElement;
+      }
+      const bounds = scroller?.getBoundingClientRect();
       const margin = 64;
-      if (e.clientY < margin) window.scrollBy({ top: -12 });
-      else if (e.clientY > window.innerHeight - margin) window.scrollBy({ top: 12 });
+      const delta =
+        e.clientY < (bounds?.top ?? 0) + margin
+          ? -12
+          : e.clientY > (bounds?.bottom ?? window.innerHeight) - margin
+            ? 12
+            : 0;
+      if (delta) (scroller ?? window).scrollBy({ top: delta });
     };
     const onUp = () => {
       const p = pointer.current;
       pointer.current = null;
-      if (p) drop(p.id);
+      if (p && begunRef.current) drop(p.id);
+      else setDragging(false);
+      begunRef.current = false;
+    };
+    const onCancel = () => {
+      const p = pointer.current;
+      pointer.current = null;
+      begunRef.current = false;
+      if (p) cancel(p.id);
     };
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
-    document.addEventListener('pointercancel', onUp);
+    document.addEventListener('pointercancel', onCancel);
     return () => {
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);
-      document.removeEventListener('pointercancel', onUp);
+      document.removeEventListener('pointercancel', onCancel);
     };
-  }, [dragging, drop, shift]);
+  }, [begin, cancel, dragging, drop, shift]);
 
   const clearLongPress = useCallback(() => {
     if (longPress.current) {
@@ -294,6 +311,7 @@ export function useReorder(opts: {
         const timer = window.setTimeout(() => {
           longPress.current = null;
           pointer.current = { id, startY: y, fromIndex: idsRef.current.indexOf(id) };
+          begunRef.current = true;
           begin(id);
           setDragging(true);
           navigator.vibrate?.(10);

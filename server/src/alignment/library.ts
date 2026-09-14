@@ -179,6 +179,17 @@ export interface ImportOutcome {
   scanned: number;
 }
 
+/** Include files retained during a mount outage, even after it recovers. */
+function readableAlignmentDirs(ctx: AppContext): string[] {
+  return [
+    ...new Set(
+      [...alignmentRoots(ctx.db, ctx.config), path.join(ctx.config.dataDir, 'alignments')].map(
+        (dir) => path.resolve(dir),
+      ),
+    ),
+  ];
+}
+
 /**
  * Take every saved alignment that belongs to a pair on this server and has not
  * already been computed here.
@@ -195,7 +206,7 @@ export function importAlignments(
 ): ImportOutcome {
   const { db } = ctx;
   const out: ImportOutcome = { imported: 0, rejected: [], unmatched: 0, scanned: 0 };
-  const files = alignmentRoots(db, ctx.config).flatMap(listAlignmentFiles);
+  const files = readableAlignmentDirs(ctx).flatMap(listAlignmentFiles);
   if (files.length === 0) return out;
 
   // Index the pairs this server could possibly be offered a file for.
@@ -358,7 +369,7 @@ export function alignmentFolderSummary(ctx: AppContext): {
   bytes: number;
   problem: string | null;
 } {
-  const dirs = alignmentRoots(ctx.db, ctx.config);
+  const dirs = readableAlignmentDirs(ctx);
   const { dir: writeDir, problem } = writeTargetDir(ctx);
   let files = 0;
   let bytes = 0;

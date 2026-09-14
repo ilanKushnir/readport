@@ -12,7 +12,7 @@ do an admin may do too.
 A key lets something else - an assistant, a script, a home agent - see a
 person's library, lists and progress without being able to change any of it.
 
-    curl -H 'Authorization: Bearer rp_a1b2c3d4_...' https://readport.example/api/library
+    curl -H 'Authorization: Bearer rp_a1b2c3d4_...' https://readport.example/api/agent/v1/books
 
 Keys are created in Settings -> Agent access, or with a session:
 
@@ -22,22 +22,61 @@ Keys are created in Settings -> Agent access, or with a session:
 | POST   | `/api/keys`     | `{name}`; returns `{key}` ONCE - only a hash is stored |
 | DELETE | `/api/keys/:id` | revoke; takes effect on the next request               |
 
-**What a key may do.** Exactly one thing: `GET`. This is enforced in the
-request hook, not per route, so a route added later cannot opt out of it.
-Two `GET`s are still refused:
+**What a key may do.** Only the explicitly listed `GET /api/agent/v1` routes
+below. Every key has the fixed `agent:read` scope; there are no configurable
+grants or write scopes. Account roles and export permissions cannot widen it.
+The global hook checks credentials and the closed route catalog before public
+routes, CSRF, static assets or fallback handling. Existing clients using legacy
+API paths with keys must migrate to v1. Browser session APIs are unchanged.
 
-- `/api/books/:id/export` - reading a list is not a licence to pull the
-  library down. Files need a real session and the export capability.
-- `/api/keys*` - keys do not manage keys.
+| Path relative to `/api/agent/v1` | Response                                                                                          |
+| -------------------------------- | ------------------------------------------------------------------------------------------------- |
+| (base path)                      | version, authentication, read-only capabilities, routes, limits and JSON schemas                  |
+| `/me`                            | `{user: {id, username, displayName}, scopes}`                                                     |
+| `/books`                         | paginated safe book metadata; optional literal `query` search across title/author/series          |
+| `/books/:id`                     | `{book}` including nullable aggregate `alignment: {coverage, meanConfidence}`                     |
+| `/shelves`                       | paginated own shelves                                                                             |
+| `/shelves/:id/books`             | paginated safe books, in shelf order; non-owned shelf is 404                                      |
+| `/reading-list`                  | paginated `{bookId, addedAt}` items in queue order                                                |
+| `/annotations`                   | paginated own non-deleted marks, canonical locator and bounded authored note, never selected text |
+| `/books/:id/progress`            | `{progress}` or null; bookId, canonical locator, finished, updatedAt                              |
+| `/books/:id/history`             | paginated own positions with occurredAt, receivedAt and applied                                   |
 
-Anything else a key does is refused with `403 {"error":"read-only"}`; an
-unknown, malformed or revoked key gets `401`, and a key stops working the
-moment its owner's account is disabled. A key carries its owner's view of the
-library, so what it can see is what they can see.
+Lists return `{items, nextOffset}`. `nextOffset: null` means no further row in
+that query. `limit` defaults to 50 (1–100); `offset` defaults to 0 (0–100000).
+Both accept decimal integers only. Search is at most 200 characters. Unknown
+or repeated query parameters are rejected with 400, including tenant/scope
+overrides. All ordering has a stable ID tie-breaker; offset pagination is not
+a snapshot across concurrent library changes. Missing books are excluded.
+Books are shared library data; shelves, annotations, queue and progress are
+always scoped to the key owner in SQL.
 
-Useful reads for an agent: `/api/auth/me`, `/api/library` (supports `kind`,
-`filter`, `facet`, `sort`, `query`), `/api/books/:id`, `/api/reading-list`,
-`/api/shelves`, `/api/annotations`, `/api/pairs`, `/api/jobs`.
+There are no content, export, cover, chapter, asset, track, job or filesystem
+endpoints. DTOs omit infrastructure, errors, raw metadata, device/session IDs,
+event IDs and excerpt text. Position JSON is validated and stripped to the
+canonical ebook/audio locator schema; malformed/oversized positions are null,
+not guessed. Sentence IDs must be opaque `s`-prefixed identifiers, not paths.
+Metadata text is bounded to 500 characters, authored notes to 2000 with an
+explicit `noteTruncated` flag. Responses over 1 MiB return 413; request a smaller
+page. URLs are limited to 2048 characters and GET request bodies are refused.
+
+Every response uses `Cache-Control: no-store`. A dedicated atomic SQLite
+counter permits 120 allowlisted requests per minute per owner, shared across
+keys and server processes, separate from browser login limits. Exhaustion is
+429 with `Retry-After: 60`. Invalid credentials remain 401; valid credentials
+on forbidden routes/methods remain 403, even when the read budget is exhausted.
+API reads do not update reading state, history, annotations or queues. Only
+security bookkeeping changes: rate counters and the existing at-most-once-per-
+minute key last-used timestamp. Structured `agent-api` audit logs record verified
+key/user IDs, catalog route templates and status, never credentials, query
+strings or content. Operators control log retention through normal server logs.
+
+Every non-GET (including HEAD/OPTIONS), unknown agent route, encoded path alias
+and every legacy/public/future/non-agent path is denied with
+`403 {"error":"read-only"}`. Malformed, duplicate, invalid or revoked
+Authorization gets 401 even on public/static paths and never falls back to a
+cookie or proxy identity. Disabled owners' keys stop working on the next request.
+The agent API requires a key; sessions remain for the ordinary browser API.
 
 ## Auth & setup
 

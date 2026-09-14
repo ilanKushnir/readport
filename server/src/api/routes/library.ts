@@ -121,7 +121,7 @@ const libraryQuerySchema = z.object({
    * exclusion and the continue rail.
    */
   filter: z
-    .enum(['paired', 'in-progress', 'finished', 'both-formats', 'recently-added'])
+    .enum(['paired', 'reading-now', 'in-progress', 'finished', 'both-formats', 'recently-added'])
     .optional(),
   sort: z.enum(['title', 'author', 'recent', 'added']).optional(),
   /**
@@ -163,8 +163,10 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
       .all(...args) as Record<string, unknown>[];
     let books = rows.map((r) => bookRowToSummary(ctx, req.user!.id, r));
     if (q.filter === 'paired') books = books.filter((b) => b.pair && b.pair.status !== 'candidate');
-    if (q.filter === 'in-progress')
-      books = books.filter((b) => b.progress && !b.progress.finished && b.progress.pct > 0.001);
+    if (q.filter === 'in-progress' || q.filter === 'reading-now')
+      books = books.filter(
+        (b) => b.progress && !b.progress.finished && b.progress.pct > 0 && b.progress.pct < 1,
+      );
     if (q.filter === 'finished') books = books.filter((b) => b.progress?.finished);
     if (q.filter === 'both-formats') books = onePerPair(books, { pairedOnly: true });
     else if (q.kind === undefined && q.filter === undefined) {
@@ -224,7 +226,7 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
 
     // Continue-listening/reading rail: most recently touched, unfinished.
     const continueRail = books
-      .filter((b) => b.progress && !b.progress.finished)
+      .filter((b) => b.progress && !b.progress.finished && b.progress.pct > 0 && b.progress.pct < 1)
       .sort((a, b) => Date.parse(b.progress!.updatedAt) - Date.parse(a.progress!.updatedAt))
       .slice(0, 8)
       .map((b) => b.id);

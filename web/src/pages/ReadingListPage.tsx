@@ -224,7 +224,7 @@ export function ReadingListPage() {
           reading list to put it at the end.
         </EmptyState>
       ) : (
-        <ol className="readlist">
+        <ol className={`readlist${reorder.dragging ? ' is-dragging' : ''}`}>
           {reorder.ids.map((id, index) => {
             const item = byId.get(id);
             if (!item) return null;
@@ -241,13 +241,19 @@ export function ReadingListPage() {
                     ? { transform: `translateY(${reorder.offset}px)` }
                     : undefined
                 }
-                {...reorder.rowProps(id)}
               >
                 <button
                   className="queue-handle"
                   type="button"
                   disabled={readOnly}
                   {...reorder.handleProps(id)}
+                  onPointerDown={(e) => {
+                    if (readOnly || e.button !== 0) return;
+                    e.preventDefault();
+                    window.getSelection()?.removeAllRanges();
+                    reorder.handleProps(id).onPointerDown(e);
+                  }}
+                  onContextMenu={(e) => e.preventDefault()}
                 >
                   <IconGrip size={18} />
                 </button>
