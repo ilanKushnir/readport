@@ -351,6 +351,16 @@ Files are not silently moved to the external folder. Portable `.rpalign`
 documents remain files, not database blobs; the existing indexed segment rows
 in SQLite serve runtime lookups. No alignment algorithm changes are involved.
 
+What is read from a folder is bounded and deliberate: only regular files
+directly inside it (no subfolders, and a symbolic link planted inside the
+folder is skipped, whatever it points at - though the folder itself may be
+reached through a link, which is how a bare-metal install points at a NAS);
+at most 5,000 files per run; each at most 16 MiB compressed and 64 MiB
+unpacked, claiming at most 400,000 segments; and the free-form `provenance`
+block is stored only up to 16 KiB, so one oversized file in a shared folder
+cannot slow every library request. One damaged file is reported by name and
+the rest of the folder is still imported.
+
 ### The file
 
 One gzipped JSON document per aligned pair, extension `.rpalign`, named
@@ -367,7 +377,7 @@ title it has ever had.
   "format": "readport-alignment",
   "formatVersion": 1,
   "writtenAt": "2026-09-01T12:00:00.000Z",
-  "writtenBy": "readport",
+  "writtenBy": "readport 0.12.0",
   "ebook": { "title": "…", "author": "…", "language": "en",
              "sentenceCount": 912, "spineCount": 12, "sizeBytes": 405000,
              "textFingerprint": "t1:…" },
@@ -396,9 +406,19 @@ the timestamps saves a further 82 KiB and costs the one property that makes a
 portable format worth having: a self-hoster can gunzip the file and read it.
 
 The counts and titles are not part of the file's identity. They are there so
-an import can say "this file is for a 412-sentence book and yours has 1,208"
-instead of a bare "no match", and `trackDurationsMs` is kept in full rather
-than only hashed for the same reason - a near-miss should be diagnosable.
+an import can say, in its log, "the ebook is here, but no audiobook has its 12
+tracks with these lengths" instead of a bare "no match", and
+`trackDurationsMs` is kept in full rather than only hashed for the same reason
+
+- a near-miss is diagnosable, and it is also recoverable: when the timeline
+  fingerprint misses, the durations are compared track by track within 50 ms,
+  because rounding to 100 ms absorbs most probe disagreements but a duration
+  sitting 2 ms from a rounding boundary flips under a 2 ms disagreement, and on a
+  twenty-track book one such flip was the likely case.
+
+`alignment.provenance` carries what the engine recorded about the run -
+precision, anchor count, decode time - so a redeploy keeps the story of how the
+numbers were made, not only the numbers.
 
 Files are written to a dotfile temporary in the same directory, fsynced, and
 renamed into place. The folder is the user's library: it is watched by their
@@ -441,11 +461,23 @@ what the filename carries and what an import looks up.
 
 ### Matching, and why an import is all-or-nothing
 
-`import-alignments` runs after every pairing scan, at a higher priority than
-the alignment jobs that scan just queued, so a redeploy restores rather than
-recomputes. For every pair on this server that is a candidate or better and
-whose ebook has a text fingerprint, it computes the pair key from the database
-and looks for a file with that key. Then:
+The import runs inside the pairing scan itself, synchronously, after the
+scan has written its candidate pairs and before it queues a single alignment
+job - not as a separately queued job at a higher priority, which did not
+help: alignment jobs run in their own worker lane, and the first of them was
+decoding audio before a queued import had been reached. A pair the import
+restored is not queued, and an align job that finds an alignment already in
+place returns without computing anything unless it was asked for by name
+(the Pairing page's own button sends `force`). Settings has an **Import**
+button for a folder mounted after the scan.
+
+For every file, the import looks up the ebook by its text fingerprint and the
+audiobook by its timeline fingerprint among the books this server has - not
+only among the pairs the scorer proposed. A pair linked by hand on the old
+install, because its metadata scored too low to be suggested, has no pair row
+on a fresh one; the file proves the two belong together, so the pair is
+created (as `auto`) and the alignment attached. A pair the reader rejected
+stays rejected; no file overrules them. Then:
 
 - **A database row always wins over a file.** A pair that already has an
   alignment here is skipped, which is what makes running this after every scan

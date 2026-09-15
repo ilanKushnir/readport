@@ -32,9 +32,14 @@ remain platform limits, not guarantees of zero loss.
 
 Each checkpoint has a UUID `eventId`, device and per-load session IDs, increasing
 session `seq`, timestamp, explicit intent, canonical locator, `baseRevision`,
-and server-issued reset `generation`. Events are written locally before network
-I/O. Sync runs when online, on its timer, and on lifecycle events; pagehide uses
-keepalive with a 48 KiB payload budget. Failed/offline sends leave queued events.
+server-issued reset `generation`, and the `ownerId` it was captured for.
+Events are written locally before network I/O. Sync runs when online, on its
+timer, and on lifecycle events. The unload path is single-flight:
+`visibilitychange` and `pagehide` together produce one keepalive single (the
+live position) and one keepalive batch trimmed to 48 KiB, inside the browser's
+64 KiB per-origin keepalive budget - a second capture within 1.5 s of the
+first, at the same position, does nothing. Failed/offline sends leave queued
+events.
 
 The server transaction acknowledges every valid event independently, including
 idempotent duplicates. Malformed events do not block the rest of a batch. The
@@ -51,16 +56,45 @@ Within a reset generation, the existing `decideApply` policy remains:
 - Explicit open/seek/switch/finish claims the reading session. Observed server
   revisions provide causal ordering; client times and session sequence resolve
   otherwise concurrent intents. An explicit rewind is allowed.
-- Heartbeats/pause from a session that lost the claim cannot overwrite an explicit
+- Heartbeats from a session that lost the claim cannot overwrite an explicit
   move from another device. Merely backgrounding or following narration is not
-  permission to take another session's claim.
+  permission to take another session's claim. `pause` IS explicit - the player
+  pausing, or leaving the player, states a position deliberately.
+- A visible surface whose heartbeats come back `recorded` with
+  `unclaimed-session` - another device opened the book and took the claim -
+  re-states its position once as an explicit `seek`, based on the revision the
+  acknowledgement just told it about, and holds the claim again. A hidden tab
+  stays a stale tab. Without this an hour of page turns after a phone glanced
+  at the book was recorded and never applied.
 - History records rejected ordinary events and reasons. Heartbeats older than
   30 days can be compacted; explicit intents remain until an explicit reset.
 
-Queue ownership is account-bound. Session revocation retains unsent work for the
-same user's reauthentication. Explicit sign-out/account replacement clears the
+Queue ownership is account-bound, and enforced at three points rather than
+assumed from one. Every event is stamped with the account it was captured
+for, and the batch envelope names the owner it is delivered for; the server
+answers `403 owner-mismatch` for a foreign envelope and `rejected` /
+`owner-mismatch` for a stray event, and files nothing. The client delivers
+only while a page has confirmed who is signed in: a tab left on the login
+screen keeps its old owner's backlog but sends nothing, so a different person
+signing in from another tab - the cookie being shared by the whole browser -
+cannot have it filed under their name. Sign-out seals the queue until the next
+sign-in, so a surface unmounting on the way to the login screen writes nothing
+for the next person. Session revocation retains unsent work for the same
+user's reauthentication; explicit sign-out or account replacement clears the
 queue, emergency stash, cached progress and reset metadata. Content/download
 caches have their separate ownership policy.
+
+The envelope also carries the client's wall clock (`clientNow`). The server
+measures the difference from its own and moves every event's effective time by
+it (bounded to a day), so a device an hour slow does not lose every explicit
+move it made offline to a device whose clock is right. Forward skew was
+already clamped to two minutes; this closes the other side.
+
+When IndexedDB itself is unavailable - some private windows, "block all site
+data" - checkpoints live in memory for the page and the newest twenty are
+mirrored into the localStorage stash, rather than the book refusing to open.
+The reader is told once. Flushes back off exponentially (to five minutes) after
+failures, and a 413 halves the batch until it goes through.
 
 ## Reading Now and reset contract
 
@@ -76,7 +110,15 @@ confirmation explaining this contract.
 `DELETE /api/progress/:bookId` transactionally deletes only that authenticated
 user's selected-book event history and current progress/claim state. It advances
 `progress_resets.generation` and returns that server-issued integer. It does not
-accept a user ID or client timestamp for the reset.
+accept a user ID or client timestamp for the reset, and it answers 404 for a
+book the library has never had (a book that is merely missing from disk can
+still be reset).
+
+A live surface that is still writing under the generation it opened with is
+told, once, that its progress was reset elsewhere - through the engine's
+notice channel, shown as a toast with **Keep reading from here**, which resumes
+under the new generation and records an explicit `open`. Every checkpoint it
+made before pressing that is refused, as the barrier requires.
 
 It never deletes the book, file, pair, alignment records, annotations (including
 bookmarks/highlights/notes), shelf membership, reading-list membership, downloads,

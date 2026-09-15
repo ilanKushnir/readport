@@ -63,8 +63,12 @@ page. URLs are limited to 2048 characters and GET request bodies are refused.
 Every response uses `Cache-Control: no-store`. A dedicated atomic SQLite
 counter permits 120 allowlisted requests per minute per owner, shared across
 keys and server processes, separate from browser login limits. Exhaustion is
-429 with `Retry-After: 60`. Invalid credentials remain 401; valid credentials
-on forbidden routes/methods remain 403, even when the read budget is exhausted.
+429 with a measured `Retry-After`. Invalid credentials remain 401; valid
+credentials on forbidden routes/methods remain 403, even when the read budget
+is exhausted - up to 300 such refusals per minute per client address, after
+which that address is answered 429 until the minute turns. The address is only
+a cost bound, never an identity. A `nextOffset` that the route would refuse
+(past 100,000) is reported as `null`.
 API reads do not update reading state, history, annotations or queues. Only
 security bookkeeping changes: rate counters and the existing at-most-once-per-
 minute key last-used timestamp. Structured `agent-api` audit logs record verified
@@ -90,7 +94,7 @@ The agent API requires a key; sessions remain for the ordinary browser API.
 | POST   | `/api/setup`            | public until first user exists; creates admin (+ folders, language), starts the scan      |
 | POST   | `/api/auth/login`       | rate limited; `403 account-disabled` for disabled accounts                                |
 | POST   | `/api/auth/logout`      |                                                                                           |
-| GET    | `/api/auth/me`          | `{user, via, needsLibraries, librariesEnvPinned}`                                         |
+| GET    | `/api/auth/me`          | `{user, via, needsLibraries, librariesEnvPinned, locale}`                                 |
 | PATCH  | `/api/auth/me`          | own display name                                                                          |
 | POST   | `/api/auth/password`    | own password (current + new); revokes other sessions                                      |
 
@@ -124,25 +128,27 @@ step.
 
 ## Library & books
 
-| Method | Path                                  | Notes                                         |
-| ------ | ------------------------------------- | --------------------------------------------- |
-| GET    | `/api/library?query&kind&filter&sort` | `{books, continueRail, scanActive}`           |
-| GET    | `/api/library?filter=both-formats`    | one row per paired title (see Shelves)        |
-| GET    | `/api/library?filter=recently-added`  | arrivals of the last 30 days, capped at 60    |
-| GET    | `/api/library?facet=kind:value`       | one grouping the library itself carries       |
-| GET    | `/api/facets`                         | every grouping this library supports, counted |
-| POST   | `/api/library/rescan`                 | admin                                         |
-| GET    | `/api/library/roots`                  | admin; the configured read-only roots         |
-| GET    | `/api/books/:id`                      | detail: chapters, tracks, pair, progress      |
-| GET    | `/api/books/:id/cover`                | image                                         |
-| GET    | `/api/books/:id/manifest`             | ebook derived manifest (spine/toc/pct math)   |
-| GET    | `/api/books/:id/chapter/:idx`         | sanitized chapter HTML fragment               |
-| GET    | `/api/books/:id/sentences/:idx`       | sentence index (ids + char offsets)           |
-| GET    | `/api/books/:id/asset/*`              | sanitized-referenced images only              |
-| GET    | `/api/books/:id/search?q`             | in-book text search                           |
-| GET    | `/api/books/:id/track/:idx`           | audio stream, HTTP Range                      |
-| GET    | `/api/books/:id/offline-manifest`     | URLs + sizes + integrity for the PWA download |
-| GET    | `/api/books/:id/offline-switch`       | precomputed switch answers for that download  |
+| Method | Path                                  | Notes                                           |
+| ------ | ------------------------------------- | ----------------------------------------------- |
+| GET    | `/api/library?query&kind&filter&sort` | `{books, continueRail, scanActive}`             |
+| GET    | `/api/library?collapse=none`          | both halves of every pair, for the device shelf |
+| POST   | `/api/books/:id/language`             | curator; `{language}` or `{language: null}`     |
+| GET    | `/api/library?filter=both-formats`    | one row per paired title (see Shelves)          |
+| GET    | `/api/library?filter=recently-added`  | arrivals of the last 30 days, capped at 60      |
+| GET    | `/api/library?facet=kind:value`       | one grouping the library itself carries         |
+| GET    | `/api/facets`                         | every grouping this library supports, counted   |
+| POST   | `/api/library/rescan`                 | admin                                           |
+| GET    | `/api/library/roots`                  | admin; the configured read-only roots           |
+| GET    | `/api/books/:id`                      | detail: chapters, tracks, pair, progress        |
+| GET    | `/api/books/:id/cover`                | image                                           |
+| GET    | `/api/books/:id/manifest`             | ebook derived manifest (spine/toc/pct math)     |
+| GET    | `/api/books/:id/chapter/:idx`         | sanitized chapter HTML fragment                 |
+| GET    | `/api/books/:id/sentences/:idx`       | sentence index (ids + char offsets)             |
+| GET    | `/api/books/:id/asset/*`              | sanitized-referenced images only                |
+| GET    | `/api/books/:id/search?q`             | in-book text search                             |
+| GET    | `/api/books/:id/track/:idx`           | audio stream, HTTP Range                        |
+| GET    | `/api/books/:id/offline-manifest`     | URLs + sizes + integrity for the PWA download   |
+| GET    | `/api/books/:id/offline-switch`       | precomputed switch answers for that download    |
 
 A book summary carries `pair`, and a pair carries both `switchable` and
 `handoff`. They are not the same claim: `switchable` means a handoff is
@@ -162,20 +168,32 @@ the text - the same direction the resolver's own margin errs in.
 
 ## Progress & annotations
 
-| Method       | Path                            | Notes                                                      |
-| ------------ | ------------------------------- | ---------------------------------------------------------- |
-| POST         | `/api/progress/events`          | idempotent batch; returns per-event ack + reconciled state |
-| GET          | `/api/progress/:bookId`         | current state                                              |
-| GET          | `/api/progress/:bookId/history` | recent events incl. rejected + reasons                     |
-| GET          | `/api/annotations?q&kind`       | every mark this reader has made, across every book         |
-| GET/POST     | `/api/books/:id/annotations`    | bookmarks/highlights/notes                                 |
-| PATCH/DELETE | `/api/annotations/:annId`       | own marks only; `PATCH` takes `{note?, color?}`            |
+| Method       | Path                            | Notes                                                                                             |
+| ------------ | ------------------------------- | ------------------------------------------------------------------------------------------------- |
+| POST         | `/api/progress/events`          | idempotent batch; returns per-event ack + reconciled state                                        |
+| GET          | `/api/progress/:bookId`         | current state + reset generation                                                                  |
+| GET          | `/api/progress/:bookId/history` | recent events incl. rejected + reasons                                                            |
+| DELETE       | `/api/progress/:bookId`         | reset this user's progress for one edition → `{generation}`; 404 for a book the library never had |
+| GET          | `/api/annotations?q&kind`       | every mark this reader has made, across every book                                                |
+| GET/POST     | `/api/books/:id/annotations`    | bookmarks/highlights/notes                                                                        |
+| PATCH/DELETE | `/api/annotations/:annId`       | own marks only; `PATCH` takes `{note?, color?}`                                                   |
 
 A batch of progress events is a drained offline queue, not a form. Refusing all
 two hundred because one is malformed would lose the other hundred and
 ninety-nine and leave the client resending the same slice forever, so each bad
 event comes back named and rejected instead - a durable verdict the client can
 act on by dropping it.
+
+The envelope is `{events, ownerId?, clientNow?}`. `ownerId` is the account
+the queue was captured for: a mismatch with the session is `403
+owner-mismatch` and nothing in the batch is filed; a single event stamped for
+somebody else comes back `rejected` / `owner-mismatch`. `clientNow` is the
+device's wall clock at send time; the server corrects every event's effective
+time by the measured skew (bounded to a day) before judging it, so a slow
+clock does not lose its owner's offline moves. Results are `applied` (moved
+the state), `recorded` (kept in history but did not move it, with a `reason`
+such as `unclaimed-session` or `stale-explicit`; `progress-reset` is answered
+without a history row), `duplicate`, or `rejected` (drop it).
 
 `GET /api/annotations` exists separately from the per-book list because it
 answers a different question: not "what did I mark in this book" but "where was
@@ -218,11 +236,36 @@ Author, series and language are read from the `books` columns; everything else
 comes from `book_facets`, rebuilt inside the same transaction that writes a
 book's metadata. Nothing is ever written back to the library's files.
 
-| Method | Path                 | Notes                                                        |
-| ------ | -------------------- | ------------------------------------------------------------ |
-| GET    | `/api/facets`        | `{groups: [{kind, label, values: [{value, label, count}]}]}` |
-| GET    | `/api/prefs/sidebar` | `{sidebar: {facets, chosen}}`; `chosen:false` = never set    |
-| PUT    | `/api/prefs/sidebar` | `{facets, chosen}`; per account, deduped, order preserved    |
+| Method | Path                                | Notes                                                             |
+| ------ | ----------------------------------- | ----------------------------------------------------------------- |
+| GET    | `/api/facets`                       | `{groups: [{kind, label, values: [{value, label, count}]}]}`      |
+| GET    | `/api/facets?query&kind&filter&ids` | the same, counted over that narrowing only                        |
+| GET    | `/api/prefs/sidebar`                | `{sidebar: {facets, chosen}}`; `chosen:false` = never set         |
+| PUT    | `/api/prefs/sidebar`                | `{facets, chosen}`; per account, deduped, order preserved         |
+| GET    | `/api/prefs/locale`                 | `{locale}`: the interface language this account chose, or null    |
+| PUT    | `/api/prefs/locale`                 | `{locale}` from the supported list, or null to follow the browser |
+
+`continueRail` is a list of whole book summaries - the eight most recently
+touched, unfinished editions - computed from progress rather than from the
+list above it, because the list is collapsed to one card per pair and the
+edition in progress is not always the card. It is filled only for the open
+library (no query, kind, filter or facet).
+
+A facet narrows EDITIONS, before a pair collapses to one card, so a French
+audiobook paired with an English ebook is under `language:fr`. The language
+facet takes several values joined with `+` - `language:fr+de+unknown` - and
+`unknown` is the books with no language at all. Counts from `/api/facets`
+without parameters describe the whole library and keep the two-values rule;
+with `query`, `kind`, `filter` or a comma-separated `ids` list (at most 400)
+they describe that view, one-value groups included, so the client lays them
+over the library's own group list.
+
+A book's `language` comes with a `languageSource`: `manual` (a curator's
+override, which no rescan touches), `metadata` (the file's own tag), `pair`
+(the other, verified edition of the same book - confirmed, or an automatic
+pair with an alignment - lending its answer), `detected` (the ebook's prose),
+or null. `POST /api/books/:id/language` sets or clears the override and
+recomputes both books of any pair the book is in.
 
 Which groups appear is per person, not per server: two people share every book
 and no furniture. An empty `facets` with `chosen:true` means "show none" and is
@@ -276,17 +319,18 @@ rank without pushing the visible numbers along.
 
 ## Pairing & alignment
 
-| Method | Path                                             | Notes                                                       |
-| ------ | ------------------------------------------------ | ----------------------------------------------------------- |
-| GET    | `/api/pairs`                                     | `{pairs, summary}` - evidence, compat, handoff, last job    |
-| GET    | `/api/pairs/:id` / `/api/pairs/:id/alignment`    | detail; per-minute confidence                               |
-| POST   | `/api/pairs/link`                                | curator; manual link `{ebookId, audioId}`                   |
-| POST   | `/api/pairs/:id/confirm` \| `reject` \| `unlink` | curator; decisions are durable                              |
-| POST   | `/api/pairs/:id/language`                        | curator; `{language}` or `{language: null}` to clear        |
-| POST   | `/api/pairs/:id/align`                           | curator; queue this pair → `{jobId, queued}`                |
-| POST   | `/api/pairs/align-many`                          | curator; `{pairIds: []}` → `{queued, skipped}`              |
-| POST   | `/api/pairs/:id/resolve`                         | `{from: Locator}` → `{to, resolution}` - the two-way switch |
-| GET    | `/api/pairs/:id/segments/:spineIdx`              | one chapter's timings - what read-along reads               |
+| Method | Path                                             | Notes                                                                                            |
+| ------ | ------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| GET    | `/api/pairs`                                     | `{pairs, summary}` - evidence, compat, handoff, last job                                         |
+| GET    | `/api/pairs/:id` / `/api/pairs/:id/alignment`    | detail; per-minute confidence                                                                    |
+| POST   | `/api/pairs/link`                                | curator; manual link `{ebookId, audioId}`                                                        |
+| POST   | `/api/pairs/:id/confirm` \| `reject` \| `unlink` | curator; decisions are durable                                                                   |
+| POST   | `/api/pairs/:id/language`                        | curator; `{language}` or `{language: null}` to clear                                             |
+| POST   | `/api/pairs/:id/align`                           | curator; queue this pair → `{jobId, queued}`                                                     |
+| POST   | `/api/pairs/align-many`                          | curator; `{pairIds: []}` → `{queued, skipped}`                                                   |
+| POST   | `/api/pairs/:id/resolve`                         | `{from: Locator}` → `{to, resolution}` - the two-way switch                                      |
+| GET    | `/api/pairs/:id/segments/:spineIdx`              | one chapter's timings - what read-along reads                                                    |
+| GET    | `/api/pairs/:id/chapters`                        | `{chapters: [{spineIdx, firstMs, lastMs, segments}]}` - where each chapter sits in the narration |
 
 Each pair reports its `language` as three values rather than one, because the
 useful thing to show is not just the answer but where it came from: `override`

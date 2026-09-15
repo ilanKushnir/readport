@@ -12,9 +12,17 @@ creates lives in its own volumes.
 ```bash
 git clone https://github.com/ilanKushnir/readport && cd readport
 cp .env.example .env
-# Required: set a session secret
-sed -i "s/^RP_SESSION_SECRET=.*/RP_SESSION_SECRET=$(openssl rand -hex 32)/" .env
-# Point the library mounts in docker-compose.yml at your real folders
+
+# Required: a session secret. (Appending wins - later lines override earlier
+# ones - so this works the same on macOS and Linux, with no sed dialect.)
+echo "RP_SESSION_SECRET=$(openssl rand -hex 32)" >> .env
+
+# Then point these three at your real folders, in .env. The compose file
+# reads them, so it never needs editing and `git pull` stays clean:
+#   RP_EBOOK_PATH=/srv/books/ebooks
+#   RP_AUDIOBOOK_PATH=/srv/books/audiobooks
+#   RP_ALIGNMENT_PATH=/srv/books/alignments   # writable, chown to PUID:PGID
+
 docker compose up -d --build
 ```
 
@@ -35,6 +43,13 @@ exact two-way switching immediately.
 | `/library/ebooks`     | Your ebook library                                 | `:ro` - read-only, required posture.                                                                                        |
 | `/library/audiobooks` | Your audiobook library                             | `:ro`                                                                                                                       |
 | `/library/alignments` | Finished alignments, one `.rpalign` file per pair  | **Read-write**, on purpose - never `:ro`. The only folder ReadPort writes into, and the one worth keeping across a rebuild. |
+
+Which host folder lands on each of the three `/library` mounts is set in
+`.env` - `RP_EBOOK_PATH`, `RP_AUDIOBOOK_PATH` and `RP_ALIGNMENT_PATH` - so the
+compose file stays as shipped. The `/data`, `/cache` and `/models` mounts are
+named Docker volumes (`rp-data`, `rp-cache`, `rp-models`) rather than bind
+mounts, because SQLite wants a real local filesystem and because a named
+volume cannot be pointed at a share by accident.
 
 Your libraries can be the folders already used by Calibre / Calibre-Web
 Automated (`.../Calibre Library`), Kavita, Audiobookshelf
@@ -116,12 +131,26 @@ different EPUB of the same title, does change them, and should: the timings
 would no longer be about that file.
 
 In practice, mount the same folder onto the new container and the pairing scan
-that follows the first library scan takes back everything it recognises. A
-pair that already has an alignment here is left alone, so a redeploy that kept
-its database imports nothing; a file is applied whole or not at all, because a
-half-applied alignment would leave the reader with silent holes and a coverage
-figure that lied about them; and files whose book is not in this library are
-passed over without comment.
+that follows the first library scan takes back everything it recognises,
+before it queues any alignment work of its own. A pair that already has an
+alignment here is left alone, so a redeploy that kept its database imports
+nothing; a file is applied whole or not at all, because a half-applied
+alignment would leave the reader with silent holes and a coverage figure that
+lied about them; files whose book is not in this library are passed over
+without comment, and a file that _nearly_ matches - the ebook is here but the
+audiobook's tracks differ - is explained in the server log. A pair you linked
+by hand on the old install comes back too, pair and all: the file proves the
+two books belong together.
+
+Three things about the folder itself. Only files directly inside it are read
+
+- sort them into subfolders by author and nothing will be imported. The folder
+  may be reached through a symbolic link (a bare-metal install pointing
+  `/data/alignments` at a NAS mount is fine), but a link planted _inside_ the
+  folder is skipped whatever it points at. And if the folder is a NAS mount on
+  the host, mount it before `docker compose up`: a bind mount of a path that is
+  not mounted yet is a bind mount of the empty directory underneath, and files
+  written there are on the host's local disk, invisible once the NAS appears.
 
 Settings → Libraries → Alignment folder has the two manual buttons - **Save
 all alignments to this folder**, for an install that has been aligning books
@@ -130,7 +159,10 @@ there**, for a folder you have just mounted and do not want to wait a scan
 for. It also reports how many files are saved and how much space they take,
 and says so plainly when the folder cannot be written to. In that case
 alignments are kept in `<data>/alignments` instead: the work is never lost
-over a bad mount, it is only not portable until you fix it.
+over a bad mount, it is only not portable until you fix it. With the stock
+Compose file that fallback lives in the `rp-data` named volume, which survives
+container replacement and image upgrades; only deleting the volume
+(`docker compose down -v`) discards it.
 
 ## Users, PUID/PGID, timezone
 
@@ -143,9 +175,20 @@ is used, and `no-new-privileges` is enabled in the compose file.
 ## Which image you get
 
 The compose file builds from source, which works on any architecture and is
-the default. The published image at `ghcr.io/ilankushnir/readport` is built
-for **linux/amd64** only - on an arm64 host (a Pi, an Apple Silicon VM, an ARM
-VPS) keep `build: .` rather than switching to `image:`.
+the default.
+
+Images are also published to `ghcr.io/ilankushnir/readport` by CI, but for
+**linux/amd64 only**. On an arm64 host (a Pi, an Apple Silicon VM, an ARM VPS)
+keep `build: .`. On amd64 you may replace that line with an explicit version:
+
+```yaml
+image: ghcr.io/ilankushnir/readport:0.12.0
+```
+
+Tags: the release version (`0.12.0`), `latest` on tagged releases, `main` and
+a short commit sha for every push to `main`. Pin the version rather than
+following `latest`, so upgrading is something you decide to do; the release
+notes in [CHANGELOG.md](../CHANGELOG.md) say what changed.
 
 ## Reverse proxy and HTTPS (required for the PWA)
 
@@ -260,7 +303,8 @@ recompute anything after losing both.
 ## Upgrades and migrations
 
 ```bash
-git pull            # or: docker pull ghcr.io/ilankushnir/readport:latest
+git pull            # or, on the published image: bump the tag in compose and
+                    #   docker compose pull
 docker compose up -d --build
 ```
 
@@ -270,18 +314,18 @@ recorded in `schema_migrations`). Downgrades are not supported - restore the
 
 ## Troubleshooting
 
-| Symptom                                                   | Likely cause / fix                                                                                                                                                                                                                                                                                                                             |
-| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Library is empty after setup                              | Check the `:ro` mounts exist inside the container (`docker compose exec readport ls /library/ebooks`) and rescan from Settings.                                                                                                                                                                                                                |
-| Books stuck in "Indexing…"                                | See Settings → Background activity for the job error; `docker compose logs readport`.                                                                                                                                                                                                                                                          |
-| Nothing ever starts aligning                              | The model is not downloaded (Settings → Alignment), or unattended alignment is off (Settings → Alignment → _Align new matches automatically_), or the metadata match was not confident enough to run without being asked - confirm it on the Pairing page and it aligns immediately.                                                           |
-| Alignment fails with "model is not installed"             | Download the alignment model in Settings → Alignment, or run `readport-model install`; the Pairing page turns the error into a one-click download and re-queues the alignment when the files land.                                                                                                                                             |
-| Pairing says the narration is not the same work           | The aligner found almost no matching passages. That usually means an abridged, dramatized or differently translated edition - a correct pair produces hundreds of anchors per thousand characters. Confirm the pair manually only if you are sure.                                                                                             |
-| Nothing appears in the alignment folder                   | The mount is `:ro`, or the host folder is not writable by `PUID`/`PGID`. Settings → Libraries → Alignment folder says which, and the alignments are safe in `<data>/alignments` meanwhile - fix the mount and press _Save all alignments to this folder_.                                                                                      |
-| A rebuilt install did not take its alignments back        | The saved files no longer describe these files: a re-encoded audiobook (different track durations) or a different EPUB of the same title (different sentence ids) is a different pair, and its timings would be wrong. Aligning again is the only honest fix.                                                                                  |
-| A book shows "Indexing failed"                            | The EPUB may be malformed or DRM-protected. ReadPort does not remove DRM.                                                                                                                                                                                                                                                                      |
-| "Add to Home Screen" gives a browser shortcut, not an app | You are not on HTTPS. See the reverse-proxy section.                                                                                                                                                                                                                                                                                           |
-| m4b won't play in Firefox/Chromium                        | AAC decoding is missing from some open-source browser builds. Chrome, Edge and Safari play m4b/m4a; mp3/flac/ogg play everywhere.                                                                                                                                                                                                              |
-| Progress didn't sync from my phone                        | It is queued locally (IndexedDB) and reconciles on the next reachable sync; nothing is lost.                                                                                                                                                                                                                                                   |
-| Login says "Too many attempts"                            | Login throttle: 10 tries per account from one IP, 30 from that IP across all accounts, both over 5 minutes. Wait a few minutes.                                                                                                                                                                                                                |
-| Reset the admin password                                  | Stop the stack, delete the `users`/`sessions` rows: `docker compose run --rm readport node -e "const {DatabaseSync}=require('node:sqlite');const d=new DatabaseSync('/data/readport.db');d.exec('DELETE FROM sessions; DELETE FROM users;')"` - the next visit shows first-run setup again. Reading progress and pair decisions are preserved. |
+| Symptom                                                   | Likely cause / fix                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Library is empty after setup                              | Check the `:ro` mounts exist inside the container (`docker compose exec readport ls /library/ebooks`) and rescan from Settings.                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Books stuck in "Indexing…"                                | See Settings → Background activity for the job error; `docker compose logs readport`.                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Nothing ever starts aligning                              | The model is not downloaded (Settings → Alignment), or unattended alignment is off (Settings → Alignment → _Align new matches automatically_), or the metadata match was not confident enough to run without being asked - confirm it on the Pairing page and it aligns immediately.                                                                                                                                                                                                                                              |
+| Alignment fails with "model is not installed"             | Download the alignment model in Settings → Alignment, or run `readport-model install`; the Pairing page turns the error into a one-click download and re-queues the alignment when the files land.                                                                                                                                                                                                                                                                                                                                |
+| Pairing says the narration is not the same work           | The aligner found almost no matching passages. That usually means an abridged, dramatized or differently translated edition - a correct pair produces hundreds of anchors per thousand characters. Confirm the pair manually only if you are sure.                                                                                                                                                                                                                                                                                |
+| Nothing appears in the alignment folder                   | The mount is `:ro`, or the host folder is not writable by `PUID`/`PGID`. Settings → Libraries → Alignment folder says which, and the alignments are safe in `<data>/alignments` meanwhile - fix the mount and press _Save all alignments to this folder_.                                                                                                                                                                                                                                                                         |
+| A rebuilt install did not take its alignments back        | The saved files no longer describe these files: a re-encoded audiobook (different track durations) or a different EPUB of the same title (different sentence ids) is a different pair, and its timings would be wrong. Aligning again is the only honest fix. The server log names near misses ("the ebook is here, but no audiobook has its 12 tracks"). Files in subfolders are not read; a Node/ICU upgrade that changes sentence segmentation also changes the text fingerprint, which a re-index of that book makes visible. |
+| A book shows "Indexing failed"                            | The EPUB may be malformed or DRM-protected. ReadPort does not remove DRM.                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| "Add to Home Screen" gives a browser shortcut, not an app | You are not on HTTPS. See the reverse-proxy section.                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| m4b won't play in Firefox/Chromium                        | AAC decoding is missing from some open-source browser builds. Chrome, Edge and Safari play m4b/m4a; mp3/flac/ogg play everywhere.                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Progress didn't sync from my phone                        | It is queued locally (IndexedDB) and reconciles on the next reachable sync; nothing is lost.                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Login says "Too many attempts"                            | Login throttle: 10 tries per account from one IP, 30 from that IP across all accounts, both over 5 minutes. Wait a few minutes.                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Reset the admin password                                  | Stop the stack, delete the `users`/`sessions` rows: `docker compose run --rm readport node -e "const {DatabaseSync}=require('node:sqlite');const d=new DatabaseSync('/data/readport.db');d.exec('DELETE FROM sessions; DELETE FROM users;')"` - the next visit shows first-run setup again. Reading progress and pair decisions are preserved.                                                                                                                                                                                    |
