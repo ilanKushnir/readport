@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { requireRole } from '../../auth/roles.js';
 import { resolveSettings } from '../../domain/settings.js';
 import { type AppContext, activeDerivedDir } from '../../context.js';
+import { recomputePairLanguages } from '../../library/language.js';
 import { nowIso } from '../../db/index.js';
 import { stableId } from '../../util/ids.js';
 import { enqueueJob } from '../../jobs/queue.js';
@@ -186,6 +187,9 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
     const res = db
       .prepare('UPDATE pairs SET status = ?, decided_at = ?, decided_by = ? WHERE id = ?')
       .run(status, nowIso(), userId, id);
+    // A pair that is confirmed lends each side the other's language; one
+    // that is rejected takes that back.
+    if (Number(res.changes) > 0) recomputePairLanguages(db, id);
     return Number(res.changes) > 0;
   };
 
@@ -247,6 +251,7 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
         req.user!.id,
       );
     }
+    recomputePairLanguages(db, id);
     enqueueJob(db, 'align', { pairId: id }, { dedupeKey: `align:${id}` });
     const row = db.prepare('SELECT * FROM pairs WHERE id = ?').get(id) as Record<string, unknown>;
     return { pair: pairDto(row) };

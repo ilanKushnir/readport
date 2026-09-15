@@ -32,10 +32,76 @@ export const LANGUAGES: LanguageSpec[] = [
   { code: 'nl', label: 'Dutch', native: 'Nederlands' },
 ];
 
+/**
+ * Languages a book may be in, for the language facet and a per-book override.
+ *
+ * Broader than `LANGUAGES` above, which is only what the romanizer knows how
+ * to spell numbers in: a Polish audiobook aligns fine, it just cannot be
+ * narrated in Polish digits, and it certainly deserves to be called Polish
+ * rather than "PL" in the sidebar. English labels; a client with
+ * `Intl.DisplayNames` shows the reader's own language's name for each.
+ */
+export const BOOK_LANGUAGES: LanguageSpec[] = [
+  ...LANGUAGES,
+  { code: 'pl', label: 'Polish', native: 'Polski' },
+  { code: 'uk', label: 'Ukrainian', native: 'Українська' },
+  { code: 'cs', label: 'Czech', native: 'Čeština' },
+  { code: 'ro', label: 'Romanian', native: 'Română' },
+  { code: 'sv', label: 'Swedish', native: 'Svenska' },
+  { code: 'da', label: 'Danish', native: 'Dansk' },
+  { code: 'nb', label: 'Norwegian Bokmål', native: 'Norsk bokmål' },
+  { code: 'no', label: 'Norwegian', native: 'Norsk' },
+  { code: 'fi', label: 'Finnish', native: 'Suomi' },
+  { code: 'el', label: 'Greek', native: 'Ελληνικά' },
+  { code: 'tr', label: 'Turkish', native: 'Türkçe' },
+  { code: 'ja', label: 'Japanese', native: '日本語' },
+  { code: 'ko', label: 'Korean', native: '한국어' },
+  { code: 'zh', label: 'Chinese', native: '中文' },
+  { code: 'hi', label: 'Hindi', native: 'हिन्दी' },
+  { code: 'fa', label: 'Persian', native: 'فارسی' },
+  { code: 'ur', label: 'Urdu', native: 'اردو' },
+  { code: 'bn', label: 'Bengali', native: 'বাংলা' },
+  { code: 'id', label: 'Indonesian', native: 'Bahasa Indonesia' },
+  { code: 'vi', label: 'Vietnamese', native: 'Tiếng Việt' },
+  { code: 'th', label: 'Thai', native: 'ไทย' },
+  { code: 'hu', label: 'Hungarian', native: 'Magyar' },
+  { code: 'bg', label: 'Bulgarian', native: 'Български' },
+  { code: 'hr', label: 'Croatian', native: 'Hrvatski' },
+  { code: 'sr', label: 'Serbian', native: 'Српски' },
+  { code: 'sk', label: 'Slovak', native: 'Slovenčina' },
+  { code: 'sl', label: 'Slovenian', native: 'Slovenščina' },
+  { code: 'lt', label: 'Lithuanian', native: 'Lietuvių' },
+  { code: 'lv', label: 'Latvian', native: 'Latviešu' },
+  { code: 'et', label: 'Estonian', native: 'Eesti' },
+  { code: 'ca', label: 'Catalan', native: 'Català' },
+  { code: 'eu', label: 'Basque', native: 'Euskara' },
+  { code: 'gl', label: 'Galician', native: 'Galego' },
+  { code: 'ga', label: 'Irish', native: 'Gaeilge' },
+  { code: 'cy', label: 'Welsh', native: 'Cymraeg' },
+  { code: 'is', label: 'Icelandic', native: 'Íslenska' },
+  { code: 'la', label: 'Latin', native: 'Latina' },
+  { code: 'yi', label: 'Yiddish', native: 'ייִדיש' },
+  { code: 'sw', label: 'Swahili', native: 'Kiswahili' },
+  { code: 'ms', label: 'Malay', native: 'Bahasa Melayu' },
+  { code: 'ta', label: 'Tamil', native: 'தமிழ்' },
+];
+
+/** The facet value that stands for "no language known": a book with none is browsable too. */
+export const UNKNOWN_LANGUAGE = 'unknown';
+
+/**
+ * Where a book's language came from, most trusted first. A manual override
+ * outlives every rescan; metadata is what the file says; `pair` is the other
+ * verified edition of the same book lending its answer; `detected` is what
+ * reading the text suggested.
+ */
+export const LANGUAGE_SOURCES = ['manual', 'metadata', 'pair', 'detected'] as const;
+export type LanguageSource = (typeof LANGUAGE_SOURCES)[number];
+
 export function languageLabel(code: string | null | undefined): string {
-  if (!code) return 'Unknown';
+  if (!code || code === UNKNOWN_LANGUAGE) return 'Unknown';
   const base = code.toLowerCase().split(/[-_]/)[0];
-  return LANGUAGES.find((l) => l.code === base)?.label ?? code.toUpperCase();
+  return BOOK_LANGUAGES.find((l) => l.code === base)?.label ?? code.toUpperCase();
 }
 
 /**
@@ -46,7 +112,7 @@ export function languageLabel(code: string | null | undefined): string {
 export function languageByCode(code: string | null | undefined): LanguageSpec | undefined {
   if (!code) return undefined;
   const base = code.toLowerCase().split(/[-_]/)[0]!;
-  return LANGUAGES.find((l) => l.code === base);
+  return BOOK_LANGUAGES.find((l) => l.code === base);
 }
 
 /**
@@ -105,5 +171,8 @@ export function normaliseLanguage(raw: string | null | undefined): string | null
   if (!raw) return null;
   const base = raw.trim().toLowerCase().split(/[-_]/)[0] ?? '';
   if (!/^[a-z]{2,3}$/.test(base)) return null;
+  // "und" is ISO 639's own word for "we do not know", and "unknown" is what
+  // a tag editor writes: neither is a language to browse by.
+  if (base === 'und' || base === 'unknown' || base === 'mul' || base === 'zxx') return null;
   return ISO3_TO_ISO1[base] ?? base;
 }

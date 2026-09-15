@@ -1,7 +1,8 @@
 import { useId, useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate, useParams } from 'react-router-dom';
 import { FACET_SPECS, type FacetGroup, type FacetKind } from '@readport/shared';
 import { useFacets } from '../state/facets';
+import { languageName } from '../lib/languageName';
 import { Sheet } from './ui';
 import {
   IconChevronDown,
@@ -43,7 +44,76 @@ const FACET_ICONS: Record<FacetKind, typeof IconTag> = {
 
 const FIRST_SHOWN = 12;
 
-function Group({ group, onNavigate }: { group: FacetGroup; onNavigate?: () => void }) {
+/**
+ * Languages are picked several at a time. "The French and German ones" is
+ * one question, so the rows are checkboxes: ticking a second language adds
+ * it to the shelf being shown, unticking the last returns to the library.
+ * Every other grouping is one value at a time, as a link.
+ */
+function LanguageRows({
+  group,
+  counts,
+  onNavigate,
+}: {
+  group: FacetGroup;
+  counts: Map<string, number> | null;
+  onNavigate?: () => void;
+}) {
+  const params = useParams();
+  const navigate = useNavigate();
+  const selected = new Set(
+    params.facetKind === 'language' && params.facetValue
+      ? params.facetValue
+          .split('+')
+          .map((v) => v.toLowerCase())
+          .filter(Boolean)
+      : [],
+  );
+  const toggle = (value: string) => {
+    const next = new Set(selected);
+    const key = value.toLowerCase();
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    // In the sidebar's own order, so the address reads the same whichever
+    // box was ticked first.
+    const ordered = group.values.map((v) => v.value.toLowerCase()).filter((v) => next.has(v));
+    navigate(ordered.length ? `/browse/language/${encodeURIComponent(ordered.join('+'))}` : '/');
+    onNavigate?.();
+  };
+  return (
+    <>
+      {group.values.map((v) => {
+        const key = v.value.toLowerCase();
+        const on = selected.has(key);
+        const count = counts ? (counts.get(`language:${key}`) ?? 0) : v.count;
+        return (
+          <li key={v.value}>
+            <label className={`sidebar__value sidebar__value--check${on ? ' is-active' : ''}`}>
+              <input type="checkbox" checked={on} onChange={() => toggle(v.value)} />
+              <span className="sidebar__valuename">{languageName(v.value)}</span>
+              <span className="sidebar__count" aria-hidden="true">
+                {count}
+              </span>
+              <span className="visually-hidden">
+                {count} {count === 1 ? 'book' : 'books'}
+              </span>
+            </label>
+          </li>
+        );
+      })}
+    </>
+  );
+}
+
+function Group({
+  group,
+  counts,
+  onNavigate,
+}: {
+  group: FacetGroup;
+  counts: Map<string, number> | null;
+  onNavigate?: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const [all, setAll] = useState(false);
   const uid = useId();
@@ -71,25 +141,36 @@ function Group({ group, onNavigate }: { group: FacetGroup; onNavigate?: () => vo
       </button>
       {open && (
         <ul className="sidebar__values" id={`${uid}-values`}>
-          {values.map((v) => (
-            <li key={v.value}>
-              <NavLink
-                to={`/browse/${group.kind}/${encodeURIComponent(v.value)}`}
-                className={({ isActive }) => `sidebar__value${isActive ? ' is-active' : ''}`}
-                onClick={onNavigate}
-                title={v.label}
-              >
-                <span className="sidebar__valuename">{v.label}</span>
-                <span className="sidebar__count" aria-hidden="true">
-                  {v.count}
-                </span>
-                <span className="visually-hidden">
-                  {v.count} {v.count === 1 ? 'book' : 'books'}
-                </span>
-              </NavLink>
-            </li>
-          ))}
-          {hidden > 0 && (
+          {group.kind === 'language' ? (
+            <LanguageRows group={group} counts={counts} onNavigate={onNavigate} />
+          ) : (
+            values.map((v) => {
+              const count = counts
+                ? (counts.get(`${group.kind}:${v.value.toLowerCase()}`) ?? 0)
+                : v.count;
+              return (
+                <li key={v.value}>
+                  <NavLink
+                    to={`/browse/${group.kind}/${encodeURIComponent(v.value)}`}
+                    className={({ isActive }) =>
+                      `sidebar__value${isActive ? ' is-active' : ''}${count === 0 ? ' is-empty' : ''}`
+                    }
+                    onClick={onNavigate}
+                    title={v.label}
+                  >
+                    <span className="sidebar__valuename">{v.label}</span>
+                    <span className="sidebar__count" aria-hidden="true">
+                      {count}
+                    </span>
+                    <span className="visually-hidden">
+                      {count} {count === 1 ? 'book' : 'books'}
+                    </span>
+                  </NavLink>
+                </li>
+              );
+            })
+          )}
+          {hidden > 0 && group.kind !== 'language' && (
             <li>
               <button className="sidebar__more" onClick={() => setAll(true)}>
                 Show all {group.values.length}
@@ -104,7 +185,7 @@ function Group({ group, onNavigate }: { group: FacetGroup; onNavigate?: () => vo
 
 /** The Browse section: a heading, its groups, and the way to change them. */
 export function BrowseGroups({ onNavigate }: { onNavigate?: () => void }) {
-  const { groups, shown } = useFacets();
+  const { groups, shown, scopedCounts } = useFacets();
   const [customising, setCustomising] = useState(false);
 
   // Nothing to browse by. A library of six untagged books is not improved by
@@ -133,7 +214,7 @@ export function BrowseGroups({ onNavigate }: { onNavigate?: () => void }) {
       ) : (
         <ul className="sidebar__group">
           {visible.map((g) => (
-            <Group key={g.kind} group={g} onNavigate={onNavigate} />
+            <Group key={g.kind} group={g} counts={scopedCounts} onNavigate={onNavigate} />
           ))}
         </ul>
       )}

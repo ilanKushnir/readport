@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { type AudioLocator, type EbookLocator } from '@readport/shared';
-import { api, isOffline } from '../api/client';
+import {
+  BOOK_LANGUAGES,
+  type AudioLocator,
+  type BookSummary,
+  type EbookLocator,
+} from '@readport/shared';
+import { actionFailed, api, isOffline } from '../api/client';
 import { type Annotation, type BookDetail, type ResolveResponse } from '../lib/types';
 import { Cover, EmptyState, Sheet, useToast } from '../components/ui';
 import { AddToSheet } from '../components/AddToSheet';
@@ -22,6 +27,7 @@ import {
   IconTrash,
 } from '../components/icons';
 import { formatBytes, formatDuration, formatPct, ordinal } from '../lib/format';
+import { languageName } from '../lib/languageName';
 import {
   cachedSwitch,
   cancelDownload,
@@ -334,7 +340,11 @@ export function BookPage() {
           {book.author && <div className="book-hero__author">{book.author}</div>}
           <div className="book-hero__meta">
             <span>{isEbook ? 'EPUB' : book.format.toUpperCase()}</span>
-            {book.language && <span>{book.language.toUpperCase()}</span>}
+            <LanguageChip
+              book={book}
+              canEdit={user?.role === 'admin' || user?.role === 'curator'}
+              onChanged={() => void load()}
+            />
             {!isEbook && book.durationMs != null && <span>{formatDuration(book.durationMs)}</span>}
             {detail.chapters.length > 0 && <span>{detail.chapters.length} chapters</span>}
             <span>{formatBytes(book.sizeBytes)}</span>
@@ -889,5 +899,79 @@ function OfflineSheet({
         </>
       )}
     </Sheet>
+  );
+}
+
+const SOURCE_WORDS: Record<NonNullable<BookSummary['languageSource']>, string> = {
+  manual: 'set by hand',
+  metadata: 'from the file',
+  pair: 'from the paired edition',
+  detected: 'read from the text',
+};
+
+/**
+ * The book's language, where it came from, and - for a curator - a way to
+ * say otherwise. A rescan cannot undo what is set here; the file's own tag,
+ * a verified pair and the prose all rank below it.
+ */
+function LanguageChip({
+  book,
+  canEdit,
+  onChanged,
+}: {
+  book: BookSummary;
+  canEdit: boolean;
+  onChanged: () => void;
+}) {
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+  const source = book.languageSource ?? null;
+  const title = book.language
+    ? `Language ${SOURCE_WORDS[source ?? 'metadata']}`
+    : 'Language unknown';
+  if (!canEdit) {
+    return (
+      <span title={title}>{book.language ? languageName(book.language) : 'Language unknown'}</span>
+    );
+  }
+  return (
+    <label className="lang-pick" title={title}>
+      <span className="visually-hidden">Language</span>
+      <select
+        className="lang-pick__select"
+        disabled={busy}
+        value={source === 'manual' ? (book.language ?? '') : ''}
+        onChange={async (ev) => {
+          const language = ev.target.value || null;
+          setBusy(true);
+          try {
+            await api(`/api/books/${book.id}/language`, { method: 'POST', body: { language } });
+            toast.show(
+              language
+                ? `Language set to ${languageName(language)}`
+                : 'Language follows the file again',
+            );
+            onChanged();
+          } catch (err) {
+            toast.show(actionFailed(err, 'Could not change the language.'));
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        <option value="">
+          {source === 'manual'
+            ? 'Auto'
+            : book.language
+              ? `${languageName(book.language)} · ${SOURCE_WORDS[source ?? 'metadata']}`
+              : 'Unknown · set by hand?'}
+        </option>
+        {BOOK_LANGUAGES.map((l) => (
+          <option key={l.code} value={l.code}>
+            {languageName(l.code)}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }

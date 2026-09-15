@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { type DB, nowIso } from '../db/index.js';
+import { recomputeBookLanguage } from '../library/language.js';
 import { stableId } from '../util/ids.js';
 
 /**
@@ -259,11 +260,16 @@ function relinkMoved(
  */
 export function discardPairing(db: DB, bookId: string): number {
   const pairs = db
-    .prepare('SELECT id FROM pairs WHERE ebook_id = ? OR audio_id = ?')
-    .all(bookId, bookId) as { id: string }[];
+    .prepare('SELECT id, ebook_id, audio_id FROM pairs WHERE ebook_id = ? OR audio_id = ?')
+    .all(bookId, bookId) as { id: string; ebook_id: string; audio_id: string }[];
   if (pairs.length === 0) return 0;
   // Alignments and their segments cascade from the pair.
   db.prepare('DELETE FROM pairs WHERE ebook_id = ? OR audio_id = ?').run(bookId, bookId);
+  // Whatever language the pair lent either side goes with it.
+  for (const p of pairs) {
+    recomputeBookLanguage(db, p.ebook_id);
+    recomputeBookLanguage(db, p.audio_id);
+  }
   return pairs.length;
 }
 

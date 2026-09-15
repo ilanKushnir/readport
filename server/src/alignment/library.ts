@@ -7,6 +7,7 @@ import { alignmentRoots } from '../domain/settings.js';
 import { latestAlignment, storeAlignment } from './service.js';
 import { rowToSegment } from './timings.js';
 import { stableId } from '../util/ids.js';
+import { recomputePairLanguages } from '../library/language.js';
 import { APP_VERSION } from '../util/version.js';
 import {
   ALIGNMENT_FILE_EXT,
@@ -386,6 +387,7 @@ function applyDocument(
       `UPDATE pairs SET status = 'auto', decided_at = ? WHERE id = ? AND status = 'candidate'`,
     )
     .run(nowIso(), pairId);
+  recomputePairLanguages(ctx.db, pairId);
   return true;
 }
 

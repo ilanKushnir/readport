@@ -11,6 +11,8 @@ import {
 } from '@readport/shared';
 import { api, ApiError } from '../api/client';
 import { useShelves } from '../state/shelves';
+import { useFacets } from '../state/facets';
+import { languageListName } from '../lib/languageName';
 import { ReadingNow } from './ReadingNow';
 import { AddToSheet } from '../components/AddToSheet';
 import { Cover, EmptyState } from '../components/ui';
@@ -75,6 +77,7 @@ function useDebounced<T>(value: T, ms: number): T {
 export function LibraryPage() {
   const params = useParams();
   const { overview, refresh, refreshDownloads } = useShelves();
+  const { setScope } = useFacets();
   const showing = useMemo<Showing>(() => {
     if (params.shelfId) return { kind: 'user', id: params.shelfId };
     if (params.facetKind && params.facetValue && isFacetKind(params.facetKind)) {
@@ -149,6 +152,27 @@ export function LibraryPage() {
     return list;
   }, []);
 
+  // The sidebar's counts describe this view: a search, a format, a progress
+  // shelf, or - for the one shelf the server cannot see - the downloads here.
+  useEffect(() => {
+    const q = debouncedQuery.trim();
+    const k = kind === 'all' ? undefined : kind;
+    if (showing.kind === 'device') {
+      setScope({ query: q || undefined, kind: k, ids: [...downloaded] });
+      return;
+    }
+    if (showing.kind === 'auto' || q || k) {
+      setScope({
+        query: q || undefined,
+        kind: k,
+        filter: showing.kind === 'auto' ? showing.id : undefined,
+      });
+      return;
+    }
+    setScope(null);
+  }, [showing, debouncedQuery, kind, downloaded, setScope]);
+  useEffect(() => () => setScope(null), [setScope]);
+
   const load = useCallback(async () => {
     const seq = ++requestSeq.current;
     try {
@@ -172,6 +196,9 @@ export function LibraryPage() {
       if (kind !== 'all') params.set('kind', kind);
       if (showing.kind === 'auto') params.set('filter', showing.id);
       if (showing.kind === 'facet') params.set('facet', formatFacet(showing.facet, showing.value));
+      // What this browser downloaded is decided here, not by the server, and
+      // a downloaded audiobook must not vanish behind its undownloaded ebook.
+      if (showing.kind === 'device') params.set('collapse', 'none');
       params.set('sort', sort);
       const res = await api<LibraryData>(`/api/library?${params}`);
       if (seq !== requestSeq.current) return;
@@ -331,7 +358,9 @@ export function LibraryPage() {
         : showing.kind === 'auto'
           ? AUTO_SHELVES.find((s) => s.id === showing.id)!.label
           : showing.kind === 'facet'
-            ? showing.value
+            ? showing.facet === 'language'
+              ? languageListName(showing.value)
+              : showing.value
             : 'Library';
 
   const showChips = showing.kind !== 'library' || (overview?.shelves.length ?? 0) > 0;
@@ -620,7 +649,7 @@ function ShelfEmpty({
     return (
       <EmptyState
         icon={<IconLibrary size={40} />}
-        title={`Nothing under ${showing.value}`}
+        title={`Nothing under ${showing.facet === 'language' ? languageListName(showing.value) : showing.value}`}
         action={
           <Link className="btn" to="/">
             Browse the library

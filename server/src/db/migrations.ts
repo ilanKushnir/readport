@@ -519,4 +519,22 @@ DROP TABLE progress_resets;
 ALTER TABLE progress_resets_owned RENAME TO progress_resets;
 `,
   },
+  {
+    version: 16,
+    sql: `
+-- A book's language, with where it came from. \`language\` stays the one the
+-- app uses; the three beside it are its evidence, most trusted first:
+--   language_manual    set by a curator, and never overwritten by a rescan
+--   language_metadata  what the EPUB (dc:language) or the audio tags declare
+--   language_detected  what reading the ebook's own prose suggested
+-- and language_source names which of them - or the verified paired edition
+-- ('pair') - the current answer was taken from.
+ALTER TABLE books ADD COLUMN language_manual TEXT;
+ALTER TABLE books ADD COLUMN language_metadata TEXT;
+ALTER TABLE books ADD COLUMN language_detected TEXT;
+ALTER TABLE books ADD COLUMN language_source TEXT;
+UPDATE books SET language_metadata = language, language_source = 'metadata'
+ WHERE language IS NOT NULL AND TRIM(language) != '';
+`,
+  },
 ];

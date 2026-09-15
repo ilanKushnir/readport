@@ -8,7 +8,16 @@ import {
   type BookSummary,
   parseFacet,
 } from '@readport/shared';
-import { bookIdsWithFacet, facetGroups, foldFacet } from '../../library/facets.js';
+import {
+  type FacetScope,
+  bookIdsWithFacet,
+  facetGroups,
+  foldFacet,
+  matchesLanguage,
+} from '../../library/facets.js';
+import { setBookLanguageOverride } from '../../library/language.js';
+import { BOOK_LANGUAGES, normaliseLanguage } from '@readport/shared';
+import { requireRole } from '../../auth/roles.js';
 import { libraryRoots } from '../../domain/settings.js';
 import { type AppContext } from '../../context.js';
 import { enqueueJob } from '../../jobs/queue.js';
@@ -67,6 +76,7 @@ export function bookRowToSummary(
     series: (row.series as string) ?? null,
     seriesIdx: (row.series_idx as number) ?? null,
     language: (row.language as string) ?? null,
+    languageSource: (row.language_source as BookSummary['languageSource']) ?? null,
     format: String(row.format),
     scanState: String(row.scan_state) as BookSummary['scanState'],
     scanError: (row.scan_error as string) ?? null,
@@ -135,8 +145,53 @@ const libraryQuerySchema = z.object({
    * automatic shelves are: one code path owns filtering, sorting, the
    * missing-book exclusion and the continue rail.
    */
-  facet: z.string().max(120).optional(),
+  facet: z.string().max(240).optional(),
+  /**
+   * Whether both halves of a pair collapse to one card. The default does on
+   * the open shelf; `none` is for the one shelf whose members are chosen
+   * elsewhere - what this browser has downloaded - where a downloaded
+   * audiobook must not vanish behind its undownloaded ebook.
+   */
+  collapse: z.enum(['pair', 'none']).optional(),
 });
+
+/**
+ * The SQL that narrows the library for one request, shared by the grid and
+ * by the facet counts beside it, so the two cannot disagree.
+ */
+function narrowing(
+  q: z.infer<typeof libraryQuerySchema>,
+  userId: string,
+): { from: string; where: string[]; args: unknown[]; progressWhere: string | null } {
+  const progressWhere =
+    q.filter === 'in-progress' || q.filter === 'reading-now'
+      ? READING_NOW_WHERE
+      : q.filter === 'finished'
+        ? FINISHED_WHERE
+        : null;
+  const from = progressWhere ? 'books b JOIN progress_state p ON p.book_id = b.id' : 'books b';
+  const where: string[] = [];
+  const args: unknown[] = [];
+  if (progressWhere) {
+    where.push(progressWhere);
+    args.push(userId);
+  } else {
+    where.push("b.scan_state != 'missing'");
+  }
+  if (q.kind === 'ebook' || q.kind === 'audio') {
+    where.push('b.kind = ?');
+    args.push(q.kind);
+  }
+  if (q.query) {
+    where.push(
+      "(b.title LIKE ? COLLATE NOCASE OR COALESCE(b.author, '') LIKE ? COLLATE NOCASE" +
+        " OR COALESCE(b.series, '') LIKE ? COLLATE NOCASE)",
+    );
+    const like = `%${q.query.replace(/[%_\\]/g, (c) => `\\${c}`)}%`;
+    args.push(like, like, like);
+  }
+  return { from, where, args, progressWhere };
+}
 
 export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): void {
   const { db } = ctx;
@@ -154,38 +209,12 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
     // The progress shelves narrow the same way, through the one predicate the
     // sidebar counts with: Reading Now used to materialise the whole library
     // and keep three rows of it, every 2.5 seconds while a scan ran.
-    const progressWhere =
-      q.filter === 'in-progress' || q.filter === 'reading-now'
-        ? READING_NOW_WHERE
-        : q.filter === 'finished'
-          ? FINISHED_WHERE
-          : null;
-    const from = progressWhere ? 'books b JOIN progress_state p ON p.book_id = b.id' : 'books b';
-    const where: string[] = [];
-    const args: string[] = [];
-    if (progressWhere) {
-      where.push(progressWhere);
-      args.push(userId);
-    } else {
-      where.push("b.scan_state != 'missing'");
-    }
-    if (q.kind === 'ebook' || q.kind === 'audio') {
-      where.push('b.kind = ?');
-      args.push(q.kind);
-    }
-    if (q.query) {
-      where.push(
-        "(b.title LIKE ? COLLATE NOCASE OR COALESCE(b.author, '') LIKE ? COLLATE NOCASE" +
-          " OR COALESCE(b.series, '') LIKE ? COLLATE NOCASE)",
-      );
-      const like = `%${q.query.replace(/[%_\\]/g, (c) => `\\${c}`)}%`;
-      args.push(like, like, like);
-    }
+    const { from, where, args } = narrowing(q, userId);
     const rows = db
       .prepare(
         `SELECT b.* FROM ${from} WHERE ${where.join(' AND ')} ORDER BY b.title COLLATE NOCASE`,
       )
-      .all(...args) as Record<string, unknown>[];
+      .all(...(args as never[])) as Record<string, unknown>[];
     let books = rows.map((r) => bookRowToSummary(ctx, userId, r));
     if (q.filter === 'paired') books = books.filter((b) => b.pair && b.pair.status !== 'candidate');
     // The SQL already narrowed these; this only drops a row whose stored
@@ -193,8 +222,27 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
     if (q.filter === 'in-progress' || q.filter === 'reading-now')
       books = books.filter((b) => isReadingNow(b.progress));
     if (q.filter === 'finished') books = books.filter((b) => b.progress?.finished);
+    // A facet narrows EDITIONS, before a pair collapses to one card: a French
+    // audiobook paired with an English ebook is a French audiobook, and
+    // filtering after the collapse - which keeps the ebook - made it
+    // unreachable from "Languages > French" while the sidebar still counted it.
+    if (q.facet) {
+      const parsed = parseFacet(q.facet);
+      if (!parsed) return reply.code(400).send({ error: 'bad-facet' });
+      const { kind, value } = parsed;
+      // Author, series and language are columns on the book; everything else
+      // is in the facet table. One place knows which is which.
+      const ids = bookIdsWithFacet(db, kind, value);
+      if (ids) books = books.filter((b) => ids.has(b.id));
+      else if (kind === 'language') books = books.filter((b) => matchesLanguage(b.language, value));
+      else {
+        const want = foldFacet(value);
+        const column = (b: BookSummary) => (kind === 'author' ? b.author : b.series);
+        books = books.filter((b) => foldFacet(column(b) ?? '') === want);
+      }
+    }
     if (q.filter === 'both-formats') books = onePerPair(books, { pairedOnly: true });
-    else if (q.kind === undefined && q.filter === undefined) {
+    else if (q.kind === undefined && q.filter === undefined && q.collapse !== 'none') {
       // A title owned twice is ONE title. Without this the shelf shows the
       // same book beside itself, once per format, which is how it read on a
       // library where most books are owned both ways.
@@ -205,21 +253,6 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
       // `in-progress` / `finished` are per-book - finishing the audiobook is
       // not finishing the ebook, and merging them would hide one of the two.
       books = onePerPair(books);
-    }
-    if (q.facet) {
-      const parsed = parseFacet(q.facet);
-      if (!parsed) return reply.code(400).send({ error: 'bad-facet' });
-      const { kind, value } = parsed;
-      // Author, series and language are columns on the book; everything else
-      // is in the facet table. One place knows which is which.
-      const ids = bookIdsWithFacet(db, kind, value);
-      if (ids) books = books.filter((b) => ids.has(b.id));
-      else {
-        const want = foldFacet(value);
-        const column = (b: BookSummary) =>
-          kind === 'author' ? b.author : kind === 'series' ? b.series : b.language;
-        books = books.filter((b) => foldFacet(column(b) ?? '') === want);
-      }
     }
     if (q.filter === 'recently-added') {
       // What the last scan turned up. Distinct from sort=added, which
@@ -285,7 +318,59 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
    * offered a Publishers group, and one with three hundred authors is. The
    * client decides which of these to show, but not which exist.
    */
-  app.get('/api/facets', async () => ({ groups: facetGroups(db) }));
+  /**
+   * Counted for the view in front of the reader when asked: the same
+   * narrowing as `/api/library` - search, format, progress shelf - and
+   * optionally a list of ids, which is how the one shelf the server cannot
+   * see (what this browser downloaded) gets honest counts too. Without
+   * parameters, the whole library, as before.
+   */
+  const facetQuerySchema = libraryQuerySchema
+    .pick({ query: true, kind: true, filter: true })
+    .extend({
+      ids: z.string().max(8192).optional(),
+    });
+  app.get('/api/facets', async (req, reply) => {
+    const parsed = facetQuerySchema.safeParse(req.query ?? {});
+    if (!parsed.success) return reply.code(400).send({ error: 'bad-query' });
+    const q = parsed.data;
+    // Nothing to narrow by is the whole library, and the whole library keeps
+    // its rule that a grouping with one value is not a way to browse.
+    if (q.ids === undefined && !q.query && !q.kind && !q.filter) return { groups: facetGroups(db) };
+    const { from, where, args } = narrowing(q, req.user!.id);
+    if (q.ids !== undefined) {
+      const ids = q.ids
+        .split(',')
+        .filter((id) => /^[A-Za-z0-9_-]{1,64}$/.test(id))
+        .slice(0, 400);
+      if (ids.length === 0) return { groups: [] };
+      where.push(`b.id IN (${ids.map(() => '?').join(',')})`);
+      args.push(...ids);
+    }
+    const scope: FacetScope = { from, where: where.join(' AND '), args };
+    return { groups: facetGroups(db, scope) };
+  });
+
+  /**
+   * A curator's word on what language a book is in. Null lets the evidence -
+   * the file's own tag, a verified paired edition, the text - speak again.
+   * Survives every rescan, which the tag in the file could not promise.
+   */
+  app.post('/api/books/:id/language', async (req, reply) => {
+    if (!requireRole(req, reply, 'curator')) return reply;
+    const { id } = req.params as { id: string };
+    const parsed = z.object({ language: z.string().max(16).nullable() }).safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: 'invalid' });
+    const code = parsed.data.language === null ? null : normaliseLanguage(parsed.data.language);
+    if (parsed.data.language !== null && (!code || !BOOK_LANGUAGES.some((l) => l.code === code)))
+      return reply.code(400).send({ error: 'unsupported-language' });
+    const row = db.prepare('SELECT * FROM books WHERE id = ?').get(id) as
+      Record<string, unknown> | undefined;
+    if (!row) return reply.code(404).send({ error: 'not-found' });
+    setBookLanguageOverride(db, id, code);
+    const after = db.prepare('SELECT * FROM books WHERE id = ?').get(id) as Record<string, unknown>;
+    return { book: bookRowToSummary(ctx, req.user!.id, after) };
+  });
 
   app.post('/api/library/rescan', async (req, reply) => {
     if (req.user!.role !== 'admin') return reply.code(403).send({ error: 'forbidden' });

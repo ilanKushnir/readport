@@ -3913,6 +3913,32 @@ body[data-rp-dragging] * {
   cursor: pointer;
 }
 
+/* A language row is a checkbox, because languages are picked several at a
+   time; it keeps the shape of the link rows beside it. */
+.sidebar__value--check {
+  cursor: pointer;
+}
+.sidebar__value--check input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--rp-primary);
+  flex-shrink: 0;
+}
+/* A value with nothing in the current view is still a way out of it. */
+.sidebar__value.is-empty {
+  opacity: 0.55;
+}
+.book-hero__meta .lang-pick__select {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid var(--rp-border);
+  border-radius: var(--radius-control);
+  padding: 2px 6px;
+  max-width: 220px;
+}
+
 /* Choosing what Browse offers. `.sheet__lede` and `.sheet__actions` are the
    shared sheet furniture; only the picker itself is new. */
 .facet-picker {

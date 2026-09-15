@@ -2,10 +2,29 @@ import {
   type FacetGroup,
   type FacetKind,
   MIN_FACET_VALUES,
+  UNKNOWN_LANGUAGE,
   facetSpec,
-  languageByCode,
+  languageLabel,
 } from '@readport/shared';
 import { type DB } from '../db/index.js';
+
+/**
+ * The books a set of counts is about: a SQL fragment over `books b`, with
+ * its parameters. The library route builds it from the same query the grid
+ * is narrowed by, so a count in the sidebar is the number of rows the click
+ * will show - under a search, a format, a shelf - rather than the number in
+ * the whole library.
+ */
+export interface FacetScope {
+  from: string;
+  where: string;
+  args: unknown[];
+}
+export const WHOLE_LIBRARY: FacetScope = {
+  from: 'books b',
+  where: "b.scan_state != 'missing'",
+  args: [],
+};
 
 /**
  * Reading the library's own metadata back out as ways to browse it.
@@ -82,7 +101,7 @@ export function writeFacets(db: DB, bookId: string, facets: ExtractedFacet[]): v
 
 /** How a value is shown, which is not always how it is stored. */
 function labelFor(kind: FacetKind, value: string): string {
-  if (kind === 'language') return languageByCode(value)?.label ?? value.toUpperCase();
+  if (kind === 'language') return languageLabel(value);
   if (kind === 'rating') {
     const stars = Number(value);
     if (!Number.isFinite(stars)) return value;
@@ -101,8 +120,13 @@ function labelFor(kind: FacetKind, value: string): string {
  * list. A grouping with fewer than two distinct values is dropped for the same
  * reason it would not be worth a shelf.
  */
-export function facetGroups(db: DB): FacetGroup[] {
+export function facetGroups(db: DB, scope: FacetScope = WHOLE_LIBRARY): FacetGroup[] {
   const groups: FacetGroup[] = [];
+  // "Fewer than two values is not a way to browse" is a rule about the
+  // library, not about a search: under a narrowed scope one matching value
+  // is exactly the answer, and the client keeps the library's own group
+  // list and lays these counts over it.
+  const minValues = scope === WHOLE_LIBRARY ? MIN_FACET_VALUES : 1;
 
   // Author, series and language: straight off the books table, so the counts
   // agree with the library listing by construction.
@@ -114,21 +138,35 @@ export function facetGroups(db: DB): FacetGroup[] {
   for (const [kind, col] of column) {
     const rows = db
       .prepare(
-        `SELECT ${col} AS value, COUNT(*) AS n FROM books
-          WHERE scan_state != 'missing' AND ${col} IS NOT NULL AND TRIM(${col}) != ''
-          GROUP BY ${col} COLLATE NOCASE ORDER BY ${col} COLLATE NOCASE`,
+        `SELECT b.${col} AS value, COUNT(*) AS n FROM ${scope.from}
+          WHERE ${scope.where} AND b.${col} IS NOT NULL AND TRIM(b.${col}) != ''
+          GROUP BY b.${col} COLLATE NOCASE ORDER BY b.${col} COLLATE NOCASE`,
       )
-      .all() as { value: string; n: number }[];
-    if (rows.length >= MIN_FACET_VALUES) {
-      groups.push({
-        kind,
-        label: facetSpec(kind).label,
-        values: rows.map((r) => ({
-          value: r.value,
-          label: labelFor(kind, r.value),
-          count: Number(r.n),
-        })),
-      });
+      .all(...(scope.args as never[])) as { value: string; n: number }[];
+    const values = rows.map((r) => ({
+      value: r.value,
+      label: labelFor(kind, r.value),
+      count: Number(r.n),
+    }));
+    if (kind === 'language') {
+      // A book whose language nobody recorded is still a book, and "the ones
+      // I have not sorted out yet" is a reason to browse. Last, and only when
+      // there are any.
+      const unknown = db
+        .prepare(
+          `SELECT COUNT(*) AS n FROM ${scope.from}
+            WHERE ${scope.where} AND (b.language IS NULL OR TRIM(b.language) = '')`,
+        )
+        .get(...(scope.args as never[])) as { n: number };
+      if (Number(unknown.n) > 0)
+        values.push({
+          value: UNKNOWN_LANGUAGE,
+          label: labelFor(kind, UNKNOWN_LANGUAGE),
+          count: Number(unknown.n),
+        });
+    }
+    if (values.length >= minValues) {
+      groups.push({ kind, label: facetSpec(kind).label, values });
     }
   }
 
@@ -138,11 +176,11 @@ export function facetGroups(db: DB): FacetGroup[] {
   const rows = db
     .prepare(
       `SELECT f.kind AS kind, f.fold AS fold, MIN(f.value) AS value, COUNT(DISTINCT f.book_id) AS n
-         FROM book_facets f JOIN books b ON b.id = f.book_id
-        WHERE b.scan_state != 'missing'
+         FROM book_facets f JOIN (SELECT b.id AS id FROM ${scope.from} WHERE ${scope.where}) s
+           ON s.id = f.book_id
         GROUP BY f.kind, f.fold`,
     )
-    .all() as { kind: string; fold: string; value: string; n: number }[];
+    .all(...(scope.args as never[])) as { kind: string; fold: string; value: string; n: number }[];
 
   const byKind = new Map<string, { value: string; label: string; count: number }[]>();
   for (const r of rows) {
@@ -155,7 +193,7 @@ export function facetGroups(db: DB): FacetGroup[] {
     byKind.set(r.kind, list);
   }
   for (const [kind, values] of byKind) {
-    if (values.length < MIN_FACET_VALUES) continue;
+    if (values.length < minValues) continue;
     const spec = facetSpec(kind as FacetKind);
     // Years and ratings read backwards - newest and best first - because that
     // is the end of those lists anyone actually opens.
@@ -191,4 +229,29 @@ export function bookIdsWithFacet(db: DB, kind: FacetKind, value: string): Set<st
     .prepare('SELECT book_id FROM book_facets WHERE kind = ? AND fold = ?')
     .all(kind, foldFacet(value)) as { book_id: string }[];
   return new Set(rows.map((r) => String(r.book_id)));
+}
+
+/**
+ * The languages a facet value names. One value, or several joined with "+"
+ * - `fr+de+unknown` - because "the French and German ones" is one question,
+ * and "unknown" is the books with no language at all.
+ */
+export function languageValues(value: string): { codes: Set<string>; unknown: boolean } {
+  const codes = new Set<string>();
+  let unknown = false;
+  for (const part of value.split('+')) {
+    const v = foldFacet(part);
+    if (!v) continue;
+    if (v === UNKNOWN_LANGUAGE) unknown = true;
+    else codes.add(v);
+  }
+  return { codes, unknown };
+}
+
+/** Whether a book's language column answers a language facet value. */
+export function matchesLanguage(language: string | null, value: string): boolean {
+  const { codes, unknown } = languageValues(value);
+  const have = foldFacet(language ?? '');
+  if (!have) return unknown;
+  return codes.has(have);
 }

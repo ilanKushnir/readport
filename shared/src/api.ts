@@ -21,6 +21,8 @@ export const bookSummarySchema = z.object({
   series: z.string().nullable(),
   seriesIdx: z.number().nullable(),
   language: z.string().nullable(),
+  /** Where `language` came from; null when nothing is known. See languages.ts. */
+  languageSource: z.enum(['manual', 'metadata', 'pair', 'detected']).nullable().optional(),
   format: z.string(),
   scanState: scanStateSchema,
   scanError: z.string().nullable(),

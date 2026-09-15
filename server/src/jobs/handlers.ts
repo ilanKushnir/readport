@@ -22,6 +22,7 @@ import { latestAlignment, storeAlignment } from '../alignment/service.js';
 import { textFingerprint, timelineFingerprint } from '../alignment/portable.js';
 import { exportAlignments, importAlignments, saveAlignmentFile } from '../alignment/library.js';
 import { detectLanguageFromText } from '../alignment/detect-language.js';
+import { recomputeBookAndPartners, recomputePairLanguages } from '../library/language.js';
 import {
   isInstalled,
   languageByCode,
@@ -619,8 +620,13 @@ export async function runIndexEbook(
       const textFp = textFingerprint(
         result.sentencesByChapter.flatMap((chapter) => chapter.map((sent) => sent.id)),
       );
+      // What the prose itself suggests, kept beside what the file declares:
+      // a curator's override and the file's own tag both outrank it, and it
+      // is what names the language of an EPUB whose dc:language is missing.
+      const detected = detectLanguageFromText((loadSentencesText(newDir) ?? []).flat().join(' '));
       db.prepare(
-        `UPDATE books SET title = ?, author = ?, language = ?, series = ?, series_idx = ?,
+        `UPDATE books SET title = ?, author = ?, language_metadata = ?, language_detected = ?,
+           series = ?, series_idx = ?,
            identifiers_json = ?, cover_path = ?, scan_state = 'ready', scanned_at = ?,
            meta_json = ?, derived_rev = ?, text_fingerprint = ?
          WHERE id = ?`,
@@ -628,6 +634,7 @@ export async function runIndexEbook(
         result.meta.title,
         result.meta.author,
         result.meta.language,
+        detected ? normaliseLanguage(detected.language) : null,
         result.meta.series,
         result.meta.seriesIdx,
         JSON.stringify(result.meta.identifiers),
@@ -659,6 +666,7 @@ export async function runIndexEbook(
         }),
       );
       db.prepare('UPDATE books SET facets_rev = ? WHERE id = ?').run(FACETS_REV, bookId);
+      recomputeBookAndPartners(db, bookId);
       db.exec('COMMIT');
     } catch (err) {
       db.exec('ROLLBACK');
@@ -830,7 +838,7 @@ export async function runIndexAudio(
 
     db.prepare(
       `UPDATE books SET title = COALESCE(?, title), author = COALESCE(?, author),
-         language = COALESCE(?, language), duration_ms = ?, cover_path = ?,
+         language_metadata = COALESCE(?, language_metadata), duration_ms = ?, cover_path = ?,
          scan_state = 'ready', scanned_at = ?, audio_timeline_fingerprint = ?
        WHERE id = ?`,
     ).run(
@@ -848,6 +856,7 @@ export async function runIndexAudio(
       timelineFingerprint(trackDurationsMs),
       bookId,
     );
+    recomputeBookAndPartners(db, bookId);
     writeFacets(db, bookId, facetsForBook({ genres: [...genres], narrator, year }));
     db.prepare('UPDATE books SET facets_rev = ? WHERE id = ?').run(FACETS_REV, bookId);
   } catch (err) {
@@ -1226,6 +1235,9 @@ export async function runAlign(ctx: AppContext, job: JobRow, guard: LeaseGuard):
       decodedMs: ctc.decodedMs,
     });
 
+    // An aligned automatic pair is a verified pair: each side may now lend
+    // the other its language.
+    recomputePairLanguages(db, pairId);
     // A copy in the library folder, so the work outlives this container.
     // Deliberately after the database write and deliberately unable to fail
     // the job: the expensive half is already safe.
