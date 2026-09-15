@@ -4,6 +4,177 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## Unreleased
+
+### Added
+
+- **The interface in 23 languages.** English, Hebrew, Russian, Arabic,
+  Spanish, French, German, Portuguese, Italian, Dutch, Polish, Ukrainian,
+  Czech, Romanian, Swedish, Danish, Norwegian Bokmål, Finnish, Greek, Turkish,
+  Japanese, Korean and Simplified Chinese, chosen per account in Settings and
+  followed to every device; the browser's language is the default, English the
+  last resort. Hebrew and Arabic turn the shell right-to-left while every book
+  keeps its own direction. Plurals, numbers, dates, relative times and
+  language names follow the interface language. Translations other than
+  English are model-generated and say so. See docs/localization.md.
+- **A book's language, with where it came from.** A curator's override that
+  survives every rescan, the file's own tag, the other _verified_ edition of
+  the same book, or the prose itself - and "unknown" is browsable too. Filter
+  by several languages at once from the sidebar. A French audiobook paired
+  with an English ebook is now under French, because language narrows
+  editions before a pair collapses to one card.
+- **Facet counts describe the view in front of you** - a search, a format, a
+  progress shelf, the downloads on this device - rather than the whole
+  library, and Browse survives being offline.
+- `GET /api/pairs/:id/chapters`: where each chapter sits in the narration,
+  which is what lets "Back to the voice" open the right chapter in one move.
+
+### Changed
+
+- **Pointing Compose at your library is a `.env` edit, not a file edit.**
+  `RP_EBOOK_PATH`, `RP_AUDIOBOOK_PATH`, `RP_ALIGNMENT_PATH` and
+  `RP_HTTP_PORT` are read by `docker-compose.yml`, which no longer has to be
+  touched at all - so `git pull` stops conflicting with your mounts. The
+  defaults are the sample library and port 8383, exactly what the file
+  hard-coded before, so an existing install behaves identically.
+- **Compose passes through the variables `.env.example` always claimed it
+  did.** `RP_SESSION_DAYS`, `RP_LOG_LEVEL`, `RP_CLIENT_IP_HEADER` and
+  `RP_CLIENT_IP_SOURCES` were documented but silently dropped by the stock
+  file; setting them in `.env` now does what it says. CI fails if that drifts
+  again, and if any `RP_*` the server reads is missing from `.env.example` or
+  the reference table.
+
+### Fixed
+
+- **The dedicated worker did not get the alignment settings.** With
+  `--profile worker`, `RP_DEFAULT_LANGUAGE` and `RP_SCAN_INTERVAL_MINUTES`
+  reached the web container and not the container that actually aligns and
+  scans, so a library whose language of last resort was not English aligned as
+  though it were. The worker now receives them, plus `RP_LOG_LEVEL` and the
+  session secret it was otherwise generating a second copy of into `/data`.
+- **Reading progress could be filed under the wrong person.** Signing out
+  while a player was open, or leaving a tab on the login screen while someone
+  else signed in from another tab, could deliver one account's checkpoints
+  under another's. Every checkpoint now carries the account it was captured
+  for, the server refuses to file it under anybody else, a page delivers
+  nothing until it has confirmed who is signed in, and sign-out seals the
+  queue.
+- **A reader lost an hour of page turns after a phone glanced at the book.**
+  A visible reader whose heartbeats are being recorded but not applied now
+  re-states its position once and holds the claim again.
+- **Without IndexedDB a book would not open.** Progress lives in memory for
+  the page instead, and the reader is told.
+- **Opening the app with no network recorded nothing at all.** Because no
+  server could confirm who was signed in, every checkpoint was dropped -
+  emptying durable progress in exactly the case it exists for. Reading
+  offline now records for the account this device already had signed in;
+  each event still carries that account, and the server still refuses to
+  file it under anyone else.
+- **Read-along in scroll mode yanked the page back to the start of the
+  chapter** about a second and a half in, with no glide to hide it under
+  reduced motion. A re-landing timer was re-armed when the top bar was
+  measured, long after the narration had moved the page.
+- **A reset made on another device stopped your progress silently.** It is
+  announced, with a way to keep reading from where you are.
+- **A device with a slow clock lost every move it made offline.** Batches
+  carry the client's clock and the server corrects for the skew.
+- **"Back to the voice" was dead while paused in another chapter, and while
+  playing it attached to the wrong chapter first.** It opens the chapter the
+  voice is in. A rewind into the untimed stretch between two chapters could
+  strand the page behind the voice with no way back; it cannot.
+- **The read-along marker pointed a hand's width below the spoken line after
+  every relocation** (two anchors, one line), vanished on pause, and slid
+  through the text when the voice changed column. Scroll anchoring, a pinch,
+  or a wheel in paginated mode no longer detach the page; the first swipe
+  under auto-scroll is honoured; auto-scroll is remembered and comes back with
+  the voice; and the page follows again by itself when the voice reaches the
+  page you went to.
+- **A chapter that would not paginate was dead to progress, resume and
+  bookmarks.** It is tracked, landed and bookmarked like a scrolling chapter.
+- **A resumed or bookmarked line landed under the top bar on a phone with a
+  notch.** Landings sit under the measured chrome. Bookmarks whose words moved
+  are found by their excerpt; a bookmark jump marks the line; opening a mark
+  from the Notes page offers the way back; bookmark rows are real buttons.
+- **The selection toolbar sat under Apple's edit menu** when a selection
+  began near the top of the screen or was a short word. It keeps clear of the
+  menu's real width and position, drops a stale span, clips to the page box,
+  and keeps the selection under a touch.
+- **"Hide shelves" could not be undone on an iPad.** The header offers "Show
+  shelves" and docks the rail back.
+- **Dragging a reading-list row led the finger by a full row**, autoscroll
+  needed a moving finger, Escape did nothing during a drag and closed the
+  shelves dialog during a keyboard grab, and a mouse drag on a shelf grip swept
+  a text selection. All fixed; overlays follow the visual viewport when the
+  keyboard is up; an iPad mini held upright gets the tablet shell.
+- **Reading Now:** the home page's Continue band hid a paired audiobook in
+  progress behind its untouched ebook, "All in progress · N" showed the
+  band's length rather than the count, offline it said "nothing here yet",
+  and it opened alphabetically. One predicate now serves the count, the shelf
+  and the band, narrowed in SQL.
+- **A saved alignment was recomputed anyway on a fresh container**, because
+  the import was queued behind the alignment it should have prevented. The
+  scan imports before it queues anything, an aligned pair is not aligned
+  again unless asked, a pair linked by hand comes back pair and all, a
+  duration two milliseconds across a rounding boundary still matches, an
+  alignment folder reached through a symlink is read (it silently imported
+  nothing, and on macOS every temp folder is one), and one damaged file
+  cannot stop the rest.
+- **Agent API:** refusals are metered by address, `Retry-After` is measured,
+  unknown key prefixes are hashed too, query strings stay out of the request
+  log, and a next offset past the ceiling is not offered.
+- **On a wide desktop the scrollbar was drawn down the middle of the page.**
+  The scrolling element was also the element capped at the reading measure,
+  so its scrollbar landed wherever that column ended, with page either side
+  of it. The pane now fills the space it is given and the column is centred
+  inside it, which puts the scrollbar back against the window edge. A page
+  that wants a narrower measure sets `--rp-measure` instead of its own
+  `max-width`.
+
+### Security
+
+- **`npm ci` verified nothing.** 279 of 318 entries in `package-lock.json`
+  carried neither an integrity hash nor a resolved URL, so neither a local
+  build nor the release image could detect a tampered tarball - while
+  `docs/security.md` claimed the dependencies were pinned. Every entry now
+  carries its SHA-512 hash. No version changed: the hashes were fetched for
+  the exact versions already pinned.
+- **Authenticated API responses carried no `Cache-Control`.** Behind a CDN
+  or caching proxy configured to cache aggressively - which is ordinary in
+  this audience - one account's `/api/auth/me` or `/api/annotations` could be
+  served to the next visitor. `/api/` now defaults to `private, no-store`;
+  content routes keep their own longer private caching, and offline
+  downloads are unaffected.
+- **CI ran dependency install scripts next to a write-capable token.** The
+  workflow declared no top-level `permissions`, so `checks` and `docker`
+  inherited the repository default. They are now `contents: read`; `publish`
+  keeps its own minimal `packages: write`.
+- `.dockerignore` excluded `.env` only at the root, so a stray
+  `server/.env` could be copied into a build stage.
+- `docs/security.md` has been corrected where it had drifted from the code:
+  the real EPUB zip limits, the `.rpalign` decompression cap that does exist,
+  which settings endpoints answer a non-admin, and the fact that trusting a
+  proxy with `RP_TRUST_PROXY=1` hands the rate-limit guarantee to that proxy.
+
+## 0.12.0 - 2026-09-14
+
+### Added
+
+- **Read-along continuity on iPad.** The active-line marker follows the
+  current text column on a two-column spread, in both directions; manual
+  scrolling detaches the page from the voice while the audio keeps playing,
+  and _Back to the voice_ finds the nearest honest cue, gaps included.
+- **Durable, exact reading progress.** Character-level locators saved to
+  IndexedDB before the network, last-gasp capture on page hide, server reset
+  generations that old offline queues cannot undo, and a resume marker on the
+  exact line.
+- **Reading Now** as a compact list of what is genuinely in progress, with a
+  per-edition reset that leaves the book, its files, notes, bookmarks and
+  other people's progress alone.
+- **A read-only agent API** under `/api/agent/v1`, with a closed route
+  catalog, per-owner rate limiting and audit logging.
+- **The selection toolbar stays out of the native selection menu's way**, and
+  the tablet shell scrolls its rail and its library independently.
+
 ## 0.11.1 - 2026-09-13
 
 ### Fixed
