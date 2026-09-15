@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 /**
- * No em dashes, anywhere, ever.
+ * No em dashes in anything we write.
  *
  * A house rule, asserted rather than remembered: they are easy to type by
  * accident, they arrive in pasted text, and once a few are in nobody notices
@@ -12,6 +12,13 @@ import { describe, expect, it } from 'vitest';
  * exist yet, and names the offenders rather than just failing.
  *
  * Binary files are skipped: a woff2 can contain the same bytes by chance.
+ *
+ * TRANSLATED CATALOGUES ARE EXEMPT, and deliberately so. This is a rule about
+ * English house style, and it is not ours to impose on other languages: in
+ * Russian and Ukrainian an em dash is the standard copula ("Полка - это..."
+ * with a hyphen is simply wrong), and in Chinese the double em dash is the
+ * ordinary parenthetical. A translation that followed our typography instead
+ * of its own would be a worse translation. `messages/en/` is NOT exempt.
  */
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -37,13 +44,26 @@ const SKIP_DIRS = new Set([
 /** Only text we author. */
 const TEXT = /\.(ts|tsx|js|jsx|mjs|cjs|css|md|json|yml|yaml|html|sh|txt)$/;
 
+/**
+ * `web/src/i18n/messages/<locale>.ts` - a translated catalogue. The English
+ * source lives in `messages/en/`, a directory, so it never matches this and
+ * stays bound by the rule.
+ */
+const TRANSLATED_CATALOGUE = new RegExp(
+  `${path.sep}web${path.sep}src${path.sep}i18n${path.sep}messages${path.sep}[^${path.sep === '\\' ? '\\\\' : path.sep}]+\\.ts$`,
+);
+
 function sourceFiles(dir: string, out: string[] = []): string[] {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     if (e.name.startsWith('.') && e.name !== '.github') continue;
     const full = path.join(dir, e.name);
     if (e.isDirectory()) {
       if (!SKIP_DIRS.has(e.name)) sourceFiles(full, out);
-    } else if (TEXT.test(e.name) && e.name !== 'package-lock.json') {
+    } else if (
+      TEXT.test(e.name) &&
+      e.name !== 'package-lock.json' &&
+      !TRANSLATED_CATALOGUE.test(full)
+    ) {
       out.push(full);
     }
   }

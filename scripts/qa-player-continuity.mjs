@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
-const { chromium } = createRequire('/usr/local/lib/node_modules/')('playwright');
+const require = createRequire(import.meta.url);
+let chromium;
+try {
+  // A project-local or NODE_PATH install first; the global path is a fallback.
+  ({ chromium } = require('playwright'));
+} catch {
+  ({ chromium } = createRequire('/usr/local/lib/node_modules/')('playwright'));
+}
 const browser = await chromium.launch({
   executablePath: process.env.AGENT_BROWSER_EXECUTABLE_PATH || undefined,
 });
@@ -163,6 +170,17 @@ try {
       [NaN, 1031000],
       [Infinity, 1031000],
     ]) {
+      // One unload, one capture. The unload path fires twice on most browsers
+      // - visibilitychange to hidden, then pagehide, milliseconds apart - and
+      // each used to build its own event and its own keepalive batch, so the
+      // origin's keepalive budget was spent twice over and the second batch
+      // was refused before it left. A repeat of the same position within
+      // UNLOAD_DEDUPE_MS (1.5s) is now recognised as the same farewell and
+      // does nothing at all - including not re-stashing it, which is why
+      // these five captures have to be genuinely separate unloads rather than
+      // five in the same instant. (NaN and Infinity both fall back to the
+      // same last known position, so without this they are one capture.)
+      await page.waitForTimeout(1600);
       await check(`${width} pagehide captures live clock ${clock} without timeupdate`, async () => {
         const at = await page.evaluate((clock) => {
           document.querySelector('audio').currentTime = clock;

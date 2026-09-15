@@ -74,8 +74,15 @@ async function open(mode, rtl = false, reducedMotion = 'no-preference') {
     let body = await response.text();
     assert(body.includes('function useNarration(opts)'), 'narration fixture seam changed');
     body = body.replace('function useNarration(opts)', 'function unusedNarration(opts)');
+    // `chapterAt` is part of the narration seam now: the book's per-chapter
+    // time bounds, so a return can open the chapter the voice is actually in
+    // instead of attaching to the nearest cue of whatever is on screen. It
+    // answers null when the bounds are not loaded - which is what the real
+    // hook does here, since this fixture serves no /api/pairs/:id/chapters -
+    // and ReaderPage calls it whenever the voice is before or after this
+    // chapter's timings.
     body += `\nexport function useNarration() {
-      const [n, setN] = useState({ ready: true, playing: true, cue: null, cues: [], bookMs: 0, seekNonce: 0, state: 'gap', speed: 1, backSeconds: 15, element: null, toggle() {}, back() {}, setSpeed() {}, playFrom() {} });
+      const [n, setN] = useState({ ready: true, playing: true, cue: null, cues: [], bookMs: 0, seekNonce: 0, state: 'gap', speed: 1, backSeconds: 15, element: null, chapterAt: () => null, toggle() {}, back() {}, setSpeed() {}, playFrom() {} });
       window.readerClock = patch => setN(prev => ({ ...prev, ...patch }));
       return n;
     }\n`;
@@ -146,6 +153,42 @@ async function open(mode, rtl = false, reducedMotion = 'no-preference') {
   await page.waitForSelector('#p219', { state: 'attached' });
   await page.waitForTimeout(400);
   return { page, context };
+}
+/**
+ * Manual scrolling gestures, driven for real.
+ *
+ * The reader detaches on evidence of INTENT, not on any event of the right
+ * name (ReaderPage.tsx `onWheelCapture` / `onTouchMoveCapture`): a wheel
+ * carrying no deltaY is a momentum tail, one with ctrlKey is a pinch, and a
+ * touch that has not travelled past TOUCH_SLOP_PX is the jitter of a tap.
+ * None of those is a reader taking the wheel, and none of them detaches any
+ * more - deliberately, so that a pinch-zoom or a tap on the page no longer
+ * silently stops the page following the voice.
+ *
+ * `locator.dispatchEvent('wheel')` constructs a WheelEvent with deltaY 0 and
+ * `dispatchEvent('touchmove')` one with no touches at all, so both are now
+ * correctly ignored. These drive the genuine article instead: a real wheel
+ * over the scroller, and a real one-finger drag past the slop threshold.
+ */
+async function manualWheel(page) {
+  const box = await page.locator('.reader-scroller').boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.wheel(0, 120);
+  await page.waitForTimeout(50);
+}
+async function manualTouchDrag(page) {
+  const box = await page.locator('.reader-scroller').boundingBox();
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+  const cdp = await page.context().newCDPSession(page);
+  const send = (type, touchPoints) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints });
+  await send('touchStart', [{ x, y }]);
+  // Well past TOUCH_SLOP_PX (8), in two steps, as a finger actually moves.
+  await send('touchMove', [{ x, y: y - 20 }]);
+  await send('touchMove', [{ x, y: y - 60 }]);
+  await send('touchEnd', []);
+  await cdp.detach();
+  await page.waitForTimeout(50);
 }
 async function rectAt(page, offset) {
   return page.evaluate(async (offset) => {
@@ -269,7 +312,8 @@ try {
     await page.getByRole('button', { name: 'Scroll with the voice', exact: true }).click();
     await check(`manual ${gesture} disables auto-scroll and stays detached`, async () => {
       if (gesture === 'PageDown') await page.keyboard.press('PageDown');
-      else await page.locator('.reader-scroller').dispatchEvent(gesture);
+      else if (gesture === 'wheel') await manualWheel(page);
+      else await manualTouchDrag(page);
       await page
         .getByRole('button', { name: 'Scroll with the voice', exact: true })
         .waitFor({ timeout: 1500 });
@@ -288,7 +332,7 @@ try {
   }
   const { page, context } = await open('scroll');
   await page.getByRole('button', { name: 'Read along', exact: true }).click();
-  await page.locator('.reader-scroller').dispatchEvent('wheel');
+  await manualWheel(page);
   await check('failed return keeps target visible', async () => {
     await page.getByRole('button', { name: 'Back to the voice', exact: true }).click();
     assert.equal(
@@ -313,8 +357,16 @@ try {
       1,
     );
   });
-  await page.locator('.reader-scroller').dispatchEvent('wheel');
-  await clock(page, [cue(deep, 10000)], 6000);
+  await manualWheel(page);
+  // A genuine gap: between two timed cues, which is what this check is about
+  // and what its paused twin below already drives. A single cue 4s ahead of
+  // the clock is the 'before' state, not a gap, and that state now means
+  // something else: the voice is outside this chapter's timings, so the
+  // return consults the book's chapter bounds - and where there are none to
+  // consult (this fixture, an older server) a playing narration attaches and
+  // lets the walker carry the page to it, rather than landing the reader on
+  // this chapter's nearest cue and calling that the voice.
+  await clock(page, [cue(deep - 1000, 0), cue(deep, 10000)], 6000);
   await check('gap return relocates to nearest honest cue before attaching', async () => {
     await page.getByRole('button', { name: 'Back to the voice', exact: true }).click();
     const r = await rectAt(page, deep);
@@ -324,7 +376,7 @@ try {
       0,
     );
   });
-  await page.locator('.reader-scroller').dispatchEvent('wheel');
+  await manualWheel(page);
   await page.evaluate(() => {
     document.querySelector('.reader-scroller').scrollTop = 0;
   });
@@ -397,7 +449,7 @@ try {
   await paused.context.close();
   const pausedGap = await open('scroll');
   await pausedGap.page.getByRole('button', { name: 'Read along', exact: true }).click();
-  await pausedGap.page.locator('.reader-scroller').dispatchEvent('wheel');
+  await manualWheel(pausedGap.page);
   await pausedGap.page.evaluate(() => window.readerClock({ playing: false }));
   await clock(pausedGap.page, [cue(deep - 1000, 0), cue(deep, 10000)], 6000);
   await check('paused same-chapter gap returns to the nearest honest cue', async () => {
@@ -444,7 +496,7 @@ try {
   const scrollbar = await open('scroll');
   await scrollbar.page.getByRole('button', { name: 'Read along', exact: true }).click();
   await clock(scrollbar.page, [cue(deep)]);
-  await scrollbar.page.locator('.reader-scroller').dispatchEvent('wheel');
+  await manualWheel(scrollbar.page);
   await scrollbar.page.getByRole('button', { name: 'Back to the voice', exact: true }).click();
   await scrollbar.page.addStyleTag({
     content:

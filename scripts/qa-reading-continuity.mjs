@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
-const { chromium } = createRequire('/usr/local/lib/node_modules/')('playwright');
+const require = createRequire(import.meta.url);
+let chromium;
+try {
+  // A project-local or NODE_PATH install first; the global path is a fallback.
+  ({ chromium } = require('playwright'));
+} catch {
+  ({ chromium } = createRequire('/usr/local/lib/node_modules/')('playwright'));
+}
 const base = process.argv[2] ?? 'http://127.0.0.1:5191';
 const browser = await chromium.launch({
   executablePath: process.env.AGENT_BROWSER_EXECUTABLE_PATH || undefined,
@@ -39,6 +46,26 @@ const state = {
   updatedAt: '2026-01-01T00:00:00Z',
   finished: false,
 };
+/**
+ * Bind `window.progressEngine` to the engine instance the APP is using.
+ *
+ * Vite serves the same module under an HMR-stamped URL and an unstamped one,
+ * and those are two module instances with two separate `sessionUserId`
+ * values. The app claims the queue on the stamped one (web/qa/reader.tsx is
+ * transformed alongside ReaderPage), so a bare `import('/src/progress/engine.ts')`
+ * from a page.evaluate lands on an UNCLAIMED instance, where the engine
+ * correctly refuses to record anything - and the test reads that refusal as a
+ * lost checkpoint. Always drive the engine through this handle, and rebind it
+ * after any reload, which throws the old `window` away.
+ */
+async function attachEngine(page) {
+  await page.evaluate(async () => {
+    const source = await (await fetch('/src/reader/ReaderPage.tsx')).text();
+    const url = source.match(/from "([^"]*\/progress\/engine\.ts[^"]*)"/)[1];
+    window.progressEngine = await import(url);
+  });
+}
+
 async function open(
   viewport,
   mode,
@@ -155,11 +182,8 @@ async function open(
     throw e;
   });
   await page.waitForTimeout(400);
-  // Match ReaderPage's exact module URL; HMR-stamped and unstamped engines are distinct.
-  await page.evaluate(async () => {
-    const source = await (await fetch('/src/reader/ReaderPage.tsx')).text();
-    const url = source.match(/from "([^"]*\/progress\/engine\.ts[^"]*)"/)[1];
-    window.progressEngine = await import(url);
+  await attachEngine(page);
+  await page.evaluate(() => {
     window.stopLifecycle = window.progressEngine.startProgressLifecycle();
   });
   return { context, page, errors, posted };
@@ -246,7 +270,24 @@ try {
             viewport.dispatchEvent(new Event('scroll'));
           }
           const rect = viewport.getBoundingClientRect();
-          const off = firstVisibleOffset(map, rect);
+          // What is bookmarked in scroll mode is the first character the
+          // reader can actually SEE. The top bar is opaque and its height is
+          // measured, not assumed, so the characters behind it are not on the
+          // page - bookmarking one used to mark a line hidden under the bar,
+          // and "is this bookmark on this page" disagreed with it. Paginated
+          // mode reserves room for the bars in its own padding, so its box is
+          // the whole page box, exactly as ReaderPage measures it.
+          const chrome = document.querySelector('.immersive-chrome--top');
+          const box =
+            mode === 'scroll'
+              ? {
+                  left: rect.left,
+                  right: rect.right,
+                  top: rect.top + Math.round(chrome.getBoundingClientRect().height),
+                  bottom: rect.bottom,
+                }
+              : rect;
+          const off = firstVisibleOffset(map, box);
           const sentenceStart = rangeForSpan(map, 0, 1).getBoundingClientRect();
           if (!(off > 0) || (sentenceStart.x >= rect.left && sentenceStart.y >= rect.top))
             throw new Error('fixture must span a preceding page/scroll boundary');
@@ -377,13 +418,16 @@ try {
         (url) => url.pathname.startsWith('/api/progress/'),
         (route) => route.abort('internetdisconnected'),
       );
-      await durable.page.evaluate(async (local) => {
+      const seeded = await durable.page.evaluate(async (local) => {
         // This fixture seeds a completed prior reading session, not an in-view seek.
         window.stopLifecycle();
-        const { recordCheckpoint } = await import('/src/progress/engine.ts');
-        await recordCheckpoint('qa', 'seek', local, { flush: false });
+        return window.progressEngine.recordCheckpoint('qa', 'seek', local, { flush: false });
       }, local);
+      assert.equal(seeded, true, 'the seeded checkpoint was refused, so nothing is being tested');
       await durable.page.reload();
+      // A reload is a new window: rebind before driving the engine again.
+      await durable.page.locator('#p69').waitFor({ state: 'attached' });
+      await attachEngine(durable.page);
       await durable.page.locator('.resume-marker').waitFor();
       assert.equal(
         await durable.page.locator('.resume-marker').getAttribute('data-offset'),
@@ -400,9 +444,7 @@ try {
           },
         });
       });
-      await durable.page.evaluate(async () =>
-        (await import('/src/progress/engine.ts')).flushPending(),
-      );
+      await durable.page.evaluate(() => window.progressEngine.flushPending());
       assert(
         replayed.some(
           (e) =>

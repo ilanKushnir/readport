@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
-const { chromium } = createRequire('/usr/local/lib/node_modules/')('playwright');
+const require = createRequire(import.meta.url);
+let chromium;
+try {
+  // A project-local or NODE_PATH install first; the global path is a fallback.
+  ({ chromium } = require('playwright'));
+} catch {
+  ({ chromium } = createRequire('/usr/local/lib/node_modules/')('playwright'));
+}
 const browser = await chromium.launch({
   executablePath: process.env.AGENT_BROWSER_EXECUTABLE_PATH || undefined,
 });
@@ -49,6 +56,16 @@ try {
       window.engine = await import('/src/progress/engine.ts');
       window.storage = await import('/src/progress/storage.ts');
       window.idb = await import('/src/progress/idb.ts');
+      // The queue belongs to an account. Nothing is written or delivered
+      // until a session has been confirmed, so that a browser two people
+      // share can never adopt - or publish - the first one's positions under
+      // the second one's name. The application claims it in SessionProvider
+      // from /api/auth/me; these two tabs drive the engine directly, so they
+      // claim for the same fixture account the way two tabs of one signed-in
+      // reader would. Without it every checkpoint below is dropped for want
+      // of an owner, and the generation checks this file exists to test
+      // would pass for the wrong reason.
+      await window.engine.claimProgressQueue('qa-fixture-user');
       await window.engine.resumeLocator('book');
     });
   }
@@ -87,7 +104,12 @@ try {
   // starts clean, and new explicit work is retained even if reset response repeats.
   await b.reload();
   await b.evaluate(async () => {
-    await import('/src/progress/engine.ts');
+    // A reload is a new page: the engine's confirmed session goes with it and
+    // has to be claimed again, exactly as the application re-confirms it from
+    // /api/auth/me on every load. The stored owner is the same account, so
+    // the queue survives the reload rather than being purged.
+    const engine = await import('/src/progress/engine.ts');
+    await engine.claimProgressQueue('qa-fixture-user');
     await import('/src/progress/storage.ts');
     await import('/src/progress/idb.ts');
   });

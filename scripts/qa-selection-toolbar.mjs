@@ -3,7 +3,14 @@
 // iPadOS menu: the photos define the above-selection exclusion contract.
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
-const { chromium } = createRequire('/usr/local/lib/node_modules/')('playwright');
+const require = createRequire(import.meta.url);
+let chromium;
+try {
+  // A project-local or NODE_PATH install first; the global path is a fallback.
+  ({ chromium } = require('playwright'));
+} catch {
+  ({ chromium } = createRequire('/usr/local/lib/node_modules/')('playwright'));
+}
 const base = process.argv[2] ?? 'http://127.0.0.1:5197';
 assert(process.env.AGENT_BROWSER_EXECUTABLE_PATH, 'Set AGENT_BROWSER_EXECUTABLE_PATH');
 const browser = await chromium.launch({
@@ -254,6 +261,7 @@ try {
           .getBoundingClientRect().top;
         let best = null;
         let distance = Infinity;
+        let line = 0;
         for (const p of document.querySelectorAll('.reader-content p')) {
           const node = p.firstChild;
           for (let start = 0; start + 130 <= node.length; start++) {
@@ -261,6 +269,7 @@ try {
             range.setStart(node, start);
             range.setEnd(node, start + 130);
             const rects = [...range.getClientRects()];
+            line = Math.max(line, rects.at(-1).height);
             const delta = Math.abs(rects.at(-1).bottom - (bottom - 62));
             if (rects.length > 1 && delta < distance) {
               best = range;
@@ -268,7 +277,16 @@ try {
             }
           }
         }
-        if (!best || distance > 24) throw new Error('no near-bottom multiline fixture');
+        // Within a line box of the dock zone, not within an arbitrary 24px:
+        // text sits on a line grid, so the closest a selection's last line
+        // can come to any given y is set by the line height (42px here, and
+        // more on a machine whose fonts are taller). A fixed 24px is
+        // unsatisfiable at some widths - this is the fixture failing to find
+        // a subject, not the toolbar misplacing itself - while a line box
+        // keeps what the checks below actually need: a multiline selection
+        // ending near the bottom chrome.
+        if (!best || distance > Math.max(24, line + 6))
+          throw new Error('no near-bottom multiline fixture');
         getSelection().removeAllRanges();
         getSelection().addRange(best);
       });

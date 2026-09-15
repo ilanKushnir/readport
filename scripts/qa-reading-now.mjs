@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
-const { chromium } = createRequire('/usr/local/lib/node_modules/')('playwright');
+const require = createRequire(import.meta.url);
+let chromium;
+try {
+  // A project-local or NODE_PATH install first; the global path is a fallback.
+  ({ chromium } = require('playwright'));
+} catch {
+  ({ chromium } = createRequire('/usr/local/lib/node_modules/')('playwright'));
+}
 const browser = await chromium.launch({
   executablePath: process.env.AGENT_BROWSER_EXECUTABLE_PATH || undefined,
 });
@@ -46,6 +53,18 @@ try {
                     scanState: 'ready',
                     hasCover: false,
                     progress: { pct: 0.3, finished: false },
+                    // Paired, so the confirmation has a paired edition to be
+                    // honest about: the sentence about it is now shown only
+                    // for a book that actually has one, instead of promising
+                    // every reader that an edition they do not own is safe.
+                    pair: {
+                      pairId: 'pair',
+                      otherBookId: 'audio',
+                      otherKind: 'audiobook',
+                      otherFormat: 'm4b',
+                      status: 'confirmed',
+                      switchable: true,
+                    },
                   },
                 ],
             continueRail: [],
@@ -67,14 +86,23 @@ try {
       assert.equal(await page.locator('.book-grid').count(), 0);
       const box = await page.locator('.reading-now__row').boundingBox();
       assert(box.width <= viewport.width && box.x >= 0);
-      await page.getByRole('button', { name: 'Remove from Reading Now' }).click();
+      // The row's way out is named for what it does. It never removed the
+      // book from anything - progress is the only thing that puts a title on
+      // this shelf, so leaving means erasing that progress - and the button
+      // now says "Reset progress…" before the dialog says it again. The
+      // failure message is the same promise in the same words as the dialog:
+      // the reset was not confirmed, so the book stays.
+      await page.getByRole('button', { name: 'Reset progress…', exact: true }).click();
       assert.equal(deletes, 0);
       await page.getByRole('button', { name: 'Cancel', exact: true }).click();
       assert.equal(deletes, 0);
-      await page.getByRole('button', { name: 'Remove from Reading Now' }).click();
-      assert.match(await page.getByRole('dialog').innerText(), /paired edition.*unchanged/i);
+      await page.getByRole('button', { name: 'Reset progress…', exact: true }).click();
+      assert.match(
+        await page.getByRole('dialog').innerText(),
+        /paired edition.*keeps its own progress/i,
+      );
       await page.getByRole('button', { name: 'Reset reading progress', exact: true }).click();
-      await page.getByRole('alert').filter({ hasText: 'Could not confirm' }).waitFor();
+      await page.getByRole('alert').filter({ hasText: 'could not be confirmed' }).waitFor();
       assert.equal(await page.locator('.reading-now__row').count(), 1);
       fail = false;
       await page.getByRole('button', { name: 'Reset reading progress', exact: true }).click();
