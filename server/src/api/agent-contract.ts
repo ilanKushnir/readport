@@ -4,7 +4,10 @@ import { locatorSchema } from '@readport/shared';
 export const AGENT_SCOPE = 'agent:read';
 export const AGENT_BASE = '/api/agent/v1';
 export const AGENT_RATE_LIMIT = 120;
+/** Refused attempts per minute per address before an address is answered 429 instead. */
+export const AGENT_REJECT_LIMIT = 300;
 export const AGENT_WINDOW_MS = 60_000;
+export const AGENT_MAX_OFFSET = 100_000;
 export const AGENT_RESPONSE_BYTES = 1024 * 1024;
 
 /** Closed catalog: registering another route never grants a key access to it. */
@@ -38,7 +41,7 @@ const integerQuery = (min: number, max: number, fallback: string) =>
 export const agentPageQuery = z
   .object({
     limit: integerQuery(1, 100, '50'),
-    offset: integerQuery(0, 100_000, '0'),
+    offset: integerQuery(0, AGENT_MAX_OFFSET, '0'),
   })
   .strict();
 export const agentBookQuery = agentPageQuery.extend({ query: z.string().max(200).optional() });

@@ -98,7 +98,10 @@ export function useFocusTrap(ref: { current: HTMLElement | null }, onClose: () =
     const opener = document.activeElement as HTMLElement | null;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onCloseRef.current();
+        // A control inside the dialog may have used the key already - a grab
+        // being cancelled, a rename being abandoned - and then the dialog
+        // stays. Closing it as well threw away the list under the reader.
+        if (!e.defaultPrevented) onCloseRef.current();
         return;
       }
       if (e.key !== 'Tab') return;

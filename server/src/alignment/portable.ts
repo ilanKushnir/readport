@@ -39,15 +39,71 @@ export const ALIGNMENT_FILE_EXT = '.rpalign';
 // Generous per-book budgets, enforced before JSON allocation/parsing.
 export const ALIGNMENT_COMPRESSED_LIMIT = 16 * 1024 * 1024;
 export const ALIGNMENT_DECOMPRESSED_LIMIT = 64 * 1024 * 1024;
+/** Sentences in the longest book anyone aligns, several times over. */
+export const ALIGNMENT_MAX_SEGMENTS = 400_000;
+/** How much free-form provenance a file may carry into the database. */
+export const ALIGNMENT_PROVENANCE_LIMIT = 16 * 1024;
+/** How far two probes of the same track may disagree and still be the same track. */
+export const TIMELINE_TOLERANCE_MS = 50;
 
-/** Reject symlinks in both the file and its expanded directory path. */
-function hasSymlink(file: string): boolean {
-  let current = path.resolve(file);
-  for (;;) {
-    if (fs.lstatSync(current).isSymbolicLink()) return true;
-    const parent = path.dirname(current);
-    if (parent === current) return false;
-    current = parent;
+/**
+ * Whether two timelines are the same audiobook, allowing for the few
+ * milliseconds two ffprobe builds can disagree about a last frame.
+ *
+ * The fingerprint rounds to 100 ms, which absorbs most of that - but a
+ * rounding is not a tolerance: a duration sitting within 2 ms of a 50 ms
+ * boundary flips to the other side under a 2 ms disagreement, and on a
+ * twenty-track book one such flip in twenty was the likely case. When the
+ * key misses, the durations the file carries in full are compared instead.
+ */
+export function timelinesMatch(
+  a: number[],
+  b: number[],
+  toleranceMs: number = TIMELINE_TOLERANCE_MS,
+): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (Math.abs(a[i]! - b[i]!) > toleranceMs) return false;
+  return true;
+}
+
+/**
+ * Free-form provenance, bounded before it is stored.
+ *
+ * A file's provenance is read back on every library request, so one file in
+ * a shared folder carrying sixty megabytes of it would slow every page for
+ * every reader; and a structure nested deep enough is accepted by the parser
+ * and refused by the serialiser, which used to fail the whole import run.
+ */
+export function boundedProvenance(
+  provenance: Record<string, unknown>,
+  limit: number = ALIGNMENT_PROVENANCE_LIMIT,
+): Record<string, unknown> {
+  try {
+    const text = JSON.stringify(provenance);
+    if (text.length <= limit) return provenance;
+  } catch {
+    /* unserialisable: fall through */
+  }
+  return { omitted: 'provenance exceeded the size this server stores' };
+}
+
+/**
+ * Whether the entry itself - the last path component, not its ancestors - is
+ * a symbolic link.
+ *
+ * The folder an alignment file sits in is the operator's choice, and it is
+ * often reached through a link: a bare-metal install pointing `/data/alignments`
+ * at a NAS mount, or macOS, where every temporary directory lives under
+ * `/var -> /private/var`. Refusing those would silently import nothing. What
+ * must never be followed is a link planted INSIDE the folder, which could lead
+ * a read out of the mount the operator meant to share - so the entry is
+ * checked, the file is opened with O_NOFOLLOW, and the listing skips links.
+ */
+function isSymlinkEntry(file: string): boolean {
+  try {
+    return fs.lstatSync(file).isSymbolicLink();
+  } catch {
+    return false;
   }
 }
 
@@ -399,11 +455,12 @@ function keySuffix(key: string): string {
 export function listAlignmentFiles(dir: string): string[] {
   let entries: fs.Dirent[];
   try {
-    if (hasSymlink(dir)) return [];
     entries = fs.readdirSync(dir, { withFileTypes: true });
   } catch {
     return [];
   }
+  // Dirent.isFile() is false for a symbolic link, so a link planted in the
+  // folder is never offered as an import, whatever it points at.
   return entries
     .filter(
       (e) =>
@@ -458,7 +515,14 @@ export function writeAlignmentFile(dir: string, doc: PortableAlignment): string 
   const tmp = path.join(dir, `.${key12}.${process.pid}.tmp`);
   const bytes = gzipSync(Buffer.from(JSON.stringify(doc), 'utf8'), { level: 9 });
   try {
-    const fd = fs.openSync(tmp, 'w');
+    // Created, never reused: a link pre-planted under the predictable name
+    // in a shared folder would otherwise be followed and its target
+    // truncated. O_EXCL refuses an existing entry, O_NOFOLLOW a link.
+    const fd = fs.openSync(
+      tmp,
+      fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_NOFOLLOW,
+      0o644,
+    );
     try {
       fs.writeFileSync(fd, bytes);
       fs.fsyncSync(fd);
@@ -576,6 +640,11 @@ export function decodeAlignmentFile(bytes: Buffer | Uint8Array): ReadAlignmentRe
     );
   }
 
+  if (doc.segmentCount > ALIGNMENT_MAX_SEGMENTS) {
+    return reject(
+      `This alignment file claims ${doc.segmentCount.toLocaleString()} segments, more than any book has sentences; it is not usable.`,
+    );
+  }
   // Columnar segments are only coherent if every column agrees on its length.
   // One short column would otherwise import as a whole book of segments quietly
   // shifted by one sentence, which is far worse than importing nothing.
@@ -595,8 +664,7 @@ export function decodeAlignmentFile(bytes: Buffer | Uint8Array): ReadAlignmentRe
 export function readAlignmentFile(file: string): ReadAlignmentResult {
   let bytes: Buffer;
   try {
-    if (hasSymlink(file))
-      return reject('Symbolic links are not accepted as alignment files or directories.');
+    if (isSymlinkEntry(file)) return reject('Symbolic links are not accepted as alignment files.');
     // NOFOLLOW closes the final-component check/open race. NONBLOCK prevents
     // a substituted FIFO from hanging before fstat can reject it.
     const fd = fs.openSync(

@@ -93,6 +93,10 @@
   height: 100%;
   overflow-y: auto;
   overscroll-behavior: contain;
+  /* An image loading above the viewport must not move the page: the browser's
+     own scroll anchoring would, and every such adjustment read as the reader
+     scrolling and detached the page from the voice. */
+  overflow-anchor: none;
 }
 .reader-content {
   /* The chapter body is arbitrary publisher XHTML. A bare URL or a code
@@ -137,6 +141,7 @@
   overflow-y: auto;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
+  overflow-anchor: none;
 }
 .reader-content--paginated.is-unpaginated {
   height: auto;
@@ -167,6 +172,15 @@
     top 320ms linear,
     opacity var(--rp-duration-quick) var(--rp-ease);
 }
+/* A change of column is a jump: the marker used to glide from the foot of
+   one column up through the text of the next. */
+.pace-marker.is-jump {
+  transition: opacity var(--rp-duration-quick) var(--rp-ease);
+}
+/* Paused: still there, so the line the voice will pick up from is known. */
+.pace-marker[data-paused='yes'] {
+  opacity: 0.3;
+}
 /* Following by itself: brighter, so it is clear what is driving the page. */
 .pace-marker[data-auto='on'] {
   opacity: 0.95;
@@ -183,13 +197,11 @@
   transition: background-color 200ms ease;
 }
 
-/* Auto-scrolling: the page is being driven, so the reader is not fighting it
-   for the same gesture. `overflow: hidden` still permits the programmatic
-   scrolling that drives it, and the toggle in the bar is lit so it is obvious
-   what is moving the page and how to stop it. */
+/* Auto-scrolling: the page is being driven, and the scrollbar is hidden so
+   the drive is not drawn as a scroll. The box stays scrollable - the reader
+   must always be able to take the page back with the first swipe, and
+   locking it used to eat that swipe and honour only the second. */
 .reader-scroller.is-autoscrolling {
-  overflow-y: hidden;
-  touch-action: pan-x;
   scrollbar-width: none;
 }
 .reader-scroller.is-autoscrolling::-webkit-scrollbar {
@@ -252,21 +264,37 @@
 .bm-split__more:hover {
   color: inherit;
 }
+.bm-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
 .bm-row {
   display: flex;
+  gap: var(--sp-2);
+  align-items: flex-start;
+  border-block-end: 1px solid var(--rp-border);
+}
+.bm-row__open {
+  display: flex;
+  flex: 1;
+  min-width: 0;
   gap: var(--sp-3);
   align-items: flex-start;
-  width: 100%;
-  padding: var(--sp-3) var(--sp-4);
+  padding: var(--sp-3) 0 var(--sp-3) var(--sp-4);
   border: 0;
-  border-block-end: 1px solid var(--rp-border);
   background: none;
   text-align: start;
   color: var(--rp-text);
+  font: inherit;
   cursor: pointer;
 }
 .bm-row:hover {
   background: var(--rp-surface);
+}
+.bm-row__delete {
+  margin-block: var(--sp-1);
+  margin-inline-end: var(--sp-2);
 }
 .bm-row__icon {
   color: var(--rp-interactive);
@@ -925,7 +953,9 @@
 /* selection menu */
 .selection-menu {
   position: fixed;
-  z-index: 8;
+  /* Above the page dimmer, like the return pill and the mark popover: the
+     controls are not part of the page being dimmed. */
+  z-index: 10;
   display: flex;
   flex-wrap: wrap;
   /* The placement adapter also constrains this to the visual viewport. */

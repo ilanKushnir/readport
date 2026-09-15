@@ -14,6 +14,7 @@ import { FacetsProvider } from './state/facets';
 import { Drawer, Sheet, ToastProvider } from './components/ui';
 import { Sidebar } from './components/Sidebar';
 import {
+  IconChevronRight,
   IconLibrary,
   IconLink,
   IconNotes,
@@ -53,20 +54,36 @@ function useSidebarCollapsed(): [boolean, (v: boolean) => void] {
 }
 
 /**
+ * The one breakpoint the shell is built around, shared with base.css: from
+ * 744px the rail has a column of its own, below it the shelves come in as an
+ * overlay. 744 is an iPad mini held upright, which is a tablet and gets the
+ * tablet shell. Keeping the number in one place on each side is what lets the
+ * header button know which of the two it is offering.
+ */
+const RAIL_MQ = '(min-width: 744px)';
+
+function useWideShell(): boolean {
+  const [wide, setWide] = useState(
+    () => typeof matchMedia === 'function' && matchMedia(RAIL_MQ).matches,
+  );
+  useEffect(() => {
+    if (typeof matchMedia !== 'function') return;
+    const mq = matchMedia(RAIL_MQ);
+    const onChange = () => setWide(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  return wide;
+}
+
+/**
  * The shelf list, in whichever container this width calls for: the rail is
  * rendered in the layout grid, and this is the overlay the header button
  * opens - a drawer with room for it, a bottom sheet on a phone, which is the
  * object this app already uses for everything that slides in.
  */
 function ShelfOverlay({ onClose }: { onClose: () => void }) {
-  const [narrow, setNarrow] = useState(
-    () => typeof window !== 'undefined' && window.innerWidth < 760,
-  );
-  useEffect(() => {
-    const onResize = () => setNarrow(window.innerWidth < 760);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
+  const narrow = !useWideShell();
   const body = <Sidebar onNavigate={onClose} />;
   return narrow ? (
     <Sheet title="Shelves" onClose={onClose}>
@@ -79,7 +96,23 @@ function ShelfOverlay({ onClose }: { onClose: () => void }) {
   );
 }
 
-function ShelfHeaderButton({ onOpen }: { onOpen: () => void }) {
+/**
+ * On a phone this opens the shelves as an overlay, because there is nowhere
+ * to dock them. On a wide screen it only appears once the rail has been
+ * hidden, and then it puts the rail BACK - the same place "Hide shelves"
+ * took it from - rather than floating a copy over the library. Opening an
+ * overlay there left the rail with no way home except a keyboard shortcut,
+ * which an iPad does not have.
+ */
+function ShelfHeaderButton({
+  wide,
+  onOpen,
+  onDock,
+}: {
+  wide: boolean;
+  onOpen: () => void;
+  onDock: () => void;
+}) {
   const { overview } = useShelves();
   const location = useLocation();
   // The button doubles as a "you are here": on a phone the header is the only
@@ -94,6 +127,18 @@ function ShelfHeaderButton({ onOpen }: { onOpen: () => void }) {
     const auto = /^\/shelf\/([a-z-]+)$/.exec(location.pathname);
     return AUTO_SHELVES.find((s) => s.id === auto?.[1])?.label ?? null;
   })();
+  if (wide) {
+    return (
+      <button
+        className="btn btn--ghost app-header__shelves"
+        onClick={onDock}
+        title="Show shelves (keyboard shortcut: [)"
+      >
+        <IconChevronRight size={17} />
+        <span className="app-header__shelvesname">Show shelves</span>
+      </button>
+    );
+  }
   return (
     <button className="btn btn--ghost app-header__shelves" onClick={onOpen} aria-haspopup="dialog">
       <IconShelf size={18} />
@@ -110,6 +155,7 @@ function Shell() {
   );
   const [collapsed, setCollapsed] = useSidebarCollapsed();
   const [overlay, setOverlay] = useState(false);
+  const wide = useWideShell();
   const shell = useRef<HTMLDivElement>(null);
   const immersive = /^\/(read|listen)\//.test(location.pathname);
 
@@ -119,14 +165,23 @@ function Shell() {
     const el = shell.current;
     const viewport = window.visualViewport;
     if (!el || immersive || !viewport) return;
+    // Set on the shell AND the root: sheets, drawers and toasts are
+    // portaled to the body, outside the shell, and could not see a value
+    // set only there - so the keyboard covered the bottom of the shelves
+    // sheet and the list's last rows were unreachable until it closed.
+    const root = document.documentElement;
     const update = () => {
       if (viewport.scale !== 1) {
-        el.style.removeProperty('--app-viewport-height');
-        el.style.removeProperty('--app-viewport-top');
+        for (const node of [el, root]) {
+          node.style.removeProperty('--app-viewport-height');
+          node.style.removeProperty('--app-viewport-top');
+        }
         return;
       }
-      el.style.setProperty('--app-viewport-height', `${viewport.height}px`);
-      el.style.setProperty('--app-viewport-top', `${viewport.offsetTop}px`);
+      for (const node of [el, root]) {
+        node.style.setProperty('--app-viewport-height', `${viewport.height}px`);
+        node.style.setProperty('--app-viewport-top', `${viewport.offsetTop}px`);
+      }
     };
     update();
     viewport.addEventListener('resize', update);
@@ -136,8 +191,10 @@ function Shell() {
       viewport.removeEventListener('resize', update);
       viewport.removeEventListener('scroll', update);
       window.removeEventListener('resize', update);
-      el.style.removeProperty('--app-viewport-height');
-      el.style.removeProperty('--app-viewport-top');
+      for (const node of [el, root]) {
+        node.style.removeProperty('--app-viewport-height');
+        node.style.removeProperty('--app-viewport-top');
+      }
     };
   }, [immersive, phase, needsLibraries, setupSkipped]);
 
@@ -205,7 +262,11 @@ function Shell() {
               <ReadPortMark size={26} style={{ color: 'var(--rp-primary)' }} />
               <span className="brand__name">ReadPort</span>
             </Link>
-            <ShelfHeaderButton onOpen={() => setOverlay(true)} />
+            <ShelfHeaderButton
+              wide={wide}
+              onOpen={() => setOverlay(true)}
+              onDock={() => setCollapsed(false)}
+            />
             <nav className="app-nav" aria-label="Primary">
               {nav}
             </nav>

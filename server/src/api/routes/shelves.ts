@@ -15,6 +15,7 @@ import {
   type ShelfSummary,
 } from '@readport/shared';
 import { type AppContext } from '../../context.js';
+import { FINISHED_WHERE, READING_NOW_WHERE } from '../../progress/service.js';
 import { type DB } from '../../db/index.js';
 import { nowIso } from '../../db/index.js';
 import { newId } from '../../util/ids.js';
@@ -151,16 +152,16 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
     const one = (sql: string, ...params: unknown[]): number =>
       Number((db.prepare(sql).get(...(params as never[])) as { c: number }).c);
 
+    // The same predicate the shelf itself is filtered by, so the number on
+    // the rail is the number of rows behind it.
     const readingNow = one(
       `SELECT COUNT(*) AS c FROM progress_state p JOIN books b ON b.id = p.book_id
-       WHERE p.user_id = ? AND p.finished = 0 AND b.scan_state != 'missing'
-         AND json_extract(p.locator_json, '$.pct') > 0
-         AND json_extract(p.locator_json, '$.pct') < 1`,
+       WHERE ${READING_NOW_WHERE}`,
       userId,
     );
     const finished = one(
       `SELECT COUNT(*) AS c FROM progress_state p JOIN books b ON b.id = p.book_id
-       WHERE p.user_id = ? AND p.finished = 1 AND b.scan_state != 'missing'`,
+       WHERE ${FINISHED_WHERE}`,
       userId,
     );
     // One count per PAIR, not per book: a title owned twice is one title.

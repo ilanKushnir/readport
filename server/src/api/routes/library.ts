@@ -13,7 +13,12 @@ import { libraryRoots } from '../../domain/settings.js';
 import { type AppContext } from '../../context.js';
 import { enqueueJob } from '../../jobs/queue.js';
 import { handoffStatus, latestAlignment, isSwitchable } from '../../alignment/service.js';
-import { getProgressState } from '../../progress/service.js';
+import {
+  FINISHED_WHERE,
+  READING_NOW_WHERE,
+  getProgressState,
+  isReadingNow,
+} from '../../progress/service.js';
 import { requireExport } from '../../auth/roles.js';
 import { realResolveWithin } from '../../util/paths.js';
 
@@ -140,33 +145,53 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
     const parsedQuery = libraryQuerySchema.safeParse(req.query ?? {});
     if (!parsedQuery.success) return reply.code(400).send({ error: 'bad-query' });
     const q = parsedQuery.data;
+    const userId = req.user!.id;
     // Narrowed in SQL, not afterwards. Building a summary costs several
     // queries and a stat() per book, so a search that matches three titles in
     // a library of a thousand used to pay for all thousand before discarding
     // 997 of them. Everything below this point works on a short list.
-    const where: string[] = ["scan_state != 'missing'"];
+    //
+    // The progress shelves narrow the same way, through the one predicate the
+    // sidebar counts with: Reading Now used to materialise the whole library
+    // and keep three rows of it, every 2.5 seconds while a scan ran.
+    const progressWhere =
+      q.filter === 'in-progress' || q.filter === 'reading-now'
+        ? READING_NOW_WHERE
+        : q.filter === 'finished'
+          ? FINISHED_WHERE
+          : null;
+    const from = progressWhere ? 'books b JOIN progress_state p ON p.book_id = b.id' : 'books b';
+    const where: string[] = [];
     const args: string[] = [];
+    if (progressWhere) {
+      where.push(progressWhere);
+      args.push(userId);
+    } else {
+      where.push("b.scan_state != 'missing'");
+    }
     if (q.kind === 'ebook' || q.kind === 'audio') {
-      where.push('kind = ?');
+      where.push('b.kind = ?');
       args.push(q.kind);
     }
     if (q.query) {
       where.push(
-        "(title LIKE ? COLLATE NOCASE OR COALESCE(author, '') LIKE ? COLLATE NOCASE" +
-          " OR COALESCE(series, '') LIKE ? COLLATE NOCASE)",
+        "(b.title LIKE ? COLLATE NOCASE OR COALESCE(b.author, '') LIKE ? COLLATE NOCASE" +
+          " OR COALESCE(b.series, '') LIKE ? COLLATE NOCASE)",
       );
       const like = `%${q.query.replace(/[%_\\]/g, (c) => `\\${c}`)}%`;
       args.push(like, like, like);
     }
     const rows = db
-      .prepare(`SELECT * FROM books WHERE ${where.join(' AND ')} ORDER BY title COLLATE NOCASE`)
+      .prepare(
+        `SELECT b.* FROM ${from} WHERE ${where.join(' AND ')} ORDER BY b.title COLLATE NOCASE`,
+      )
       .all(...args) as Record<string, unknown>[];
-    let books = rows.map((r) => bookRowToSummary(ctx, req.user!.id, r));
+    let books = rows.map((r) => bookRowToSummary(ctx, userId, r));
     if (q.filter === 'paired') books = books.filter((b) => b.pair && b.pair.status !== 'candidate');
+    // The SQL already narrowed these; this only drops a row whose stored
+    // state could not be parsed, which the summary reports as no progress.
     if (q.filter === 'in-progress' || q.filter === 'reading-now')
-      books = books.filter(
-        (b) => b.progress && !b.progress.finished && b.progress.pct > 0 && b.progress.pct < 1,
-      );
+      books = books.filter((b) => isReadingNow(b.progress));
     if (q.filter === 'finished') books = books.filter((b) => b.progress?.finished);
     if (q.filter === 'both-formats') books = onePerPair(books, { pairedOnly: true });
     else if (q.kind === undefined && q.filter === undefined) {
@@ -224,12 +249,25 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
         break; // title order from SQL
     }
 
-    // Continue-listening/reading rail: most recently touched, unfinished.
-    const continueRail = books
-      .filter((b) => b.progress && !b.progress.finished && b.progress.pct > 0 && b.progress.pct < 1)
-      .sort((a, b) => Date.parse(b.progress!.updatedAt) - Date.parse(a.progress!.updatedAt))
-      .slice(0, 8)
-      .map((b) => b.id);
+    // The Continue band: what this person most recently touched and has not
+    // finished, whichever edition that is. Its own query rather than a pass
+    // over the list above, because the list has been narrowed (a search, a
+    // shelf) and collapsed to one card per pair - and a paired audiobook at
+    // 40% was vanishing behind its untouched ebook, so the sidebar said
+    // "Reading now 1" while the home page showed nothing to continue. Only
+    // the open library shows the band, so only the open library pays for it.
+    const home =
+      q.filter === undefined && q.facet === undefined && !q.query && q.kind === undefined;
+    const continueRail = home
+      ? (
+          db
+            .prepare(
+              `SELECT b.* FROM progress_state p JOIN books b ON b.id = p.book_id
+               WHERE ${READING_NOW_WHERE} ORDER BY p.updated_at DESC LIMIT 8`,
+            )
+            .all(userId) as Record<string, unknown>[]
+        ).map((r) => bookRowToSummary(ctx, userId, r))
+      : [];
 
     const scanning = db
       .prepare(

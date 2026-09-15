@@ -18,7 +18,7 @@ import { facetsForBook, writeFacets } from '../library/facets.js';
 import { formatBytes } from '../util/format.js';
 import { FACETS_REV } from '../scanner/scan.js';
 import { CANDIDATE_THRESHOLD, scorePair } from '../pairing/score.js';
-import { storeAlignment } from '../alignment/service.js';
+import { latestAlignment, storeAlignment } from '../alignment/service.js';
 import { textFingerprint, timelineFingerprint } from '../alignment/portable.js';
 import { exportAlignments, importAlignments, saveAlignmentFile } from '../alignment/library.js';
 import { detectLanguageFromText } from '../alignment/detect-language.js';
@@ -101,6 +101,7 @@ export async function runImportAlignments(
   const parts = [`Restored ${out.imported}`];
   if (out.unmatched) parts.push(`${out.unmatched} for books not in this library`);
   if (out.rejected.length) parts.push(`${out.rejected.length} could not be used`);
+  for (const note of out.notes.slice(0, 5)) ctx.log.info(note);
   jobProgress(
     db,
     job.id,
@@ -262,10 +263,16 @@ export function requeueAlignmentsWaitingFor(ctx: AppContext, modelIds?: string[]
   let n = 0;
   for (const id of ids) {
     const waiting = db
-      .prepare(`SELECT id FROM jobs WHERE type = 'align' AND state = 'failed' AND error LIKE ?`)
-      .all(`model-missing:${id}|%`) as { id: string }[];
+      .prepare(
+        `SELECT id, payload_json FROM jobs WHERE type = 'align' AND state = 'failed' AND error LIKE ?`,
+      )
+      .all(`model-missing:${id}|%`) as { id: string; payload_json: string }[];
     for (const w of waiting) {
       try {
+        // A pair that was restored from a saved file while the model was
+        // missing has nothing left to compute.
+        const pairId = (JSON.parse(w.payload_json) as { pairId?: string }).pairId;
+        if (pairId && latestAlignment(db, pairId)) continue;
         if (retryJob(db, w.id)) n += 1;
       } catch (err) {
         ctx.log.warn(`Could not re-queue alignment ${w.id}: ${(err as Error).message}`);
@@ -974,6 +981,7 @@ export async function runPairScan(ctx: AppContext, job: JobRow, guard: LeaseGuar
     { settledEbooks, settledAudios },
   );
 
+  const toAlign: string[] = [];
   for (const { ebookId: eId, audioId: aId, score, item } of winners) {
     const { evidence } = item;
     // Metadata alone NEVER links two editions. A high-scoring match stays a
@@ -989,19 +997,28 @@ export async function runPairScan(ctx: AppContext, job: JobRow, guard: LeaseGuar
       `INSERT INTO pairs (id, ebook_id, audio_id, status, score, evidence_json, created_at)
        VALUES (?, ?, ?, 'candidate', ?, ?, ?)`,
     ).run(pairId, eId, aId, score, JSON.stringify(evidence), nowIso());
-    if (autoEligible && settings.autoAlign) {
-      enqueueJob(db, 'align', { pairId }, { dedupeKey: `align:${pairId}`, priority: -2 });
-    }
+    if (autoEligible && settings.autoAlign) toAlign.push(pairId);
   }
 
   // Before anything is computed: an alignment that already exists on disk for
   // one of these pairs is hours of work this server does not have to redo.
-  // Higher priority than the align jobs just queued, so a redeploy restores
-  // rather than recomputes. Skipped entirely when the operator has said they
-  // would rather start fresh - in which case the files are left alone, not
-  // deleted, so the decision stays reversible.
+  // Restored HERE, synchronously, before a single align job is queued - a
+  // queued import at a higher priority did not help, because align jobs run
+  // in their own lane and the first of them was decoding audio before the
+  // import had been enqueued. Skipped entirely when the operator has said
+  // they would rather start fresh - in which case the files are left alone,
+  // not deleted, so the decision stays reversible.
   if (settings.importSavedAlignments) {
-    enqueueJob(db, 'import-alignments', {}, { dedupeKey: 'import-alignments', priority: 5 });
+    jobProgress(db, job.id, job.lease_token, 0.9, 'Looking for saved alignments');
+    const restored = importAlignments(ctx, () => guard.assertHeld());
+    if (restored.imported > 0)
+      ctx.log.info(`Restored ${restored.imported} saved alignment(s) before aligning`);
+    for (const note of restored.notes.slice(0, 5)) ctx.log.info(note);
+    for (const r of restored.rejected) ctx.log.warn(`${path.basename(r.file)}: ${r.reason}`);
+  }
+  for (const pairId of toAlign) {
+    if (latestAlignment(db, pairId)) continue;
+    enqueueJob(db, 'align', { pairId }, { dedupeKey: `align:${pairId}`, priority: -2 });
   }
 }
 
@@ -1015,6 +1032,14 @@ export async function runAlign(ctx: AppContext, job: JobRow, guard: LeaseGuard):
   if (!pair) throw new Error(`Pair not found: ${pairId}`);
   if (!['auto', 'confirmed', 'candidate'].includes(String(pair.status))) {
     throw new Error(`Pair ${pairId} is ${pair.status}; not aligning`);
+  }
+  // Already aligned - restored from a saved file, or computed by an earlier
+  // job - and nobody asked for it again: hours of CPU are not spent to
+  // replace an alignment with the same alignment. `force` is what the
+  // Pairing page's own button sends, and that means it.
+  if (!payload.force && latestAlignment(db, pairId)) {
+    jobProgress(db, job.id, job.lease_token, 1, 'Already aligned; nothing to recompute');
+    return;
   }
 
   const ebook = getBook(ctx, String(pair.ebook_id));
@@ -1062,6 +1087,9 @@ export async function runAlign(ctx: AppContext, job: JobRow, guard: LeaseGuard):
     languageSource = 'the server default';
   }
   guard.assertHeld();
+  // Recorded now, whether or not the alignment can proceed: this is what
+  // reading the ebook settled on, and it is the same answer a finished run
+  // would record - so the Pairing page can show it before the model is here.
   db.prepare('UPDATE pairs SET detected_language = ? WHERE id = ?').run(language, pairId);
   jobProgress(
     db,
@@ -1197,6 +1225,7 @@ export async function runAlign(ctx: AppContext, job: JobRow, guard: LeaseGuard):
       probes: ctc.probes,
       decodedMs: ctc.decodedMs,
     });
+
     // A copy in the library folder, so the work outlives this container.
     // Deliberately after the database write and deliberately unable to fail
     // the job: the expensive half is already safe.

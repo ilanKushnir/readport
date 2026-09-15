@@ -178,7 +178,7 @@ export function ReadingListPage() {
         <div className={`banner ${readOnly ? '' : 'banner--error'}`} role="alert">
           {readOnly ? <IconOffline size={18} /> : <IconAlert size={18} />}
           <span style={{ flex: 1 }}>{error}</span>
-          <button className="btn btn--ghost" style={{ minHeight: 36 }} onClick={() => void load()}>
+          <button className="btn btn--ghost btn--tight" onClick={() => void load()}>
             Retry
           </button>
         </div>
@@ -247,13 +247,6 @@ export function ReadingListPage() {
                   type="button"
                   disabled={readOnly}
                   {...reorder.handleProps(id)}
-                  onPointerDown={(e) => {
-                    if (readOnly || e.button !== 0) return;
-                    e.preventDefault();
-                    window.getSelection()?.removeAllRanges();
-                    reorder.handleProps(id).onPointerDown(e);
-                  }}
-                  onContextMenu={(e) => e.preventDefault()}
                 >
                   <IconGrip size={18} />
                 </button>
@@ -293,10 +286,15 @@ export function ReadingListPage() {
                         setMenu(null);
                         return;
                       }
-                      const below =
-                        window.innerHeight - e.currentTarget.getBoundingClientRect().bottom;
-                      // The tab bar sits over the last ~96px of the viewport.
-                      setMenuUp(below - 96 < MENU_H);
+                      // Room below the button inside the pane that scrolls,
+                      // which ends above the phone tab bar and is what the
+                      // menu is actually clipped by.
+                      const pane = e.currentTarget.closest('.app-main')?.getBoundingClientRect();
+                      const paneBottom =
+                        pane?.bottom ??
+                        window.innerHeight - (matchMedia('(max-width: 743px)').matches ? 96 : 0);
+                      const below = paneBottom - e.currentTarget.getBoundingClientRect().bottom;
+                      setMenuUp(below < MENU_H);
                       setMenu(id);
                     }}
                   >

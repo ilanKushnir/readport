@@ -30,6 +30,28 @@
 .reading-now__body p {
   margin: 4px 0;
 }
+.reading-now__author {
+  color: var(--rp-text-muted);
+}
+.reading-now__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  font-size: 13.5px;
+  color: var(--rp-text-muted);
+}
+.reading-now__meta svg {
+  flex-shrink: 0;
+}
+.reading-now__when::before {
+  content: '·';
+  margin-inline-end: 10px;
+}
+.reading-now .progressbar {
+  margin-top: 8px;
+  max-width: 320px;
+}
 .reading-now__actions {
   display: flex;
   flex-wrap: wrap;

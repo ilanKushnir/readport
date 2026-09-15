@@ -80,11 +80,14 @@ export function resolveApiKey(
   const row = db
     .prepare('SELECT * FROM api_keys WHERE prefix = ? AND revoked_at IS NULL')
     .get(m[1]!) as ApiKeyRow | undefined;
-  if (!row) return null;
-
-  const want = Buffer.from(row.key_hash, 'hex');
+  // Hashed and compared whether or not the prefix is known: an unknown
+  // prefix used to return before hashing, which made "this prefix exists"
+  // readable from the response time. The prefix is not a secret - it is
+  // shown in Settings - but the cost of not leaking it is one hash.
   const got = Buffer.from(hashKey(presented.trim()), 'hex');
-  if (want.length !== got.length || !timingSafeEqual(want, got)) return null;
+  const want = row ? Buffer.from(row.key_hash, 'hex') : Buffer.alloc(got.length);
+  const matches = want.length === got.length && timingSafeEqual(want, got);
+  if (!row || !matches) return null;
 
   const user = db
     .prepare('SELECT id, username, role, display_name, status FROM users WHERE id = ?')

@@ -328,3 +328,36 @@ export function nearestCue(cues: Cue[], bookMs: number): Cue | null {
   if (bookMs <= before.endMs) return before;
   return bookMs - before.endMs <= after.startMs - bookMs ? before : after;
 }
+
+/** Where one chapter sits in the narration: its first and last timed moment. */
+export interface ChapterBound {
+  spineIdx: number;
+  firstMs: number;
+  lastMs: number;
+}
+
+/**
+ * The chapter the voice is in at `bookMs`, or the one it is nearest to.
+ *
+ * Inside a chapter's timed span the answer is that chapter. Between two -
+ * the narrator reading a chapter title nobody aligned - it is whichever
+ * span is closer, and on a tie the later one, because the voice is moving
+ * forward. This is what lets "Back to the voice" open the right chapter in
+ * one move instead of walking there a chapter at a time from wherever the
+ * page happens to be, and what stops the walk itself from getting stuck
+ * between two chapters that each claim the playhead is past their edge.
+ */
+export function nearestChapter(bounds: ChapterBound[], bookMs: number): number | null {
+  let best: { spineIdx: number; distance: number } | null = null;
+  for (const b of bounds) {
+    const distance =
+      bookMs < b.firstMs ? b.firstMs - bookMs : bookMs > b.lastMs ? bookMs - b.lastMs : 0;
+    if (
+      !best ||
+      distance < best.distance ||
+      (distance === best.distance && b.spineIdx > best.spineIdx)
+    )
+      best = { spineIdx: b.spineIdx, distance };
+  }
+  return best?.spineIdx ?? null;
+}

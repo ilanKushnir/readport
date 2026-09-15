@@ -16,6 +16,7 @@ import {
 } from '../components/icons';
 import {
   type AlignedSegment,
+  type ChapterBound,
   type Cue,
   type FollowState,
   buildCues,
@@ -23,6 +24,7 @@ import {
   cueForOffset,
   leadInFor,
   locateInTracks,
+  nearestChapter,
 } from './readalong';
 
 /**
@@ -60,6 +62,12 @@ export interface NarrationApi {
   bookMs: number;
   /** Synchronous lifecycle capture, including time since the last timeupdate. */
   currentBookMs: () => number;
+  /**
+   * The chapter the narration is in, or nearest to, at a moment - from the
+   * book's per-chapter timing bounds. Null until they have loaded, or when
+   * the alignment timed nothing at all.
+   */
+  chapterAt: (bookMs: number) => number | null;
   speed: number;
   error: string | null;
   toggle: () => void;
@@ -83,8 +91,12 @@ export interface NarrationOptions {
   sentences: SentenceIndexEntry[];
   /** Where the reader is now, used to place the needle when it starts. */
   startOffset: () => number;
-  /** The narration has left this chapter; the reader should move. */
-  onLeaveChapter: (direction: 'next' | 'prev') => void;
+  /**
+   * The narration has left this chapter; the reader should move. `target`
+   * names the chapter the voice is actually in when that is known, so the
+   * reader can go straight there; without it, one step in `direction`.
+   */
+  onLeaveChapter: (direction: 'next' | 'prev', target?: number) => void;
 }
 
 /**
@@ -128,6 +140,15 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
    * chapters, but it may not immediately reverse.
    */
   const lastWalkRef = useRef<'next' | 'prev' | null>(null);
+  /** When the last automatic step was taken: a refusal to reverse expires. */
+  const lastWalkAtRef = useRef(0);
+  /**
+   * Where each chapter sits in the narration. One small request per book,
+   * and the difference between walking to the voice a chapter at a time -
+   * or getting stuck between two chapters that each say the playhead is
+   * past their edge - and opening the right chapter in one move.
+   */
+  const [bounds, setBounds] = useState<ChapterBound[] | null>(null);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeedState] = useState(() => speedFor(loadPlayback(), audioBookId ?? ''));
   const [error, setError] = useState<string | null>(null);
@@ -183,6 +204,30 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
       alive = false;
     };
   }, [enabled, audioBookId]);
+
+  // The book's chapter bounds, once. Absent on a server that predates the
+  // route, in which case the walker steps a chapter at a time as before.
+  useEffect(() => {
+    if (!enabled || !pairId) return;
+    let alive = true;
+    setBounds(null);
+    void api<{ chapters: ChapterBound[] }>(`/api/pairs/${pairId}/chapters`)
+      .then((d) => {
+        if (alive) setBounds(d.chapters ?? []);
+      })
+      .catch(() => {
+        if (alive) setBounds(null);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [enabled, pairId]);
+
+  const chapterAt = useCallback(
+    (at: number): number | null =>
+      bounds && bounds.length > 0 ? nearestChapter(bounds, at) : null,
+    [bounds],
+  );
 
   // This chapter's timings. Refetched per chapter: a whole book's segments is
   // megabytes, and the reader only ever needs the page in front of them.
@@ -334,13 +379,39 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
     // to a different chapter must not be dragged back to this one.
     const dir = lookup.state === 'after' ? 'next' : lookup.state === 'before' ? 'prev' : null;
     if (!dir) return;
+    // With the chapter bounds known there is nothing to walk: the chapter
+    // the voice is in is a lookup, and the page goes there in one move.
+    const target = chapterAt(bookMs);
+    if (target !== null) {
+      if (target === spineIdx) return; // an untimed stretch inside this chapter
+      lastWalkRef.current = target > spineIdx ? 'next' : 'prev';
+      lastWalkAtRef.current = Date.now();
+      leaveRef.current(target > spineIdx ? 'next' : 'prev', target);
+      return;
+    }
+    // A refusal to reverse guards against ping-pong between two chapters,
+    // and it must expire: a rewind into the untimed stretch between two
+    // chapters used to step back, then be refused the step forward the
+    // narration soon needed, and the page stayed a chapter behind the voice
+    // with nothing to point at.
     const reverses =
       (dir === 'next' && lastWalkRef.current === 'prev') ||
       (dir === 'prev' && lastWalkRef.current === 'next');
-    if (reverses) return;
+    if (reverses && Date.now() - lastWalkAtRef.current < 4000) return;
     lastWalkRef.current = dir;
+    lastWalkAtRef.current = Date.now();
     leaveRef.current(dir);
-  }, [enabled, playing, following, lookup.state, segments, cues.length]);
+  }, [
+    enabled,
+    playing,
+    following,
+    lookup.state,
+    segments,
+    cues.length,
+    chapterAt,
+    bookMs,
+    spineIdx,
+  ]);
 
   /* --------------------------------------------------------- audio events */
 
@@ -464,7 +535,9 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
     timingsFailed: segmentsFailed,
     skipUntimed: () => {
       lastWalkRef.current = 'next';
-      leaveRef.current('next');
+      lastWalkAtRef.current = Date.now();
+      const target = chapterAt(bookMs);
+      leaveRef.current('next', target !== null && target > spineIdx ? target : undefined);
     },
     playing,
     cue: lookup.cue,
@@ -477,6 +550,7 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
       audioRef.current
         ? (tracks[trackIdx]?.startMsAbsolute ?? 0) + audioRef.current.currentTime * 1000
         : bookMs,
+    chapterAt,
     error,
     backSeconds,
     toggle,
@@ -588,7 +662,12 @@ export function NarrationBar({
           chapter they cannot see, which is exactly when there is no cue here
           and the way back used to disappear. */}
       {!following && (
-        <button className="readalong__resume" onClick={onResume}>
+        <button
+          className="readalong__resume"
+          onClick={onResume}
+          aria-label="Back to the voice"
+          title="Back to the voice"
+        >
           <IconTarget size={15} />
           <span>Back to the voice</span>
         </button>

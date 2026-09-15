@@ -1,4 +1,9 @@
-import { EXPLICIT_INTENTS, type ProgressEvent, type ProgressState } from './progress.js';
+import {
+  EXPLICIT_INTENTS,
+  MAX_CLOCK_CORRECTION_MS,
+  type ProgressEvent,
+  type ProgressState,
+} from './progress.js';
 
 /**
  * Pure reconciliation decision, shared verbatim by the server (authoritative
@@ -20,6 +25,22 @@ export const MAX_FUTURE_SKEW_MS = 2 * 60_000;
 export function clampEventTime(occurredAtMs: number, nowMs: number): number {
   if (!Number.isFinite(occurredAtMs)) return nowMs;
   return Math.min(occurredAtMs, nowMs + MAX_FUTURE_SKEW_MS);
+}
+
+/**
+ * The correction to add to a client's timestamps, from what it said the time
+ * was as it sent them: `serverNow - clientNow`, bounded to a day either way.
+ *
+ * Forward skew was already clamped; this closes the other side. A device an
+ * hour slow used to have every explicit move it made offline judged older
+ * than anything another device did in that hour, and lose the lot.
+ */
+export function clockCorrectionMs(clientNowIso: string | undefined, serverNowMs: number): number {
+  if (!clientNowIso) return 0;
+  const clientNow = Date.parse(clientNowIso);
+  if (!Number.isFinite(clientNow)) return 0;
+  const skew = serverNowMs - clientNow;
+  return Math.max(-MAX_CLOCK_CORRECTION_MS, Math.min(MAX_CLOCK_CORRECTION_MS, skew));
 }
 
 export type ReconcileDecision =

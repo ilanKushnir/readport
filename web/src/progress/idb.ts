@@ -13,21 +13,52 @@ export const STORES = {
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
+/**
+ * Open the database, once per page - but not once per page FOREVER.
+ *
+ * A rejected open used to be cached like a successful one, so a tab that was
+ * blocked by an older tab holding the previous schema, or that hit a
+ * transient quota error, could never store anything again without a reload.
+ * A failure is forgotten so the next call tries afresh, and a connection
+ * that another tab wants to upgrade closes itself instead of blocking the
+ * upgrade for everyone.
+ */
 export function openIdb(): Promise<IDBDatabase> {
   if (dbPromise) return dbPromise;
-  dbPromise = new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
+  const attempt = new Promise<IDBDatabase>((resolve, reject) => {
+    let req: IDBOpenDBRequest;
+    try {
+      if (typeof indexedDB === 'undefined') throw new Error('IndexedDB unavailable');
+      req = indexedDB.open(DB_NAME, DB_VERSION);
+    } catch (err) {
+      reject(err instanceof Error ? err : new Error('IndexedDB unavailable'));
+      return;
+    }
     req.onupgradeneeded = () => {
       const db = req.result;
       for (const name of Object.values(STORES)) {
         if (!db.objectStoreNames.contains(name)) db.createObjectStore(name);
       }
     };
-    req.onsuccess = () => resolve(req.result);
+    req.onsuccess = () => {
+      const db = req.result;
+      db.onversionchange = () => {
+        db.close();
+        if (dbPromise === attempt) dbPromise = null;
+      };
+      db.onclose = () => {
+        if (dbPromise === attempt) dbPromise = null;
+      };
+      resolve(db);
+    };
     req.onerror = () => reject(req.error ?? new Error('IndexedDB open failed'));
     req.onblocked = () => reject(new Error('IndexedDB blocked'));
   });
-  return dbPromise;
+  dbPromise = attempt;
+  attempt.catch(() => {
+    if (dbPromise === attempt) dbPromise = null;
+  });
+  return attempt;
 }
 
 export async function idbPut(store: string, key: string, value: unknown): Promise<void> {

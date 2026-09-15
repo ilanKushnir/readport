@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  clipRects,
   placeSelectionToolbar,
   selectionGeometry,
   type PlacementInput,
@@ -141,5 +142,58 @@ describe('selection toolbar placement', () => {
         input({ selection: selectionGeometry([rect(1100, 300, 1400, 330)], 'ltr')! }),
       ),
     ).toBeNull();
+  });
+});
+
+describe('the platform edit menu', () => {
+  it('is kept clear across its real width, not just the first line of a short word', () => {
+    // A one-word selection near the bottom: "below" cannot fit, so the dock
+    // slides beside the word - and used to sit under the native menu, which
+    // is centred on the word but four hundred points wide.
+    const word = selectionGeometry([rect(500, 600, 540, 630)], 'ltr')!;
+    const band = { left: 520 - 220, right: 520 + 220, top: 600 - 96, bottom: 600 };
+    const clear = (t: { left: number; top: number } | null) =>
+      t === null ||
+      !(
+        t.left < band.right &&
+        t.left + 320 > band.left &&
+        t.top < band.bottom &&
+        t.top + 44 > band.top
+      );
+    // On a narrow screen there is nowhere honest: hidden beats overlapping.
+    expect(
+      clear(placeSelectionToolbar(input({ selection: word, toolbar: { width: 320, height: 44 } }))),
+    ).toBe(true);
+    // On a wide one the dock slides clear of the band and is offered.
+    const wide = placeSelectionToolbar(
+      input({
+        selection: word,
+        toolbar: { width: 320, height: 44 },
+        viewport: rect(0, 0, 1600, 768),
+      }),
+    );
+    expect(wide).not.toBeNull();
+    expect(clear(wide)).toBe(true);
+  });
+  it('expects the menu BELOW a selection whose first line is at the top of the screen, and stays out of its way', () => {
+    const high = selectionGeometry([rect(200, 80, 420, 110)], 'ltr')!;
+    const placed = placeSelectionToolbar(input({ selection: high }));
+    expect(placed?.mode).not.toBe('below');
+    if (placed) expect(placed.top).toBeGreaterThanOrEqual(110 + 96);
+  });
+  it('a fine pointer still gets the toolbar above, since there is no native menu to collide with', () => {
+    const high = selectionGeometry([rect(200, 80, 420, 110)], 'ltr')!;
+    expect(placeSelectionToolbar(input({ selection: high, coarse: false }))?.mode).toBe('below');
+  });
+});
+
+describe('clipRects', () => {
+  it('drops the part of a selection that ran into the clipped next column', () => {
+    const rects = [rect(100, 200, 500, 230), rect(700, 200, 1100, 230)];
+    expect(clipRects(rects, rect(0, 0, 600, 800))).toEqual([rect(100, 200, 500, 230)]);
+  });
+  it('is the identity without a box', () => {
+    const rects = [rect(1, 2, 3, 4)];
+    expect(clipRects(rects, null)).toBe(rects);
   });
 });

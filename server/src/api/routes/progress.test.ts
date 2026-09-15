@@ -44,7 +44,7 @@ afterAll(async () => {
   fs.rmSync(tmp, { recursive: true, force: true });
 });
 
-const post = (events: unknown) =>
+const postEnvelope = (envelope: Record<string, unknown>, user = 'dana') =>
   app.inject({
     method: 'POST',
     url: '/api/progress/events',
@@ -52,10 +52,21 @@ const post = (events: unknown) =>
     headers: {
       'x-rp-csrf': '1',
       'content-type': 'application/json',
-      'x-rp-test-user': 'dana',
+      'x-rp-test-user': user,
     },
-    payload: { events } as never,
+    payload: envelope as never,
   });
+const post = (events: unknown) => postEnvelope({ events });
+const whoami = async (user: string) =>
+  (
+    (
+      await app.inject({
+        url: '/api/auth/me',
+        remoteAddress: '10.0.0.5',
+        headers: { 'x-rp-test-user': user },
+      })
+    ).json() as { user: { id: string } }
+  ).user.id;
 
 const stateOf = async (bookId: string) =>
   (
@@ -124,6 +135,75 @@ describe('POST /api/progress/events', () => {
     expect((await post([])).statusCode).toBe(400);
     expect((await post('not-an-array')).statusCode).toBe(400);
     expect((await post(Array.from({ length: 201 }, () => ev()))).statusCode).toBe(400);
+  });
+
+  it('a queue stamped for another account is refused whole, and a stray event of theirs is dropped by name', async () => {
+    const dana = await whoami('dana');
+    const erin = await whoami('erin');
+    // The envelope names the wrong owner: nothing in it is filed.
+    const whole = await postEnvelope({ events: [ev({ bookId: 'book6' })], ownerId: erin });
+    expect(whole.statusCode).toBe(403);
+    expect(whole.json()).toEqual({ error: 'owner-mismatch' });
+    expect((await stateOf('book6')).state).toBeNull();
+    // One event in an otherwise honest batch carries someone else's stamp:
+    // it comes back rejected - a verdict the client can act on by dropping
+    // it - and the rest still lands.
+    const mine = ev({ bookId: 'book6', seq: 1, ownerId: dana });
+    const theirs = ev({ bookId: 'book6', seq: 2, intent: 'seek', ownerId: erin });
+    const res = await postEnvelope({ events: [mine, theirs], ownerId: dana });
+    expect(res.statusCode).toBe(200);
+    const byId = new Map((res.json() as Ack).results.map((r) => [r.eventId, r]));
+    expect(byId.get(mine.eventId as string)?.status).toBe('applied');
+    expect(byId.get(theirs.eventId as string)).toMatchObject({
+      status: 'rejected',
+      reason: 'owner-mismatch',
+    });
+    expect((await stateOf('book6')).state?.revision).toBe(1);
+  });
+
+  it('a device whose clock runs slow is corrected by the time it reports, so its explicit moves are not judged stale', async () => {
+    const now = Date.now();
+    // Another device, with a correct clock, holds the claim as of now.
+    await post([
+      ev({
+        bookId: 'book7',
+        deviceId: 'right',
+        sessionId: 'right',
+        seq: 1,
+        occurredAt: new Date(now).toISOString(),
+        locator: { medium: 'audio', trackIdx: 0, positionMs: 100, pct: 0.1 },
+      }),
+    ]);
+    const hour = 60 * 60_000;
+    const slowMove = () =>
+      ev({
+        bookId: 'book7',
+        deviceId: 'slow',
+        sessionId: 'slow',
+        seq: 1,
+        intent: 'seek',
+        // Made a second after the claim, by a clock that is an hour behind.
+        occurredAt: new Date(now + 1000 - hour).toISOString(),
+        locator: { medium: 'audio', trackIdx: 0, positionMs: 900, pct: 0.9 },
+      });
+    // Without saying what time it thinks it is, the slow device loses.
+    const uncorrected = await post([slowMove()]);
+    expect((uncorrected.json() as Ack).results[0]).toMatchObject({
+      status: 'recorded',
+      reason: 'stale-explicit',
+    });
+    expect((await stateOf('book7')).state?.locator.positionMs).toBe(100);
+    // With it, the server measures the hour and the move is judged at the
+    // time it actually happened.
+    const corrected = await postEnvelope({
+      events: [slowMove()],
+      clientNow: new Date(Date.now() - hour).toISOString(),
+    });
+    expect((corrected.json() as Ack).results[0]).toEqual({
+      eventId: expect.any(String),
+      status: 'applied',
+    });
+    expect((await stateOf('book7')).state?.locator.positionMs).toBe(900);
   });
 
   it('a batch of nothing but malformed events does not fail', async () => {

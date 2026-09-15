@@ -482,7 +482,7 @@ body:has(.app-body) {
   color: var(--rp-interactive);
 }
 
-@media (min-width: 760px) {
+@media (min-width: 744px) {
   .app-nav {
     display: flex;
   }
@@ -649,7 +649,7 @@ body:has(.app-body) {
   gap: var(--sp-3);
   margin-block-start: var(--sp-3);
 }
-@media (min-width: 760px) {
+@media (min-width: 744px) {
   .hero-card {
     padding: var(--sp-6);
     gap: var(--sp-6);
@@ -755,7 +755,7 @@ body:has(.app-body) {
   grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
   gap: var(--sp-4) var(--sp-4);
 }
-@media (min-width: 760px) {
+@media (min-width: 744px) {
   .book-grid {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: var(--sp-5);
@@ -1037,8 +1037,11 @@ body:has(.app-body) {
   position: fixed;
   z-index: 41;
   inset-inline: 0;
-  bottom: 0;
-  max-height: 82dvh;
+  /* Pinned to the bottom of the VISUAL viewport: with the keyboard up the
+     sheet used to size and sit against the full-height layout viewport, so
+     its last rows were under the keys until it closed. */
+  bottom: calc(100dvh - var(--app-viewport-top, 0px) - var(--app-viewport-height, 100dvh));
+  max-height: calc(var(--app-viewport-height, 100dvh) * 0.82);
   display: flex;
   flex-direction: column;
   background: var(--rp-surface-raised);
@@ -1047,10 +1050,10 @@ body:has(.app-body) {
   padding-block-end: var(--rp-safe-bottom);
   animation: rp-slide-up var(--rp-duration-slow) var(--rp-ease);
 }
-@media (min-width: 760px) {
+@media (min-width: 744px) {
   .sheet {
     inset-inline: auto;
-    /* A phone in landscape is wider than 760px and has a notch down one side.
+    /* A phone in landscape is wider than 744px and has a notch down one side.
        24px is not enough to clear it, so the card sat under the cutout. */
     inset-inline-end: max(var(--sp-5), var(--rp-safe-right));
     bottom: max(var(--sp-5), var(--rp-safe-bottom));
@@ -1244,7 +1247,7 @@ body:has(.app-body) {
   margin: 0;
   height: 5px;
 }
-@media (min-width: 760px) {
+@media (min-width: 744px) {
   .book-hero__coverwrap {
     width: 180px;
   }
@@ -3295,17 +3298,18 @@ body:has(.app-body) {
   pointer-events: auto;
 }
 /* A finger cannot hover, and a control that only appears on hover does not
-   exist on a phone. */
-@media (hover: none) {
+   exist on a phone - nor on an iPad with a trackpad attached, which reports
+   that it CAN hover and is still mostly touched. Any coarse pointer counts. */
+@media (hover: none), (any-pointer: coarse) {
   .sidebar__tools {
     opacity: 1;
     pointer-events: auto;
   }
   /* Being always visible, it is always ON TOP of the row - it covered the
      book count and the end of any shelf name long enough to reach it. Give
-     the row that width back so the two do not share it. */
+     the row that width back so the two do not share it: two 44px targets. */
   .sidebar__item--own .sidebar__row {
-    padding-inline-end: 84px;
+    padding-inline-end: 90px;
   }
   .sidebar__item--own .sidebar__count {
     /* The count sat under the tools; it belongs just before them. */
@@ -3371,6 +3375,18 @@ body:has(.app-body) {
   color: var(--rp-text-soft);
   cursor: grab;
   touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+/* While anything is being dragged, nothing on the page is being selected:
+   a mouse drag on a grip used to sweep a text selection across the shelf
+   names as the rows moved. */
+body[data-rp-dragging],
+body[data-rp-dragging] * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 .sidebar__grip[aria-pressed='true'] {
   background: var(--rp-surface-raised);
@@ -3393,7 +3409,7 @@ body:has(.app-body) {
 
 /* Persistent rail. Chrome in this app is a hairline, never a raised slab:
    a full-height surface would out-weigh the covers it exists to serve. */
-@media (min-width: 760px) {
+@media (min-width: 744px) {
   .app-body {
     grid-template-columns: 260px minmax(0, 1fr);
   }
@@ -3448,6 +3464,9 @@ body:has(.app-body) {
   position: fixed;
   z-index: 41;
   inset-block: 0;
+  /* The keyboard shrinks the visual viewport; so does the drawer. */
+  top: var(--app-viewport-top, 0px);
+  height: var(--app-viewport-height, 100dvh);
   /* In landscape the notch is on one side, and this list is the only way to
      the shelves on a phone - it cannot start underneath it. */
   inset-inline-start: var(--rp-safe-left);
@@ -3650,6 +3669,11 @@ body:has(.app-body) {
 .queue-row.is-grabbed {
   z-index: 2;
   box-shadow: var(--rp-shadow-2);
+}
+/* Under a finger the row goes where the finger is, this frame; the eased
+   transform is for the rows making way, not for the one being carried. */
+.readlist.is-dragging .queue-row.is-grabbed {
+  transition: none;
 }
 .queue-handle {
   display: inline-flex;
@@ -4170,11 +4194,18 @@ body:has(.app-body) {
   }
   /* The header button is the ONLY way into the shelves on a phone, and the
      two buttons below are the only way to make the first shelf and to move
-     one without a drag. */
+     one without a drag. The primary navigation, the rail's own foot and the
+     "pick what to show" link are touched just as often on an iPad. */
   .app-header__shelves,
   .sidebar__newbtn,
-  .sidebar__moves .btn {
+  .sidebar__moves .btn,
+  .app-nav a,
+  .sidebar__foot .btn {
     min-height: 44px;
+  }
+  .sidebar__empty button {
+    min-height: 44px;
+    padding-block: var(--sp-2);
   }
 
   /* Browsing by the library's own metadata: a value row and its "show all"

@@ -43,7 +43,12 @@ type Sort = 'title' | 'author' | 'recent' | 'added';
 
 interface LibraryData {
   books: BookSummary[];
-  continueRail: string[];
+  /**
+   * The Continue band, most recently touched first. Whole summaries rather
+   * than ids into `books`: the grid collapses a pair to one card, and the
+   * edition in progress is not always the one the card stands for.
+   */
+  continueRail: BookSummary[];
   scanActive: boolean;
 }
 
@@ -109,11 +114,18 @@ export function LibraryPage() {
         : `${showing.kind}:${'id' in showing ? showing.id : ''}`;
 
   // Arriving at a different shelf starts fresh. Inside "Recently added" the
-  // point IS recency, so that is where its sort starts.
+  // point IS recency, and Reading Now is defined as most recent first, so
+  // those two start on their own order rather than on the alphabet.
   useEffect(() => {
     setData(null);
     setOfflineBooks(null);
-    setSort(shelfKey === 'auto:recently-added' ? 'added' : 'title');
+    setSort(
+      shelfKey === 'auto:recently-added'
+        ? 'added'
+        : shelfKey === 'auto:reading-now'
+          ? 'recent'
+          : 'title',
+    );
     setQuery('');
     setKind('all');
   }, [shelfKey]);
@@ -290,15 +302,15 @@ export function LibraryPage() {
     return source;
   }, [data, offlineBooks, showing, downloaded, debouncedQuery, kind]);
 
-  const continueBooks = useMemo(() => {
-    if (!data) return [];
-    const byId = new Map(data.books.map((b) => [b.id, b]));
-    return data.continueRail.map((id) => byId.get(id)).filter((b): b is BookSummary => !!b);
-  }, [data]);
+  const continueBooks = data?.continueRail ?? [];
   const hero = continueBooks[0] ?? null;
   const rail = continueBooks.slice(1);
   const showContinue =
     showing.kind === 'library' && kind === 'all' && !query && continueBooks.length > 0;
+  // The band shows the eight most recent; the number beside "All in progress"
+  // is how many there are, which is what the sidebar already counts.
+  const readingNowCount =
+    overview?.auto.find((a) => a.id === 'reading-now')?.count ?? continueBooks.length;
 
   const stats = useMemo(() => {
     const all = data?.books ?? [];
@@ -361,7 +373,7 @@ export function LibraryPage() {
         <div className={`banner ${offlineBooks ? '' : 'banner--error'}`} role="alert">
           {offlineBooks ? <IconOffline size={18} /> : <IconAlert size={18} />}
           <span style={{ flex: 1 }}>{error}</span>
-          <button className="btn btn--ghost" style={{ minHeight: 36 }} onClick={() => void load()}>
+          <button className="btn btn--ghost btn--tight" onClick={() => void load()}>
             Retry
           </button>
         </div>
@@ -382,9 +394,9 @@ export function LibraryPage() {
             <h2 id="continue-h" className="band__title">
               Continue
             </h2>
-            {continueBooks.length > 1 && (
+            {readingNowCount > 1 && (
               <Link className="band__more" to="/shelf/reading-now">
-                All in progress · {continueBooks.length}
+                All in progress · {readingNowCount}
               </Link>
             )}
           </div>
@@ -479,6 +491,15 @@ export function LibraryPage() {
               </div>
             ))}
           </div>
+        ) : showing.kind === 'auto' && showing.id === 'reading-now' && !data ? (
+          // The one shelf the server has to answer: what is in progress is
+          // progress state, and the downloaded titles this browser holds
+          // are not the same list. Saying "nothing here yet" under a banner
+          // that says the shelf could not be fetched contradicted itself.
+          <EmptyState icon={<IconOffline size={40} />} title="Reading Now needs the server">
+            Your place in every book is kept on this device and will sync when you are back online.
+            Downloaded titles are on the On this device shelf.
+          </EmptyState>
         ) : books.length === 0 ? (
           <ShelfEmpty
             showing={showing}

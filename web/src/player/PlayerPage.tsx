@@ -13,6 +13,7 @@ import {
 } from '../reader/continuity';
 import { bookAudioSupport } from '../lib/audioSupport';
 import { Cover, Sheet, useToast } from '../components/ui';
+import { useProgressNotices } from '../progress/notices';
 import {
   IconBack,
   IconClose,
@@ -160,6 +161,7 @@ export function PlayerPage() {
    */
   const locatorNowRef = useRef<(() => AudioLocator) | null>(null);
   locatorNowRef.current = detail ? locatorNow : null;
+  useProgressNotices(id, () => locatorNowRef.current?.() ?? null);
 
   /**
    * Leaving the player records where you got to.

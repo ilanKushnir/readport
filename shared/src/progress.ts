@@ -58,13 +58,33 @@ export const progressEventSchema = z.object({
   baseRevision: z.number().int().min(0).optional(),
   /** Server-issued reset generation. Omitted legacy events belong to generation zero. */
   generation: z.number().int().min(0).optional(),
+  /**
+   * The account that recorded this event, stamped by the client at capture
+   * time. The queue lives in one browser that several people may sign in
+   * to, and a checkpoint is one person's reading position: the server
+   * refuses to file it under anybody else, whatever cookie delivers it.
+   */
+  ownerId: z.string().min(1).max(64).optional(),
   intent: progressIntentSchema,
   locator: locatorSchema,
 });
 export type ProgressEvent = z.infer<typeof progressEventSchema>;
 
+/**
+ * How far a client clock may be corrected. A batch says what time the
+ * client thinks it is as it sends; the server measures the difference and
+ * moves every event's effective time by it, so a device whose clock is an
+ * hour slow does not lose every explicit move to a device whose clock is
+ * right. Bounded, because past a day the "clock" is not a clock.
+ */
+export const MAX_CLOCK_CORRECTION_MS = 24 * 60 * 60_000;
+
 export const progressBatchSchema = z.object({
   events: z.array(progressEventSchema).min(1).max(200),
+  /** The queue owner the client believes it is delivering for; see `ownerId`. */
+  ownerId: z.string().min(1).max(64).optional(),
+  /** The client's wall clock at send time, for skew correction. */
+  clientNow: z.iso.datetime().optional(),
 });
 export type ProgressBatch = z.infer<typeof progressBatchSchema>;
 
@@ -87,6 +107,13 @@ export const progressAckSchema = z.object({
   results: z.array(
     z.object({
       eventId: z.uuid(),
+      /**
+       * `applied` moved the state; `recorded` was kept in history but did
+       * not move it (a stale heartbeat, a claim another session holds);
+       * `duplicate` had been seen before; `rejected` is a durable verdict -
+       * malformed, or filed under the wrong person - that a client should
+       * drop rather than retry.
+       */
       status: z.enum(['applied', 'recorded', 'duplicate', 'rejected']),
       reason: z.string().optional(),
     }),

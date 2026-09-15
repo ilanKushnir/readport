@@ -412,6 +412,37 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
     };
   });
 
+  /**
+   * Where every chapter sits in the narration: the first and last timed
+   * moment of each spine item, one row per chapter.
+   *
+   * This is what lets the reader take "Back to the voice" literally when the
+   * voice has wandered into a chapter that is not on screen: it can open the
+   * chapter that contains the playhead directly, instead of attaching to the
+   * nearest cue of whatever chapter happens to be open and walking from there
+   * one fetch at a time. Chapters the aligner never timed are simply absent.
+   */
+  app.get('/api/pairs/:id/chapters', async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const handle = latestAlignment(db, id);
+    if (!handle) return reply.code(404).send({ error: 'no-alignment' });
+    const rows = db
+      .prepare(
+        `SELECT spine_idx, MIN(start_ms) AS first_ms, MAX(end_ms) AS last_ms, COUNT(*) AS n
+           FROM alignment_segments WHERE alignment_id = ?
+          GROUP BY spine_idx ORDER BY spine_idx`,
+      )
+      .all(handle.alignmentId) as Record<string, unknown>[];
+    return {
+      chapters: rows.map((r) => ({
+        spineIdx: Number(r.spine_idx),
+        firstMs: Number(r.first_ms),
+        lastMs: Number(r.last_ms),
+        segments: Number(r.n),
+      })),
+    };
+  });
+
   /** Alignment coverage detail for the pairing review screen. */
   app.get('/api/pairs/:id/alignment', async (req, reply) => {
     const { id } = req.params as { id: string };

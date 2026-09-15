@@ -55,21 +55,43 @@ const send = (events: ProgressEvent[], user = 'alice') =>
   request('/api/progress/events', user, 'POST', { events });
 beforeAll(async () => {
   await app.ready();
-  for (const id of ['ebook', 'audio', 'tiny', 'zero', 'absent', 'done', 'full', 'foreign']) {
+  for (const id of [
+    'ebook',
+    'audio',
+    'tiny',
+    'zero',
+    'absent',
+    'done',
+    'full',
+    'foreign',
+    'missing',
+    'roundtrip',
+    'clock-race',
+    // A second pair, in progress only on its audio side: the open library
+    // collapses it to the ebook card, and the Continue band must still name
+    // the audiobook.
+    'ebook2',
+    'audio2',
+  ]) {
+    const audio = id === 'audio' || id === 'audio2';
     db.prepare(
-      "INSERT INTO books (id,kind,root_dir,rel_path,format,title,scan_state,added_at) VALUES (?,?,?,?,?,?,'ready',?)",
+      'INSERT INTO books (id,kind,root_dir,rel_path,format,title,scan_state,added_at) VALUES (?,?,?,?,?,?,?,?)',
     ).run(
       id,
-      id === 'audio' ? 'audio' : 'ebook',
+      audio ? 'audio' : 'ebook',
       tmp,
       id,
-      id === 'audio' ? 'mp3' : 'epub',
+      audio ? 'mp3' : 'epub',
       id,
+      id === 'missing' ? 'missing' : 'ready',
       new Date().toISOString(),
     );
   }
   db.prepare(
     "INSERT INTO pairs (id,ebook_id,audio_id,status,score,created_at) VALUES ('pair','ebook','audio','confirmed',1,?)",
+  ).run(new Date().toISOString());
+  db.prepare(
+    "INSERT INTO pairs (id,ebook_id,audio_id,status,score,created_at) VALUES ('pair2','ebook2','audio2','confirmed',1,?)",
   ).run(new Date().toISOString());
   await send([
     event('ebook', 0.2),
@@ -78,6 +100,14 @@ beforeAll(async () => {
     event('zero', 0),
     event('done', 0.9, 'finish'),
     event('full', 1),
+    {
+      ...event('missing', 0.5),
+      locator: { medium: 'ebook', spineIdx: 0, charOffset: 5, pct: 0.5 },
+    },
+    {
+      ...event('audio2', 0.4),
+      locator: { medium: 'audio', trackIdx: 0, positionMs: 9000, pct: 0.4 },
+    },
   ]);
   await send([event('foreign', 0.4), event('ebook', 0.7)], 'bob');
 });
@@ -96,14 +126,14 @@ describe('Reading Now contract', () => {
         .json()
         .books.map((b: { id: string }) => b.id)
         .sort(),
-    ).toEqual(['audio', 'ebook', 'tiny']);
+    ).toEqual(['audio', 'audio2', 'ebook', 'tiny']);
     const legacy = await request('/api/library?filter=in-progress');
     expect(legacy.json().books).toEqual(res.json().books);
     expect(
       (await request('/api/shelves'))
         .json()
         .auto.find((s: { id: string }) => s.id === 'reading-now').count,
-    ).toBe(3);
+    ).toBe(4);
     expect(
       (await request('/api/library?filter=reading-now', 'bob'))
         .json()
@@ -111,6 +141,33 @@ describe('Reading Now contract', () => {
         .sort(),
     ).toEqual(['ebook', 'foreign']);
     expect((await request('/api/library?filter=nonsense')).statusCode).toBe(400);
+  });
+  it('the Continue band names the edition in progress even when the grid collapses its pair to the other one', async () => {
+    const home = (await request('/api/library')).json();
+    const grid = home.books.map((b: { id: string }) => b.id);
+    // The open shelf shows one card per pair, the ebook side.
+    expect(grid).toContain('ebook2');
+    expect(grid).not.toContain('audio2');
+    const rail = home.continueRail.map((b: { id: string }) => b.id);
+    expect(rail).toContain('audio2');
+    expect(rail).toContain('ebook');
+    expect(rail).not.toContain('missing');
+    expect(rail).not.toContain('done');
+    // Narrowed views do not carry the band.
+    expect((await request('/api/library?kind=ebook')).json().continueRail).toEqual([]);
+    expect((await request('/api/library?filter=finished')).json().continueRail).toEqual([]);
+  });
+  it('a book the scanner lost is neither listed nor counted, and cannot be reset if it never existed', async () => {
+    expect(
+      (await request('/api/library?filter=finished'))
+        .json()
+        .books.map((b: { id: string }) => b.id)
+        .sort(),
+    ).toEqual(['done']);
+    expect((await request('/api/progress/nonsense', 'alice', 'DELETE')).statusCode).toBe(404);
+    // Missing from disk is not the same as never having existed: its progress
+    // is still this person's to erase.
+    expect((await request('/api/progress/missing', 'alice', 'DELETE')).statusCode).toBe(200);
   });
   it('exact sentence and character survive same-chapter sync, replay and cross-device reads; stale tab cannot overwrite explicit moves', async () => {
     const first = event('roundtrip', 0.2);
@@ -208,11 +265,12 @@ describe('Reading Now contract', () => {
     // A previously offline tab must not resurrect progress after removal.
     expect((await send([old])).json().results[0].status).toBe('recorded');
     expect((await request('/api/progress/ebook')).json().state).toBeNull();
+    // audio, audio2, tiny, and the roundtrip book the previous test started.
     expect(
       (await request('/api/shelves'))
         .json()
         .auto.find((s: { id: string }) => s.id === 'reading-now').count,
-    ).toBe(2);
+    ).toBe(4);
   });
   it('reset generation blocks future-skewed old queues, survives reopen and accepts new reads with past-skewed clocks', async () => {
     const old = { ...event('clock-race', 0.8), occurredAt: '2099-01-01T00:00:00Z' };

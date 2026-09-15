@@ -278,7 +278,11 @@ export function Sidebar({
                       maxLength={60}
                       onChange={(e) => setEditName(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Escape') closeEdit();
+                        if (e.key === 'Escape') {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          closeEdit();
+                        }
                       }}
                     />
                     <button className="btn btn--secondary btn--sm" type="submit">

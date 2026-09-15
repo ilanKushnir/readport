@@ -77,6 +77,8 @@ export function storeAlignment(
 export interface AlignmentHandle {
   alignmentId: string;
   summary: AlignmentSummary;
+  /** What the engine recorded about the run, as stored. Carried into exports. */
+  provenance: Record<string, unknown>;
 }
 
 /**
@@ -119,12 +121,18 @@ export function latestAlignment(db: DB, pairId: string): AlignmentHandle | null 
   }
   const count = { c: tally.segments };
   const exact = { c: tally.exact };
-  const provenance = JSON.parse(String(row.provenance_json ?? '{}')) as {
-    sentenceCount?: number;
-  };
+  let provenance: Record<string, unknown> = {};
+  try {
+    const parsed: unknown = JSON.parse(String(row.provenance_json ?? '{}'));
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed))
+      provenance = parsed as Record<string, unknown>;
+  } catch {
+    /* a damaged provenance column is not a reason to hide the alignment */
+  }
   const sentenceCount = Math.max(1, Number(provenance.sentenceCount ?? count.c));
   return {
     alignmentId: String(row.id),
+    provenance,
     summary: {
       pairId,
       version: Number(row.version),

@@ -59,6 +59,12 @@ export const readerPrefsSchema = z.object({
   brightness: z.number().min(0.35).max(1),
   /** Bottom progress indicator: full, one thin line, or nothing. */
   progressBar: z.enum(['full', 'compact', 'hidden']),
+  /**
+   * Read-along in scroll mode: keep the marker still and move the page
+   * under it. Remembered, so "Back to the voice" brings it back too - it
+   * used to switch itself off every time the reader so much as scrolled.
+   */
+  autoScroll: z.boolean().default(false),
 });
 
 export type ReaderPrefs = z.infer<typeof readerPrefsSchema>;
@@ -79,6 +85,7 @@ export const DEFAULT_READER_PREFS: ReaderPrefs = {
   pageTurn: 'slide',
   brightness: 1,
   progressBar: 'full',
+  autoScroll: false,
 };
 
 /**
@@ -102,6 +109,8 @@ export const PER_DEVICE_READER_KEYS = [
   'pageTurn',
   'brightness',
   'progressBar',
+  // Belongs with `mode`: it only means anything where the page scrolls.
+  'autoScroll',
 ] as const satisfies readonly (keyof ReaderPrefs)[];
 
 const perDevice = new Set<string>(PER_DEVICE_READER_KEYS);

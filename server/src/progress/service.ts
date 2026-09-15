@@ -61,6 +61,28 @@ export function getProgressState(db: DB, userId: string, bookId: string): Progre
   return readProgressRow(db, userId, bookId).state;
 }
 
+/**
+ * The one definition of "reading now", as SQL over `progress_state p` joined
+ * to `books b`, with the user id as its single parameter: this person's own
+ * progress, not finished, strictly between the start and the end, on a book
+ * that is still on disk.
+ *
+ * The sidebar count, the Reading Now shelf, the legacy `in-progress` filter
+ * and the home page's Continue band all read this one fragment. They used to
+ * carry four private copies of the same predicate, which agreed only until
+ * someone edited one of them.
+ */
+export const READING_NOW_WHERE = `p.user_id = ? AND p.finished = 0 AND b.scan_state != 'missing'
+  AND json_extract(p.locator_json, '$.pct') > 0 AND json_extract(p.locator_json, '$.pct') < 1`;
+
+/** The Finished shelf's counterpart: read to the end, and still on disk. */
+export const FINISHED_WHERE = `p.user_id = ? AND p.finished = 1 AND b.scan_state != 'missing'`;
+
+/** Whether a summary's progress meets the Reading Now predicate above. */
+export function isReadingNow(progress: { pct: number; finished: boolean } | null): boolean {
+  return !!progress && !progress.finished && progress.pct > 0 && progress.pct < 1;
+}
+
 /** Selected edition only. A barrier prevents an old offline queue restoring deleted progress. */
 export function getProgressGeneration(db: DB, userId: string, bookId: string): number {
   return (
@@ -104,15 +126,32 @@ export function applyProgressEvents(
   db: DB,
   userId: string,
   events: ProgressEvent[],
+  opts: {
+    /**
+     * Added to every event's client time before it is judged: the measured
+     * difference between this server's clock and the sending device's, so a
+     * slow clock does not lose its owner's explicit moves. See
+     * `clockCorrectionMs` in the shared package.
+     */
+    skewMs?: number;
+  } = {},
 ): ProgressBatchAck {
   const results: ProgressAck['results'] = [];
   const books = new Set<string>();
+  const skewMs = Number.isFinite(opts.skewMs) ? opts.skewMs! : 0;
   for (const ev of events) books.add(ev.bookId);
   if (events.length === 0) return { results, state: null, states: [] };
 
   db.exec('BEGIN IMMEDIATE');
   try {
     for (const ev of events) {
+      // A checkpoint stamped with somebody else's account never becomes this
+      // person's position, whatever session carried it here. Durable verdict:
+      // the client drops it rather than retrying.
+      if (ev.ownerId !== undefined && ev.ownerId !== userId) {
+        results.push({ eventId: ev.eventId, status: 'rejected', reason: 'owner-mismatch' });
+        continue;
+      }
       const dup = db
         .prepare('SELECT id FROM progress_events WHERE user_id = ? AND event_id = ?')
         .get(userId, ev.eventId);
@@ -121,10 +160,18 @@ export function applyProgressEvents(
         continue;
       }
       const nowMs = Date.now();
-      // Server-observed ordering: clamp the client clock so it can never
-      // lead server time by more than the skew window. The raw client
-      // occurredAt is preserved in the event log as diagnostics only.
-      const effectiveAt = new Date(clampEventTime(Date.parse(ev.occurredAt), nowMs)).toISOString();
+      // Server-observed ordering: correct the client clock by the skew the
+      // batch measured, then clamp so it can never lead server time by more
+      // than the skew window. The decision below judges the corrected time;
+      // the raw client occurredAt is preserved in the event log as
+      // diagnostics only.
+      const judged =
+        skewMs === 0
+          ? ev
+          : { ...ev, occurredAt: new Date(Date.parse(ev.occurredAt) + skewMs).toISOString() };
+      const effectiveAt = new Date(
+        clampEventTime(Date.parse(judged.occurredAt), nowMs),
+      ).toISOString();
       const { exists, state } = readProgressRow(db, userId, ev.bookId);
       const generation = getProgressGeneration(db, userId, ev.bookId);
       if (
@@ -145,7 +192,7 @@ export function applyProgressEvents(
             revision: state.revision,
           }
         : null;
-      const decision = decideApply(ev, claim, nowMs);
+      const decision = decideApply(judged, claim, nowMs);
       db.prepare(
         `INSERT INTO progress_events
            (user_id, book_id, event_id, device_id, session_uuid, seq, intent, medium, locator_json, occurred_at, effective_at, base_revision, received_at, applied, reject_reason)

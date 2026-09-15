@@ -9,6 +9,7 @@ import { nowIso, openMemoryDatabase } from '../db/index.js';
 import { ALIGNER_MODEL_ID, ModelMissingError, parseModelMissing } from '../alignment/model.js';
 import { claimNextJob, enqueueJob, makeLeaseGuard, type JobRow } from './queue.js';
 import { runAlign, runIndexEbook } from './handlers.js';
+import { storeAlignment } from '../alignment/service.js';
 
 /**
  * Wiring test for `runAlign`.
@@ -155,6 +156,34 @@ afterAll(() => {
 });
 
 describe('runAlign without the alignment model installed', () => {
+  it('an already-aligned pair is not aligned again unless asked to be', async () => {
+    const pairId = makePair();
+    // Restored from a saved file, say - the model need not even be here.
+    storeAlignment(
+      ctx.db,
+      pairId,
+      'en',
+      'imported',
+      { segments: [], gaps: [], coverage: 0, meanConfidence: 0 },
+      { sentenceCount: 1 },
+    );
+    expect(await align(pairId)).toBeNull();
+    expect(alignmentCount(pairId)).toBe(1);
+    const detail = ctx.db
+      .prepare(`SELECT detail FROM jobs WHERE type = 'align' ORDER BY rowid DESC LIMIT 1`)
+      .get() as { detail: string | null };
+    expect(detail.detail).toMatch(/Already aligned/);
+    // Asked for by name, it goes ahead - and here that means asking for the
+    // model, which is the failure shape the rest of this file is about.
+    enqueueJob(ctx.db, 'align', { pairId, force: true });
+    const { job, guard } = claimWithGuard();
+    const err = await runAlign(ctx, job, guard).then(
+      () => null,
+      (e: unknown) => e,
+    );
+    expect(err).toBeInstanceOf(ModelMissingError);
+  });
+
   it('fails with the structured error the Pairing page turns into a download', async () => {
     const pairId = makePair();
 

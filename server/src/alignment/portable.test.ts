@@ -138,17 +138,28 @@ it('caps decompressed output at 64 MiB even for valid highly compressible JSON',
   });
 });
 
-it('rejects symlink files and symlink alignment directories', () => {
+it('never lists a symlinked file, and refuses one it is handed directly', () => {
   const real = path.join(dir, 'real');
   const file = writeAlignmentFile(real, mkDoc());
   const link = path.join(dir, 'linked.rpalign');
   fs.symlinkSync(file, link);
   expect(readAlignmentFile(link).ok).toBe(false);
+  expect(readAlignmentFile(link)).toMatchObject({ reason: expect.stringMatching(/symbolic/i) });
   expect(listAlignmentFiles(dir)).toEqual([]);
+});
+
+// The folder itself is the operator's choice. A bare-metal install may point
+// its alignment folder at a NAS through a link, and on macOS every temporary
+// directory sits under /var -> /private/var; refusing those imported nothing
+// and said nothing. Only links INSIDE the folder are refused.
+it('reads a folder that is itself reached through a symlink', () => {
+  const real = path.join(dir, 'real');
+  const file = writeAlignmentFile(real, mkDoc());
   const linkedDir = path.join(dir, 'linked-dir');
   fs.symlinkSync(real, linkedDir, 'dir');
-  expect(listAlignmentFiles(linkedDir)).toEqual([]);
-  expect(readAlignmentFile(path.join(linkedDir, path.basename(file))).ok).toBe(false);
+  const viaLink = path.join(linkedDir, path.basename(file));
+  expect(listAlignmentFiles(linkedDir)).toEqual([viaLink]);
+  expect(readAlignmentFile(viaLink).ok).toBe(true);
 });
 
 beforeEach(() => {

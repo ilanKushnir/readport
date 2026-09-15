@@ -5,7 +5,9 @@ import {
   AGENT_BASE,
   AGENT_SCOPE,
   AGENT_ROUTES,
+  AGENT_MAX_OFFSET,
   AGENT_RATE_LIMIT,
+  AGENT_REJECT_LIMIT,
   AGENT_WINDOW_MS,
   AGENT_RESPONSE_BYTES,
   AGENT_SCHEMAS,
@@ -38,9 +40,9 @@ function boundedText(value: unknown, max = 500): string | null {
 
 /** A single atomic statement: concurrent processes cannot both spend the last slot.
  * Reuses the durable throttle store, but never the browser-login namespace.
- * One bounded counter per real user; expired rows use the existing pruning job.
+ * One bounded counter per bucket; expired rows use the existing pruning job.
  */
-export function allowAgentRead(db: DB, userId: string): boolean {
+function allowAgentBucket(db: DB, key: string, limit: number): boolean {
   const now = Date.now();
   const result = db
     .prepare(
@@ -53,8 +55,34 @@ export function allowAgentRead(db: DB, userId: string): boolean {
     RETURNING count
   `,
     )
-    .get(`agent:user:${userId}`, now + AGENT_WINDOW_MS, now, now, now, AGENT_RATE_LIMIT);
+    .get(key, now + AGENT_WINDOW_MS, now, now, now, limit);
   return result !== undefined;
+}
+
+/** One bounded read budget per real user, shared across every key they hold. */
+export function allowAgentRead(db: DB, userId: string): boolean {
+  return allowAgentBucket(db, `agent:user:${userId}`, AGENT_RATE_LIMIT);
+}
+
+/**
+ * Refusals are metered too, by address. A key that does not resolve costs a
+ * lookup and a hash, and a valid key on a forbidden route costs a route
+ * match; neither is expensive, but neither used to be counted at all, so an
+ * address could try credentials, or probe the closed catalog, without limit
+ * and without a trace in the throttle. The identity is still never the
+ * address - this is a cost bound, not an authorization input.
+ */
+export function allowAgentRejection(db: DB, clientIp: string): boolean {
+  return allowAgentBucket(db, `agent:reject:${clientIp}`, AGENT_REJECT_LIMIT);
+}
+
+/** Seconds until a bucket opens again, for the Retry-After header. */
+export function agentRetryAfterSeconds(db: DB, userId: string): number {
+  const row = db
+    .prepare('SELECT reset_at FROM login_throttle WHERE key = ?')
+    .get(`agent:user:${userId}`) as { reset_at: number } | undefined;
+  if (!row) return Math.ceil(AGENT_WINDOW_MS / 1000);
+  return Math.max(1, Math.ceil((Number(row.reset_at) - Date.now()) / 1000));
 }
 
 // Project safe fields in SQL, before materialization. No filesystem operations,
@@ -94,9 +122,12 @@ export function registerAgentRoutes(app: FastifyInstance, ctx: AppContext): void
   };
   const exists = (id: string) =>
     db.prepare("SELECT 1 FROM books WHERE id = ? AND scan_state != 'missing'").get(id);
+  // A next offset the route would refuse is not a next offset: past the
+  // ceiling the page simply ends, rather than pointing a compliant client at
+  // a 400.
   const page = <T>(rows: Row[], limit: number, offset: number, map: (row: Row) => T) => ({
     items: rows.slice(0, limit).map(map),
-    nextOffset: rows.length > limit ? offset + limit : null,
+    nextOffset: rows.length > limit && offset + limit <= AGENT_MAX_OFFSET ? offset + limit : null,
   });
 
   for (const route of AGENT_ROUTES) {

@@ -6,16 +6,20 @@ import { nowIso } from '../db/index.js';
 import { alignmentRoots } from '../domain/settings.js';
 import { latestAlignment, storeAlignment } from './service.js';
 import { rowToSegment } from './timings.js';
+import { stableId } from '../util/ids.js';
+import { APP_VERSION } from '../util/version.js';
 import {
   ALIGNMENT_FILE_EXT,
+  type PortableAlignment,
+  boundedProvenance,
   buildAlignmentDocument,
   columnsToSegments,
   listAlignmentFiles,
   pairKey,
   readAlignmentFile,
   timelineFingerprint,
+  timelinesMatch,
   writeAlignmentFile,
-  type PortableAlignment,
 } from './portable.js';
 
 /**
@@ -153,11 +157,14 @@ export function saveAlignmentFile(ctx: AppContext, pairId: string): string | nul
         model: handle.summary.model,
         coverage: handle.summary.coverage,
         meanConfidence: handle.summary.meanConfidence,
-        provenance: {},
+        // What the engine recorded - precision, anchors, decode time - goes
+        // with the file, so a redeploy keeps the story of how the numbers
+        // were made and not only the numbers.
+        provenance: boundedProvenance(handle.provenance),
         gaps: handle.summary.gaps,
       },
       segments: segments.map(rowToSegment),
-      writtenBy: 'readport',
+      writtenBy: `readport ${APP_VERSION}`,
       writtenAt: nowIso(),
     });
     const { dir, problem } = writeTargetDir(ctx);
@@ -176,8 +183,17 @@ export interface ImportOutcome {
   rejected: { file: string; title: string; reason: string }[];
   /** Files whose book is simply not in this library. Normal, not a problem. */
   unmatched: number;
+  /**
+   * Near misses among the unmatched: the ebook is here but its audiobook is
+   * not, or the other way round, or the tracks differ. Said in words so a
+   * folder that "restores nothing" can be understood without a debugger.
+   */
+  notes: string[];
   scanned: number;
 }
+
+/** More files than this in one folder is not a library, it is a mistake. */
+const IMPORT_MAX_FILES = 5000;
 
 /** Include files retained during a mount outage, even after it recovers. */
 function readableAlignmentDirs(ctx: AppContext): string[] {
@@ -205,54 +221,111 @@ export function importAlignments(
   onProgress?: (done: number, total: number) => void,
 ): ImportOutcome {
   const { db } = ctx;
-  const out: ImportOutcome = { imported: 0, rejected: [], unmatched: 0, scanned: 0 };
-  const files = readableAlignmentDirs(ctx).flatMap(listAlignmentFiles);
-  if (files.length === 0) return out;
+  const out: ImportOutcome = { imported: 0, rejected: [], unmatched: 0, notes: [], scanned: 0 };
+  const all = readableAlignmentDirs(ctx).flatMap(listAlignmentFiles);
+  if (all.length === 0) return out;
+  const files = all.slice(0, IMPORT_MAX_FILES);
+  if (all.length > files.length)
+    out.notes.push(
+      `Only the first ${IMPORT_MAX_FILES.toLocaleString()} of ${all.length.toLocaleString()} files were checked.`,
+    );
 
-  // Index the pairs this server could possibly be offered a file for.
-  const pairs = db
+  // Index the BOOKS this server could be offered a file for - not only the
+  // pairs the scorer proposed. A pair linked by hand on the old install,
+  // because its metadata scored too low to be suggested, has no pair row
+  // here; the file proves both books are present, and that is enough.
+  const ebooks = db
     .prepare(
-      `SELECT p.id AS pair_id, e.text_fingerprint AS e_fp, p.audio_id AS audio_id
-         FROM pairs p JOIN books e ON e.id = p.ebook_id
-        WHERE p.status IN ('auto', 'confirmed', 'candidate') AND e.text_fingerprint IS NOT NULL`,
+      `SELECT id, text_fingerprint AS fp FROM books
+        WHERE kind = 'ebook' AND text_fingerprint IS NOT NULL AND scan_state != 'missing'`,
     )
-    .all() as { pair_id: string; e_fp: string; audio_id: string }[];
-  const byKey = new Map<string, { pairId: string; textFp: string; durations: number[] }>();
-  for (const p of pairs) {
-    const durations = (
+    .all() as { id: string; fp: string }[];
+  const byTextFp = new Map<string, string>();
+  for (const e of ebooks) if (!byTextFp.has(e.fp)) byTextFp.set(e.fp, e.id);
+  const audios = (
+    db.prepare(`SELECT id FROM books WHERE kind = 'audio' AND scan_state != 'missing'`).all() as {
+      id: string;
+    }[]
+  ).map((a) => ({
+    id: a.id,
+    durations: (
       db
         .prepare('SELECT duration_ms FROM audio_tracks WHERE book_id = ? ORDER BY idx')
-        .all(p.audio_id) as { duration_ms: number }[]
-    ).map((t) => Number(t.duration_ms ?? 0));
-    byKey.set(pairKey(p.e_fp, timelineFingerprint(durations)), {
-      pairId: p.pair_id,
-      textFp: p.e_fp,
-      durations,
-    });
+        .all(a.id) as { duration_ms: number }[]
+    ).map((t) => Number(t.duration_ms ?? 0)),
+  }));
+  const byTimelineFp = new Map<string, string>();
+  for (const a of audios) {
+    const fp = timelineFingerprint(a.durations);
+    if (!byTimelineFp.has(fp)) byTimelineFp.set(fp, a.id);
   }
+  const audioFor = (doc: PortableAlignment): string | null =>
+    byTimelineFp.get(doc.audio.timelineFingerprint) ??
+    audios.find((a) => timelinesMatch(a.durations, doc.audio.trackDurationsMs))?.id ??
+    null;
 
   files.forEach((file, i) => {
     out.scanned += 1;
     onProgress?.(i + 1, files.length);
-    const read = readAlignmentFile(file);
-    if (!read.ok) {
-      out.rejected.push({ file, title: path.basename(file), reason: read.reason });
-      return;
-    }
-    const doc = read.doc;
-    const local = byKey.get(doc.pairKey);
-    if (!local) {
-      out.unmatched += 1;
-      return;
-    }
-    if (latestAlignment(db, local.pairId)) return;
-    const applied = applyDocument(ctx, local.pairId, doc, file);
-    if (applied) out.imported += 1;
-    else {
+    // One damaged file must not stop the rest of the folder from restoring.
+    try {
+      const read = readAlignmentFile(file);
+      if (!read.ok) {
+        out.rejected.push({ file, title: path.basename(file), reason: read.reason });
+        return;
+      }
+      const doc = read.doc;
+      const ebookId = byTextFp.get(doc.ebook.textFingerprint) ?? null;
+      const audioId = audioFor(doc);
+      if (!ebookId || !audioId) {
+        out.unmatched += 1;
+        if (ebookId && !audioId)
+          out.notes.push(
+            `“${doc.ebook.title}”: the ebook is here, but no audiobook has its ${doc.audio.trackCount} tracks with these lengths.`,
+          );
+        else if (audioId && !ebookId)
+          out.notes.push(
+            `“${doc.ebook.title}”: the audiobook is here, but the ebook is not - or its text differs (${doc.ebook.sentenceCount.toLocaleString()} sentences in the file).`,
+          );
+        return;
+      }
+      const pair = db
+        .prepare('SELECT id, status FROM pairs WHERE ebook_id = ? AND audio_id = ?')
+        .get(ebookId, audioId) as { id: string; status: string } | undefined;
+      // A pair the reader rejected stays rejected; a file does not overrule them.
+      if (pair && pair.status === 'rejected') return;
+      const pairId = pair?.id ?? stableId('pair', ebookId, audioId);
+      if (!pair) {
+        db.prepare(
+          `INSERT INTO pairs (id, ebook_id, audio_id, status, score, evidence_json, created_at)
+           VALUES (?, ?, ?, 'candidate', 1, ?, ?)`,
+        ).run(
+          pairId,
+          ebookId,
+          audioId,
+          JSON.stringify({
+            notes: [
+              'Linked by a saved alignment: the narration was checked against this text before.',
+            ],
+          }),
+          nowIso(),
+        );
+      }
+      if (latestAlignment(db, pairId)) return;
+      const applied = applyDocument(ctx, pairId, doc, file);
+      if (applied) out.imported += 1;
+      else {
+        out.rejected.push({
+          file,
+          title: doc.ebook.title,
+          reason: 'Its timings do not line up with this copy of the ebook - align this pair again.',
+        });
+      }
+    } catch (err) {
       out.rejected.push({
         file,
-        title: doc.ebook.title,
-        reason: 'Its timings do not line up with this copy of the ebook - align this pair again.',
+        title: path.basename(file),
+        reason: `Could not be imported: ${(err as Error).message}`,
       });
     }
   });
@@ -297,10 +370,11 @@ function applyDocument(
       meanConfidence: doc.alignment.meanConfidence,
     },
     {
-      ...doc.alignment.provenance,
+      ...boundedProvenance(doc.alignment.provenance),
       importedFrom: file,
       importedAt: nowIso(),
       importedFormatVersion: doc.formatVersion,
+      writtenBy: doc.writtenBy,
       sentenceCount: doc.ebook.sentenceCount,
     },
   );

@@ -16,6 +16,30 @@ export type PlacementInput = {
   previous: PlacementMode | null;
 };
 export type ToolbarPlacement = { mode: PlacementMode; left: number; top: number };
+/** Room the touch platform's own edit menu takes, above or below a selection. */
+export const NATIVE_MENU_HEIGHT = 96;
+/** Half of how wide that menu is on a tablet, centred on the selection. */
+export const NATIVE_MENU_HALF_WIDTH = 220;
+
+/**
+ * Only the parts of a selection that are actually on the page.
+ *
+ * In paginated mode a range can run on into the next column - the clipped
+ * one beyond the page box - and its rectangles there are real, just not
+ * visible. Placing the toolbar "below the last line" of a line nobody can
+ * see put it under an invisible line.
+ */
+export function clipRects(rects: Rect[], box: Rect | null | undefined): Rect[] {
+  if (!box) return rects;
+  return rects
+    .map((r) => ({
+      left: Math.max(r.left, box.left),
+      right: Math.min(r.right, box.right),
+      top: Math.max(r.top, box.top),
+      bottom: Math.min(r.bottom, box.bottom),
+    }))
+    .filter((r) => r.right > r.left && r.bottom > r.top);
+}
 export function selectionGeometry(
   rects: Rect[],
   direction: 'ltr' | 'rtl',
@@ -78,13 +102,34 @@ export function placeSelectionToolbar(input: PlacementInput): ToolbarPlacement |
     top: r.top - 12,
     bottom: r.bottom + 12,
   }));
-  if (coarse)
-    exclusions.push({
-      left: s.first.left - 24,
-      right: s.first.right + 24,
-      top: s.first.top - 96,
-      bottom: s.first.top,
-    });
+  // The native edit menu on a touch screen. iOS centres it on the whole
+  // selection's box - a menu of three to five items is 300-450pt wide
+  // whatever the selected word is - and puts it above the first line, or
+  // BELOW the last line when the first line is too close to the top of the
+  // visible screen for it to fit above. Both places are kept clear, and
+  // when the menu is below, "below" is not offered at all.
+  const union = s.rects.reduce(
+    (u, r) => ({
+      left: Math.min(u.left, r.left),
+      right: Math.max(u.right, r.right),
+      top: Math.min(u.top, r.top),
+      bottom: Math.max(u.bottom, r.bottom),
+    }),
+    { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity },
+  );
+  const menuCentre = (union.left + union.right) / 2;
+  const nativeMenuBelow = coarse && s.first.top - top < NATIVE_MENU_HEIGHT + 14;
+  if (coarse) {
+    const band = {
+      left: Math.min(s.first.left - 24, menuCentre - NATIVE_MENU_HALF_WIDTH),
+      right: Math.max(s.first.right + 24, menuCentre + NATIVE_MENU_HALF_WIDTH),
+    };
+    exclusions.push(
+      nativeMenuBelow
+        ? { ...band, top: s.last.bottom, bottom: s.last.bottom + NATIVE_MENU_HEIGHT }
+        : { ...band, top: s.first.top - NATIVE_MENU_HEIGHT, bottom: s.first.top },
+    );
+  }
   const safe = (x: number, y: number) =>
     y >= top &&
     y + height <= bottom &&
@@ -104,7 +149,8 @@ export function placeSelectionToolbar(input: PlacementInput): ToolbarPlacement |
   // Once docked, stay docked through handle jitter and chrome/viewport changes.
   // Reset only when the native selection clears; no floating/docked oscillation.
   if (previous !== 'dock') {
-    for (const p of coarse ? [below] : [above, below]) if (safe(p.left, p.top)) return p;
+    const order = coarse ? (nativeMenuBelow ? [] : [below]) : [above, below];
+    for (const p of order) if (safe(p.left, p.top)) return p;
   }
   const dockTop = bottom - height;
   const center = clamp((v.left + v.right - width) / 2);

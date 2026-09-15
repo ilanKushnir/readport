@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { afterIdFor, moveItem } from './reorder';
+import { afterIdFor, autoscrollSpeed, moveItem, slotFor } from './reorder';
 
 /**
  * The arithmetic behind every reordering gesture. The keyboard path, the
@@ -52,5 +52,32 @@ describe('afterIdFor', () => {
     const moved = moveItem(['a', 'b', 'c', 'd'], 3, 1);
     expect(moved).toEqual(['a', 'd', 'b', 'c']);
     expect(afterIdFor(moved, 'd')).toBe('a');
+  });
+});
+
+describe('slotFor', () => {
+  it('counts the rows whose middle the dragged row has passed, whatever their heights', () => {
+    // Rows of 40, 90 and 40 px with 8px gaps: middles at 20, 93 and 158.
+    const mids = [20, 93, 158];
+    expect(slotFor(mids, 10)).toBe(0);
+    expect(slotFor(mids, 60)).toBe(1);
+    expect(slotFor(mids, 120)).toBe(2);
+    expect(slotFor(mids, 200)).toBe(3);
+  });
+});
+
+describe('autoscrollSpeed', () => {
+  it('is still in the middle of the list', () => {
+    expect(autoscrollSpeed(300, 0, 600, 64)).toBe(0);
+  });
+  it('scrolls up near the top and down near the bottom, faster the deeper in', () => {
+    expect(autoscrollSpeed(60, 0, 600, 64)).toBeLessThan(0);
+    expect(autoscrollSpeed(2, 0, 600, 64)).toBeLessThan(autoscrollSpeed(60, 0, 600, 64));
+    expect(autoscrollSpeed(540, 0, 600, 64)).toBeGreaterThan(0);
+    expect(autoscrollSpeed(598, 0, 600, 64)).toBeGreaterThan(autoscrollSpeed(540, 0, 600, 64));
+  });
+  it('never exceeds the cap', () => {
+    expect(autoscrollSpeed(-100, 0, 600, 64)).toBe(-18);
+    expect(autoscrollSpeed(900, 0, 600, 64)).toBe(18);
   });
 });

@@ -26,12 +26,25 @@ describe('continuous scroll step', () => {
     expect(autoScrollDelta(0, 1000, 0.1, 16, false, false)).toBe(0);
     expect(autoScrollDelta(0, 1000, 0.1, 16, true, true)).toBe(0);
   });
-  it('caps catch-up and background-frame movement without reversing', () => {
+  it('caps catch-up and background-frame movement, and glides back when the line is above', () => {
     expect(autoScrollDelta(0, 10000, 1, 16, true, false)).toBeCloseTo(3.52);
     expect(autoScrollDelta(0, 10000, 1, 10000, true, false)).toBeCloseTo(14.08);
-    expect(autoScrollDelta(100, 0, 0, 16, true, false)).toBe(0);
+    // Nothing measured yet (speed 0): the drift term alone moves it, gently.
+    expect(autoScrollDelta(100, 0, 0, 16, true, false)).toBeCloseTo(-(100 * 16) / 3000);
   });
   it('does not overshoot a stationary target', () => {
     expect(autoScrollDelta(99, 100, 0.2, 16, true, false)).toBe(1);
+  });
+});
+
+describe('autoScrollDelta direction', () => {
+  it('glides back up when the target is above the current position', () => {
+    const d = autoScrollDelta(1000, 800, 0.1, 16, true, false);
+    expect(d).toBeLessThan(0);
+    expect(Math.abs(d)).toBeLessThanOrEqual(16 * 0.22);
+  });
+  it('never overshoots the target in either direction', () => {
+    expect(autoScrollDelta(1000, 1002, 5, 16, true, false)).toBe(2);
+    expect(autoScrollDelta(1000, 998, 5, 16, true, false)).toBe(-2);
   });
 });

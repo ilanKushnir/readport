@@ -2,7 +2,12 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { api, isUnauthorized, setUnauthorizedHandler } from '../api/client';
 import { purgeOfflineData } from '../offline/downloads';
 import { idbClear, STORES } from '../progress/idb';
-import { claimProgressQueue, flushPending, purgeProgressQueue } from '../progress/engine';
+import {
+  claimProgressQueue,
+  flushPending,
+  purgeProgressQueue,
+  releaseProgressSession,
+} from '../progress/engine';
 
 export interface User {
   id: string;
@@ -99,6 +104,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         // survive: they are the reader's own writes, and signing back in
         // delivers them.
         await purgeOfflineData().catch(() => {});
+        // Delivery stops here: the queue stays for its owner, but this page
+        // has nobody signed in to deliver it for, and the browser's cookie
+        // may soon belong to someone else.
+        releaseProgressSession();
         try {
           const s = await api<{ needsSetup: boolean }>('/api/setup/status');
           setUser(null);
@@ -129,6 +138,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const invalidate = async () => {
       await purgeOfflineData().catch(() => {});
+      releaseProgressSession();
       setUser(null);
       setPhase('login');
     };

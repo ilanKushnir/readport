@@ -108,7 +108,11 @@ export function checkLibraryPath(p: string, kind?: FolderKind): PathCheck {
 /** Saved alignments already sitting in a folder, for "found N of these". */
 function countAlignmentFiles(dir: string): number {
   try {
-    return fs.readdirSync(dir).filter((n) => !n.startsWith('.') && n.endsWith('.rpalign')).length;
+    // The same rule the import applies: regular files only, no links, no
+    // subfolders - so the number promised here is the number that imports.
+    return fs
+      .readdirSync(dir, { withFileTypes: true })
+      .filter((e) => e.isFile() && !e.name.startsWith('.') && e.name.endsWith('.rpalign')).length;
   } catch {
     return 0;
   }

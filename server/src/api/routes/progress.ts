@@ -1,6 +1,11 @@
 import { type FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { progressEventSchema, type ProgressAck, type ProgressEvent } from '@readport/shared';
+import {
+  clockCorrectionMs,
+  progressEventSchema,
+  type ProgressAck,
+  type ProgressEvent,
+} from '@readport/shared';
 import { type AppContext } from '../../context.js';
 import {
   applyProgressEvents,
@@ -10,11 +15,20 @@ import {
 } from '../../progress/service.js';
 
 /** The envelope must hold, but each event stands or falls on its own. */
-const progressEnvelopeSchema = z.object({ events: z.array(z.unknown()).min(1).max(200) });
+const progressEnvelopeSchema = z.object({
+  events: z.array(z.unknown()).min(1).max(200),
+  ownerId: z.string().min(1).max(64).optional(),
+  clientNow: z.iso.datetime().optional(),
+});
 
 export function registerProgressRoutes(app: FastifyInstance, ctx: AppContext): void {
-  app.delete('/api/progress/:bookId', async (req) => {
+  app.delete('/api/progress/:bookId', async (req, reply) => {
     const { bookId } = req.params as { bookId: string };
+    // A reset mints a row per (person, book) that outlives ordinary progress,
+    // so it is minted only for books the library actually has - a missing
+    // one included, since its progress is still this person's to erase.
+    if (!ctx.db.prepare('SELECT 1 FROM books WHERE id = ?').get(bookId))
+      return reply.code(404).send({ error: 'not-found' });
     return { bookId, generation: resetProgress(ctx.db, req.user!.id, bookId) };
   });
 
@@ -22,6 +36,11 @@ export function registerProgressRoutes(app: FastifyInstance, ctx: AppContext): v
     const envelope = progressEnvelopeSchema.safeParse(req.body);
     if (!envelope.success) {
       return reply.code(400).send({ error: 'invalid', detail: envelope.error.issues[0]?.message });
+    }
+    // A queue delivered for somebody other than the person signed in is not
+    // theirs to file: refused whole, before a single event is looked at.
+    if (envelope.data.ownerId !== undefined && envelope.data.ownerId !== req.user!.id) {
+      return reply.code(403).send({ error: 'owner-mismatch' });
     }
     // A batch is a drained offline queue, not a form. Refusing all 200 events
     // because one is malformed loses the other 199 and leaves the client
@@ -46,7 +65,9 @@ export function registerProgressRoutes(app: FastifyInstance, ctx: AppContext): v
         });
       }
     }
-    const ack = applyProgressEvents(ctx.db, req.user!.id, events);
+    const ack = applyProgressEvents(ctx.db, req.user!.id, events, {
+      skewMs: clockCorrectionMs(envelope.data.clientNow, Date.now()),
+    });
     return { ...ack, results: [...ack.results, ...rejected] };
   });
 

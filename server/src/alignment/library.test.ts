@@ -279,6 +279,80 @@ describe('importing on a fresh install', () => {
     expect(out.scanned).toBe(1);
   });
 
+  it('restores a pair the old install had linked by hand, creating the pair row the scorer never proposed', () => {
+    const first = seedPair(ctx);
+    seedAlignment(ctx, first.pairId);
+    saveAlignmentFile(ctx, first.pairId);
+
+    // The fresh install has both books but no pair: metadata scored too low
+    // to be suggested, and the person who linked it is not here to do it
+    // again. The file proves the two belong together.
+    const second = makeContext('hand-linked');
+    seedPair(second, { ebookId: 'hl-e', audioId: 'hl-a', pairId: 'hl-p' });
+    second.db.prepare('DELETE FROM pairs').run();
+
+    const out = importAlignments(second);
+
+    expect(out.imported).toBe(1);
+    const pair = second.db
+      .prepare('SELECT id, status FROM pairs WHERE ebook_id = ? AND audio_id = ?')
+      .get('hl-e', 'hl-a') as { id: string; status: string };
+    expect(pair.status).toBe('auto');
+    expect(latestAlignment(second.db, pair.id)).not.toBeNull();
+    second.db.close();
+  });
+
+  it('does not overrule a pair the reader rejected', () => {
+    const first = seedPair(ctx);
+    seedAlignment(ctx, first.pairId);
+    saveAlignmentFile(ctx, first.pairId);
+    const second = makeContext('rejected');
+    seedPair(second, { ebookId: 'rj-e', audioId: 'rj-a', pairId: 'rj-p' });
+    second.db.prepare("UPDATE pairs SET status = 'rejected'").run();
+
+    const out = importAlignments(second);
+
+    expect(out.imported).toBe(0);
+    expect(latestAlignment(second.db, 'rj-p')).toBeNull();
+    second.db.close();
+  });
+
+  it('accepts an audiobook whose durations drifted across a rounding boundary', () => {
+    // 600,049 rounds to 6000 decisecons; 600,051 to 6001. Two ffprobe builds
+    // disagreeing by 2 ms used to be two different audiobooks.
+    const first = seedPair(ctx, { trackMs: [600_049, 540_000] });
+    seedAlignment(ctx, first.pairId);
+    saveAlignmentFile(ctx, first.pairId);
+    const second = makeContext('boundary');
+    seedPair(second, {
+      ebookId: 'bd-e',
+      audioId: 'bd-a',
+      pairId: 'bd-p',
+      trackMs: [600_051, 540_000],
+    });
+
+    const out = importAlignments(second);
+
+    expect(out.imported).toBe(1);
+    expect(latestAlignment(second.db, 'bd-p')).not.toBeNull();
+    second.db.close();
+  });
+
+  it('says in words why a file matched nothing, when it nearly did', () => {
+    const first = seedPair(ctx);
+    seedAlignment(ctx, first.pairId);
+    saveAlignmentFile(ctx, first.pairId);
+    const second = makeContext('near-miss');
+    seedPair(second, { ebookId: 'nm-e', audioId: 'nm-a', pairId: 'nm-p', trackMs: [1, 2, 3] });
+
+    const out = importAlignments(second);
+
+    expect(out.imported).toBe(0);
+    expect(out.unmatched).toBe(1);
+    expect(out.notes.join(' ')).toMatch(/the ebook is here/);
+    second.db.close();
+  });
+
   it('leaves a file for a book that is not in this library alone, and does not call it broken', () => {
     const first = seedPair(ctx);
     seedAlignment(ctx, first.pairId);

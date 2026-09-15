@@ -22,13 +22,14 @@ import { registerModelRoutes } from './routes/models.js';
 import { registerPreflightRoutes } from './routes/preflight.js';
 import { registerUserRoutes } from './routes/users.js';
 import { registerKeyRoutes } from './routes/keys.js';
-import { registerAgentRoutes, allowAgentRead } from './routes/agent.js';
+import {
+  registerAgentRoutes,
+  agentRetryAfterSeconds,
+  allowAgentRead,
+  allowAgentRejection,
+} from './routes/agent.js';
 import { agentRoute, AGENT_BASE, AGENT_RESPONSE_BYTES } from './agent-contract.js';
-import { createRequire } from 'node:module';
-
-const APP_VERSION: string = (
-  createRequire(import.meta.url)('../../package.json') as { version: string }
-).version;
+import { APP_VERSION } from '../util/version.js';
 
 declare module 'fastify' {
   interface FastifyContextConfig {
@@ -82,6 +83,19 @@ export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyIn
     logger: {
       level: ctx.config.logLevel,
       redact: ['req.headers.authorization', 'req.headers.cookie'],
+      // The request line without its query string. A search term, a library
+      // query, an agent's `?query=` - what someone looked for is theirs, and
+      // the audit line already says which route answered and how.
+      serializers: {
+        req(req: { id?: unknown; method?: string; url?: string; ip?: string }) {
+          return {
+            id: req.id,
+            method: req.method,
+            url: (req.url ?? '').split('?')[0],
+            remoteAddress: req.ip,
+          };
+        },
+      },
     },
     bodyLimit: 2 * 1024 * 1024,
     // Default false: forwarded headers are ignored so clients cannot spoof
@@ -141,11 +155,17 @@ export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyIn
       reply.header('cache-control', 'no-store');
     }
     if (authHeaderCount > 1) return reply.code(401).send({ error: 'unauthorized' });
+    // A refusal, metered by address before it is answered: the answer stays
+    // 401 or 403 - never an identity - until an address has earned a 429.
+    const refuse = (status: 401 | 403, body: Record<string, string>) =>
+      allowAgentRejection(ctx.db, req.clientIp ?? req.ip)
+        ? reply.code(status).send(body)
+        : reply.header('retry-after', '60').code(429).send({ error: 'rate-limited' });
     attachUser(ctx, req, reply);
     // Authorization takes precedence over cookies, proxy SSO, public routes,
     // static assets and the not-found handler. Never downgrade bad credentials.
     if (hasAuthorization && req.authVia !== 'apikey') {
-      return reply.code(401).send({ error: 'unauthorized' });
+      return refuse(401, { error: 'unauthorized' });
     }
     if (req.authVia === 'apikey') {
       // Use the unnormalized origin-form path. URL() normalizes dot segments;
@@ -155,12 +175,16 @@ export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyIn
         !apiKeyAllows(req.method, rawPath, req.agentScopes) ||
         agentRoute(rawPath) !== req.routeOptions.url
       ) {
-        return reply
-          .code(403)
-          .send({ error: 'read-only', detail: 'This API key may only read the agent API' });
+        return refuse(403, {
+          error: 'read-only',
+          detail: 'This API key may only read the agent API',
+        });
       }
       if (!allowAgentRead(ctx.db, req.user!.id)) {
-        return reply.header('retry-after', '60').code(429).send({ error: 'rate-limited' });
+        return reply
+          .header('retry-after', String(agentRetryAfterSeconds(ctx.db, req.user!.id)))
+          .code(429)
+          .send({ error: 'rate-limited' });
       }
       if (
         req.url.length > 2048 ||

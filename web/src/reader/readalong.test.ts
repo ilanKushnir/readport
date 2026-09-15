@@ -8,6 +8,7 @@ import {
   cueForOffset,
   leadInFor,
   locateInTracks,
+  nearestChapter,
   shouldFollow,
 } from './readalong';
 
@@ -206,5 +207,24 @@ describe('locateInTracks', () => {
 
   it('survives a book whose tracks have not loaded yet', () => {
     expect(locateInTracks([], 4_000)).toEqual({ trackIdx: 0, positionMs: 4_000 });
+  });
+});
+
+describe('nearestChapter', () => {
+  const bounds = [
+    { spineIdx: 1, firstMs: 10_000, lastMs: 20_000 },
+    { spineIdx: 3, firstMs: 30_000, lastMs: 40_000 },
+  ];
+  it('names the chapter whose timed span holds the playhead', () => {
+    expect(nearestChapter(bounds, 15_000)).toBe(1);
+    expect(nearestChapter(bounds, 40_000)).toBe(3);
+  });
+  it('in the untimed stretch between two chapters, picks the closer edge, and forward on a tie', () => {
+    expect(nearestChapter(bounds, 22_000)).toBe(1);
+    expect(nearestChapter(bounds, 28_000)).toBe(3);
+    expect(nearestChapter(bounds, 25_000)).toBe(3);
+  });
+  it('has no answer for a book with no timed chapters', () => {
+    expect(nearestChapter([], 5)).toBeNull();
   });
 });

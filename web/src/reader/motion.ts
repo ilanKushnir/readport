@@ -60,7 +60,14 @@ export function markerPosition(
   };
 }
 
-/** One bounded frame of continuous following; never run during takeover. */
+/**
+ * One bounded frame of continuous following; never run during takeover.
+ *
+ * Signed: the page glides up to meet the marker and, after a rewind or a
+ * relocation that landed the line below the anchor, glides back down. It
+ * used to move only one way, so any relocation left the text sitting a
+ * viewport's fraction below the marker until the voice had read that far.
+ */
 export function autoScrollDelta(
   current: number,
   target: number,
@@ -71,6 +78,7 @@ export function autoScrollDelta(
 ): number {
   if (!enabled || reducedMotion) return 0;
   const dt = Math.max(0, Math.min(64, elapsed));
-  const drift = Math.max(0, target - current);
-  return Math.max(0, Math.min(speed * dt + (drift * dt) / 3000, dt * 0.22, drift));
+  const drift = target - current;
+  const cap = Math.min(speed * dt + (Math.abs(drift) * dt) / 3000, dt * 0.22, Math.abs(drift));
+  return drift < 0 ? -cap : cap;
 }
