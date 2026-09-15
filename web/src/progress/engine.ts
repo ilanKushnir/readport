@@ -157,6 +157,29 @@ export function releaseProgressSession(): void {
 }
 
 /**
+ * Start the app with no network: nobody can be *confirmed* signed in, because
+ * confirming is what /api/auth/me is for. Reading offline is the one case
+ * durable progress exists for, though, so refusing to record anything until a
+ * server answers would empty the feature at exactly the moment it matters.
+ *
+ * The queue's owner is already on this device from the last time somebody
+ * signed in, and that is whose books were downloaded, so delivery resumes for
+ * them. Isolation does not rest on this guess: every event carries `ownerId`,
+ * and the server refuses to file a batch under any account but the one that
+ * stamped it (403 `owner-mismatch`), so the worst case for a shared browser
+ * is that the previous owner's own queue is rejected on delivery - not that
+ * one person's reading is recorded against another's.
+ *
+ * Returns the account delivery resumed for, or null when this device has
+ * never had anyone signed in and there is genuinely nobody to record for.
+ */
+export function resumeStoredProgressSession(): string | null {
+  const owner = readOwner();
+  if (owner !== null) sessionUserId = owner;
+  return owner;
+}
+
+/**
  * Hand the queue to the signed-in account. The same person returning - after
  * a logout-less session expiry, a re-login, or a week offline - keeps every
  * queued checkpoint; anybody else starts empty.

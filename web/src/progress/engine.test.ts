@@ -84,6 +84,7 @@ import {
   releaseProgressSession,
   resetBookProgress,
   resumeLocator,
+  resumeStoredProgressSession,
   sessionId,
   setActiveLocatorProvider,
   withinKeepaliveBudget,
@@ -296,6 +297,30 @@ describe('queue ownership (a revoked session must not cost the reader their writ
     await claimProgressQueue('user-a');
     await flushPending();
     expect(apiMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('opening the app offline still records, for the owner this device already has', async () => {
+    // No server answered, so nobody could be confirmed - the state a reader
+    // on a plane is in, and the one case the durable queue exists for.
+    releaseProgressSession();
+    expect(await recordCheckpoint('bookOff', 'seek', audio(0.3), { flush: false })).toBe(false);
+    expect(store('pending-events').size).toBe(0);
+
+    expect(resumeStoredProgressSession()).toBe('user-a');
+    expect(await recordCheckpoint('bookOff', 'seek', audio(0.4), { flush: false })).toBe(true);
+    expect(store('pending-events').size).toBe(1);
+    // Stamped for the account that owns the queue, so the server can refuse
+    // it if this browser has since become somebody else's.
+    await flushPending();
+    expect(lastBatch().map((e) => e.ownerId)).toEqual(['user-a']);
+  });
+
+  it('a device nobody has ever signed in on records nothing offline', async () => {
+    await purgeProgressQueue();
+    releaseProgressSession();
+    expect(resumeStoredProgressSession()).toBe(null);
+    expect(await recordCheckpoint('bookOff', 'seek', audio(0.3), { flush: false })).toBe(false);
+    expect(store('pending-events').size).toBe(0);
   });
 
   it('an event stamped for another account is dropped from the batch, never delivered', async () => {

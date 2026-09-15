@@ -7,6 +7,7 @@ import {
   flushPending,
   purgeProgressQueue,
   releaseProgressSession,
+  resumeStoredProgressSession,
 } from '../progress/engine';
 
 export interface User {
@@ -35,6 +36,8 @@ interface SessionCtx {
   needsLibraries: boolean;
   /** 'loading' | 'setup' | 'login' | 'ready' | 'offline' */
   phase: 'loading' | 'setup' | 'login' | 'ready' | 'offline';
+  /** The interface language this account chose, or null to follow the browser. */
+  locale: string | null;
   refresh: () => Promise<void>;
   setUser: (u: User | null) => void;
   logout: () => Promise<void>;
@@ -46,6 +49,7 @@ const Ctx = createContext<SessionCtx>({
   hasPassword: true,
   needsLibraries: false,
   phase: 'loading',
+  locale: null,
   refresh: async () => {},
   setUser: () => {},
   logout: async () => {},
@@ -72,6 +76,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [hasPassword, setHasPassword] = useState(true);
   const [needsLibraries, setNeedsLibraries] = useState(false);
   const [phase, setPhase] = useState<SessionCtx['phase']>('loading');
+  const [locale, setLocale] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -80,6 +85,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         via?: AuthVia;
         hasPassword?: boolean;
         needsLibraries?: boolean;
+        locale?: string | null;
       }>('/api/auth/me', { signal: sessionCheckSignal() });
       // Before anything can be delivered: queued checkpoints belong to the
       // account that recorded them. The same person keeps a backlog written
@@ -91,6 +97,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       // a password" to an account that already has one is the worse mistake.
       setHasPassword(me.hasPassword !== false);
       setNeedsLibraries(me.needsLibraries === true);
+      setLocale(me.locale ?? null);
       setPhase('ready');
       return;
     } catch (err) {
@@ -117,7 +124,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         }
         return;
       }
-      // Network failure: allow offline reading of downloaded titles.
+      // Network failure: allow offline reading of downloaded titles - and
+      // record it. Delivery resumes for whoever this device last had signed
+      // in (see resumeStoredProgressSession); without this the reader writes
+      // nothing at all offline, which is the one case the durable queue is
+      // for.
+      resumeStoredProgressSession();
       setPhase('offline');
     }
   }, []);
@@ -202,6 +214,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         hasPassword,
         needsLibraries,
         phase,
+        locale,
         refresh,
         logout,
         setUser: (u) => {

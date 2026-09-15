@@ -12,6 +12,9 @@ import {
 } from '../lib/types';
 import { recordCheckpoint, resumeLocator, setActiveLocatorProvider } from '../progress/engine';
 import { Sheet, useToast } from '../components/ui';
+import { useT } from '../i18n';
+import { useFormat } from '../i18n/useFormat';
+import { type MessageKey } from '../i18n/messages/en';
 import { useProgressNotices } from '../progress/notices';
 import {
   IconBack,
@@ -84,7 +87,7 @@ import {
   type PageLayout,
   type ReaderPrefs,
 } from './prefs';
-import { formatDuration, formatPct } from '../lib/format';
+import { formatDuration } from '../lib/format';
 import { applyAppThemeColor, setThemeColor } from '../lib/themeColor';
 
 type SheetKind = 'none' | 'toc' | 'settings' | 'search' | 'note';
@@ -158,6 +161,8 @@ export function ReaderPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const toast = useToast();
+  const t = useT();
+  const f = useFormat();
 
   const [manifest, setManifest] = useState<ReaderManifest | null>(null);
   const [detail, setDetail] = useState<BookDetail | null>(null);
@@ -215,7 +220,7 @@ export function ReaderPage() {
    * Per-chapter, not a preference: the next chapter gets a fresh chance.
    */
   const [paginationFailed, setPaginationFailed] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<MessageKey | null>(null);
   const [selection, setSelection] = useState<{
     start: number;
     end: number;
@@ -380,7 +385,8 @@ export function ReaderPage() {
                 {
                   spineIdx: from.spineIdx,
                   charOffset: from.charOffset ?? 0,
-                  label: m.chapters[from.spineIdx]?.title ?? `Chapter ${from.spineIdx + 1}`,
+                  // Unnamed spine items are called by number where the chip renders.
+                  label: m.chapters[from.spineIdx]?.title ?? '',
                 },
                 { spineIdx: s, charOffset: charOffset ?? 0 },
                 'bookmark',
@@ -404,7 +410,7 @@ export function ReaderPage() {
           }
         }
       } catch {
-        if (alive) setLoadError('Could not open this book. It may still be indexing.');
+        if (alive) setLoadError('reader.error.openFailed');
       }
     })();
     return () => {
@@ -440,7 +446,7 @@ export function ReaderPage() {
         setLoadSeq((n) => n + 1);
         setLoadError(null);
       } catch {
-        if (alive) setLoadError('Could not load this chapter (offline and not downloaded?).');
+        if (alive) setLoadError('reader.error.chapterFailed');
       }
     })();
     return () => {
@@ -587,8 +593,8 @@ export function ReaderPage() {
           Math.abs(l.pct - here) > 0.005 &&
           (l.spineIdx !== spineIdx || l.charOffset !== currentOffsetRef.current)
         ) {
-          toast.show(`Another device is at ${formatPct(l.pct)}`, {
-            label: 'Jump there',
+          toast.show(t('reader.toast.otherDeviceAt', { pct: f.percent(l.pct) }), {
+            label: t('reader.toast.jumpThere'),
             onClick: () => {
               void resumeLocator(id).then(() => {
                 gotoChapterRef.current(l.spineIdx, l.charOffset, 'open', undefined, 'resume', {
@@ -606,7 +612,7 @@ export function ReaderPage() {
     const handler = () => void onVisible();
     document.addEventListener('visibilitychange', handler);
     return () => document.removeEventListener('visibilitychange', handler);
-  }, [manifest, id, spineIdx, toast]);
+  }, [manifest, id, spineIdx, toast, t, f]);
 
   // After chapter HTML renders: fix asset URLs, build text map, paginate,
   // jump to pending target, paint highlights.
@@ -635,9 +641,7 @@ export function ReaderPage() {
       const recovered = recoverOffset(map, charOffset, target.excerpt);
       if (recovered.moved) {
         charOffset = recovered.charOffset;
-        toast.show(
-          "Landed at the words of this mark; the book's text has changed since it was made.",
-        );
+        toast.show(t('reader.toast.markMoved'));
       }
     }
     currentOffsetRef.current = charOffset;
@@ -680,8 +684,8 @@ export function ReaderPage() {
         handoffCleanupRef.current = paintHandoff(map, s.start, s.end);
         toast.show(
           target.granularity && target.granularity !== 'sentence'
-            ? 'Continuing near your listening position'
-            : 'Continuing from your listening position',
+            ? t('reader.handoff.near')
+            : t('reader.handoff.from'),
         );
       }
     }
@@ -750,6 +754,9 @@ export function ReaderPage() {
     },
     [chromeInset.top],
   );
+  /** The latest measurement, for callers that must not re-run when it changes. */
+  const scrollLineToRef = useRef(scrollLineTo);
+  scrollLineToRef.current = scrollLineTo;
   /** The page box a selection's rectangles are clipped to, when pages turn. */
   const pageClipBox = useCallback(
     (): DOMRect | null =>
@@ -1048,7 +1055,7 @@ export function ReaderPage() {
               textMapRef.current,
               scrollerRef.current,
             ),
-        label: manifest.chapters[spineIdx]?.title ?? `Chapter ${spineIdx + 1}`,
+        label: manifest.chapters[spineIdx]?.title ?? '',
       };
       if (fragment && clamped === spineIdx && contentRef.current && textMapRef.current) {
         charOffset =
@@ -1084,9 +1091,7 @@ export function ReaderPage() {
             const recovered = recoverOffset(map, charOffset, extra.excerpt);
             if (recovered.moved) {
               charOffset = recovered.charOffset;
-              toast.show(
-                "Landed at the words of this mark; the book's text has changed since it was made.",
-              );
+              toast.show(t('reader.toast.markMoved'));
             }
           }
           currentOffsetRef.current = charOffset;
@@ -1121,6 +1126,7 @@ export function ReaderPage() {
       scrollBox,
       scrollLineTo,
       toast,
+      t,
     ],
   );
   const gotoChapterRef = useRef(gotoChapter);
@@ -1141,8 +1147,8 @@ export function ReaderPage() {
       ...locatorAt(manifest, sentences, spineIdx, last),
       pct: 1,
     });
-    toast.show('The End - marked as finished');
-  }, [manifest, spineIdx, sentences, id, toast]);
+    toast.show(t('reader.toast.finished'));
+  }, [manifest, spineIdx, sentences, id, toast, t]);
 
   const nextPage = useCallback(() => {
     if (chapterLoadingRef.current) return;
@@ -1367,12 +1373,12 @@ export function ReaderPage() {
     resumeRefusedAtRef.current = now;
     toast.show(
       !narration.ready
-        ? 'The narration is still loading.'
+        ? t('reader.readAlong.stillLoading')
         : narration.state === 'before' || narration.state === 'after'
-          ? 'The voice is in another chapter. Press play and the page will find it.'
-          : 'No timed text to return to on this page yet.',
+          ? t('reader.readAlong.voiceElsewhere')
+          : t('reader.readAlong.noTimedText'),
     );
-  }, [resumeFollowing, narration.ready, narration.state, toast]);
+  }, [resumeFollowing, narration.ready, narration.state, toast, t]);
 
   /**
    * Wash the sentence being spoken, and bring the page to it.
@@ -1435,6 +1441,13 @@ export function ReaderPage() {
         if (autoScroll && !reduceMotion && Math.abs(want - box.scrollTop) < base.height * 1.5)
           return;
         scrollOwnership.current.write(box, want);
+        // The page is no longer where the chapter landed, and the tracked
+        // offset has to say so. A late layout pass - the settle re-land
+        // below, an image arriving - otherwise reads a position the voice
+        // moved away from long ago and puts the reader back on it, which
+        // with reduced motion (no glide to correct it) means the top of the
+        // chapter mid-sentence.
+        currentOffsetRef.current = cue.charStart;
       }
     }
   }, [
@@ -1825,12 +1838,12 @@ export function ReaderPage() {
     try {
       if (!localStorage.getItem('rp-readalong-hint')) {
         localStorage.setItem('rp-readalong-hint', '1');
-        toast.show('Reading along - tap any line to move the voice there');
+        toast.show(t('reader.readAlong.hint'));
       }
     } catch {
       /* private mode: the hint is a nicety, not a requirement */
     }
-  }, [toast, prefs.autoScroll, prefs.mode, reduceMotion]);
+  }, [toast, t, prefs.autoScroll, prefs.mode, reduceMotion]);
 
   // Keyboard.
   useEffect(() => {
@@ -1974,18 +1987,16 @@ export function ReaderPage() {
           body,
         });
         setAnnotations((a) => [...a, res.annotation]);
-        toast.show(
-          kind === 'bookmark' ? 'Bookmarked' : kind === 'note' ? 'Note saved' : 'Highlighted',
-        );
+        toast.show(t('reader.toast.saved', { kind }));
         setSelection(null);
         document.getSelection()?.removeAllRanges();
         return true;
       } catch {
-        toast.show('Could not save - are you offline?');
+        toast.show(t('reader.toast.couldNotSave'));
         return false;
       }
     },
-    [manifest, selection, sentences, spineIdx, id, toast],
+    [manifest, selection, sentences, spineIdx, id, toast, t],
   );
 
   /**
@@ -2238,7 +2249,10 @@ export function ReaderPage() {
       if (manualScrollEpoch.current !== epoch) return;
       if (Math.abs(currentOffsetRef.current - landing) > 40) return;
       const map = textMapRef.current;
-      if (map) scrollLineTo(scroller, map, landing);
+      // Through the ref: the chrome is measured a beat after the chapter is on
+      // screen, and this has to use that measurement without being re-armed by
+      // it (see the dependencies below).
+      if (map) scrollLineToRef.current(scroller, map, landing);
     };
     const pending = Array.from(content.querySelectorAll('img')).filter((i) => !i.complete);
     for (const img of pending) {
@@ -2254,7 +2268,12 @@ export function ReaderPage() {
         img.removeEventListener('error', settle);
       }
     };
-  }, [loadSeq, html, prefs.mode, paginationFailed, scrollBox, scrollLineTo]);
+    // Armed by a chapter arriving, and by nothing else. `scrollLineTo` is
+    // rebuilt whenever the top chrome is re-measured - which happens once,
+    // shortly after the chapter is on screen - and listing it here restarted
+    // the 1.6s timer from that moment, long after the landing had been
+    // superseded by wherever the reader or the voice had since gone.
+  }, [loadSeq, html, prefs.mode, paginationFailed]);
 
   /**
    * Tell the toast how tall this page's chrome is.
@@ -2286,11 +2305,11 @@ export function ReaderPage() {
         setMarkPop((m) => (m && m.a.id === annId ? { ...m, a: res.annotation } : m));
         return true;
       } catch {
-        toast.show('Could not save the change - are you offline?');
+        toast.show(t('reader.toast.couldNotSaveChange'));
         return false;
       }
     },
-    [toast],
+    [toast, t],
   );
   const recolour = useCallback(
     (annId: string, color: HighlightColor) => patchAnnotation(annId, { color }),
@@ -2327,9 +2346,9 @@ export function ReaderPage() {
       try {
         await api(`/api/annotations/${currentBookmark.id}`, { method: 'DELETE' });
         setAnnotations((a) => a.filter((x) => x.id !== currentBookmark.id));
-        toast.show('Bookmark removed');
+        toast.show(t('reader.toast.bookmarkRemoved'));
       } catch {
-        toast.show('Could not remove the bookmark - are you offline?');
+        toast.show(t('reader.toast.couldNotRemoveBookmark'));
       }
       return;
     }
@@ -2377,9 +2396,11 @@ export function ReaderPage() {
         handoffCleanupRef.current = paintHandoff(map, sent.start, sent.end);
       }
       toast.show(
-        prefs.mode === 'paginated' ? `Bookmarked page ${page + 1}` : 'Bookmarked this passage',
+        prefs.mode === 'paginated'
+          ? t('reader.toast.bookmarkedPage', { n: page + 1 })
+          : t('reader.toast.bookmarkedPassage'),
         {
-          label: 'Bookmarks',
+          label: t('reader.toast.openBookmarks'),
           onClick: () => {
             setContentsTab('marks');
             setSheet('toc');
@@ -2387,7 +2408,7 @@ export function ReaderPage() {
         },
       );
     } catch {
-      toast.show('Could not save - are you offline?');
+      toast.show(t('reader.toast.couldNotSave'));
     }
   }, [
     manifest,
@@ -2400,6 +2421,7 @@ export function ReaderPage() {
     chromeInset.top,
     id,
     toast,
+    t,
   ]);
 
   const deleteAnnotation = useCallback(
@@ -2408,10 +2430,10 @@ export function ReaderPage() {
         await api(`/api/annotations/${annId}`, { method: 'DELETE' });
         setAnnotations((a) => a.filter((x) => x.id !== annId));
       } catch {
-        toast.show('Could not delete - are you offline?');
+        toast.show(t('reader.toast.couldNotDelete'));
       }
     },
-    [toast],
+    [toast, t],
   );
 
   const switchToAudio = useCallback(async () => {
@@ -2439,7 +2461,7 @@ export function ReaderPage() {
         // answers, so the handoff lands where it would online.
         const stored = await cachedSwitch(id, from);
         if (!stored) {
-          toast.show('This spot was not stored for offline switching.');
+          toast.show(t('reader.switch.notStoredOffline'));
           return;
         }
         res = stored;
@@ -2448,11 +2470,15 @@ export function ReaderPage() {
         // Never silently cross an alignment gap: explain, and point at the
         // nearest verified aligned narration instead.
         const anchor = res.anchors?.before ?? res.anchors?.after;
-        const extra =
-          anchor && anchor.to.medium === 'audio'
-            ? ` Nearest aligned narration: ${formatDuration(anchor.to.bookMs ?? anchor.to.positionMs)}.`
-            : '';
-        toast.show((res.resolution.reason ?? 'No aligned audio position here.') + extra);
+        // The reason is the server's own sentence, shown as it came.
+        const parts = [res.resolution.reason ?? t('reader.switch.noAlignedAudio')];
+        if (anchor && anchor.to.medium === 'audio')
+          parts.push(
+            t('reader.switch.nearestNarration', {
+              time: formatDuration(anchor.to.bookMs ?? anchor.to.positionMs),
+            }),
+          );
+        toast.show(parts.join(' '));
         return;
       }
       void recordCheckpoint(id, 'switch', from);
@@ -2464,9 +2490,9 @@ export function ReaderPage() {
           (back > 0 ? `&back=${back}` : ''),
       );
     } catch {
-      toast.show('Switching failed - server unreachable?');
+      toast.show(t('reader.switch.failed'));
     }
-  }, [detail, manifest, sentences, spineIdx, id, navigate, toast]);
+  }, [detail, manifest, sentences, spineIdx, id, navigate, toast, t]);
 
   /* ------------------------------------------------------------- render */
 
@@ -2474,10 +2500,10 @@ export function ReaderPage() {
     return (
       <div className="reader-page" data-reader-theme={theme}>
         <div className="empty-state" style={{ margin: 'auto' }}>
-          <h2>Cannot open book</h2>
-          <p>{loadError}</p>
+          <h2>{t('reader.error.title')}</h2>
+          <p>{t(loadError)}</p>
           <Link className="btn btn--secondary" to={`/book/${id}`}>
-            Back to details
+            {t('reader.error.backToDetails')}
           </Link>
         </div>
       </div>
@@ -2524,15 +2550,23 @@ export function ReaderPage() {
         <button
           className="icon-btn"
           onClick={() => navigate(`/book/${id}`)}
-          aria-label="Back to book"
+          aria-label={t('reader.chrome.backToBook')}
         >
           <IconBack />
         </button>
         <span className="reader-title">{chapterTitle}</span>
-        <button className="icon-btn" onClick={() => setSheet('toc')} aria-label="Table of contents">
+        <button
+          className="icon-btn"
+          onClick={() => setSheet('toc')}
+          aria-label={t('reader.chrome.contents')}
+        >
           <IconToc />
         </button>
-        <button className="icon-btn" onClick={() => setSheet('search')} aria-label="Search in book">
+        <button
+          className="icon-btn"
+          onClick={() => setSheet('search')}
+          aria-label={t('reader.chrome.search')}
+        >
           <IconSearch />
         </button>
         {/* Two jobs, one control: the ribbon marks this page, the caret opens
@@ -2543,7 +2577,9 @@ export function ReaderPage() {
             className={`icon-btn ${currentBookmark ? 'is-marked' : ''}`}
             onClick={() => void toggleBookmark()}
             aria-pressed={!!currentBookmark}
-            aria-label={currentBookmark ? 'Remove bookmark from this page' : 'Bookmark this page'}
+            aria-label={
+              currentBookmark ? t('reader.chrome.removeBookmark') : t('reader.chrome.bookmarkPage')
+            }
           >
             <IconBookmark filled={!!currentBookmark} />
           </button>
@@ -2555,7 +2591,7 @@ export function ReaderPage() {
                 setSheet('toc');
               }}
               aria-haspopup="dialog"
-              aria-label={`Bookmarks and notes (${annotations.length})`}
+              aria-label={t('reader.chrome.marksWithCount', { n: annotations.length })}
             >
               <IconChevronDown size={16} />
             </button>
@@ -2564,7 +2600,7 @@ export function ReaderPage() {
         <button
           className="icon-btn"
           onClick={() => setSheet('settings')}
-          aria-label="Reading settings"
+          aria-label={t('reader.chrome.settings')}
         >
           <IconType />
         </button>
@@ -2639,13 +2675,13 @@ export function ReaderPage() {
           <>
             <button
               className="tapzone tapzone--prev"
-              aria-label="Previous page"
+              aria-label={t('reader.chrome.previousPage')}
               onClick={prevPage}
               tabIndex={-1}
             />
             <button
               className="tapzone tapzone--next"
-              aria-label="Next page"
+              aria-label={t('reader.chrome.nextPage')}
               onClick={nextPage}
               tabIndex={-1}
             />
@@ -2733,12 +2769,14 @@ export function ReaderPage() {
                         "Chapter 2, 3, 4" called them something they are not,
                         with numbers that matched nothing in the book. */}
                     {manifest.chapters[spineIdx + 1]?.title
-                      ? `Next: ${manifest.chapters[spineIdx + 1]!.title}`
-                      : 'Continue'}
+                      ? t('reader.chapterEnd.next', {
+                          title: manifest.chapters[spineIdx + 1]!.title,
+                        })
+                      : t('common.continue')}
                   </button>
                 ) : (
                   <button className="btn btn--secondary" onClick={finishBook}>
-                    Finish book
+                    {t('reader.chapterEnd.finish')}
                   </button>
                 )}
               </div>
@@ -2747,7 +2785,7 @@ export function ReaderPage() {
         )}
         {!html && !loadError && (
           <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' }}>
-            <div className="spinner" role="status" aria-label="Loading chapter" />
+            <div className="spinner" role="status" aria-label={t('reader.loadingChapter')} />
           </div>
         )}
       </div>
@@ -2767,12 +2805,18 @@ export function ReaderPage() {
               gotoChapter(rp.spineIdx, rp.charOffset, 'seek', undefined, 'return');
             }}
           >
-            <IconBack size={15} /> Back to {returnPoint.origin.label}
+            <IconBack size={15} />{' '}
+            {t('reader.return.backTo', {
+              // A spine item the book never named is called by its number.
+              label:
+                returnPoint.origin.label ||
+                t('common.chapterN', { n: returnPoint.origin.spineIdx + 1 }),
+            })}
           </button>
           <button
             type="button"
             className="return-pill__x"
-            aria-label="Dismiss"
+            aria-label={t('common.dismiss')}
             onClick={() => setReturnPoint(null)}
           >
             <IconClose size={14} />
@@ -2792,7 +2836,7 @@ export function ReaderPage() {
             visibility: 'hidden',
           }}
           role="toolbar"
-          aria-label="Selected text"
+          aria-label={t('reader.select.toolbar')}
           // A touch on a button outside the selection collapses the selection
           // before the click arrives, and the toolbar unmounts under the
           // finger. Keeping the default from happening keeps the selection;
@@ -2802,12 +2846,12 @@ export function ReaderPage() {
           {/* The colours ARE the highlight button: picking one is the act, so
               highlighting in a chosen colour costs the same single tap as
               highlighting at all. */}
-          <span className="swatches" role="group" aria-label="Highlight">
+          <span className="swatches" role="group" aria-label={t('reader.select.highlight')}>
             {HIGHLIGHT_COLORS.map((c) => (
               <button
                 key={c}
                 className={`swatch swatch--${c}`}
-                aria-label={`Highlight in ${COLOR_LABELS[c].toLowerCase()}`}
+                aria-label={t('reader.select.highlightIn', { color: c })}
                 onClick={() => void addAnnotation('highlight', undefined, c)}
               />
             ))}
@@ -2818,9 +2862,11 @@ export function ReaderPage() {
               setSheet('note');
             }}
           >
-            Note
+            {t('reader.select.note')}
           </button>
-          <button onClick={() => void addAnnotation('bookmark')}>Bookmark</button>
+          <button onClick={() => void addAnnotation('bookmark')}>
+            {t('reader.select.bookmark')}
+          </button>
         </div>
       )}
 
@@ -2836,21 +2882,23 @@ export function ReaderPage() {
             visibility: markPopTop === null ? 'hidden' : undefined,
           }}
           role="dialog"
-          aria-label={markPop.a.kind === 'note' ? 'Note' : 'Highlight'}
+          aria-label={t('reader.mark.kind', { kind: markPop.a.kind })}
         >
           {markPop.a.selectedText && (
-            <p className="mark-pop__quote">&ldquo;{markPop.a.selectedText}&rdquo;</p>
+            <p className="mark-pop__quote">
+              {t('reader.quoted', { text: markPop.a.selectedText })}
+            </p>
           )}
           {markPop.a.note && <p className="mark-pop__note">{markPop.a.note}</p>}
           <div className="mark-pop__row">
             {markPop.a.kind === 'highlight' && (
-              <span className="swatches" role="group" aria-label="Colour">
+              <span className="swatches" role="group" aria-label={t('reader.mark.colour')}>
                 {HIGHLIGHT_COLORS.map((c) => (
                   <button
                     key={c}
                     className={`swatch swatch--${c}`}
                     aria-pressed={colorOf(markPop.a) === c}
-                    aria-label={COLOR_LABELS[c]}
+                    aria-label={t(COLOR_LABELS[c])}
                     onClick={() => void recolour(markPop.a.id, c)}
                   />
                 ))}
@@ -2866,7 +2914,7 @@ export function ReaderPage() {
                   setSheet('note');
                 }}
               >
-                Edit
+                {t('common.edit')}
               </button>
             )}
             <button
@@ -2877,7 +2925,7 @@ export function ReaderPage() {
                 void deleteAnnotation(target);
               }}
             >
-              <IconTrash size={15} /> Remove
+              <IconTrash size={15} /> {t('common.remove')}
             </button>
           </div>
         </div>
@@ -2906,10 +2954,7 @@ export function ReaderPage() {
               setPrefs(next);
               savePrefs(next);
               if (enabled) {
-                if (reduceMotion)
-                  toast.show(
-                    'Your system asks for reduced motion, so the page will not scroll by itself.',
-                  );
+                if (reduceMotion) toast.show(t('reader.readAlong.reducedMotion'));
                 else if (!resumeFollowing(true)) returnToVoice();
               } else {
                 autoScrollTargetRef.current = null;
@@ -2926,7 +2971,7 @@ export function ReaderPage() {
             min={0}
             max={1000}
             value={Math.round((dragPct ?? bookPct) * 1000)}
-            aria-label="Book position"
+            aria-label={t('reader.progress.position')}
             onChange={(e) => {
               if (!manifest) return;
               const pct = Number(e.target.value) / 1000;
@@ -2958,12 +3003,12 @@ export function ReaderPage() {
                 : paginationFailed
                   ? // This chapter would not divide into pages, so it is
                     // scrolling instead - say so rather than claim one page.
-                    'This chapter scrolls'
+                    t('reader.progress.chapterScrolls')
                   : pagesLeft === 0
                     ? pageCount === 1
-                      ? 'Whole chapter on this page'
-                      : 'Last page in chapter'
-                    : `${pagesLeft} ${pagesLeft === 1 ? 'page' : 'pages'} left in chapter`}
+                      ? t('reader.progress.wholeChapter')
+                      : t('reader.progress.lastPage')
+                    : t('reader.progress.pagesLeft', { n: pagesLeft })}
             </span>
           )}
           {prefs.progressBar === 'compact' && (
@@ -2973,8 +3018,11 @@ export function ReaderPage() {
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={Math.round(bookPct * 100)}
-              aria-label="Book position"
-              title={`${chapterTitle} · chapter ${formatPct(chapterPct)}`}
+              aria-label={t('reader.progress.position')}
+              title={t('reader.progress.miniTitle', {
+                chapter: chapterTitle,
+                pct: f.percent(chapterPct),
+              })}
             >
               <span style={{ width: `${bookPct * 100}%` }} />
               <i style={{ insetInlineStart: `${bookPct * 100}%` }} aria-hidden="true" />
@@ -2993,71 +3041,69 @@ export function ReaderPage() {
                 aria-pressed={readAlong}
                 title={
                   pair.switchable
-                    ? 'Play the narration over the page you are reading'
-                    : 'Alignment not ready - the narration cannot follow the text yet'
+                    ? t('reader.tandem.readAlongHint')
+                    : t('reader.tandem.notReadyHint')
                 }
               >
                 <IconReadAlong size={17} />
                 <span>
                   {!pair.switchable
-                    ? 'Audio · aligning…'
+                    ? t('reader.tandem.aligning')
                     : readAlong
-                      ? 'Reading along'
-                      : 'Read along'}
+                      ? t('reader.tandem.readingAlong')
+                      : t('reader.tandem.readAlong')}
                 </span>
               </button>
               {pair.switchable && !readAlong && (
                 <button
                   className="tandem-pill"
                   onClick={() => void switchToAudio()}
-                  title="Leave the page and switch to the audiobook at this sentence"
+                  title={t('reader.tandem.listenHint')}
                 >
                   <IconHeadphones size={17} />
-                  <span>Listen instead</span>
+                  <span>{t('reader.tandem.listenInstead')}</span>
                 </button>
               )}
             </div>
           )}
-          {prefs.progressBar !== 'hidden' && <span>{formatPct(bookPct)}</span>}
+          {prefs.progressBar !== 'hidden' && <span>{f.percent(bookPct)}</span>}
         </div>
       </div>
 
       {sheet === 'toc' && manifest && (
-        <Sheet title="Contents" onClose={() => setSheet('none')}>
+        <Sheet title={t('reader.contents.title')} onClose={() => setSheet('none')}>
           <div className="sheet-tabs" role="tablist" style={{ margin: '-16px -16px 8px' }}>
             <button
               role="tab"
               aria-selected={contentsTab === 'toc'}
               onClick={() => setContentsTab('toc')}
             >
-              Chapters
+              {t('reader.contents.chaptersTab')}
             </button>
             <button
               role="tab"
               aria-selected={contentsTab === 'marks'}
               onClick={() => setContentsTab('marks')}
             >
-              Bookmarks & notes
-              {annotations.length > 0 ? ` · ${annotations.length}` : ''}
+              {annotations.length > 0
+                ? t('reader.contents.marksTabCount', { n: annotations.length })
+                : t('reader.contents.marksTab')}
             </button>
           </div>
           {contentsTab === 'marks' &&
             (annotations.length === 0 ? (
-              <p style={{ color: 'var(--rp-text-soft)' }}>
-                No bookmarks yet. Tap the ribbon icon while reading to mark a page; select text to
-                highlight or add a note.
-              </p>
+              <p style={{ color: 'var(--rp-text-soft)' }}>{t('reader.contents.noMarks')}</p>
             ) : (
               <ul className="bm-list">
                 {[...annotations]
                   .sort((a, b) => a.locator.pct - b.locator.pct)
                   .map((a) => {
-                    const kindLabel =
-                      a.kind === 'bookmark' ? 'Bookmark' : a.kind === 'note' ? 'Note' : 'Highlight';
+                    const kindLabel = t('reader.mark.kind', { kind: a.kind });
                     const chapter =
                       manifest.chapters[a.locator.medium === 'ebook' ? a.locator.spineIdx : 0]
-                        ?.title ?? 'Chapter';
-                    const text = a.selectedText ?? a.note ?? 'Bookmarked page';
+                        ?.title ?? t('common.chapter');
+                    const text = a.selectedText ?? a.note ?? t('reader.contents.bookmarkedPage');
+                    const pct = f.percent(a.locator.pct);
                     // Two controls, two buttons: the row opens the mark, the
                     // bin removes it. A button nested inside a row that was
                     // itself a button read to a screen reader as one control
@@ -3067,7 +3113,12 @@ export function ReaderPage() {
                         <button
                           type="button"
                           className="bm-row__open"
-                          aria-label={`${kindLabel}, ${chapter}, ${formatPct(a.locator.pct)}: ${text.slice(0, 80)}`}
+                          aria-label={t('reader.contents.markLabel', {
+                            kind: kindLabel,
+                            chapter,
+                            pct,
+                            text: text.slice(0, 80),
+                          })}
                           onClick={() => {
                             if (a.locator.medium !== 'ebook') return;
                             setSheet('none');
@@ -3090,18 +3141,19 @@ export function ReaderPage() {
                           </span>
                           <span className="bm-row__body">
                             <span className="bm-row__where">
-                              {kindLabel} · {chapter} · {formatPct(a.locator.pct)}
+                              {t('reader.contents.markWhere', { kind: kindLabel, chapter, pct })}
                             </span>
                             <span className="bm-row__text">
-                              {text}
-                              {a.kind === 'note' && a.note && a.selectedText ? ` - ${a.note}` : ''}
+                              {a.kind === 'note' && a.note && a.selectedText
+                                ? t('reader.contents.quoteAndNote', { text, note: a.note })
+                                : text}
                             </span>
                           </span>
                         </button>
                         <button
                           type="button"
                           className="icon-btn bm-row__delete"
-                          aria-label={`Delete ${kindLabel.toLowerCase()}`}
+                          aria-label={t('reader.contents.deleteMark', { kind: a.kind })}
                           onClick={() => void deleteAnnotation(a.id)}
                         >
                           <IconTrash size={15} />
@@ -3112,7 +3164,7 @@ export function ReaderPage() {
               </ul>
             ))}
           {contentsTab === 'toc' && manifest.toc.length === 0 && (
-            <p>No table of contents in this book.</p>
+            <p>{t('reader.contents.noToc')}</p>
           )}
           {contentsTab === 'toc' &&
             manifest.toc.map((t, i) => (
@@ -3158,12 +3210,12 @@ export function ReaderPage() {
 
       {sheet === 'note' && (
         <Sheet
-          title={editingNote ? 'Edit note' : 'Add note'}
+          title={editingNote ? t('reader.note.edit') : t('reader.note.add')}
           onClose={() => {
             // On a phone the way to dismiss the keyboard is to tap outside,
             // which lands on the backdrop and closes the sheet - so an
             // accidental dismissal used to take the note with it silently.
-            if (noteDraft.trim() && !window.confirm('Discard this note?')) return;
+            if (noteDraft.trim() && !window.confirm(t('reader.note.discard'))) return;
             setSheet('none');
             setEditingNote(null);
             setSelection(null);
@@ -3172,12 +3224,13 @@ export function ReaderPage() {
         >
           {selection && !editingNote && (
             <blockquote style={{ color: 'var(--rp-text-soft)', fontSize: 14, margin: '0 0 12px' }}>
-              “{selection.text.slice(0, 160)}
-              {selection.text.length > 160 ? '…' : ''}”
+              {t('reader.quoted', {
+                text: selection.text.slice(0, 160) + (selection.text.length > 160 ? '…' : ''),
+              })}
             </blockquote>
           )}
           <div className="field">
-            <label htmlFor="note-text">Note</label>
+            <label htmlFor="note-text">{t('reader.note.label')}</label>
             <textarea
               id="note-text"
               className="input"
@@ -3207,7 +3260,7 @@ export function ReaderPage() {
               })();
             }}
           >
-            {editingNote ? 'Save changes' : 'Save note'}
+            {editingNote ? t('reader.note.saveChanges') : t('reader.note.save')}
           </button>
         </Sheet>
       )}
@@ -3348,42 +3401,43 @@ function ReaderSettingsSheet({
   onChange: (p: ReaderPrefs) => void;
   onClose: () => void;
 }) {
+  const t = useT();
   const set = <K extends keyof ReaderPrefs>(k: K, v: ReaderPrefs[K]) =>
     onChange({ ...prefs, [k]: v });
   const themes: { value: ReaderPrefs['theme']; label: string }[] = [
-    { value: 'auto', label: 'Auto' },
-    { value: 'paper', label: 'Paper' },
-    { value: 'sepia', label: 'Sepia' },
-    { value: 'night', label: 'Night' },
-    { value: 'contrast', label: 'Contrast' },
+    { value: 'auto', label: t('reader.theme.auto') },
+    { value: 'paper', label: t('reader.theme.paper') },
+    { value: 'sepia', label: t('reader.theme.sepia') },
+    { value: 'night', label: t('reader.theme.night') },
+    { value: 'contrast', label: t('reader.theme.contrast') },
   ];
   return (
-    <Sheet title="Reading settings" onClose={onClose}>
-      <div className="rs-group" role="group" aria-label="Theme">
+    <Sheet title={t('reader.settings.title')} onClose={onClose}>
+      <div className="rs-group" role="group" aria-label={t('reader.settings.theme')}>
         <div className="rs-themes">
-          {themes.map((t) => (
+          {themes.map((th) => (
             <button
-              key={t.value}
-              className={`rs-swatch rs-swatch--${t.value}`}
-              aria-pressed={prefs.theme === t.value}
-              aria-label={`${t.label} theme`}
-              onClick={() => set('theme', t.value)}
+              key={th.value}
+              className={`rs-swatch rs-swatch--${th.value}`}
+              aria-pressed={prefs.theme === th.value}
+              aria-label={t('reader.settings.themeLabel', { name: th.label })}
+              onClick={() => set('theme', th.value)}
             >
               <span className="rs-swatch__disc" aria-hidden="true">
                 Aa
               </span>
-              <span className="rs-swatch__label">{t.label}</span>
+              <span className="rs-swatch__label">{th.label}</span>
             </button>
           ))}
         </div>
       </div>
 
       <div className="rs-group">
-        <div className="rs-size" role="group" aria-label="Text size">
+        <div className="rs-size" role="group" aria-label={t('reader.settings.textSize')}>
           <button
             className="rs-size__btn"
             style={{ fontSize: 17 }}
-            aria-label="Smaller text"
+            aria-label={t('reader.settings.smaller')}
             disabled={prefs.size <= SIZE_MIN}
             onClick={() => set('size', Math.max(SIZE_MIN, prefs.size - 1))}
           >
@@ -3396,7 +3450,7 @@ function ReaderSettingsSheet({
           <button
             className="rs-size__btn"
             style={{ fontSize: 26 }}
-            aria-label="Larger text"
+            aria-label={t('reader.settings.larger')}
             disabled={prefs.size >= SIZE_MAX}
             onClick={() => set('size', Math.min(SIZE_MAX, prefs.size + 1))}
           >
@@ -3413,15 +3467,15 @@ function ReaderSettingsSheet({
             max={1}
             step={0.05}
             value={prefs.brightness}
-            aria-label="Page brightness"
+            aria-label={t('reader.settings.brightness')}
             onChange={(e) => set('brightness', Number(e.target.value))}
           />
           <IconSun size={22} />
         </label>
       </div>
 
-      <div className="rs-group" role="group" aria-label="Font">
-        <div className="rs-label">Font</div>
+      <div className="rs-group" role="group" aria-label={t('reader.settings.font')}>
+        <div className="rs-label">{t('reader.settings.font')}</div>
         <div className="rs-fonts">
           {(Object.keys(FONTS) as (keyof typeof FONTS)[]).map((k) => (
             <button
@@ -3435,8 +3489,8 @@ function ReaderSettingsSheet({
                 Aa
               </span>
               <span className="rs-font__name">
-                {FONTS[k].label}
-                <small>{FONTS[k].note}</small>
+                {t(FONTS[k].label)}
+                <small>{t(FONTS[k].note)}</small>
               </span>
               {prefs.font === k && <IconCheck size={18} />}
             </button>
@@ -3449,78 +3503,72 @@ function ReaderSettingsSheet({
           under it rather than listed beside it - Columns used to sit under
           the heading "Progress bar", which is neither. */}
       <div className="rs-group">
-        <div className="rs-label">How it reads</div>
-        <div className="segmented" role="group" aria-label="How it reads">
+        <div className="rs-label">{t('reader.settings.mode')}</div>
+        <div className="segmented" role="group" aria-label={t('reader.settings.mode')}>
           <button
             aria-pressed={prefs.mode === 'paginated'}
             onClick={() => set('mode', 'paginated')}
           >
-            Pages
+            {t('reader.mode.paginated')}
           </button>
           <button aria-pressed={prefs.mode === 'scroll'} onClick={() => set('mode', 'scroll')}>
-            Scroll
+            {t('reader.mode.scroll')}
           </button>
         </div>
 
         {prefs.mode === 'paginated' ? (
           <>
-            <div className="rs-label rs-label--sub">Pages at a time</div>
-            <div className="segmented" role="group" aria-label="Pages at a time">
+            <div className="rs-label rs-label--sub">{t('reader.settings.columns')}</div>
+            <div className="segmented" role="group" aria-label={t('reader.settings.columns')}>
               {(['auto', 'one', 'two'] as const).map((c) => (
                 <button
                   key={c}
                   aria-pressed={prefs.columns === c}
                   onClick={() => set('columns', c)}
                 >
-                  {c === 'auto' ? 'Auto' : c === 'one' ? 'One' : 'Two'}
+                  {t(`reader.columns.${c}` as const)}
                 </button>
               ))}
             </div>
 
-            <div className="rs-label rs-label--sub">Page turn</div>
-            <div className="segmented" role="group" aria-label="Page turn">
-              {(
-                [
-                  ['slide', 'Slide'],
-                  ['fade', 'Fade'],
-                  ['instant', 'Instant'],
-                ] as const
-              ).map(([v, label]) => (
+            <div className="rs-label rs-label--sub">{t('reader.settings.pageTurn')}</div>
+            <div className="segmented" role="group" aria-label={t('reader.settings.pageTurn')}>
+              {(['slide', 'fade', 'instant'] as const).map((v) => (
                 <button
                   key={v}
                   aria-pressed={prefs.pageTurn === v}
                   onClick={() => set('pageTurn', v)}
                 >
-                  {label}
+                  {t(`reader.pageTurn.${v}` as const)}
                 </button>
               ))}
             </div>
-            <p className="rs-note">Tap either edge, swipe, or use the arrow keys.</p>
+            <p className="rs-note">{t('reader.settings.pagesNote')}</p>
           </>
         ) : (
-          <p className="rs-note">One continuous column. Scroll, or swipe up and down.</p>
+          <p className="rs-note">{t('reader.settings.scrollNote')}</p>
         )}
       </div>
 
       <div className="rs-group">
-        <div className="rs-label">Progress bar</div>
-        <div className="segmented" role="group" aria-label="Progress bar">
+        <div className="rs-label">{t('reader.settings.progressBar')}</div>
+        <div className="segmented" role="group" aria-label={t('reader.settings.progressBar')}>
           {(['full', 'compact', 'hidden'] as const).map((v) => (
             <button
               key={v}
               aria-pressed={prefs.progressBar === v}
               onClick={() => set('progressBar', v)}
             >
-              {v === 'full' ? 'Full' : v === 'compact' ? 'Compact' : 'Hidden'}
+              {t(`reader.progressBar.${v}` as const)}
             </button>
           ))}
         </div>
       </div>
 
       <div className="rs-group">
-        <div className="rs-label">Spacing</div>
+        <div className="rs-label">{t('reader.settings.spacing')}</div>
         <label className="rs-slider" htmlFor="rs-leading">
-          <span className="rs-slider__name">Lines</span>
+          <span className="rs-slider__name">{t('reader.settings.lines')}</span>
           <input
             id="rs-leading"
             className="slider"
@@ -3529,13 +3577,13 @@ function ReaderSettingsSheet({
             max={2.1}
             step={0.04}
             value={prefs.lineHeight}
-            aria-label="Line height"
+            aria-label={t('reader.settings.lineHeight')}
             onChange={(e) => set('lineHeight', Number(e.target.value))}
           />
           <span className="rs-slider__val">{prefs.lineHeight.toFixed(2)}</span>
         </label>
         <label className="rs-slider" htmlFor="rs-weight">
-          <span className="rs-slider__name">Weight</span>
+          <span className="rs-slider__name">{t('reader.settings.weight')}</span>
           <input
             id="rs-weight"
             className="slider"
@@ -3544,32 +3592,32 @@ function ReaderSettingsSheet({
             max={700}
             step={20}
             value={prefs.weight}
-            aria-label="Font weight"
+            aria-label={t('reader.settings.fontWeight')}
             onChange={(e) => set('weight', Number(e.target.value))}
           />
           <span className="rs-slider__val">{prefs.weight}</span>
         </label>
-        <div className="segmented" role="group" aria-label="Margins">
+        <div className="segmented" role="group" aria-label={t('reader.settings.margins')}>
           {(['compact', 'normal', 'wide'] as const).map((m) => (
             <button key={m} aria-pressed={prefs.margin === m} onClick={() => set('margin', m)}>
-              {m[0]!.toUpperCase() + m.slice(1)}
+              {t(`reader.margin.${m}` as const)}
             </button>
           ))}
         </div>
       </div>
 
       <div className="rs-group">
-        <div className="rs-label">Text</div>
-        <div className="segmented" role="group" aria-label="Text alignment">
+        <div className="rs-label">{t('reader.settings.text')}</div>
+        <div className="segmented" role="group" aria-label={t('reader.settings.alignment')}>
           <button aria-pressed={prefs.align === 'start'} onClick={() => set('align', 'start')}>
-            Ragged
+            {t('reader.align.start')}
           </button>
           <button aria-pressed={prefs.align === 'justify'} onClick={() => set('align', 'justify')}>
-            Justified
+            {t('reader.align.justify')}
           </button>
         </div>
         <label className="rs-toggle">
-          <span>Hyphenation</span>
+          <span>{t('reader.settings.hyphenation')}</span>
           <input
             type="checkbox"
             role="switch"
@@ -3613,6 +3661,7 @@ function SearchSheet({
   const [results, setResults] = useState<SearchMatch[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  const t = useT();
 
   const run = async () => {
     if (q.trim().length < 2) return;
@@ -3635,7 +3684,7 @@ function SearchSheet({
   };
 
   return (
-    <Sheet title="Search in book" onClose={onClose}>
+    <Sheet title={t('reader.search.title')} onClose={onClose}>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -3646,29 +3695,28 @@ function SearchSheet({
         <input
           className="input"
           type="search"
-          placeholder="Find in this book"
-          aria-label="Search text"
+          placeholder={t('reader.search.placeholder')}
+          aria-label={t('reader.search.input')}
           value={q}
           onChange={(e) => setQ(e.target.value)}
           autoFocus
         />
         <button className="btn" type="submit" disabled={busy || q.trim().length < 2}>
-          {busy ? '…' : 'Search'}
+          {busy ? '…' : t('reader.search.go')}
         </button>
       </form>
       {results !== null && (
         <>
           {results.length > 0 && (
             <p className="search-count" role="status">
-              {results.length === 100 ? 'First 100 matches' : null}
-              {results.length !== 100
-                ? `${results.length} ${results.length === 1 ? 'match' : 'matches'}`
-                : null}
+              {results.length === 100
+                ? t('reader.search.firstMatches', { n: 100 })
+                : t('reader.search.matches', { n: results.length })}
             </p>
           )}
           {results.length === 0 ? (
             <p style={{ color: 'var(--rp-text-soft)' }}>
-              {failed ? 'Could not search - are you offline?' : 'No matches.'}
+              {failed ? t('reader.search.failed') : t('reader.search.none')}
             </p>
           ) : (
             results.map((r, i) => (
@@ -3679,7 +3727,7 @@ function SearchSheet({
               >
                 <span className="grow" style={{ whiteSpace: 'normal' }}>
                   <span className="search-hit__chapter">
-                    {r.chapterTitle ?? `Chapter ${r.spineIdx + 1}`}
+                    {r.chapterTitle ?? t('common.chapterN', { n: r.spineIdx + 1 })}
                   </span>
                   <span className="search-hit__text">
                     {r.before}
