@@ -2,6 +2,7 @@ import { type FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { loginSchema, setupSchema, testPathsSchema, LANGUAGES } from '@readport/shared';
 import { type AppContext } from '../../context.js';
+import { readPref } from './prefs.js';
 import { hashPassword, verifyAgainstDummy, verifyPassword } from '../../auth/passwords.js';
 import { createSession, destroySession, LoginThrottle } from '../../auth/sessions.js';
 import { newId } from '../../util/ids.js';
@@ -271,6 +272,9 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
         roots.audiobookDirs.length === 0,
       librariesEnvPinned:
         config.envPinned.includes('ebookDirs') || config.envPinned.includes('audiobookDirs'),
+      // The interface language this person chose, so the first paint after
+      // sign-in is already in it rather than flashing English.
+      locale: readPref(ctx, req.user.id, 'locale')?.locale ?? null,
     };
   });
 }

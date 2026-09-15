@@ -1,6 +1,7 @@
 import { api } from '../api/client';
 import { idbAll, idbClear, idbDelete, idbGet, idbPut, STORES } from '../progress/idb';
 import { type BookSummary, type Locator, type SwitchResolution } from '@readport/shared';
+import { type MessageKey } from '../i18n/messages/en';
 
 /**
  * Explicit per-title offline packages. Downloads go into a dedicated Cache
@@ -44,6 +45,38 @@ export interface OfflineManifestEntry {
   chunkHashes?: string[];
 }
 
+/**
+ * Why a download stopped, as something the interface can put into words.
+ * The Error itself carries the developer's detail (which URL, which chunk);
+ * the code is what a reader is told, in their own language.
+ */
+export type DownloadErrorCode =
+  | 'no-cache-storage'
+  | 'out-of-space'
+  | 'http'
+  | 'invalid-response'
+  | 'size-mismatch'
+  | 'integrity'
+  | 'missing-integrity'
+  | 'no-range'
+  | 'wrong-range'
+  | 'source-changed';
+
+export class DownloadError extends Error {
+  constructor(
+    public code: DownloadErrorCode,
+    detail: string,
+  ) {
+    super(detail);
+    this.name = 'DownloadError';
+  }
+}
+
+/** The catalog key that explains a stopped download; a plain "failed" when the cause is unknown. */
+export function downloadErrorKey(code: DownloadErrorCode | undefined): MessageKey {
+  return code ? (`library.download.error.${code}` as const) : 'library.download.failed';
+}
+
 export interface DownloadState {
   bookId: string;
   status: 'idle' | 'downloading' | 'done' | 'error' | 'cancelled';
@@ -51,7 +84,10 @@ export interface DownloadState {
   doneUrls: number;
   estimatedBytes: number;
   storedBytes: number;
+  /** The developer's detail of the failure, kept for diagnosis. */
   error?: string;
+  /** What the reader is told, when the cause is one this app can name. */
+  errorCode?: DownloadErrorCode;
   updatedAt: string;
   urls: string[];
 }
@@ -203,25 +239,28 @@ export async function downloadEntry(
   const existing = await cache.match(entry.url);
   if (existing) return Number(existing.headers.get('content-length') ?? 0);
   const res = await fetch(entry.url, fetchOpts(signal));
-  if (!res.ok) throw new Error(`Download failed (${res.status}) for ${entry.url}`);
+  if (!res.ok) {
+    throw new DownloadError('http', `Download failed (${res.status}) for ${entry.url}`);
+  }
   const buf = await res.arrayBuffer();
   if (entry.dynamic) {
     // Dynamic JSON has no stable hash; validate structure instead.
     try {
       JSON.parse(new TextDecoder().decode(buf));
     } catch {
-      throw new Error(`Invalid response for ${entry.url}`);
+      throw new DownloadError('invalid-response', `Invalid response for ${entry.url}`);
     }
   } else {
     if (buf.byteLength !== entry.sizeBytes) {
-      throw new Error(
+      throw new DownloadError(
+        'size-mismatch',
         `Size mismatch for ${entry.url}: got ${buf.byteLength}, expected ${entry.sizeBytes}`,
       );
     }
     if (entry.sha256) {
       const digest = await sha256Hex(buf);
       if (digest !== null && digest !== entry.sha256) {
-        throw new Error(`Integrity check failed for ${entry.url}`);
+        throw new DownloadError('integrity', `Integrity check failed for ${entry.url}`);
       }
     }
   }
@@ -308,7 +347,10 @@ export async function downloadTrackChunked(
   const chunks = chunkCount(total, chunkSize);
   if (!version || !hashes || hashes.length !== chunks) {
     // Fail closed: without the integrity contract nothing is stored.
-    throw new Error(`Offline manifest is missing integrity data for ${entry.url}`);
+    throw new DownloadError(
+      'missing-integrity',
+      `Offline manifest is missing integrity data for ${entry.url}`,
+    );
   }
 
   const doneMetaRes = await cache.match(metaKey(entry.url));
@@ -358,11 +400,15 @@ export async function downloadTrackChunked(
 
     const res = await fetch(entry.url, fetchOpts(signal, `bytes=${start}-${end}`));
     if (res.status !== 206) {
-      throw new Error(`Server did not honor Range for ${entry.url} (status ${res.status})`);
+      throw new DownloadError(
+        'no-range',
+        `Server did not honor Range for ${entry.url} (status ${res.status})`,
+      );
     }
     const contentRange = res.headers.get('content-range');
     if (contentRange !== `bytes ${start}-${end}/${total}`) {
-      throw new Error(
+      throw new DownloadError(
+        'wrong-range',
         `Wrong Content-Range for ${entry.url}: got "${contentRange ?? ''}", expected "bytes ${start}-${end}/${total}"`,
       );
     }
@@ -371,15 +417,18 @@ export async function downloadTrackChunked(
       // The source file changed under us mid-download: nothing stored so
       // far may be combined with the new bytes.
       await deleteTrackChunks(cache, entry.url);
-      throw new Error(`Source changed during download of ${entry.url}; download restarted`);
+      throw new DownloadError(
+        'source-changed',
+        `Source changed during download of ${entry.url}; download restarted`,
+      );
     }
     const buf = await res.arrayBuffer();
     if (buf.byteLength !== expectedLen) {
-      throw new Error(`Chunk size mismatch for ${entry.url} at ${start}`);
+      throw new DownloadError('size-mismatch', `Chunk size mismatch for ${entry.url} at ${start}`);
     }
     const digest = await sha256Hex(buf);
     if (digest !== null && digest !== hashes[i]) {
-      throw new Error(`Integrity check failed for ${entry.url} (chunk ${i})`);
+      throw new DownloadError('integrity', `Integrity check failed for ${entry.url} (chunk ${i})`);
     }
     contentType = res.headers.get('content-type') ?? contentType;
     await cache.put(
@@ -410,12 +459,9 @@ const activeDownloads = new Map<string, Promise<void>>();
 const QUOTA_HEADROOM = 1.1;
 
 /**
- * What running out of room reads like. The raw DOMException ("The quota has
- * been exceeded.") tells the reader nothing they can act on.
+ * Running out of room is reported as its own code: the raw DOMException
+ * ("The quota has been exceeded.") tells the reader nothing they can act on.
  */
-const OUT_OF_SPACE =
-  'There is not enough room on this device. Remove an offline copy or free up space, then try again.';
-
 function isQuotaError(err: unknown): boolean {
   return (
     err instanceof DOMException &&
@@ -480,7 +526,9 @@ export async function startDownload(
   bookId: string,
   onUpdate: (s: DownloadState) => void,
 ): Promise<void> {
-  if (!('caches' in window)) throw new Error('Cache Storage is not available in this browser.');
+  if (!('caches' in window)) {
+    throw new DownloadError('no-cache-storage', 'Cache Storage is not available in this browser.');
+  }
   void requestPersistentStorage();
   // Register the controller and in-flight marker BEFORE the first await: a
   // purge that begins while the manifest request is still pending must see
@@ -546,7 +594,7 @@ export async function startDownload(
       estimate.quota - estimate.usage < stillNeeded * QUOTA_HEADROOM
     ) {
       state.status = 'error';
-      state.error = OUT_OF_SPACE;
+      state.errorCode = 'out-of-space';
       await save();
       return;
     }
@@ -582,7 +630,12 @@ export async function startDownload(
         state.status = 'cancelled';
       } else {
         state.status = 'error';
-        state.error = isQuotaError(err) ? OUT_OF_SPACE : (err as Error).message;
+        state.error = (err as Error).message;
+        state.errorCode = isQuotaError(err)
+          ? 'out-of-space'
+          : err instanceof DownloadError
+            ? err.code
+            : undefined;
       }
       await save();
     }

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { type Locator } from '@readport/shared';
 import { useToast } from '../components/ui';
+import { useT } from '../i18n';
 import { onProgressNotice, recordCheckpoint, resumeLocator } from './engine';
 
 /**
@@ -15,14 +16,15 @@ import { onProgressNotice, recordCheckpoint, resumeLocator } from './engine';
  */
 export function useProgressNotices(bookId: string, locator: () => Locator | null): void {
   const toast = useToast();
+  const t = useT();
   const locatorRef = useRef(locator);
   locatorRef.current = locator;
   useEffect(() => {
     return onProgressNotice((notice) => {
       if (notice.bookId !== bookId) return;
       if (notice.type === 'reset-elsewhere') {
-        toast.show('Your progress in this book was reset from another device.', {
-          label: 'Keep reading from here',
+        toast.show(t('reader.notice.resetElsewhere'), {
+          label: t('reader.notice.keepReadingHere'),
           onClick: () => {
             void resumeLocator(bookId).then(() => {
               const at = locatorRef.current();
@@ -31,10 +33,8 @@ export function useProgressNotices(bookId: string, locator: () => Locator | null
           },
         });
       } else if (notice.type === 'storage-degraded') {
-        toast.show(
-          'This browser blocks site storage, so your place is kept only while this page is open.',
-        );
+        toast.show(t('reader.notice.storageDegraded'));
       }
     });
-  }, [bookId, toast]);
+  }, [bookId, toast, t]);
 }

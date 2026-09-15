@@ -152,3 +152,18 @@ export function actionFailed(err: unknown, fallback: string): string {
   if (err instanceof ApiError && err.status === 403) return 'You do not have permission for that.';
   return fallback;
 }
+
+/**
+ * The same three-way answer, in the interface language: pass the app's `t`
+ * and an already-translated fallback. `actionFailed` above stays for the
+ * few non-React callers; everything a person reads goes through this.
+ */
+export function failureMessage(
+  err: unknown,
+  fallback: string,
+  t: (key: 'common.offline' | 'common.noPermission') => string,
+): string {
+  if (isOffline(err)) return t('common.offline');
+  if (err instanceof ApiError && err.status === 403) return t('common.noPermission');
+  return fallback;
+}

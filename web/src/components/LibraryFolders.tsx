@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { type FolderKind, type PathCheck } from '@readport/shared';
-import { api } from '../api/client';
+import { api, failureMessage } from '../api/client';
+import { useT } from '../i18n';
 import { IconAlert, IconBack, IconCheck, IconClose, IconTrash } from './icons';
 
 /**
@@ -63,6 +64,7 @@ export function LibraryFolders({
   disabled?: boolean;
   pinnedNote?: string | null;
 }) {
+  const t = useT();
   const [draft, setDraft] = useState('');
   const [checks, setChecks] = useState<Record<string, PathCheck>>({});
   const [testing, setTesting] = useState(false);
@@ -95,15 +97,10 @@ export function LibraryFolders({
     void test([clean]);
   };
 
-  const label = kind === 'ebook' ? 'ebook' : kind === 'audio' ? 'audiobook' : 'alignment';
   return (
     <div className="folders">
       {pinnedNote && <p className="folders__pinned">{pinnedNote}</p>}
-      {value.length === 0 && (
-        <p className="folders__empty">
-          No {label} folders yet. Add the folder as the server sees it.
-        </p>
-      )}
+      {value.length === 0 && <p className="folders__empty">{t('shell.folders.empty', { kind })}</p>}
       <ul className="folders__list">
         {value.map((p) => {
           const c = checks[p] ?? checks[p.replace(/\/+$/, '')];
@@ -116,26 +113,39 @@ export function LibraryFolders({
                 {!c ? '·' : c.ok && !c.problem ? <IconCheck size={15} /> : <IconAlert size={15} />}
               </span>
               <span className="folders__body">
-                <code className="folders__path">{p}</code>
+                <code className="folders__path" dir="ltr">
+                  {p}
+                </code>
                 <span className="folders__meta">
-                  {!c
-                    ? 'Not tested yet'
-                    : !c.ok
-                      ? c.problem
-                      : kind === 'alignment'
-                        ? c.matches === 0
-                          ? 'Empty - new alignments will be saved here'
-                          : `${c.matches} saved alignment${c.matches === 1 ? '' : 's'} here`
-                        : c.matches === 0
-                          ? (c.problem ?? 'No books found in this folder')
-                          : `${c.matches}${c.sampled ? '+' : ''} ${kind === 'ebook' ? 'EPUB' : 'audio'} file${c.matches === 1 ? '' : 's'} found`}
+                  {/* The server's own diagnosis is shown as it came. */}
+                  {!c ? (
+                    t('shell.folders.notTested')
+                  ) : !c.ok ? (
+                    <bdi>{c.problem}</bdi>
+                  ) : kind === 'alignment' ? (
+                    c.matches === 0 ? (
+                      t('shell.folders.alignmentsEmpty')
+                    ) : (
+                      t('shell.folders.alignmentsSaved', { n: c.matches })
+                    )
+                  ) : c.matches === 0 ? (
+                    c.problem ? (
+                      <bdi>{c.problem}</bdi>
+                    ) : (
+                      t('shell.folders.noBooks')
+                    )
+                  ) : c.sampled ? (
+                    t('shell.folders.filesFoundSampled', { n: c.matches, kind })
+                  ) : (
+                    t('shell.folders.filesFound', { n: c.matches, kind })
+                  )}
                 </span>
               </span>
               {!disabled && (
                 <button
                   type="button"
                   className="icon-btn"
-                  aria-label={`Remove ${p}`}
+                  aria-label={t('shell.folders.remove', { path: p })}
                   onClick={() => onChange(value.filter((x) => x !== p))}
                 >
                   <IconTrash size={15} />
@@ -164,7 +174,7 @@ export function LibraryFolders({
                 add(draft);
               }
             }}
-            aria-label={`Add ${label} folder`}
+            aria-label={t('shell.folders.addFolder', { kind })}
             spellCheck={false}
             autoCapitalize="off"
           />
@@ -174,10 +184,10 @@ export function LibraryFolders({
             onClick={() => add(draft)}
             disabled={!draft.trim()}
           >
-            Add
+            {t('shell.add')}
           </button>
           <button type="button" className="btn btn--ghost" onClick={() => setPicker(true)}>
-            Browse…
+            {t('shell.folders.browse')}
           </button>
           {value.length > 0 && (
             <button
@@ -186,7 +196,7 @@ export function LibraryFolders({
               onClick={() => void test()}
               disabled={testing}
             >
-              {testing ? 'Testing…' : 'Test again'}
+              {testing ? t('shell.folders.testing') : t('shell.folders.testAgain')}
             </button>
           )}
         </div>
@@ -214,45 +224,50 @@ function FolderPicker({
   onPick: (path: string) => void;
   onClose: () => void;
 }) {
+  const t = useT();
   const [cur, setCur] = useState<BrowseResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const go = async (p?: string) => {
     try {
       setCur(await folders.browse(p));
       setError(null);
-    } catch {
-      setError('Could not list that folder.');
+    } catch (err) {
+      setError(failureMessage(err, t('shell.folders.listFailed'), t));
     }
   };
   useEffect(() => {
     void go();
   }, []);
   return (
-    <div className="picker" role="dialog" aria-label="Choose a folder">
+    <div className="picker" role="dialog" aria-label={t('shell.folders.pickerTitle')}>
       <div className="picker__head">
         <button
           type="button"
           className="icon-btn"
           disabled={!cur?.parent && !cur?.path}
           onClick={() => void go(cur?.parent ?? undefined)}
-          aria-label="Up one level"
+          aria-label={t('shell.folders.upOneLevel')}
         >
           <IconBack size={16} />
         </button>
-        <code className="picker__path">{cur?.path || 'Common locations'}</code>
-        <button type="button" className="icon-btn" onClick={onClose} aria-label="Close">
+        <code className="picker__path">
+          {cur?.path ? <bdi>{cur.path}</bdi> : t('shell.folders.commonLocations')}
+        </code>
+        <button type="button" className="icon-btn" onClick={onClose} aria-label={t('common.close')}>
           <IconClose size={16} />
         </button>
       </div>
       {error && <p className="folders__meta">{error}</p>}
       {!cur?.path && cur?.entries.some((e) => e.mounted || e.mountsInside) && (
         <p className="picker__hint">
-          <span className="pill-mount">mounted</span> marks a folder your container config maps in
-          from the host. Only those, and what is inside them, exist for this server.
+          <span className="pill-mount">{t('shell.folders.mounted')}</span>{' '}
+          {t('shell.folders.mountedHint')}
         </p>
       )}
       <ul className="picker__list">
-        {cur?.entries.length === 0 && <li className="folders__meta">No sub-folders here.</li>}
+        {cur?.entries.length === 0 && (
+          <li className="folders__meta">{t('shell.folders.noSubfolders')}</li>
+        )}
         {cur?.entries.map((e) => (
           <li key={e.path}>
             <button
@@ -260,12 +275,16 @@ function FolderPicker({
               className={`picker__row ${e.mounted ? 'is-mounted' : ''}`}
               onClick={() => void go(e.path)}
             >
-              <span className="grow">{e.name}</span>
-              {e.mounted && <span className="pill-mount">mounted</span>}
+              <span className="grow">
+                <bdi>{e.name}</bdi>
+              </span>
+              {e.mounted && <span className="pill-mount">{t('shell.folders.mounted')}</span>}
               {!e.mounted && !!e.mountsInside && (
-                <span className="soft">{e.mountsInside} mounted inside</span>
+                <span className="soft">
+                  {t('shell.folders.mountedInside', { n: e.mountsInside })}
+                </span>
               )}
-              {e.books > 0 && <span className="soft">{e.books} books</span>}
+              {e.books > 0 && <span className="soft">{t('common.books', { n: e.books })}</span>}
             </button>
           </li>
         ))}
@@ -273,7 +292,7 @@ function FolderPicker({
       {cur?.path && (
         <div className="picker__foot">
           <button type="button" className="btn" onClick={() => onPick(cur.path)}>
-            Use this folder
+            {t('shell.folders.useThisFolder')}
           </button>
         </div>
       )}

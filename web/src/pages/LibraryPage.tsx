@@ -5,14 +5,15 @@ import {
   type AutoShelfId,
   type BookSummary,
   type FacetKind,
-  facetSpec,
   formatFacet,
   isFacetKind,
 } from '@readport/shared';
 import { api, ApiError } from '../api/client';
 import { useShelves } from '../state/shelves';
 import { useFacets } from '../state/facets';
-import { languageListName } from '../lib/languageName';
+import { useT } from '../i18n';
+import { useFormat } from '../i18n/useFormat';
+import { type MessageKey } from '../i18n/messages/en';
 import { ReadingNow } from './ReadingNow';
 import { AddToSheet } from '../components/AddToSheet';
 import { Cover, EmptyState } from '../components/ui';
@@ -30,10 +31,11 @@ import {
   IconSearch,
   IconShelf,
 } from '../components/icons';
-import { formatBytes, formatDuration, formatPct } from '../lib/format';
 import {
   cachedBookSummary,
   cancelDownload,
+  downloadErrorKey,
+  downloadFraction,
   downloadPercent,
   listDownloads,
   startDownload,
@@ -75,6 +77,8 @@ function useDebounced<T>(value: T, ms: number): T {
 }
 
 export function LibraryPage() {
+  const t = useT();
+  const f = useFormat();
   const params = useParams();
   const { overview, refresh, refreshDownloads } = useShelves();
   const { setScope } = useFacets();
@@ -95,7 +99,7 @@ export function LibraryPage() {
   const [missingCount, setMissingCount] = useState(0);
   /** This shelf answered 404: it was removed, here or on another device. */
   const [gone, setGone] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<MessageKey | null>(null);
   const [offlineBooks, setOfflineBooks] = useState<BookSummary[] | null>(null);
   /** What this device is fetching right now - shown on the On-this-device shelf. */
   const [active, setActive] = useState<DownloadState[]>([]);
@@ -213,9 +217,7 @@ export function LibraryPage() {
         // An unavailable filtered shelf must never masquerade as the whole library.
         setData(null);
         setOfflineBooks([]);
-        setError(
-          'Reading Now could not be refreshed. Reconnect and retry; your progress is kept on this device.',
-        );
+        setError('library.readingNowRefreshFailed');
         return;
       }
       // A shelf that is not there is not a connection problem. Deleting a
@@ -238,11 +240,7 @@ export function LibraryPage() {
       );
       const books = summaries.filter((b): b is BookSummary => !!b);
       setOfflineBooks(books);
-      setError(
-        books.length > 0
-          ? 'You appear to be offline. Showing the titles downloaded to this device.'
-          : 'Could not load the library. Check the server connection.',
-      );
+      setError(books.length > 0 ? 'library.offlineShowingDownloads' : 'library.loadFailed');
     }
   }, [debouncedQuery, kind, sort, showing, loadDownloads]);
 
@@ -351,24 +349,28 @@ export function LibraryPage() {
   const heading =
     showing.kind === 'user'
       ? gone
-        ? 'Shelf removed'
-        : (shelfName ?? 'Shelf')
+        ? t('library.shelfRemoved')
+        : (shelfName ?? t('library.shelf'))
       : showing.kind === 'device'
-        ? 'On this device'
+        ? t('shelves.on-this-device')
         : showing.kind === 'auto'
-          ? AUTO_SHELVES.find((s) => s.id === showing.id)!.label
+          ? t(`shelves.${showing.id}` as const)
           : showing.kind === 'facet'
             ? showing.facet === 'language'
-              ? languageListName(showing.value)
+              ? f.languageListName(showing.value)
               : showing.value
-            : 'Library';
+            : t('nav.library');
 
   const showChips = showing.kind !== 'library' || (overview?.shelves.length ?? 0) > 0;
   const chips = [
-    { to: '/', label: 'Library', end: true },
-    { to: '/reading-list', label: 'Reading list', end: false },
-    ...AUTO_SHELVES.map((s) => ({ to: `/shelf/${s.id}`, label: s.label, end: false })),
-    { to: '/shelf/on-this-device', label: 'On this device', end: false },
+    { to: '/', label: t('nav.library'), end: true },
+    { to: '/reading-list', label: t('shelves.readingList'), end: false },
+    ...AUTO_SHELVES.map((s) => ({
+      to: `/shelf/${s.id}`,
+      label: t(`shelves.${s.id}` as const),
+      end: false,
+    })),
+    { to: '/shelf/on-this-device', label: t('shelves.on-this-device'), end: false },
     ...(overview?.shelves ?? []).map((s) => ({
       to: `/shelf/u/${s.id}`,
       label: s.name,
@@ -384,7 +386,7 @@ export function LibraryPage() {
           sheet. A reader with no shelves is not taxed with a control that
           does nothing yet. */}
       {showChips && (
-        <nav className="shelf-chips chip-row" aria-label="Shelves" ref={chipsRef}>
+        <nav className="shelf-chips chip-row" aria-label={t('nav.shelves')} ref={chipsRef}>
           {chips.map((c) => (
             <NavLink
               key={c.to}
@@ -401,9 +403,9 @@ export function LibraryPage() {
       {error && (
         <div className={`banner ${offlineBooks ? '' : 'banner--error'}`} role="alert">
           {offlineBooks ? <IconOffline size={18} /> : <IconAlert size={18} />}
-          <span style={{ flex: 1 }}>{error}</span>
+          <span style={{ flex: 1 }}>{t(error)}</span>
           <button className="btn btn--ghost btn--tight" onClick={() => void load()}>
-            Retry
+            {t('common.retry')}
           </button>
         </div>
       )}
@@ -411,9 +413,7 @@ export function LibraryPage() {
       {missingCount > 0 && (
         <div className="banner" role="note">
           <IconAlert size={16} />
-          {missingCount === 1
-            ? '1 book on this shelf is on a drive that is not mounted.'
-            : `${missingCount} books on this shelf are on a drive that is not mounted.`}
+          {t('library.missingOnDrive', { n: missingCount })}
         </div>
       )}
 
@@ -421,11 +421,11 @@ export function LibraryPage() {
         <section className="band band--continue" aria-labelledby="continue-h">
           <div className="band__head">
             <h2 id="continue-h" className="band__title">
-              Continue
+              {t('library.hero.title')}
             </h2>
             {readingNowCount > 1 && (
               <Link className="band__more" to="/shelf/reading-now">
-                All in progress · {readingNowCount}
+                {t('library.hero.allInProgress', { n: readingNowCount })}
               </Link>
             )}
           </div>
@@ -444,12 +444,17 @@ export function LibraryPage() {
         <div className="band__head">
           <h2 id="library-h" className="band__title">
             {heading}
-            {books.length > 0 && <span className="section-title__count">{books.length}</span>}
+            {books.length > 0 && (
+              <span className="section-title__count">{f.number(books.length)}</span>
+            )}
           </h2>
           {showing.kind === 'library' && kind === 'all' && !query && data && (
             <span className="band__stats">
-              {stats.ebooks} ebooks · {stats.audio} audiobooks
-              {stats.paired > 0 ? ` · ${Math.round(stats.paired)} paired` : ''}
+              {t('library.stats', {
+                ebooks: stats.ebooks,
+                audio: stats.audio,
+                paired: Math.round(stats.paired),
+              })}
             </span>
           )}
         </div>
@@ -461,25 +466,29 @@ export function LibraryPage() {
               <input
                 className="input"
                 type="search"
-                placeholder="Search title, author, series"
-                aria-label="Search this shelf"
+                placeholder={t('library.searchPlaceholder')}
+                aria-label={t('library.searchLabel')}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
             </div>
-            <div className="segmented segmented--inline" role="group" aria-label="Library type">
+            <div
+              className="segmented segmented--inline"
+              role="group"
+              aria-label={t('library.kindGroup')}
+            >
               <button aria-pressed={kind === 'all'} onClick={() => setKind('all')}>
-                All
+                {t('library.kind.all')}
               </button>
               <button aria-pressed={kind === 'ebook'} onClick={() => setKind('ebook')}>
-                <IconBookOpen size={15} /> Ebooks
+                <IconBookOpen size={15} /> {t('library.kind.ebooks')}
               </button>
               <button aria-pressed={kind === 'audio'} onClick={() => setKind('audio')}>
-                <IconHeadphones size={15} /> Audiobooks
+                <IconHeadphones size={15} /> {t('library.kind.audiobooks')}
               </button>
             </div>
             <label className="visually-hidden" htmlFor="lib-sort">
-              Sort by
+              {t('library.sortBy')}
             </label>
             <select
               id="lib-sort"
@@ -487,12 +496,12 @@ export function LibraryPage() {
               value={sort}
               onChange={(e) => setSort(e.target.value as Sort)}
             >
-              <option value="title">By title</option>
-              <option value="author">By author</option>
+              <option value="title">{t('library.sort.title')}</option>
+              <option value="author">{t('library.sort.author')}</option>
               <option value="recent">
-                {showing.kind === 'user' ? 'Shelf order' : 'Recently active'}
+                {showing.kind === 'user' ? t('library.sort.shelfOrder') : t('library.sort.recent')}
               </option>
-              <option value="added">Recently added</option>
+              <option value="added">{t('library.sort.added')}</option>
             </select>
           </div>
         )}
@@ -500,7 +509,7 @@ export function LibraryPage() {
         {data?.scanActive && (
           <div className="banner" role="status" style={{ marginBlockStart: 'var(--sp-4)' }}>
             <div className="spinner" style={{ width: 16, height: 16 }} />
-            Scanning your libraries - new books appear as they are indexed.
+            {t('library.scanning')}
           </div>
         )}
 
@@ -525,9 +534,11 @@ export function LibraryPage() {
           // progress state, and the downloaded titles this browser holds
           // are not the same list. Saying "nothing here yet" under a banner
           // that says the shelf could not be fetched contradicted itself.
-          <EmptyState icon={<IconOffline size={40} />} title="Reading Now needs the server">
-            Your place in every book is kept on this device and will sync when you are back online.
-            Downloaded titles are on the On this device shelf.
+          <EmptyState
+            icon={<IconOffline size={40} />}
+            title={t('library.readingNow.needsServerTitle')}
+          >
+            {t('library.readingNow.needsServerBody')}
           </EmptyState>
         ) : books.length === 0 ? (
           <ShelfEmpty
@@ -589,13 +600,16 @@ function ShelfEmpty({
   gone: boolean;
   scanning: boolean;
 }) {
+  const t = useT();
+  const f = useFormat();
+  const app = t('common.appName');
   if (scanning) {
     // The first screen after setup. Telling the operator to go and configure
     // the folders they configured thirty seconds ago reads as though the
     // wizard did not work.
     return (
-      <EmptyState icon={<IconLibrary size={44} />} title="Reading your shelves">
-        ReadPort is going through your folders. Books appear here as it finds them.
+      <EmptyState icon={<IconLibrary size={44} />} title={t('library.empty.scanningTitle')}>
+        {t('library.empty.scanningBody', { app })}
       </EmptyState>
     );
   }
@@ -603,30 +617,28 @@ function ShelfEmpty({
     return (
       <EmptyState
         icon={<IconShelf size={40} />}
-        title="That shelf is no longer here"
+        title={t('library.empty.goneTitle')}
         action={
           <Link className="btn" to="/">
-            Back to the library
+            {t('library.empty.backToLibrary')}
           </Link>
         }
       >
-        It was removed - on this device or another one. The books that were on it are all still in
-        your library.
+        {t('library.empty.goneBody')}
       </EmptyState>
     );
   }
   if (filtered) {
     return (
-      <EmptyState icon={<IconSearch size={40} />} title="No matches">
-        Nothing here matches this search or filter.
+      <EmptyState icon={<IconSearch size={40} />} title={t('library.empty.noMatchesTitle')}>
+        {t('library.empty.noMatchesBody')}
       </EmptyState>
     );
   }
   if (showing.kind === 'device') {
     return (
-      <EmptyState icon={<IconOffline size={40} />} title="Nothing downloaded in this browser">
-        Downloads stay on the device that made them and are removed when you sign out. Open a book
-        and choose Download to keep it here.
+      <EmptyState icon={<IconOffline size={40} />} title={t('library.empty.deviceTitle')}>
+        {t('library.empty.deviceBody')}
       </EmptyState>
     );
   }
@@ -634,14 +646,14 @@ function ShelfEmpty({
     return (
       <EmptyState
         icon={<IconShelf size={40} />}
-        title="This shelf is empty"
+        title={t('library.empty.shelfTitle')}
         action={
           <Link className="btn" to="/">
-            Browse the library
+            {t('library.empty.browseLibrary')}
           </Link>
         }
       >
-        Press the + on any cover in the library, then pick this shelf.
+        {t('library.empty.shelfBody')}
       </EmptyState>
     );
   }
@@ -649,45 +661,39 @@ function ShelfEmpty({
     return (
       <EmptyState
         icon={<IconLibrary size={40} />}
-        title={`Nothing under ${showing.facet === 'language' ? languageListName(showing.value) : showing.value}`}
+        title={t('library.empty.facetTitle', {
+          value: showing.facet === 'language' ? f.languageListName(showing.value) : showing.value,
+        })}
         action={
           <Link className="btn" to="/">
-            Browse the library
+            {t('library.empty.browseLibrary')}
           </Link>
         }
       >
-        {facetSpec(showing.facet).label} come from the books themselves, so this one goes away when
-        the last book carrying it does.
+        {t('library.empty.facetBody', { facet: t(`facets.${showing.facet}` as const) })}
       </EmptyState>
     );
   }
   if (showing.kind === 'auto') {
-    const copy: Record<AutoShelfId, string> = {
-      'reading-now':
-        'Start reading or listening and that edition appears here until you finish it.',
-      finished: 'Books you read to the end collect here on their own.',
-      'both-formats':
-        'This fills up as ReadPort matches an ebook to its audiobook. The Pairing page shows what it is considering.',
-      'recently-added': 'Nothing new has turned up in the last month.',
-    };
     return (
       <EmptyState
         icon={showing.id === 'both-formats' ? <IconLink size={40} /> : <IconList size={40} />}
-        title="Nothing here yet"
+        title={t('library.empty.autoTitle')}
       >
-        {copy[showing.id]}
+        {t(`library.empty.auto.${showing.id}` as const, { app })}
       </EmptyState>
     );
   }
   return (
-    <EmptyState icon={<IconLibrary size={44} />} title="Your library is empty">
-      ReadPort reads ebook and audiobook folders you already have, and never writes to them. Choose
-      those folders in Settings → Libraries; each one is tested before it is saved.
+    <EmptyState icon={<IconLibrary size={44} />} title={t('library.empty.libraryTitle')}>
+      {t('library.empty.libraryBody', { app })}
     </EmptyState>
   );
 }
 
 function HeroCard({ book }: { book: BookSummary }) {
+  const t = useT();
+  const f = useFormat();
   const pct = book.progress?.pct ?? 0;
   const isEbook = book.kind === 'ebook';
   const primaryTo = isEbook ? `/read/${book.id}` : `/listen/${book.id}`;
@@ -697,14 +703,14 @@ function HeroCard({ book }: { book: BookSummary }) {
       <Link
         to={`/book/${book.id}`}
         className="hero-card__cover"
-        aria-label={`${book.title} details`}
+        aria-label={t('library.card.details', { title: book.title })}
       >
         <Cover book={book} className="hero-card__img" />
       </Link>
       <div className="hero-card__body">
         <div className="hero-card__eyebrow">
           {isEbook ? <IconBookOpen size={14} /> : <IconHeadphones size={14} />}
-          {isEbook ? 'Continue reading' : 'Continue listening'}
+          {t('library.continueIn', { kind: book.kind })}
         </div>
         <h2 className="hero-card__title">{book.title}</h2>
         {book.author && <div className="hero-card__author">{book.author}</div>}
@@ -713,29 +719,27 @@ function HeroCard({ book }: { book: BookSummary }) {
             <span style={{ width: `${pct * 100}%` }} />
           </span>
           <span className="hero-card__pct">
-            {formatPct(pct)}
+            {f.percent(pct)}
             {!isEbook && book.durationMs
-              ? ` · ${formatDuration(book.durationMs * (1 - pct))} left`
+              ? ` · ${t('format.left', { duration: f.duration(book.durationMs * (1 - pct)) })}`
               : ''}
           </span>
         </div>
         <div className="hero-card__actions">
           <Link className="btn" to={primaryTo}>
             {isEbook ? <IconBookOpen size={18} /> : <IconPlay size={18} />}
-            {isEbook ? 'Resume reading' : 'Resume listening'}
+            {t('library.hero.resume', { kind: book.kind })}
           </Link>
           {pair && (
             <Link
               className="btn btn--secondary"
               to={`/book/${book.id}?switch=1`}
               title={
-                pair.switchable
-                  ? 'Continue in the other edition at the same place'
-                  : 'The other edition of this book'
+                pair.switchable ? t('library.hero.switchSameSpot') : t('library.hero.otherEdition')
               }
             >
               {isEbook ? <IconHeadphones size={17} /> : <IconBookOpen size={17} />}
-              {isEbook ? 'Listen instead' : 'Read instead'}
+              {t('library.hero.instead', { kind: book.kind })}
             </Link>
           )}
         </div>
@@ -745,6 +749,8 @@ function HeroCard({ book }: { book: BookSummary }) {
 }
 
 function ContinueCard({ book }: { book: BookSummary }) {
+  const t = useT();
+  const f = useFormat();
   const pct = book.progress?.pct ?? 0;
   return (
     <Link
@@ -758,9 +764,9 @@ function ContinueCard({ book }: { book: BookSummary }) {
         <span className="continue-card__title">{book.title}</span>
         <span className="continue-card__meta">
           {book.kind === 'ebook' ? <IconBookOpen size={12} /> : <IconHeadphones size={12} />}
-          {formatPct(pct)}
+          {f.percent(pct)}
           {book.kind === 'audio' && book.durationMs
-            ? ` · ${formatDuration(book.durationMs * (1 - pct))} left`
+            ? ` · ${t('format.left', { duration: f.duration(book.durationMs * (1 - pct)) })}`
             : ''}
         </span>
         <span className="progressbar" aria-hidden="true">
@@ -794,13 +800,17 @@ function DownloadsInProgress({
   titleFor: (bookId: string) => string | null;
   onChanged: () => void;
 }) {
+  const t = useT();
+  const f = useFormat();
   return (
-    <section className="dls" aria-label="Downloads in progress">
+    <section className="dls" aria-label={t('library.download.inProgress')}>
       <h2 className="dls__h">
         <IconDownload size={15} />
         {active.some((d) => d.status === 'downloading')
-          ? `Downloading ${active.filter((d) => d.status === 'downloading').length}`
-          : 'Downloads'}
+          ? t('library.download.downloadingN', {
+              n: active.filter((d) => d.status === 'downloading').length,
+            })
+          : t('library.download.title')}
       </h2>
       <ul className="dls__list">
         {active.map((d) => {
@@ -810,14 +820,19 @@ function DownloadsInProgress({
             <li key={d.bookId} className={`dls__row ${failed ? 'is-bad' : ''}`}>
               <div className="dls__meta">
                 <Link className="dls__title" to={`/book/${d.bookId}`}>
-                  {titleFor(d.bookId) ?? (failed ? 'Interrupted download' : 'Starting…')}
+                  {titleFor(d.bookId) ??
+                    (failed ? t('library.download.interrupted') : t('library.download.starting'))}
                 </Link>
                 <span className="dls__sub">
                   {failed
-                    ? (d.error ?? 'Download failed')
+                    ? t(downloadErrorKey(d.errorCode))
                     : d.estimatedBytes > 0
-                      ? `${formatBytes(d.storedBytes)} of ${formatBytes(d.estimatedBytes)} · ${pct}%`
-                      : 'Starting…'}
+                      ? t('library.download.progress', {
+                          stored: f.bytes(d.storedBytes),
+                          total: f.bytes(d.estimatedBytes),
+                          pct: f.percent(downloadFraction(d)),
+                        })
+                      : t('library.download.starting')}
                 </span>
                 {!failed && (
                   <div
@@ -841,7 +856,7 @@ function DownloadsInProgress({
                   }
                 }}
               >
-                {failed ? 'Retry' : 'Stop'}
+                {failed ? t('common.retry') : t('library.download.stop')}
               </button>
             </li>
           );
@@ -853,11 +868,12 @@ function DownloadsInProgress({
 
 /** One format inside the badge: EPUB, M4B, MP3, or AUDIO for a folder of files. */
 function FormatPart({ kind, format }: { kind: BookSummary['kind']; format: string }) {
+  const t = useT();
   const label =
     kind === 'ebook'
       ? (format || 'epub').toUpperCase()
       : !format || format === 'multi'
-        ? 'AUDIO'
+        ? t('library.card.audioFormat')
         : format.toUpperCase();
   return (
     <>
@@ -876,11 +892,12 @@ function BookCard({
   offline: boolean;
   onAddTo: () => void;
 }) {
+  const t = useT();
   const stateNote =
     book.scanState === 'error'
-      ? 'Indexing failed'
+      ? t('library.card.indexingFailed')
       : book.scanState === 'indexing' || book.scanState === 'discovered'
-        ? 'Indexing…'
+        ? t('library.card.indexing')
         : null;
   const pair = book.pair && book.pair.status !== 'candidate' ? book.pair : null;
   return (
@@ -908,15 +925,15 @@ function BookCard({
             {pair?.switchable && (
               <span
                 className="badge badge--paired badge--sync"
-                title="Synced - switching lands in the same place"
+                title={t('library.card.syncedTitle')}
               >
                 <IconLink size={11} />
-                SYNC
+                {t('library.card.sync')}
               </span>
             )}
           </span>
           {offline && (
-            <span className="book-card__offline" title="Downloaded to this device">
+            <span className="book-card__offline" title={t('library.card.downloadedTitle')}>
               <IconDownload size={12} />
             </span>
           )}
@@ -925,7 +942,9 @@ function BookCard({
               <span style={{ width: `${book.progress.pct * 100}%` }} />
             </span>
           )}
-          {book.progress?.finished && <span className="book-card__done">Finished</span>}
+          {book.progress?.finished && (
+            <span className="book-card__done">{t('library.card.finished')}</span>
+          )}
         </span>
         <span>
           <span className="book-card__title">{book.title}</span>
@@ -937,8 +956,8 @@ function BookCard({
       <button
         className="book-card__add"
         onClick={onAddTo}
-        aria-label={`Add ${book.title} to a shelf or your reading list`}
-        title="Add to…"
+        aria-label={t('library.card.addLabel', { title: book.title })}
+        title={t('library.card.addTo')}
       >
         <IconPlus size={17} />
       </button>

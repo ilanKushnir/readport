@@ -9,6 +9,7 @@ import {
 } from 'react-router-dom';
 import { AUTO_SHELVES } from '@readport/shared';
 import { SessionProvider, useSession } from './state/session';
+import { I18nProvider, useT } from './i18n';
 import { ShelvesProvider, useShelves } from './state/shelves';
 import { FacetsProvider } from './state/facets';
 import { Drawer, Sheet, ToastProvider } from './components/ui';
@@ -83,14 +84,15 @@ function useWideShell(): boolean {
  * object this app already uses for everything that slides in.
  */
 function ShelfOverlay({ onClose }: { onClose: () => void }) {
+  const t = useT();
   const narrow = !useWideShell();
   const body = <Sidebar onNavigate={onClose} />;
   return narrow ? (
-    <Sheet title="Shelves" onClose={onClose}>
+    <Sheet title={t('nav.shelves')} onClose={onClose}>
       {body}
     </Sheet>
   ) : (
-    <Drawer title="Shelves" onClose={onClose}>
+    <Drawer title={t('nav.shelves')} onClose={onClose}>
       {body}
     </Drawer>
   );
@@ -113,6 +115,7 @@ function ShelfHeaderButton({
   onOpen: () => void;
   onDock: () => void;
 }) {
+  const t = useT();
   const { overview } = useShelves();
   const location = useLocation();
   // The button doubles as a "you are here": on a phone the header is the only
@@ -120,34 +123,39 @@ function ShelfHeaderButton({
   const current = (() => {
     const user = /^\/shelf\/u\/(.+)$/.exec(location.pathname);
     if (user) return overview?.shelves.find((s) => s.id === user[1])?.name ?? null;
-    if (location.pathname === '/reading-list') return 'Reading list';
-    if (location.pathname === '/shelf/on-this-device') return 'On this device';
+    if (location.pathname === '/reading-list') return t('shelves.readingList');
+    if (location.pathname === '/shelf/on-this-device') return t('shelves.on-this-device');
     const facet = /^\/browse\/[a-z]+\/(.+)$/.exec(location.pathname);
     if (facet) return decodeURIComponent(facet[1]!);
     const auto = /^\/shelf\/([a-z-]+)$/.exec(location.pathname);
-    return AUTO_SHELVES.find((s) => s.id === auto?.[1])?.label ?? null;
+    const shelf = AUTO_SHELVES.find((s) => s.id === auto?.[1]);
+    return shelf ? t(`shelves.${shelf.id}` as const) : null;
   })();
   if (wide) {
     return (
       <button
         className="btn btn--ghost app-header__shelves"
         onClick={onDock}
-        title="Show shelves (keyboard shortcut: [)"
+        title={t('nav.shelvesShortcut', { label: t('nav.showShelves') })}
       >
         <IconChevronRight size={17} />
-        <span className="app-header__shelvesname">Show shelves</span>
+        <span className="app-header__shelvesname">{t('nav.showShelves')}</span>
       </button>
     );
   }
+  // On the plain library the tab bar's own Shelves entry is the way in; a
+  // second "Shelves" in the header, a thumb's reach above it, said nothing.
+  if (!current) return null;
   return (
     <button className="btn btn--ghost app-header__shelves" onClick={onOpen} aria-haspopup="dialog">
       <IconShelf size={18} />
-      <span className="app-header__shelvesname">{current ?? 'Shelves'}</span>
+      <span className="app-header__shelvesname">{current}</span>
     </button>
   );
 }
 
 function Shell() {
+  const t = useT();
   const { phase, needsLibraries } = useSession();
   const location = useLocation();
   const [setupSkipped, setSetupSkipped] = useState(
@@ -218,7 +226,7 @@ function Shell() {
   if (phase === 'loading') {
     return (
       <div className="auth-page" aria-busy="true">
-        <div className="spinner" role="status" aria-label="Loading" />
+        <div className="spinner" role="status" aria-label={t('common.loading')} />
       </div>
     );
   }
@@ -236,16 +244,16 @@ function Shell() {
   const nav = (
     <>
       <NavLink to="/" end>
-        <IconLibrary size={18} /> Library
+        <IconLibrary size={18} /> {t('nav.library')}
       </NavLink>
       <NavLink to="/notes">
-        <IconNotes size={18} /> Notes
+        <IconNotes size={18} /> {t('nav.notes')}
       </NavLink>
       <NavLink to="/pairs">
-        <IconLink size={18} /> Pairing
+        <IconLink size={18} /> {t('nav.pairing')}
       </NavLink>
       <NavLink to="/settings">
-        <IconSettings size={18} /> Settings
+        <IconSettings size={18} /> {t('nav.settings')}
       </NavLink>
     </>
   );
@@ -255,19 +263,19 @@ function Shell() {
       {!immersive && (
         <>
           <a className="skip-link" href="#main-content">
-            Skip to the content
+            {t('common.skipToContent')}
           </a>
           <header className="app-header">
-            <Link to="/" className="brand" aria-label="ReadPort home">
+            <Link to="/" className="brand" aria-label={t('nav.home')}>
               <ReadPortMark size={26} style={{ color: 'var(--rp-primary)' }} />
-              <span className="brand__name">ReadPort</span>
+              <span className="brand__name">{t('common.appName')}</span>
             </Link>
             <ShelfHeaderButton
               wide={wide}
               onOpen={() => setOverlay(true)}
               onDock={() => setCollapsed(false)}
             />
-            <nav className="app-nav" aria-label="Primary">
+            <nav className="app-nav" aria-label={t('nav.primary')}>
               {nav}
             </nav>
           </header>
@@ -285,7 +293,7 @@ function Shell() {
       )}
       {overlay && !immersive && <ShelfOverlay onClose={() => setOverlay(false)} />}
       {!immersive && (
-        <nav className="tabbar" aria-label="Primary">
+        <nav className="tabbar" aria-label={t('nav.primary')}>
           {/* Shelves is a button rather than a link because it opens the same
               overlay the header button does. On a phone the rail is not on
               screen, so without this the whole sidebar - shelves, the reading
@@ -296,7 +304,7 @@ function Shell() {
             onClick={() => setOverlay(true)}
             aria-haspopup="dialog"
           >
-            <IconShelf size={18} /> Shelves
+            <IconShelf size={18} /> {t('nav.shelves')}
           </button>
           {nav}
         </nav>
@@ -334,13 +342,15 @@ const router = createBrowserRouter([
 export function App() {
   return (
     <SessionProvider>
-      <ToastProvider>
-        <ShelvesProvider>
-          <FacetsProvider>
-            <RouterProvider router={router} />
-          </FacetsProvider>
-        </ShelvesProvider>
-      </ToastProvider>
+      <I18nProvider>
+        <ToastProvider>
+          <ShelvesProvider>
+            <FacetsProvider>
+              <RouterProvider router={router} />
+            </FacetsProvider>
+          </ShelvesProvider>
+        </ToastProvider>
+      </I18nProvider>
     </SessionProvider>
   );
 }

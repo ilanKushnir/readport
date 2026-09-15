@@ -67,7 +67,7 @@ export const IconSettings = (p: P) => (
   </I>
 );
 export const IconBack = (p: P) => (
-  <I {...p}>
+  <I data-mirror="" {...p}>
     <path d="M14.5 5.5 8 12l6.5 6.5" />
   </I>
 );
@@ -211,7 +211,7 @@ export const IconCheck = (p: P) => (
   </I>
 );
 export const IconChevronRight = (p: P) => (
-  <I {...p}>
+  <I data-mirror="" {...p}>
     <path d="m9.5 5.5 6.5 6.5-6.5 6.5" />
   </I>
 );
@@ -353,7 +353,7 @@ export const IconMore = (p: P) => (
   </I>
 );
 export const IconChevronLeft = (p: P) => (
-  <I {...p}>
+  <I data-mirror="" {...p}>
     <path d="M14.5 5.5 8 12l6.5 6.5" />
   </I>
 );

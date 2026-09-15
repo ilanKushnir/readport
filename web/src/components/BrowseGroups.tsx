@@ -1,8 +1,9 @@
 import { useId, useState } from 'react';
 import { NavLink, useNavigate, useParams } from 'react-router-dom';
 import { FACET_SPECS, type FacetGroup, type FacetKind } from '@readport/shared';
+import { useT } from '../i18n';
+import { useFormat } from '../i18n/useFormat';
 import { useFacets } from '../state/facets';
-import { languageName } from '../lib/languageName';
 import { Sheet } from './ui';
 import {
   IconChevronDown,
@@ -59,6 +60,8 @@ function LanguageRows({
   counts: Map<string, number> | null;
   onNavigate?: () => void;
 }) {
+  const t = useT();
+  const f = useFormat();
   const params = useParams();
   const navigate = useNavigate();
   const selected = new Set(
@@ -90,13 +93,11 @@ function LanguageRows({
           <li key={v.value}>
             <label className={`sidebar__value sidebar__value--check${on ? ' is-active' : ''}`}>
               <input type="checkbox" checked={on} onChange={() => toggle(v.value)} />
-              <span className="sidebar__valuename">{languageName(v.value)}</span>
+              <span className="sidebar__valuename">{f.languageName(v.value)}</span>
               <span className="sidebar__count" aria-hidden="true">
-                {count}
+                {f.number(count)}
               </span>
-              <span className="visually-hidden">
-                {count} {count === 1 ? 'book' : 'books'}
-              </span>
+              <span className="visually-hidden">{t('common.books', { n: count })}</span>
             </label>
           </li>
         );
@@ -114,6 +115,8 @@ function Group({
   counts: Map<string, number> | null;
   onNavigate?: () => void;
 }) {
+  const t = useT();
+  const f = useFormat();
   const [open, setOpen] = useState(false);
   const [all, setAll] = useState(false);
   const uid = useId();
@@ -131,13 +134,11 @@ function Group({
       >
         {open ? <IconChevronDown size={16} /> : <IconChevronRight size={16} />}
         <Icon size={18} />
-        <span className="sidebar__label">{group.label}</span>
+        <span className="sidebar__label">{t(`facets.${group.kind}` as const)}</span>
         <span className="sidebar__count" aria-hidden="true">
-          {group.values.length}
+          {f.number(group.values.length)}
         </span>
-        <span className="visually-hidden">
-          {group.values.length} {group.values.length === 1 ? 'entry' : 'entries'}
-        </span>
+        <span className="visually-hidden">{t('common.entries', { n: group.values.length })}</span>
       </button>
       {open && (
         <ul className="sidebar__values" id={`${uid}-values`}>
@@ -160,11 +161,9 @@ function Group({
                   >
                     <span className="sidebar__valuename">{v.label}</span>
                     <span className="sidebar__count" aria-hidden="true">
-                      {count}
+                      {f.number(count)}
                     </span>
-                    <span className="visually-hidden">
-                      {count} {count === 1 ? 'book' : 'books'}
-                    </span>
+                    <span className="visually-hidden">{t('common.books', { n: count })}</span>
                   </NavLink>
                 </li>
               );
@@ -173,7 +172,7 @@ function Group({
           {hidden > 0 && group.kind !== 'language' && (
             <li>
               <button className="sidebar__more" onClick={() => setAll(true)}>
-                Show all {group.values.length}
+                {t('shell.browse.showAll', { n: group.values.length })}
               </button>
             </li>
           )}
@@ -185,6 +184,7 @@ function Group({
 
 /** The Browse section: a heading, its groups, and the way to change them. */
 export function BrowseGroups({ onNavigate }: { onNavigate?: () => void }) {
+  const t = useT();
   const { groups, shown, scopedCounts } = useFacets();
   const [customising, setCustomising] = useState(false);
 
@@ -199,17 +199,18 @@ export function BrowseGroups({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <>
       <h2 className="sidebar__heading sidebar__heading--action">
-        Browse
+        {t('shell.browse.heading')}
         <button
           className="sidebar__iconbtn sidebar__iconbtn--text"
           onClick={() => setCustomising(true)}
         >
-          Edit
+          {t('common.edit')}
         </button>
       </h2>
       {visible.length === 0 ? (
         <p className="sidebar__empty">
-          Nothing chosen. <button onClick={() => setCustomising(true)}>Pick what to show</button>.
+          {t('shell.browse.nothingChosen')}{' '}
+          <button onClick={() => setCustomising(true)}>{t('shell.browse.pickWhatToShow')}</button>.
         </p>
       ) : (
         <ul className="sidebar__group">
@@ -233,6 +234,7 @@ export function BrowseGroups({ onNavigate }: { onNavigate?: () => void }) {
  * always be empty is not an option, it is a puzzle.
  */
 function CustomiseSheet({ onClose }: { onClose: () => void }) {
+  const t = useT();
   const { groups, shown, save } = useFacets();
   const [picked, setPicked] = useState<FacetKind[]>(shown);
   const [saving, setSaving] = useState(false);
@@ -251,23 +253,22 @@ function CustomiseSheet({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <Sheet title="What to browse by" onClose={onClose}>
+    <Sheet title={t('shell.browse.customiseTitle')} onClose={onClose}>
       <p className="sheet__lede">
-        These come from your own files - Calibre tags, audiobook genres, whatever your library
-        already says. ReadPort never writes any of it back.
+        {t('shell.browse.customiseLede', { appName: t('common.appName') })}
       </p>
       <ul className="facet-picker">
         {groups.map((g) => {
-          const spec = FACET_SPECS.find((s) => s.kind === g.kind)!;
           const on = picked.includes(g.kind);
           return (
             <li key={g.kind}>
               <label className="facet-picker__row">
                 <input type="checkbox" checked={on} onChange={() => toggle(g.kind)} />
                 <span className="facet-picker__text">
-                  <strong>{g.label}</strong>
+                  <strong>{t(`facets.${g.kind}` as const)}</strong>
                   <small>
-                    {g.values.length} {g.values.length === 1 ? 'entry' : 'entries'} · {spec.source}
+                    {t('common.entries', { n: g.values.length })} ·{' '}
+                    {t(`shell.facetSource.${g.kind}` as const)}
                   </small>
                 </span>
               </label>
@@ -277,10 +278,10 @@ function CustomiseSheet({ onClose }: { onClose: () => void }) {
       </ul>
       <div className="sheet__actions">
         <button className="btn" onClick={() => void commit()} disabled={saving}>
-          {saving ? 'Saving…' : 'Save'}
+          {saving ? t('common.saving') : t('common.save')}
         </button>
         <button className="btn btn--ghost" onClick={onClose}>
-          Cancel
+          {t('common.cancel')}
         </button>
       </div>
     </Sheet>

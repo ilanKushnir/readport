@@ -1,8 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { ROLE_LABELS, type Role } from '@readport/shared';
+import type { Role } from '@readport/shared';
 import { api, ApiError } from '../api/client';
 import { useSession, type User } from '../state/session';
 import { ReadPortMark } from '../components/icons';
+import { useT } from '../i18n';
 
 interface InvitePeek {
   role: Role;
@@ -15,6 +16,7 @@ interface InvitePeek {
 /** Accept an invitation link: /join/<token>. The only self-service sign-up path. */
 export function JoinPage({ token }: { token: string }) {
   const { setUser } = useSession();
+  const t = useT();
   const [peek, setPeek] = useState<InvitePeek | null | 'invalid' | 'unreachable'>(null);
   const [displayName, setDisplayName] = useState('');
   const [username, setUsername] = useState('');
@@ -45,7 +47,7 @@ export function JoinPage({ token }: { token: string }) {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (password !== confirm) {
-      setError('Passwords do not match.');
+      setError(t('auth.form.passwordsMismatch'));
       return;
     }
     setBusy(true);
@@ -60,12 +62,12 @@ export function JoinPage({ token }: { token: string }) {
     } catch (err) {
       setError(
         err instanceof ApiError && err.code === 'username-taken'
-          ? 'That username is taken - pick another.'
+          ? t('auth.join.usernameTaken')
           : err instanceof ApiError && err.code === 'invalid-invite'
-            ? 'This invitation is no longer valid.'
+            ? t('auth.join.inviteInvalid')
             : err instanceof ApiError && err.code === 'invalid'
               ? err.message.replace(/^invalid:?\s*/, '')
-              : 'Could not create the account. Is the server reachable?',
+              : t('auth.join.createFailed'),
       );
     } finally {
       setBusy(false);
@@ -78,36 +80,33 @@ export function JoinPage({ token }: { token: string }) {
       <form className="auth-card" onSubmit={submit}>
         <span className="brand">
           <ReadPortMark size={34} style={{ color: 'var(--rp-primary)' }} />
-          <span className="brand__name">ReadPort</span>
+          <span className="brand__name">{t('common.appName')}</span>
         </span>
-        <p className="auth-card__tagline">Read and listen in tandem</p>
-        {peek === null && <p className="lede">Checking your invitation…</p>}
+        <p className="auth-card__tagline">{t('common.tagline')}</p>
+        {peek === null && <p className="lede">{t('auth.join.checking')}</p>}
         {peek === 'unreachable' && (
           <>
-            <h1>Could not check this invitation</h1>
-            <p className="lede">
-              The server did not answer. Your link is probably fine - try again in a moment.
-            </p>
+            <h1>{t('auth.join.unreachableTitle')}</h1>
+            <p className="lede">{t('auth.join.unreachableLede')}</p>
             <button className="btn" type="button" onClick={() => window.location.reload()}>
-              Try again
+              {t('common.retry')}
             </button>
           </>
         )}
         {peek === 'invalid' && (
           <>
-            <h1>This link has expired</h1>
-            <p className="lede">
-              Invitations are single-use and time-limited. Ask whoever invited you for a fresh link.
-            </p>
+            <h1>{t('auth.join.expiredTitle')}</h1>
+            <p className="lede">{t('auth.join.expiredLede')}</p>
           </>
         )}
         {peek && peek !== 'invalid' && peek !== 'unreachable' && (
           <>
-            <h1>You're invited</h1>
+            <h1>{t('auth.join.title')}</h1>
             <p className="lede">
-              {peek.invitedBy ? `${peek.invitedBy} invited you` : 'You have been invited'} to join
-              as a <strong>{ROLE_LABELS[peek.role].label.toLowerCase()}</strong>.{' '}
-              {ROLE_LABELS[peek.role].blurb}
+              {peek.invitedBy
+                ? t('auth.join.invitedBy', { name: peek.invitedBy, role: peek.role })
+                : t('auth.join.invited', { role: peek.role })}{' '}
+              {t(`auth.join.roleBlurb.${peek.role}` as const)}
             </p>
             {error && (
               <div className="banner banner--error" role="alert">
@@ -115,18 +114,18 @@ export function JoinPage({ token }: { token: string }) {
               </div>
             )}
             <div className="field">
-              <label htmlFor="jn-name">Display name</label>
+              <label htmlFor="jn-name">{t('auth.form.displayName')}</label>
               <input
                 id="jn-name"
                 className="input"
                 autoComplete="name"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Optional"
+                placeholder={t('auth.form.optional')}
               />
             </div>
             <div className="field">
-              <label htmlFor="jn-user">Username</label>
+              <label htmlFor="jn-user">{t('auth.form.username')}</label>
               <input
                 id="jn-user"
                 className="input"
@@ -141,7 +140,7 @@ export function JoinPage({ token }: { token: string }) {
               />
             </div>
             <div className="field">
-              <label htmlFor="jn-pass">Password</label>
+              <label htmlFor="jn-pass">{t('auth.form.password')}</label>
               <input
                 id="jn-pass"
                 className="input"
@@ -152,10 +151,10 @@ export function JoinPage({ token }: { token: string }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-              <span className="hint">At least 10 characters.</span>
+              <span className="hint">{t('auth.form.passwordHint')}</span>
             </div>
             <div className="field">
-              <label htmlFor="jn-confirm">Confirm password</label>
+              <label htmlFor="jn-confirm">{t('auth.form.confirmPassword')}</label>
               <input
                 id="jn-confirm"
                 className="input"
@@ -167,7 +166,7 @@ export function JoinPage({ token }: { token: string }) {
               />
             </div>
             <button className="btn" type="submit" disabled={busy} style={{ width: '100%' }}>
-              {busy ? 'Creating…' : 'Create my account'}
+              {busy ? t('auth.join.creating') : t('auth.join.submit')}
             </button>
           </>
         )}

@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { api } from '../api/client';
+import { api, failureMessage } from '../api/client';
+import { useT } from '../i18n';
+import { useFormat } from '../i18n/useFormat';
 import { useShelves } from '../state/shelves';
 import { Sheet, useToast } from './ui';
 import { IconCheck, IconListPlus, IconPlus, IconShelf } from './icons';
-import { ordinal } from '../lib/format';
 
 /**
  * "Add to…": two taps to shelve a book, two to queue it. The panel STAYS
@@ -28,6 +29,8 @@ export function AddToSheet({
   /** The book page redraws its membership chips from this. */
   onChanged?: () => void;
 }) {
+  const t = useT();
+  const f = useFormat();
   const { overview, refresh, createShelf } = useShelves();
   const toast = useToast();
   const [member, setMember] = useState<Membership | null>(null);
@@ -66,22 +69,22 @@ export function AddToSheet({
       await api(`/api/shelves/${id}/books/${bookId}`, { method: on ? 'DELETE' : 'PUT' });
       await after();
       if (on) {
-        toast.show(`Taken off ${shelfName}`, {
-          label: 'Undo',
+        toast.show(t('shell.addTo.takenOff', { shelf: shelfName }), {
+          label: t('shell.addTo.undo'),
           onClick: () => {
             void api(`/api/shelves/${id}/books/${bookId}`, { method: 'PUT' }).then(after);
           },
         });
       } else {
-        toast.show(`Added to ${shelfName}`, {
-          label: 'Undo',
+        toast.show(t('shell.addTo.addedTo', { shelf: shelfName }), {
+          label: t('shell.addTo.undo'),
           onClick: () => {
             void api(`/api/shelves/${id}/books/${bookId}`, { method: 'DELETE' }).then(after);
           },
         });
       }
-    } catch {
-      toast.show('That did not save - check the connection.');
+    } catch (err) {
+      toast.show(failureMessage(err, t('shell.addTo.saveFailed'), t));
     } finally {
       setBusy(null);
     }
@@ -94,7 +97,7 @@ export function AddToSheet({
       if (member.onReadingList && position === 'end') {
         await api(`/api/reading-list/${bookId}`, { method: 'DELETE' });
         await after();
-        toast.show('Taken off your reading list');
+        toast.show(t('shell.addTo.takenOffReadingList'));
       } else {
         const res = await api<{ moved: boolean; position: number | null; count: number }>(
           `/api/reading-list/${bookId}`,
@@ -107,15 +110,15 @@ export function AddToSheet({
         toast.show(
           position === 'top'
             ? res.moved
-              ? 'Moved to the front of your reading list'
-              : 'Next up on your reading list'
+              ? t('shell.addTo.movedToFront')
+              : t('shell.addTo.nextUp')
             : res.position !== null
-              ? `Queued ${ordinal(res.position)} on your reading list`
-              : 'Added to your reading list',
+              ? t('shell.addTo.queuedAt', { n: res.position })
+              : t('shell.addTo.addedToReadingList'),
         );
       }
-    } catch {
-      toast.show('That did not save - check the connection.');
+    } catch (err) {
+      toast.show(failureMessage(err, t('shell.addTo.saveFailed'), t));
     } finally {
       setBusy(null);
     }
@@ -132,12 +135,12 @@ export function AddToSheet({
       await after();
       setName('');
       setCreating(false);
-      toast.show(`Added to ${shelf.name}`);
+      toast.show(t('shell.addTo.addedTo', { shelf: shelf.name }));
     } catch (err) {
       toast.show(
         (err as Error).message.includes('shelf-name-taken')
-          ? 'You already have a shelf with that name.'
-          : 'Could not make that shelf just now.',
+          ? t('shell.shelves.nameTaken')
+          : failureMessage(err, t('shell.shelves.createFailed'), t),
       );
     } finally {
       setBusy(null);
@@ -155,8 +158,8 @@ export function AddToSheet({
           disabled={busy !== null || !member}
         >
           <IconListPlus size={17} />
-          <span className="grow">Read next</span>
-          <span className="soft">Front of the queue</span>
+          <span className="grow">{t('shell.addTo.readNext')}</span>
+          <span className="soft">{t('shell.addTo.frontOfQueue')}</span>
         </button>
         <button
           className="list-row"
@@ -166,7 +169,9 @@ export function AddToSheet({
         >
           <IconListPlus size={17} />
           <span className="grow">
-            {member?.onReadingList ? 'On your reading list' : 'Add to reading list'}
+            {member?.onReadingList
+              ? t('shell.addTo.onReadingList')
+              : t('shell.addTo.addToReadingList')}
           </span>
           {member?.onReadingList && <IconCheck size={17} />}
         </button>
@@ -174,9 +179,7 @@ export function AddToSheet({
         <div className="addto__rule" role="presentation" />
 
         {shelves.length === 0 && !creating && (
-          <p className="addto__empty">
-            No shelves yet - a shelf is just a name and a pile of books.
-          </p>
+          <p className="addto__empty">{t('shell.addTo.noShelves')}</p>
         )}
         {shelves.map((s) => {
           const on = member?.shelfIds.includes(s.id) ?? false;
@@ -190,7 +193,7 @@ export function AddToSheet({
             >
               <IconShelf size={17} />
               <span className="grow">{s.name}</span>
-              {on ? <IconCheck size={17} /> : <span className="soft">{s.count}</span>}
+              {on ? <IconCheck size={17} /> : <span className="soft">{f.number(s.count)}</span>}
             </button>
           );
         })}
@@ -198,7 +201,7 @@ export function AddToSheet({
         {creating ? (
           <form className="addto__new" onSubmit={submitNew}>
             <label className="visually-hidden" htmlFor="addto-shelf-name">
-              Shelf name
+              {t('shell.shelves.name')}
             </label>
             <input
               id="addto-shelf-name"
@@ -206,7 +209,7 @@ export function AddToSheet({
               className="input"
               value={name}
               maxLength={60}
-              placeholder="Shelf name"
+              placeholder={t('shell.shelves.name')}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Escape') {
@@ -217,13 +220,13 @@ export function AddToSheet({
               }}
             />
             <button className="btn btn--secondary" type="submit" disabled={!name.trim()}>
-              Add
+              {t('shell.add')}
             </button>
           </form>
         ) : (
           <button className="list-row" onClick={() => setCreating(true)}>
             <IconPlus size={17} />
-            <span className="grow">New shelf…</span>
+            <span className="grow">{t('shell.addTo.newShelf')}</span>
           </button>
         )}
       </div>

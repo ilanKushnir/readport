@@ -1,4 +1,5 @@
 import { type Annotation } from '@readport/shared';
+import { type MessageKey } from '../i18n/messages/en';
 import { domToOffset, rangeForSpan, type TextMap } from './textmap';
 
 /**
@@ -20,13 +21,13 @@ export type HighlightColor = (typeof HIGHLIGHT_COLORS)[number];
 
 export const DEFAULT_HIGHLIGHT: HighlightColor = 'amber';
 
-/** What each colour is called when a screen reader says it aloud. */
-export const COLOR_LABELS: Record<HighlightColor, string> = {
-  amber: 'Amber',
-  rose: 'Rose',
-  plum: 'Plum',
-  sky: 'Sky',
-  sand: 'Sand',
+/** What each colour is called when a screen reader says it aloud: a catalog key, translated where shown. */
+export const COLOR_LABELS: Record<HighlightColor, MessageKey> = {
+  amber: 'reader.color.amber',
+  rose: 'reader.color.rose',
+  plum: 'reader.color.plum',
+  sky: 'reader.color.sky',
+  sand: 'reader.color.sand',
 };
 
 export function isHighlightColor(value: string | null | undefined): value is HighlightColor {

@@ -9,7 +9,8 @@ describe('audioFormatSupport', () => {
   it('marks Ogg/Opus unsupported on a Safari-like browser with an honest reason', () => {
     const ogg = audioFormatSupport('ogg', safari);
     expect(ogg.supported).toBe(false);
-    expect(ogg.reason).toMatch(/OGG/);
+    expect(ogg.reason).toBe('library.book.audioUnsupported');
+    expect(ogg.format).toBe('OGG');
     const opus = audioFormatSupport('opus', safari);
     expect(opus.supported).toBe(false);
   });
@@ -30,7 +31,7 @@ describe('bookAudioSupport', () => {
   it('a single unsupported track makes the book unsupported', () => {
     const s = bookAudioSupport(['mp3', 'opus'], safari);
     expect(s.supported).toBe(false);
-    expect(s.reason).toMatch(/OPUS/);
+    expect(s.format).toBe('OPUS');
   });
 
   it('all-supported tracks pass', () => {

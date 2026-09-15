@@ -1,8 +1,10 @@
-import { ago } from '../lib/format';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { type Job } from '@readport/shared';
-import { api } from '../api/client';
+import { api, failureMessage } from '../api/client';
+import { useT, type TranslateFn } from '../i18n';
+import { useFormat } from '../i18n/useFormat';
+import { en, type MessageKey } from '../i18n/messages/en';
 import { alignerModel, type ModelsResponse } from '../lib/types';
 import { IconAlert, IconCheck, IconClose, IconHeadphones, IconBookOpen } from './icons';
 import { useToast } from './ui';
@@ -10,45 +12,59 @@ import { useToast } from './ui';
 const ACTIVE = new Set(['queued', 'running']);
 
 /** Keys are the server's real job types (server/src/jobs/handlers.ts). */
-const TYPE_LABEL: Record<string, string> = {
-  align: 'Align to the text',
-  'model-download': 'Model download',
-  scan: 'Library scan',
-  'index-ebook': 'Index ebook',
-  'index-audio': 'Index audiobook',
-  'pair-scan': 'Look for pairs',
+const TYPE_KEY: Record<string, MessageKey | undefined> = {
+  align: 'shell.jobType.align',
+  'model-download': 'shell.jobType.model-download',
+  scan: 'shell.jobType.scan',
+  'index-ebook': 'shell.jobType.index-ebook',
+  'index-audio': 'shell.jobType.index-audio',
+  'pair-scan': 'shell.jobType.pair-scan',
 };
 
-export function typeLabel(t: string): string {
-  const known = TYPE_LABEL[t];
-  if (known) return known;
-  const words = t.replace(/[-_]/g, ' ');
+const STATE_KEY: Record<string, MessageKey | undefined> = {
+  queued: 'shell.jobState.queued',
+  running: 'shell.jobState.running',
+  done: 'shell.jobState.done',
+  failed: 'shell.jobState.failed',
+  cancelled: 'shell.jobState.cancelled',
+};
+
+/**
+ * What the label helpers need: the app's `t`, or - for a caller with no
+ * hook in reach - English straight from the catalog.
+ */
+export type LabelT = (key: MessageKey) => string;
+const english: LabelT = (key) => en[key];
+
+export function typeLabel(type: string, t: LabelT = english): string {
+  const key = TYPE_KEY[type];
+  if (key) return t(key);
+  // A type the catalog does not know: the server's own identifier, made readable.
+  const words = type.replace(/[-_]/g, ' ');
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
 /** A job state as a word, not as the enum the scheduler happens to use. */
-export function stateLabel(state: string): string {
-  if (state === 'done') return 'Finished';
-  if (state === 'failed') return 'Failed';
-  if (state === 'cancelled') return 'Cancelled';
-  if (state === 'running') return 'Running';
-  return 'Queued';
+export function stateLabel(state: string, t: LabelT = english): string {
+  return t(STATE_KEY[state] ?? 'shell.jobState.queued');
 }
 
 /** Which of the three scheduler lanes a job waits in. */
-function laneLabel(t: string): string {
+function laneOf(t: string): 'alignment' | 'download' | 'library' {
   if (t === 'align') return 'alignment';
   if (t === 'model-download') return 'download';
   return 'library';
 }
 
-function elapsed(fromIso: string | null): string | null {
+function elapsed(fromIso: string | null, t: TranslateFn): string | null {
   if (!fromIso) return null;
   const s = Math.max(0, (Date.now() - Date.parse(fromIso)) / 1000);
-  if (s < 60) return `${Math.round(s)}s`;
+  if (s < 60) return t('shell.job.elapsedSeconds', { n: Math.round(s) });
   const h = Math.floor(s / 3600);
   const m = Math.round((s % 3600) / 60);
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  return h > 0
+    ? t('shell.job.elapsedHoursMinutes', { h, m })
+    : t('shell.job.elapsedMinutes', { m });
 }
 
 /**
@@ -64,8 +80,8 @@ function elapsed(fromIso: string | null): string | null {
  */
 const firstSeen = new Map<string, { t: number; p: number }>();
 
-/** Rough remaining time, measured from this job's own observed rate. */
-function eta(jobId: string, startedAt: string | null, progress: number): string | null {
+/** Rough remaining time in milliseconds, measured from this job's own observed rate. */
+function etaMs(jobId: string, startedAt: string | null, progress: number): number | null {
   if (!startedAt || progress >= 0.995) {
     firstSeen.delete(jobId);
     return null;
@@ -80,10 +96,7 @@ function eta(jobId: string, startedAt: string | null, progress: number): string 
   const dt = now - first.t;
   // Enough of both to mean anything, and never from a bar that went backwards.
   if (dp <= 0.02 || dt < 45_000) return null;
-  const mins = Math.round(((dt / dp) * (1 - progress)) / 60_000);
-  if (mins < 1) return 'less than a minute left';
-  if (mins < 90) return `about ${mins} min left`;
-  return `about ${Math.round(mins / 60)} h left`;
+  return (dt / dp) * (1 - progress);
 }
 
 /**
@@ -98,6 +111,7 @@ export function ProcessingQueue({
   canManage: boolean;
   onChange?: () => void;
 }) {
+  const t = useT();
   const [jobs, setJobs] = useState<Job[] | null>(null);
   const [showDone, setShowDone] = useState(false);
   const toast = useToast();
@@ -142,10 +156,10 @@ export function ProcessingQueue({
   const act = async (job: Job, what: 'cancel' | 'retry') => {
     try {
       await api(`/api/jobs/${job.id}/${what}`, { method: 'POST' });
-      toast.show(what === 'cancel' ? 'Job cancelled' : 'Job queued again');
+      toast.show(what === 'cancel' ? t('shell.queue.cancelled') : t('shell.queue.retried'));
       await load();
-    } catch {
-      toast.show('Action failed');
+    } catch (err) {
+      toast.show(failureMessage(err, t('shell.queue.actionFailed'), t));
     }
   };
 
@@ -161,22 +175,20 @@ export function ProcessingQueue({
   const idle = running.length === 0 && queued.length === 0;
 
   return (
-    <section className="queue" aria-label="Processing queue" aria-live="polite">
+    <section className="queue" aria-label={t('shell.queue.label')} aria-live="polite">
       <div className="queue__head">
         <div>
           <h2 className="section-title" style={{ margin: 0 }}>
-            Processing
+            {t('shell.queue.heading')}
             {!idle && (
               <span className="section-title__count">
-                {running.length} running
-                {queued.length > 0 ? ` · ${queued.length} waiting` : ''}
+                {t('shell.queue.running', { n: running.length })}
+                {queued.length > 0 ? ` · ${t('shell.queue.waiting', { n: queued.length })}` : ''}
               </span>
             )}
           </h2>
           <p className="queue__lede">
-            {idle
-              ? 'Nothing is being processed right now. Confirming a pair or downloading a model adds work here.'
-              : 'Three lanes run side by side: one alignment, one model download, one library task - so a long alignment never blocks a scan.'}
+            {idle ? t('shell.queue.idleLede') : t('shell.queue.busyLede')}
           </p>
         </div>
         <span className={`queue__dot ${idle ? '' : 'is-live'}`} aria-hidden="true" />
@@ -186,7 +198,7 @@ export function ProcessingQueue({
         <JobRow key={j.id} job={j} canManage={canManage} onAct={act} live />
       ))}
       {queued.length > 0 && (
-        <ol className="queue__list" aria-label="Waiting">
+        <ol className="queue__list" aria-label={t('shell.queue.waitingList')}>
           {queued.map((j, i) => (
             <JobRow key={j.id} job={j} canManage={canManage} onAct={act} position={i + 1} />
           ))}
@@ -195,7 +207,9 @@ export function ProcessingQueue({
       {done.length > 0 && (
         <>
           <button className="queue__toggle" onClick={() => setShowDone((v) => !v)}>
-            {showDone ? 'Hide' : 'Show'} recent results ({done.length})
+            {showDone
+              ? t('shell.queue.hideRecent', { n: done.length })
+              : t('shell.queue.showRecent', { n: done.length })}
           </button>
           {showDone && (
             <div className="queue__list queue__list--done">
@@ -223,6 +237,8 @@ function JobRow({
   live?: boolean;
   position?: number;
 }) {
+  const t = useT();
+  const f = useFormat();
   const pct = Math.round(job.progress * 100);
   const failed = job.state === 'failed';
   const modelMissing = failed && (job.error ?? '').startsWith('model-missing:');
@@ -237,14 +253,20 @@ function JobRow({
     job.type === 'align' ? IconHeadphones : job.type === 'model-download' ? IconBookOpen : null;
   // Housekeeping jobs (library scan, pair scan) have no subject of their own:
   // name them once instead of printing the same words twice.
-  const title = subject?.title ?? typeLabel(job.type);
-  const spent = live ? elapsed(job.startedAt) : null;
-  const remaining = live ? eta(job.id, job.startedAt, job.progress) : null;
+  const title = subject?.title ?? typeLabel(job.type, t);
+  const spent = live ? elapsed(job.startedAt, t) : null;
+  const remaining = live ? etaMs(job.id, job.startedAt, job.progress) : null;
+  // The server's own progress note is shown as it came, isolated so a
+  // left-to-right path or title sits right inside a right-to-left line.
+  const liveParts: ReactNode[] = [];
+  if (job.detail) liveParts.push(<bdi key="detail">{job.detail}</bdi>);
+  if (spent) liveParts.push(t('shell.job.runningFor', { spent }));
+  if (remaining != null) liveParts.push(t('format.left', { duration: f.span(remaining) }));
   return (
     <div className={`jobrow ${live ? 'jobrow--live' : ''} jobrow--${job.state}`}>
       <div className="jobrow__lead">
         {position != null ? (
-          <span className="jobrow__pos">{position}</span>
+          <span className="jobrow__pos">{f.number(position)}</span>
         ) : job.state === 'done' ? (
           <IconCheck size={16} />
         ) : failed ? (
@@ -264,20 +286,33 @@ function JobRow({
           ) : (
             title
           )}
-          {subject?.title && <span className="jobrow__type">{typeLabel(job.type)}</span>}
+          {subject?.title && <span className="jobrow__type">{typeLabel(job.type, t)}</span>}
         </div>
         <div className="jobrow__meta">
           {live
-            ? [job.detail, spent ? `running ${spent}` : null, remaining]
-                .filter(Boolean)
-                .join(' · ') || 'Starting…'
+            ? liveParts.length > 0
+              ? liveParts.map((part, i) => (
+                  <Fragment key={i}>
+                    {i > 0 && ' · '}
+                    {part}
+                  </Fragment>
+                ))
+              : t('shell.job.starting')
             : null}
-          {!live && job.state === 'queued' ? `Waiting for the ${laneLabel(job.type)} lane` : null}
+          {!live && job.state === 'queued'
+            ? t('shell.job.waitingForLane', { lane: laneOf(job.type) })
+            : null}
           {!live && job.state !== 'queued' ? (
             <>
-              {job.state === 'done' ? 'Finished' : job.state === 'failed' ? 'Failed' : 'Cancelled'}{' '}
-              {ago(job.finishedAt, '')}
-              {errorText ? ` · ${errorText}` : ''}
+              {stateLabel(job.state, t)} {f.ago(job.finishedAt, '')}
+              {errorText ? (
+                <>
+                  {' · '}
+                  <bdi>{errorText}</bdi>
+                </>
+              ) : (
+                ''
+              )}
             </>
           ) : null}
         </div>
@@ -294,24 +329,24 @@ function JobRow({
         )}
       </div>
       <div className="jobrow__side">
-        {live && <span className="jobrow__pct">{pct}%</span>}
+        {live && <span className="jobrow__pct">{f.percent(job.progress)}</span>}
         {canManage && (job.state === 'queued' || job.state === 'running') && (
           <button
             className="btn btn--ghost btn--sm"
             onClick={() => onAct(job, 'cancel')}
-            aria-label="Cancel job"
+            aria-label={t('shell.job.cancel')}
           >
-            Cancel
+            {t('common.cancel')}
           </button>
         )}
         {canManage && failed && !modelMissing && (
           <button className="btn btn--ghost btn--sm" onClick={() => onAct(job, 'retry')}>
-            Retry
+            {t('common.retry')}
           </button>
         )}
         {modelMissing && (
           <Link className="btn btn--ghost btn--sm" to="/settings#alignment">
-            Get model
+            {t('shell.job.getModel')}
           </Link>
         )}
       </div>
@@ -329,6 +364,8 @@ function JobRow({
  * words were said, which is exactly why it is fast and language-agnostic.
  */
 export function PipelineDiagram() {
+  const t = useT();
+  const f = useFormat();
   const [models, setModels] = useState<ModelsResponse | null>(null);
   useEffect(() => {
     void api<ModelsResponse>('/api/models')
@@ -339,44 +376,44 @@ export function PipelineDiagram() {
   const steps: { n: number; title: string; body: string; tag?: string }[] = [
     {
       n: 1,
-      title: 'Audiobook',
-      body: 'Each part is decoded to plain 16 kHz mono audio with ffmpeg. Your files are only read, never changed.',
+      title: t('common.audiobook'),
+      body: t('shell.pipeline.audiobookBody'),
       tag: 'ffmpeg',
     },
     {
       n: 2,
-      title: 'Listening',
-      body: 'An acoustic model hears the narration and reports which sound it is hearing, twenty milliseconds at a time. It never decides which words were said - that is what makes it fast, and the same model works for every language.',
+      title: t('shell.pipeline.listeningTitle'),
+      body: t('shell.pipeline.listeningBody'),
       tag: !aligner
-        ? 'acoustic model'
+        ? t('shell.pipeline.tagAcousticModel')
         : aligner.installed
-          ? 'aligner installed · 20 ms frames'
-          : 'aligner not installed',
+          ? t('shell.pipeline.tagAlignerInstalled')
+          : t('shell.pipeline.tagAlignerMissing'),
     },
     {
       n: 3,
-      title: 'Ebook text',
-      body: 'The EPUB is split into sentences and reduced to the same small alphabet the model reports in, so the book and the narration can be compared letter for letter.',
-      tag: '27 letters',
+      title: t('shell.pipeline.textTitle'),
+      body: t('shell.pipeline.textBody'),
+      tag: t('shell.pipeline.tagLetters'),
     },
     {
       n: 4,
-      title: 'Pinning',
-      body: 'Passages that occur exactly once on each side pin text to audio, and only pins that keep their order are kept. Timings between two pins are interpolated; where nothing matches, the pair keeps an honest gap instead of a guess.',
-      tag: 'unique passages, in order',
+      title: t('shell.pipeline.pinningTitle'),
+      body: t('shell.pipeline.pinningBody'),
+      tag: t('shell.pipeline.tagPins'),
     },
     {
       n: 5,
-      title: 'Switching map',
-      body: 'Every pinned or interpolated sentence knows its second in the audio, and every second knows its sentence - that is what the switch between reading and listening lands on.',
-      tag: 'sentence ↔ second',
+      title: t('shell.pipeline.mapTitle'),
+      body: t('shell.pipeline.mapBody'),
+      tag: t('shell.pipeline.tagMap'),
     },
   ];
   return (
     <div className="pipeline">
       {steps.map((s, i) => (
         <div key={s.n} className={`pipeline__step pipeline__step--${s.n}`}>
-          <div className="pipeline__num">{s.n}</div>
+          <div className="pipeline__num">{f.number(s.n)}</div>
           <div className="pipeline__title">{s.title}</div>
           <p className="pipeline__body">{s.body}</p>
           {s.tag && <span className="pipeline__tag">{s.tag}</span>}
@@ -384,12 +421,9 @@ export function PipelineDiagram() {
         </div>
       ))}
       <p className="pipeline__foot">
-        One model covers every language - set it up in{' '}
-        <Link to="/settings#alignment">Settings → Models</Link>. Step 2 is the expensive part, about
-        a minute of computing per hour of audio - it samples the narration rather than listening to
-        every second - which is why it runs one book at a time and reports live progress above. How
-        many pins turn up is also the edition check: a narration that is not this text produces
-        almost none, and ReadPort refuses to publish timings rather than inventing them.
+        {t('shell.pipeline.footSetup')}{' '}
+        <Link to="/settings#alignment">{t('shell.pipeline.footSettingsLink')}</Link>.{' '}
+        {t('shell.pipeline.footDetail', { appName: t('common.appName') })}
       </p>
     </div>
   );

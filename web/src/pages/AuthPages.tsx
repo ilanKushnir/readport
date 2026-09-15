@@ -4,6 +4,7 @@ import { formatInviteCode, isInviteCode, normalizeInviteCode } from '@readport/s
 import { api, ApiError } from '../api/client';
 import { useSession, type User } from '../state/session';
 import { ReadPortMark } from '../components/icons';
+import { useT } from '../i18n';
 
 function AuthCard({
   title,
@@ -22,15 +23,16 @@ function AuthCard({
   error: string | null;
   children: React.ReactNode;
 }) {
+  const t = useT();
   return (
     <main className="auth-page">
       <div className="auth-page__glow" aria-hidden="true" />
       <form className="auth-card" onSubmit={onSubmit}>
         <span className="brand">
           <ReadPortMark size={34} style={{ color: 'var(--rp-primary)' }} />
-          <span className="brand__name">ReadPort</span>
+          <span className="brand__name">{t('common.appName')}</span>
         </span>
-        <p className="auth-card__tagline">Read and listen in tandem</p>
+        <p className="auth-card__tagline">{t('common.tagline')}</p>
         <h1>{title}</h1>
         <p className="lede">{lede}</p>
         {error && (
@@ -40,7 +42,7 @@ function AuthCard({
         )}
         {children}
         <button className="btn" type="submit" disabled={busy} style={{ width: '100%' }}>
-          {busy ? 'Please wait…' : submitLabel}
+          {busy ? t('auth.login.pleaseWait') : submitLabel}
         </button>
       </form>
     </main>
@@ -49,6 +51,7 @@ function AuthCard({
 
 export function LoginPage() {
   const { setUser } = useSession();
+  const t = useT();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -66,11 +69,11 @@ export function LoginPage() {
       setUser(res.user);
     } catch (err) {
       if (err instanceof ApiError && err.status === 429) {
-        setError('Too many attempts. Try again in a few minutes.');
+        setError(t('auth.login.tooManyAttempts'));
       } else if (err instanceof ApiError && err.status === 401) {
-        setError('Wrong username or password.');
+        setError(t('auth.login.wrongCredentials'));
       } else {
-        setError('Sign-in failed. Is the server reachable?');
+        setError(t('auth.login.failed'));
       }
     } finally {
       setBusy(false);
@@ -79,15 +82,15 @@ export function LoginPage() {
 
   return (
     <AuthCard
-      title="Welcome back"
-      lede="Sign in to your ReadPort server."
+      title={t('auth.login.title')}
+      lede={t('auth.login.lede')}
       onSubmit={submit}
-      submitLabel="Sign in"
+      submitLabel={t('auth.login.submit')}
       busy={busy}
       error={error}
     >
       <div className="field">
-        <label htmlFor="li-user">Username</label>
+        <label htmlFor="li-user">{t('auth.form.username')}</label>
         <input
           id="li-user"
           className="input"
@@ -100,7 +103,7 @@ export function LoginPage() {
         />
       </div>
       <div className="field">
-        <label htmlFor="li-pass">Password</label>
+        <label htmlFor="li-pass">{t('auth.form.password')}</label>
         <input
           id="li-pass"
           className="input"
@@ -126,6 +129,7 @@ export function LoginPage() {
  */
 function RedeemCode() {
   const navigate = useNavigate();
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState('');
   const ok = isInviteCode(code);
@@ -133,18 +137,19 @@ function RedeemCode() {
   if (!open) {
     return (
       <button type="button" className="auth-card__aside" onClick={() => setOpen(true)}>
-        I have an invitation code
+        {t('auth.invite.haveCode')}
       </button>
     );
   }
   return (
     <div className="field">
-      <label htmlFor="li-code">Invitation code</label>
+      <label htmlFor="li-code">{t('auth.invite.codeLabel')}</label>
       <div className="folders__add">
         <input
           id="li-code"
           className="input"
-          placeholder="ABCD-EFGH-JKMN"
+          dir="ltr"
+          placeholder={t('auth.invite.codePlaceholder')}
           autoCapitalize="characters"
           autoCorrect="off"
           spellCheck={false}
@@ -163,10 +168,10 @@ function RedeemCode() {
           disabled={!ok}
           onClick={() => navigate(`/join/${normalizeInviteCode(code)}`)}
         >
-          Continue
+          {t('common.continue')}
         </button>
       </div>
-      <span className="hint">Twelve characters, in three groups. Case does not matter.</span>
+      <span className="hint">{t('auth.invite.codeHint')}</span>
     </div>
   );
 }

@@ -1,6 +1,9 @@
 import { useCallback, useId, useRef, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { AUTO_SHELVES, type AutoShelfId } from '@readport/shared';
+import { failureMessage } from '../api/client';
+import { useT } from '../i18n';
+import { useFormat } from '../i18n/useFormat';
 import { useShelves } from '../state/shelves';
 import { useToast } from './ui';
 import {
@@ -49,6 +52,8 @@ function Row({
   onNavigate?: () => void;
   children?: React.ReactNode;
 }) {
+  const t = useT();
+  const f = useFormat();
   return (
     <li className="sidebar__item">
       <NavLink
@@ -66,11 +71,9 @@ function Row({
         {count !== null && (
           <>
             <span className="sidebar__count" aria-hidden="true">
-              {count}
+              {f.number(count)}
             </span>
-            <span className="visually-hidden">
-              {count} {count === 1 ? 'book' : 'books'}
-            </span>
+            <span className="visually-hidden">{t('common.books', { n: count })}</span>
           </>
         )}
       </NavLink>
@@ -87,6 +90,8 @@ export function Sidebar({
   onNavigate?: () => void;
   onCollapse?: () => void;
 }) {
+  const t = useT();
+  const f = useFormat();
   const { overview, deviceCount, createShelf, renameShelf, deleteShelf, moveShelf } = useShelves();
   const navigate = useNavigate();
   const location = useLocation();
@@ -107,15 +112,15 @@ export function Sidebar({
   const shelves = overview?.shelves ?? [];
   const ids = shelves.map((s) => s.id);
   const nameOf = useCallback(
-    (id: string) => shelves.find((s) => s.id === id)?.name ?? 'Shelf',
-    [shelves],
+    (id: string) => shelves.find((s) => s.id === id)?.name ?? t('shell.shelves.unnamed'),
+    [shelves, t],
   );
   const reorder = useReorder({
     ids,
     labelOf: nameOf,
     onCommit: (id, afterId) => {
       void moveShelf(id, afterId).then((ok) => {
-        if (!ok) toast.show('Could not save the new order - check the connection.');
+        if (!ok) toast.show(t('shell.shelves.reorderFailed'));
       });
     },
   });
@@ -135,8 +140,8 @@ export function Sidebar({
     } catch (err) {
       toast.show(
         (err as Error).message.includes('shelf-name-taken')
-          ? 'You already have a shelf with that name.'
-          : 'Could not make that shelf just now.',
+          ? t('shell.shelves.nameTaken')
+          : failureMessage(err, t('shell.shelves.createFailed'), t),
       );
     } finally {
       setBusy(false);
@@ -164,8 +169,8 @@ export function Sidebar({
     } catch (err) {
       toast.show(
         (err as Error).message.includes('shelf-name-taken')
-          ? 'You already have a shelf with that name.'
-          : 'Could not rename that shelf just now.',
+          ? t('shell.shelves.nameTaken')
+          : failureMessage(err, t('shell.shelves.renameFailed'), t),
       );
     }
   };
@@ -184,28 +189,28 @@ export function Sidebar({
         navigate('/');
         onNavigate?.();
       }
-      toast.show(`Removed ${shelf.name}`);
-    } catch {
-      toast.show('Could not remove that shelf just now.');
+      toast.show(t('shell.shelves.removed', { name: shelf.name }));
+    } catch (err) {
+      toast.show(failureMessage(err, t('shell.shelves.removeFailed'), t));
     }
   };
 
   const queue = overview?.readingList;
 
   return (
-    <nav className="sidebar" aria-label="Shelves">
+    <nav className="sidebar" aria-label={t('nav.shelves')}>
       <ul className="sidebar__group sidebar__group--queue">
         <Row
           to="/reading-list"
           icon={<IconList size={18} />}
-          label="Reading list"
+          label={t('shelves.readingList')}
           count={queue?.count ?? 0}
-          sub={queue?.nextTitle ? `Next: ${queue.nextTitle}` : null}
+          sub={queue?.nextTitle ? t('shell.shelves.nextUp', { title: queue.nextTitle }) : null}
           onNavigate={onNavigate}
         />
       </ul>
 
-      <h2 className="sidebar__heading">Shelves</h2>
+      <h2 className="sidebar__heading">{t('nav.shelves')}</h2>
       <ul className="sidebar__group">
         {AUTO_SHELVES.map((s) => {
           const Icon = AUTO_ICONS[s.id];
@@ -215,7 +220,7 @@ export function Sidebar({
               key={s.id}
               to={`/shelf/${s.id}`}
               icon={<Icon size={18} />}
-              label={s.label}
+              label={t(`shelves.${s.id}` as const)}
               count={count}
               onNavigate={onNavigate}
             />
@@ -226,18 +231,18 @@ export function Sidebar({
         <Row
           to="/shelf/on-this-device"
           icon={<IconOffline size={18} />}
-          label="On this device"
+          label={t('shelves.on-this-device')}
           count={deviceCount}
           onNavigate={onNavigate}
         />
       </ul>
 
       <h2 className="sidebar__heading sidebar__heading--action">
-        My shelves
+        {t('shell.shelves.mine')}
         <button
           className="sidebar__iconbtn"
-          aria-label="New shelf"
-          title="New shelf"
+          aria-label={t('shell.shelves.new')}
+          title={t('shell.shelves.new')}
           onClick={() => {
             setCreating(true);
             window.setTimeout(() => inputRef.current?.focus(), 0);
@@ -247,7 +252,7 @@ export function Sidebar({
         </button>
       </h2>
       {shelves.length === 0 && !creating && (
-        <p className="sidebar__empty">A shelf is just a name and a pile of books.</p>
+        <p className="sidebar__empty">{t('shell.shelves.empty')}</p>
       )}
       <ul className="sidebar__group">
         {reorder.ids.map((id, index) => {
@@ -268,7 +273,7 @@ export function Sidebar({
                 <div className="sidebar__edit">
                   <form onSubmit={(e) => void saveName(e, id)}>
                     <label className="visually-hidden" htmlFor={`${uid}-shelf-${id}`}>
-                      Shelf name
+                      {t('shell.shelves.name')}
                     </label>
                     <input
                       id={`${uid}-shelf-${id}`}
@@ -286,27 +291,25 @@ export function Sidebar({
                       }}
                     />
                     <button className="btn btn--secondary btn--sm" type="submit">
-                      Save
+                      {t('common.save')}
                     </button>
                   </form>
                   {confirmRemove ? (
                     <>
                       <p className="sidebar__confirm">
                         {shelf.count === 0
-                          ? 'Remove this shelf?'
-                          : `The ${shelf.count} ${
-                              shelf.count === 1 ? 'book' : 'books'
-                            } on it stay in your library.`}
+                          ? t('shell.shelves.removeQuestion')
+                          : t('shell.shelves.removeKeepsBooks', { n: shelf.count })}
                       </p>
                       <div className="sidebar__editactions">
                         <button className="btn btn--danger btn--sm" onClick={() => void remove(id)}>
-                          Remove
+                          {t('common.remove')}
                         </button>
                         <button
                           className="btn btn--ghost btn--sm"
                           onClick={() => setConfirmRemove(false)}
                         >
-                          Keep it
+                          {t('shell.shelves.keepIt')}
                         </button>
                       </div>
                     </>
@@ -319,35 +322,35 @@ export function Sidebar({
                         <div
                           className="sidebar__moves"
                           role="group"
-                          aria-label={`Move ${shelf.name}`}
+                          aria-label={t('shell.shelves.moveGroup', { name: shelf.name })}
                         >
                           <button
                             className="btn btn--ghost btn--sm"
                             disabled={first}
                             onClick={() => reorder.moveTo(id, 'top')}
                           >
-                            To top
+                            {t('shell.shelves.toTop')}
                           </button>
                           <button
                             className="btn btn--ghost btn--sm"
                             disabled={first}
                             onClick={() => reorder.moveTo(id, 'up')}
                           >
-                            Up
+                            {t('shell.shelves.up')}
                           </button>
                           <button
                             className="btn btn--ghost btn--sm"
                             disabled={last}
                             onClick={() => reorder.moveTo(id, 'down')}
                           >
-                            Down
+                            {t('shell.shelves.down')}
                           </button>
                           <button
                             className="btn btn--ghost btn--sm"
                             disabled={last}
                             onClick={() => reorder.moveTo(id, 'bottom')}
                           >
-                            To bottom
+                            {t('shell.shelves.toBottom')}
                           </button>
                         </div>
                       )}
@@ -356,10 +359,10 @@ export function Sidebar({
                           className="btn btn--danger btn--sm"
                           onClick={() => setConfirmRemove(true)}
                         >
-                          Remove…
+                          {t('shell.shelves.removeEllipsis')}
                         </button>
                         <button className="btn btn--ghost btn--sm" onClick={closeEdit}>
-                          Done
+                          {t('common.done')}
                         </button>
                       </div>
                     </>
@@ -379,11 +382,9 @@ export function Sidebar({
                     <IconShelf size={18} />
                     <span className="sidebar__label">{shelf.name}</span>
                     <span className="sidebar__count" aria-hidden="true">
-                      {shelf.count}
+                      {f.number(shelf.count)}
                     </span>
-                    <span className="visually-hidden">
-                      {shelf.count} {shelf.count === 1 ? 'book' : 'books'}
-                    </span>
+                    <span className="visually-hidden">{t('common.books', { n: shelf.count })}</span>
                   </NavLink>
                   <span className="sidebar__tools">
                     <button className="sidebar__grip" type="button" {...reorder.handleProps(id)}>
@@ -391,7 +392,7 @@ export function Sidebar({
                     </button>
                     <button
                       className="sidebar__iconbtn"
-                      aria-label={`Rename or remove the shelf ${shelf.name}`}
+                      aria-label={t('shell.shelves.renameOrRemove', { name: shelf.name })}
                       onClick={() => {
                         setEditing(id);
                         setConfirmRemove(false);
@@ -410,7 +411,7 @@ export function Sidebar({
       {creating ? (
         <form className="sidebar__new" onSubmit={submitNew}>
           <label className="visually-hidden" htmlFor={`${uid}-new`}>
-            Shelf name
+            {t('shell.shelves.name')}
           </label>
           <input
             id={`${uid}-new`}
@@ -418,7 +419,7 @@ export function Sidebar({
             className="input"
             value={name}
             maxLength={60}
-            placeholder="Shelf name"
+            placeholder={t('shell.shelves.name')}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Escape') {
@@ -428,13 +429,13 @@ export function Sidebar({
             }}
           />
           <button className="btn btn--secondary" type="submit" disabled={busy || !name.trim()}>
-            Add
+            {t('shell.add')}
           </button>
         </form>
       ) : (
         shelves.length === 0 && (
           <button className="btn btn--secondary sidebar__newbtn" onClick={() => setCreating(true)}>
-            <IconPlus size={17} /> New shelf
+            <IconPlus size={17} /> {t('shell.shelves.new')}
           </button>
         )
       )}
@@ -452,9 +453,9 @@ export function Sidebar({
           <button
             className="btn btn--ghost"
             onClick={onCollapse}
-            title="Hide shelves (keyboard shortcut: [)"
+            title={t('nav.shelvesShortcut', { label: t('nav.hideShelves') })}
           >
-            <IconChevronLeft size={17} /> Hide shelves
+            <IconChevronLeft size={17} /> {t('nav.hideShelves')}
           </button>
         </div>
       )}

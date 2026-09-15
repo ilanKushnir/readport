@@ -631,11 +631,11 @@ describe('storage quota', () => {
 
     const state = (await idb.idbGet(idb.STORES.downloads, 'big')) as {
       status: string;
-      error: string;
+      errorCode?: string;
     };
     expect(state.status).toBe('error');
     // Actionable, not "The quota has been exceeded."
-    expect(state.error).toMatch(/not enough room/i);
+    expect(state.errorCode).toBe('out-of-space');
     expect(fetch).not.toHaveBeenCalled();
     expect(cache.store.size).toBe(0);
   });

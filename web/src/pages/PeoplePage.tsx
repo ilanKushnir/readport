@@ -1,25 +1,30 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { ROLE_LABELS, type InviteDto, type Role, type UserDto } from '@readport/shared';
+import { type InviteDto, type Role, type UserDto } from '@readport/shared';
 import { api, ApiError } from '../api/client';
 import { useSession } from '../state/session';
 import { Sheet, useToast } from '../components/ui';
 import { IconAlert, IconCheck, IconClose, IconLink } from '../components/icons';
-import { formatDate, ago } from '../lib/format';
+import { useT, type TranslateFn } from '../i18n';
+import { useFormat } from '../i18n/useFormat';
 
 const ROLES: Role[] = ['admin', 'curator', 'reader'];
 
-function errorText(err: unknown, fallback: string): string {
+/** A role's name and its one-line job description, in the interface language. */
+const roleLabel = (t: TranslateFn, r: Role) => t(`people.roles.${r}.label` as const);
+const roleBlurb = (t: TranslateFn, r: Role) => t(`people.roles.${r}.blurb` as const);
+
+function errorText(err: unknown, fallback: string, t: TranslateFn): string {
   if (!(err instanceof ApiError)) return fallback;
   switch (err.code) {
     case 'username-taken':
-      return 'That username is already taken.';
+      return t('people.error.usernameTaken');
     case 'last-admin':
-      return 'This is the last active admin - promote someone else first.';
+      return t('people.error.lastAdmin');
     case 'self-lockout':
-      return 'You cannot remove your own admin access.';
+      return t('people.error.selfLockout');
     case 'proxy-managed':
-      return 'This account signs in through the reverse proxy; there is no local password.';
+      return t('people.error.proxyManaged');
     case 'invalid':
       return err.message.replace(/^invalid:?\s*/, '');
     default:
@@ -29,6 +34,8 @@ function errorText(err: unknown, fallback: string): string {
 
 /** Settings → People: accounts, roles, invitations. Admin only. */
 export function PeoplePage() {
+  const t = useT();
+  const f = useFormat();
   const { user: me } = useSession();
   const toast = useToast();
   const [users, setUsers] = useState<UserDto[] | null>(null);
@@ -57,8 +64,13 @@ export function PeoplePage() {
 
   if (me?.role !== 'admin') {
     return (
-      <main className="app-main" id="main-content" tabIndex={-1} style={{ maxWidth: 820 }}>
-        <p>Only admins manage people.</p>
+      <main
+        className="app-main"
+        id="main-content"
+        tabIndex={-1}
+        style={{ '--rp-measure': '820px' } as React.CSSProperties}
+      >
+        <p>{t('people.adminsOnly')}</p>
       </main>
     );
   }
@@ -66,10 +78,10 @@ export function PeoplePage() {
   const revokeInvite = async (id: string) => {
     try {
       await api(`/api/invites/${id}`, { method: 'DELETE' });
-      toast.show('Invitation revoked');
+      toast.show(t('people.invites.revoked'));
       await load();
     } catch {
-      toast.show('Could not revoke');
+      toast.show(t('people.invites.couldNotRevoke'));
     }
   };
 
@@ -78,40 +90,40 @@ export function PeoplePage() {
       className="app-main settings-page"
       id="main-content"
       tabIndex={-1}
-      style={{ maxWidth: 820 }}
+      style={{ '--rp-measure': '820px' } as React.CSSProperties}
     >
       <header className="page-head page-head--row">
         <div>
           <p className="crumb">
-            <Link to="/settings">Settings</Link> / People
+            <Link to="/settings">{t('nav.settings')}</Link> / {t('people.title')}
           </p>
-          <h1>People</h1>
-          <p>
-            Everyone keeps their own reading position, bookmarks and downloads. There is no open
-            sign-up: add someone directly or send them a one-time link.
-          </p>
+          <h1>{t('people.title')}</h1>
+          <p>{t('people.lede')}</p>
         </div>
         <div className="page-head__actions">
           <button className="btn btn--secondary" onClick={() => setSheet('invite')}>
-            <IconLink size={16} /> Invite by link
+            <IconLink size={16} /> {t('people.inviteByLink')}
           </button>
           <button className="btn" onClick={() => setSheet('add')}>
-            Add person
+            {t('people.addPerson')}
           </button>
         </div>
       </header>
 
-      <section className="roles-legend" aria-label="Roles">
+      <section className="roles-legend" aria-label={t('people.roles.label')}>
         {ROLES.map((r) => (
           <div key={r} className={`roles-legend__item roles-legend__item--${r}`}>
-            <strong>{ROLE_LABELS[r].label}</strong>
-            <span>{ROLE_LABELS[r].blurb}</span>
+            <strong>{roleLabel(t, r)}</strong>
+            <span>{roleBlurb(t, r)}</span>
           </div>
         ))}
       </section>
 
-      <section className="settings-section" aria-label="Accounts">
-        <h2>Accounts {users && <span className="section-title__count">{users.length}</span>}</h2>
+      <section className="settings-section" aria-label={t('people.accounts.title')}>
+        <h2>
+          {t('people.accounts.title')}{' '}
+          {users && <span className="section-title__count">{f.number(users.length)}</span>}
+        </h2>
         {!users ? (
           <div className="skeleton" style={{ height: 120 }} />
         ) : (
@@ -124,32 +136,37 @@ export function PeoplePage() {
                 <span className="person__body">
                   <span className="person__name">
                     {u.displayName ?? u.username}
-                    {u.displayName && <span className="person__user"> @{u.username}</span>}
-                    {u.id === me.id && <span className="person__you">you</span>}
+                    {u.displayName && (
+                      <span className="person__user">
+                        {' '}
+                        @<bdi>{u.username}</bdi>
+                      </span>
+                    )}
+                    {u.id === me.id && (
+                      <span className="person__you">{t('people.accounts.you')}</span>
+                    )}
                   </span>
                   <span className="person__meta">
-                    <span className={`badge badge--role-${u.role}`}>
-                      {ROLE_LABELS[u.role].label}
-                    </span>
+                    <span className={`badge badge--role-${u.role}`}>{roleLabel(t, u.role)}</span>
                     {u.status === 'disabled' && (
-                      <span className="badge badge--muted">Disabled</span>
+                      <span className="badge badge--muted">{t('people.accounts.disabled')}</span>
                     )}
-                    {u.proxyManaged && <span className="badge badge--muted">Proxy sign-in</span>}
-                    <span>Last seen {ago(u.lastLoginAt)}</span>
+                    {u.proxyManaged && (
+                      <span className="badge badge--muted">{t('people.accounts.proxySignIn')}</span>
+                    )}
+                    <span>{t('people.accounts.lastSeen', { when: f.ago(u.lastLoginAt) })}</span>
                     {u.booksInProgress > 0 && (
                       <span>
-                        · {u.booksInProgress} book{u.booksInProgress === 1 ? '' : 's'} in progress
+                        · {t('people.accounts.booksInProgress', { n: u.booksInProgress })}
                       </span>
                     )}
                     {u.sessions > 0 && (
-                      <span>
-                        · {u.sessions} device{u.sessions === 1 ? '' : 's'}
-                      </span>
+                      <span>· {t('people.accounts.devices', { n: u.sessions })}</span>
                     )}
                   </span>
                 </span>
                 <button className="btn btn--ghost btn--sm" onClick={() => setEditing(u)}>
-                  Manage
+                  {t('people.accounts.manage')}
                 </button>
               </li>
             ))}
@@ -158,9 +175,10 @@ export function PeoplePage() {
       </section>
 
       {invites.length > 0 && (
-        <section className="settings-section" aria-label="Pending invitations">
+        <section className="settings-section" aria-label={t('people.invites.title')}>
           <h2>
-            Pending invitations <span className="section-title__count">{invites.length}</span>
+            {t('people.invites.title')}{' '}
+            <span className="section-title__count">{f.number(invites.length)}</span>
           </h2>
           <ul className="people">
             {invites.map((i) => (
@@ -170,18 +188,18 @@ export function PeoplePage() {
                 </span>
                 <span className="person__body">
                   <span className="person__name">
-                    {i.displayName ?? i.username ?? 'Anyone with the link'}
+                    {i.displayName ?? i.username ?? t('people.invites.anyone')}
                   </span>
                   <span className="person__meta">
-                    <span className={`badge badge--role-${i.role}`}>
-                      {ROLE_LABELS[i.role].label}
-                    </span>
-                    <span>Expires {formatDate(i.expiresAt)}</span>
-                    {i.createdBy && <span>· from {i.createdBy}</span>}
+                    <span className={`badge badge--role-${i.role}`}>{roleLabel(t, i.role)}</span>
+                    <span>{t('people.invites.expires', { date: f.date(i.expiresAt) })}</span>
+                    {i.createdBy && (
+                      <span>· {t('people.invites.from', { name: i.createdBy })}</span>
+                    )}
                   </span>
                 </span>
                 <button className="btn btn--ghost btn--sm" onClick={() => void revokeInvite(i.id)}>
-                  Revoke
+                  {t('people.invites.revoke')}
                 </button>
               </li>
             ))}
@@ -209,28 +227,26 @@ export function PeoplePage() {
         />
       )}
       {link && (
-        <Sheet title="Invitation link" onClose={() => setLink(null)}>
+        <Sheet title={t('people.link.title')} onClose={() => setLink(null)}>
           <p style={{ marginTop: 0 }}>
-            Share this once. It creates one {ROLE_LABELS[link.role].label.toLowerCase()} account and
-            stops working after use or on {formatDate(link.expiresAt)}.
+            {t('people.link.shareOnce', { role: link.role, date: f.date(link.expiresAt) })}
           </p>
           <div className="field">
-            <label htmlFor="iv-code">Or read them this code</label>
+            <label htmlFor="iv-code">{t('people.link.codeLabel')}</label>
             <input
               id="iv-code"
               className="input invitecode"
+              dir="ltr"
               readOnly
               value={link.code}
               onFocus={(e) => e.currentTarget.select()}
             />
-            <span className="hint">
-              They enter it on the sign-in page. Case does not matter, and it is the same invitation
-              as the link.
-            </span>
+            <span className="hint">{t('people.link.codeHint')}</span>
           </div>
           <div className="linkbox">
             <input
               className="input"
+              dir="ltr"
               readOnly
               value={link.url}
               onFocus={(e) => e.currentTarget.select()}
@@ -239,12 +255,12 @@ export function PeoplePage() {
               className="btn"
               onClick={() => {
                 void navigator.clipboard?.writeText(link.url).then(
-                  () => toast.show('Link copied'),
-                  () => toast.show('Select and copy the link'),
+                  () => toast.show(t('people.link.copied')),
+                  () => toast.show(t('people.link.copyFailed')),
                 );
               }}
             >
-              Copy
+              {t('people.link.copy')}
             </button>
           </div>
         </Sheet>
@@ -277,8 +293,9 @@ function RolePicker({
   onChange: (r: Role) => void;
   disabled?: boolean;
 }) {
+  const t = useT();
   return (
-    <div className="role-picker" role="radiogroup" aria-label="Role">
+    <div className="role-picker" role="radiogroup" aria-label={t('people.form.role')}>
       {ROLES.map((r) => (
         <button
           key={r}
@@ -289,8 +306,8 @@ function RolePicker({
           className={`role-picker__opt ${value === r ? 'is-on' : ''}`}
           onClick={() => onChange(r)}
         >
-          <strong>{ROLE_LABELS[r].label}</strong>
-          <span>{ROLE_LABELS[r].blurb}</span>
+          <strong>{roleLabel(t, r)}</strong>
+          <span>{roleBlurb(t, r)}</span>
         </button>
       ))}
     </div>
@@ -298,6 +315,7 @@ function RolePicker({
 }
 
 function AddPersonSheet({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
+  const t = useT();
   const toast = useToast();
   const [displayName, setDisplayName] = useState('');
   const [username, setUsername] = useState('');
@@ -314,34 +332,34 @@ function AddPersonSheet({ onClose, onDone }: { onClose: () => void; onDone: () =
         method: 'POST',
         body: { username, password, role, displayName: displayName.trim() || undefined },
       });
-      toast.show(`Added ${displayName.trim() || username}`);
+      toast.show(t('people.add.added', { name: displayName.trim() || username }));
       onDone();
     } catch (err) {
-      setError(errorText(err, 'Could not add the account.'));
+      setError(errorText(err, t('people.add.failed'), t));
     } finally {
       setBusy(false);
     }
   };
   return (
-    <Sheet title="Add a person" onClose={onClose}>
+    <Sheet title={t('people.add.title')} onClose={onClose}>
       <form onSubmit={submit}>
         {error && (
           <div className="banner banner--error" role="alert">
-            {error}
+            <bdi>{error}</bdi>
           </div>
         )}
         <div className="field">
-          <label htmlFor="ap-name">Display name</label>
+          <label htmlFor="ap-name">{t('people.form.displayName')}</label>
           <input
             id="ap-name"
             className="input"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Optional"
+            placeholder={t('people.add.optional')}
           />
         </div>
         <div className="field">
-          <label htmlFor="ap-user">Username</label>
+          <label htmlFor="ap-user">{t('people.add.username')}</label>
           <input
             id="ap-user"
             className="input"
@@ -356,7 +374,7 @@ function AddPersonSheet({ onClose, onDone }: { onClose: () => void; onDone: () =
           />
         </div>
         <div className="field">
-          <label htmlFor="ap-pass">Temporary password</label>
+          <label htmlFor="ap-pass">{t('people.add.temporaryPassword')}</label>
           <input
             id="ap-pass"
             className="input"
@@ -367,16 +385,14 @@ function AddPersonSheet({ onClose, onDone }: { onClose: () => void; onDone: () =
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <span className="hint">
-            Tell them in person; they can change it under Settings → Account.
-          </span>
+          <span className="hint">{t('people.add.passwordHint')}</span>
         </div>
         <div className="field">
-          <label>Role</label>
+          <label>{t('people.form.role')}</label>
           <RolePicker value={role} onChange={setRole} />
         </div>
         <button className="btn" type="submit" disabled={busy} style={{ width: '100%' }}>
-          {busy ? 'Adding…' : 'Add person'}
+          {busy ? t('people.add.adding') : t('people.addPerson')}
         </button>
       </form>
     </Sheet>
@@ -390,6 +406,7 @@ function InviteSheet({
   onClose: () => void;
   onDone: (l: { url: string; code: string; role: Role; expiresAt: string }) => void;
 }) {
+  const t = useT();
   const [displayName, setDisplayName] = useState('');
   const [role, setRole] = useState<Role>('reader');
   const [canExport, setCanExport] = useState(false);
@@ -425,40 +442,40 @@ function InviteSheet({
         expiresAt: res.invite.expiresAt,
       });
     } catch (err) {
-      setError(errorText(err, 'Could not create the invitation.'));
+      setError(errorText(err, t('people.invite.failed'), t));
     } finally {
       setBusy(false);
     }
   };
   return (
-    <Sheet title="Invite by link" onClose={onClose}>
+    <Sheet title={t('people.inviteByLink')} onClose={onClose}>
       <form onSubmit={submit}>
         {error && (
           <div className="banner banner--error" role="alert">
-            {error}
+            <bdi>{error}</bdi>
           </div>
         )}
         <div className="field">
-          <label htmlFor="iv-name">Who is it for?</label>
+          <label htmlFor="iv-name">{t('people.invite.whoFor')}</label>
           <input
             id="iv-name"
             className="input"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Optional - shown on the invite"
+            placeholder={t('people.invite.namePlaceholder')}
           />
         </div>
         <div className="field">
-          <label>Role</label>
+          <label>{t('people.form.role')}</label>
           <RolePicker value={role} onChange={setRole} />
         </div>
         <label className="rs-toggle" style={{ maxWidth: 620 }}>
           <span>
-            Let them save copies
+            {t('people.form.letThemSave')}
             <span className="hint" style={{ display: 'block' }}>
               {role === 'admin'
-                ? 'Admins can always download the files.'
-                : 'Downloads the original file to their device, to keep. Reading and offline use do not need this.'}
+                ? t('people.form.adminsAlwaysDownload')
+                : t('people.invite.saveCopiesHint')}
             </span>
           </span>
           <input
@@ -470,22 +487,22 @@ function InviteSheet({
           />
         </label>
         <div className="field">
-          <label htmlFor="iv-days">Valid for</label>
+          <label htmlFor="iv-days">{t('people.invite.validFor')}</label>
           <select
             id="iv-days"
             className="input input--select"
             value={days}
             onChange={(e) => setDays(Number(e.target.value))}
           >
-            <option value={1}>1 day</option>
-            <option value={3}>3 days</option>
-            <option value={7}>7 days</option>
-            <option value={14}>14 days</option>
-            <option value={30}>30 days</option>
+            {[1, 3, 7, 14, 30].map((n) => (
+              <option key={n} value={n}>
+                {t('people.invite.days', { n })}
+              </option>
+            ))}
           </select>
         </div>
         <button className="btn" type="submit" disabled={busy} style={{ width: '100%' }}>
-          {busy ? 'Creating…' : 'Create link'}
+          {busy ? t('people.invite.creating') : t('people.invite.createLink')}
         </button>
       </form>
     </Sheet>
@@ -505,6 +522,7 @@ function ManageSheet({
   onChanged: (u: UserDto) => void;
   onDeleted: () => void;
 }) {
+  const t = useT();
   const toast = useToast();
   const [displayName, setDisplayName] = useState(user.displayName ?? '');
   const [role, setRole] = useState<Role>(user.role);
@@ -523,7 +541,7 @@ function ManageSheet({
       toast.show(okMsg);
       return true;
     } catch (err) {
-      setError(errorText(err, 'Could not save.'));
+      setError(errorText(err, t('people.manage.saveFailed'), t));
       return false;
     } finally {
       setBusy(false);
@@ -539,11 +557,11 @@ function ManageSheet({
     <Sheet title={user.displayName ?? user.username} onClose={onClose}>
       {error && (
         <div className="banner banner--error" role="alert">
-          <IconAlert size={16} /> {error}
+          <IconAlert size={16} /> <bdi>{error}</bdi>
         </div>
       )}
       <div className="field">
-        <label htmlFor="mg-name">Display name</label>
+        <label htmlFor="mg-name">{t('people.form.displayName')}</label>
         <input
           id="mg-name"
           className="input"
@@ -552,17 +570,17 @@ function ManageSheet({
         />
       </div>
       <div className="field">
-        <label>Role</label>
+        <label>{t('people.form.role')}</label>
         <RolePicker value={role} onChange={setRole} disabled={isSelf} />
-        {isSelf && <span className="hint">Ask another admin to change your own role.</span>}
+        {isSelf && <span className="hint">{t('people.manage.ownRoleHint')}</span>}
       </div>
       <label className="rs-toggle" style={{ maxWidth: 620 }}>
         <span>
-          Let them save copies
+          {t('people.form.letThemSave')}
           <span className="hint" style={{ display: 'block' }}>
             {role === 'admin'
-              ? 'Admins can always download the files.'
-              : 'Downloads the original EPUB or audio file to their device, to keep. Reading and offline use do not need this.'}
+              ? t('people.form.adminsAlwaysDownload')
+              : t('people.manage.saveCopiesHint')}
           </span>
         </span>
         <input
@@ -583,24 +601,24 @@ function ManageSheet({
               ...(role !== user.role ? { role } : {}),
               ...(canExport !== user.canExport ? { canExport } : {}),
             },
-            'Saved',
+            t('people.manage.saved'),
           )
         }
       >
-        Save changes
+        {t('people.manage.saveChanges')}
       </button>
 
       {!user.proxyManaged && (
         <div className="manage-block">
-          <h3>Reset password</h3>
-          <p className="hint">Signs them out on every device; they sign back in with this one.</p>
+          <h3>{t('people.manage.resetPassword')}</h3>
+          <p className="hint">{t('people.manage.resetPasswordHint')}</p>
           <div className="linkbox">
             <input
               className="input"
               type="text"
               autoComplete="off"
               minLength={10}
-              placeholder="New password (10+ chars)"
+              placeholder={t('people.manage.newPasswordPlaceholder')}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
             />
@@ -608,19 +626,19 @@ function ManageSheet({
               className="btn btn--secondary"
               disabled={newPassword.length < 10 || busy}
               onClick={() =>
-                void patch({ password: newPassword }, 'Password reset').then(
+                void patch({ password: newPassword }, t('people.manage.passwordReset')).then(
                   (ok) => ok && setNewPassword(''),
                 )
               }
             >
-              Reset
+              {t('people.manage.reset')}
             </button>
           </div>
         </div>
       )}
 
       <div className="manage-block">
-        <h3>Access</h3>
+        <h3>{t('people.manage.access')}</h3>
         <div className="manage-row">
           <button
             className="btn btn--secondary btn--sm"
@@ -633,16 +651,16 @@ function ManageSheet({
                 );
                 toast.show(
                   r.revoked
-                    ? `Signed out of ${r.revoked} device${r.revoked === 1 ? '' : 's'}`
-                    : 'No active sessions',
+                    ? t('people.manage.signedOut', { n: r.revoked })
+                    : t('people.manage.noSessions'),
                 );
                 onChanged({ ...user, sessions: 0 });
               } catch {
-                toast.show('Could not sign out');
+                toast.show(t('people.manage.signOutFailed'));
               }
             }}
           >
-            Sign out everywhere
+            {t('people.manage.signOutEverywhere')}
           </button>
           {!isSelf && (
             <button
@@ -651,17 +669,19 @@ function ManageSheet({
               onClick={() =>
                 void patch(
                   { status: user.status === 'disabled' ? 'active' : 'disabled' },
-                  user.status === 'disabled' ? 'Account enabled' : 'Account disabled',
+                  user.status === 'disabled'
+                    ? t('people.manage.accountEnabled')
+                    : t('people.manage.accountDisabled'),
                 )
               }
             >
               {user.status === 'disabled' ? (
                 <>
-                  <IconCheck size={14} /> Enable account
+                  <IconCheck size={14} /> {t('people.manage.enableAccount')}
                 </>
               ) : (
                 <>
-                  <IconClose size={14} /> Disable account
+                  <IconClose size={14} /> {t('people.manage.disableAccount')}
                 </>
               )}
             </button>
@@ -671,13 +691,11 @@ function ManageSheet({
 
       {!isSelf && (
         <div className="manage-block manage-block--danger">
-          <h3>Delete account</h3>
-          <p className="hint">
-            Removes their progress, bookmarks and sessions. Library files are never touched.
-          </p>
+          <h3>{t('people.manage.deleteAccount')}</h3>
+          <p className="hint">{t('people.manage.deleteHint')}</p>
           {!confirmDelete ? (
             <button className="btn btn--danger btn--sm" onClick={() => setConfirmDelete(true)}>
-              Delete {user.displayName ?? user.username}…
+              {t('people.manage.deleteNamed', { name: user.displayName ?? user.username })}
             </button>
           ) : (
             <div className="manage-row">
@@ -688,19 +706,19 @@ function ManageSheet({
                   setBusy(true);
                   try {
                     await api(`/api/users/${user.id}`, { method: 'DELETE' });
-                    toast.show('Account deleted');
+                    toast.show(t('people.manage.accountDeleted'));
                     onDeleted();
                   } catch (err) {
-                    setError(errorText(err, 'Could not delete.'));
+                    setError(errorText(err, t('people.manage.deleteFailed'), t));
                   } finally {
                     setBusy(false);
                   }
                 }}
               >
-                Yes, delete permanently
+                {t('people.manage.deleteConfirm')}
               </button>
               <button className="btn btn--ghost btn--sm" onClick={() => setConfirmDelete(false)}>
-                Keep
+                {t('people.manage.keep')}
               </button>
             </div>
           )}

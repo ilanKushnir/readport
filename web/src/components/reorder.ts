@@ -7,6 +7,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
 } from 'react';
+import { useT } from '../i18n';
 
 /**
  * Re-ordering a list, with the keyboard path as the PRIMARY mechanism and the
@@ -128,6 +129,7 @@ export function useReorder(opts: {
   disabled?: boolean;
 }): ReorderApi {
   const { ids: source, labelOf, onCommit, disabled } = opts;
+  const t = useT();
   const [live, setLive] = useState<string[] | null>(null);
   const [grabbed, setGrabbed] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -161,11 +163,13 @@ export function useReorder(opts: {
   }, []);
 
   const say = useCallback(
-    (id: string, verb: string, list: string[]) => {
+    (id: string, how: 'dropped' | 'left' | 'moved', list: string[]) => {
       const at = list.indexOf(id) + 1;
-      setAnnouncement(`${verb} ${labelOf(id)}, position ${at} of ${list.length}.`);
+      setAnnouncement(
+        t(`shell.reorder.${how}` as const, { label: labelOf(id), at, total: list.length }),
+      );
     },
-    [labelOf],
+    [labelOf, t],
   );
 
   const begin = useCallback(
@@ -176,11 +180,10 @@ export function useReorder(opts: {
       setGrabbed(id);
       const at = idsRef.current.indexOf(id) + 1;
       setAnnouncement(
-        `Grabbed ${labelOf(id)}, position ${at} of ${idsRef.current.length}. ` +
-          'Use the arrow keys to move it, space to drop it, escape to leave it where it was.',
+        t('shell.reorder.grabbed', { label: labelOf(id), at, total: idsRef.current.length }),
       );
     },
-    [disabled, labelOf],
+    [disabled, labelOf, t],
   );
 
   const drop = useCallback(
@@ -197,9 +200,9 @@ export function useReorder(opts: {
       const SEP = '\u0000';
       if (before.join(SEP) !== list.join(SEP)) {
         onCommit(id, afterIdFor(list, id), list);
-        say(id, 'Dropped at', list);
+        say(id, 'dropped', list);
       } else {
-        say(id, 'Left', list);
+        say(id, 'left', list);
       }
     },
     [onCommit, say],
@@ -211,9 +214,9 @@ export function useReorder(opts: {
       setGrabbed(null);
       setDragging(false);
       setOffset(0);
-      setAnnouncement(`${labelOf(id)} left where it was.`);
+      setAnnouncement(t('shell.reorder.cancelled', { label: labelOf(id) }));
     },
-    [labelOf],
+    [labelOf, t],
   );
 
   const shift = useCallback((id: string, to: number) => {
@@ -243,7 +246,7 @@ export function useReorder(opts: {
       const next = moveItem(list, from, to);
       idsRef.current = next;
       onCommit(id, afterIdFor(next, id), next);
-      say(id, 'Moved to', next);
+      say(id, 'moved', next);
     },
     [disabled, onCommit, say],
   );
@@ -251,7 +254,11 @@ export function useReorder(opts: {
   const handleProps = useCallback(
     (id: string) => ({
       'aria-pressed': grabbed === id,
-      'aria-label': `Reorder ${labelOf(id)}, position ${ids.indexOf(id) + 1} of ${ids.length}`,
+      'aria-label': t('shell.reorder.handle', {
+        label: labelOf(id),
+        at: ids.indexOf(id) + 1,
+        total: ids.length,
+      }),
       onKeyDown: (e: ReactKeyboardEvent) => {
         if (disabled) return;
         const list = idsRef.current;
@@ -272,19 +279,19 @@ export function useReorder(opts: {
         } else if (e.key === 'ArrowUp' && at > 0) {
           e.preventDefault();
           shift(id, at - 1);
-          say(id, 'Moved to', moveItem(list, at, at - 1));
+          say(id, 'moved', moveItem(list, at, at - 1));
         } else if (e.key === 'ArrowDown' && at < list.length - 1) {
           e.preventDefault();
           shift(id, at + 1);
-          say(id, 'Moved to', moveItem(list, at, at + 1));
+          say(id, 'moved', moveItem(list, at, at + 1));
         } else if (e.key === 'Home' && at > 0) {
           e.preventDefault();
           shift(id, 0);
-          say(id, 'Moved to', moveItem(list, at, 0));
+          say(id, 'moved', moveItem(list, at, 0));
         } else if (e.key === 'End' && at < list.length - 1) {
           e.preventDefault();
           shift(id, list.length - 1);
-          say(id, 'Moved to', moveItem(list, at, list.length - 1));
+          say(id, 'moved', moveItem(list, at, list.length - 1));
         }
       },
       // A keyboard grab that loses focus - a tap elsewhere, a tab away - is
@@ -325,7 +332,7 @@ export function useReorder(opts: {
         setDragging(true);
       },
     }),
-    [begin, cancel, disabled, drop, grabbed, ids, labelOf, say, shift],
+    [begin, cancel, disabled, drop, grabbed, ids, labelOf, say, shift, t],
   );
 
   // The pointer drag lives on the document so a fast gesture that leaves the

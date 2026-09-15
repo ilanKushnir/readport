@@ -15,7 +15,9 @@ import {
   IconOffline,
   IconTrash,
 } from '../components/icons';
-import { formatPct } from '../lib/format';
+import { useT } from '../i18n';
+import { useFormat } from '../i18n/useFormat';
+import { type MessageKey } from '../i18n/messages/en';
 import { useReorder } from '../components/reorder';
 
 /**
@@ -30,11 +32,13 @@ interface QueueResponse {
 }
 
 export function ReadingListPage() {
+  const t = useT();
+  const f = useFormat();
   const { phase } = useSession();
   const { refresh: refreshSidebar } = useShelves();
   const toast = useToast();
   const [data, setData] = useState<QueueResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<MessageKey | null>(null);
   const [menu, setMenu] = useState<string | null>(null);
   /**
    * Which way the open menu hangs.
@@ -64,9 +68,9 @@ export function ReadingListPage() {
       setError(
         isOffline(err)
           ? cached
-            ? 'You appear to be offline. This is the queue as it last looked.'
-            : 'You appear to be offline, so your reading list could not be fetched.'
-          : 'Could not load your reading list.',
+            ? 'library.queue.offlineCached'
+            : 'library.queue.offlineNoList'
+          : 'library.queue.loadFailed',
       );
       // An empty list because the fetch failed is NOT an empty list. Saying
       // "nothing queued yet" to somebody with twenty books queued is worse
@@ -127,15 +131,15 @@ export function ReadingListPage() {
             return;
           }
           setData((d) => (d ? { ...d, items: before } : d));
-          toast.show('Could not save the new order - check the connection.');
+          toast.show(t('library.queue.reorderFailed'));
         });
     },
-    [items, byId, load, refreshSidebar, toast],
+    [items, byId, load, refreshSidebar, toast, t],
   );
 
   const reorder = useReorder({
     ids,
-    labelOf: (id) => byId.get(id)?.book.title ?? 'this book',
+    labelOf: (id) => byId.get(id)?.book.title ?? t('library.queue.thisBook'),
     onCommit: commit,
     disabled: readOnly,
   });
@@ -149,8 +153,8 @@ export function ReadingListPage() {
     try {
       await api(`/api/reading-list/${id}`, { method: 'DELETE' });
       await refreshSidebar();
-      toast.show(`Taken off your reading list`, {
-        label: 'Undo',
+      toast.show(t('library.queue.takenOff'), {
+        label: t('library.queue.undo'),
         onClick: () => {
           const at = before.findIndex((i) => i.book.id === id);
           void api(`/api/reading-list/${id}`, {
@@ -163,32 +167,30 @@ export function ReadingListPage() {
       });
     } catch {
       setData((d) => (d ? { ...d, items: before } : d));
-      toast.show('Could not remove that just now.');
+      toast.show(t('library.queue.removeFailed'));
     }
   };
 
   return (
     <main className="app-main" id="main-content" tabIndex={-1}>
       <div className="page-head">
-        <h1>Reading list</h1>
-        <p>What you plan to read next, in the order you plan to read it.</p>
+        <h1>{t('shelves.readingList')}</h1>
+        <p>{t('library.queue.lede')}</p>
       </div>
 
       {error && (
         <div className={`banner ${readOnly ? '' : 'banner--error'}`} role="alert">
           {readOnly ? <IconOffline size={18} /> : <IconAlert size={18} />}
-          <span style={{ flex: 1 }}>{error}</span>
+          <span style={{ flex: 1 }}>{t(error)}</span>
           <button className="btn btn--ghost btn--tight" onClick={() => void load()}>
-            Retry
+            {t('common.retry')}
           </button>
         </div>
       )}
       {(data?.missingCount ?? 0) > 0 && (
         <div className="banner" role="note">
           <IconAlert size={16} />
-          {data!.missingCount === 1
-            ? '1 book is on a drive that is not mounted, so it is not shown here.'
-            : `${data!.missingCount} books are on a drive that is not mounted, so they are not shown here.`}
+          {t('library.queue.missingOnDrive', { n: data!.missingCount })}
         </div>
       )}
 
@@ -201,27 +203,26 @@ export function ReadingListPage() {
       ) : items.length === 0 && stale ? (
         <EmptyState
           icon={<IconAlert size={40} />}
-          title="Your reading list could not be loaded"
+          title={t('library.queue.loadFailedTitle')}
           action={
             <button className="btn" onClick={() => void load()}>
-              Try again
+              {t('common.retry')}
             </button>
           }
         >
-          Nothing is lost - the list is on the server and will be here when it answers.
+          {t('library.queue.loadFailedBody')}
         </EmptyState>
       ) : items.length === 0 ? (
         <EmptyState
           icon={<IconList size={40} />}
-          title="Nothing queued yet"
+          title={t('library.queue.emptyTitle')}
           action={
             <Link className="btn" to="/">
-              Browse the library
+              {t('library.empty.browseLibrary')}
             </Link>
           }
         >
-          Press the + on any cover, then Read next to put a book at the front of the line, or Add to
-          reading list to put it at the end.
+          {t('library.queue.emptyBody')}
         </EmptyState>
       ) : (
         <ol className={`readlist${reorder.dragging ? ' is-dragging' : ''}`}>
@@ -251,7 +252,7 @@ export function ReadingListPage() {
                   <IconGrip size={18} />
                 </button>
                 <span className="queue-row__pos" aria-hidden="true">
-                  {index + 1}
+                  {f.number(index + 1)}
                 </span>
                 <Link className="queue-row__cover" to={`/book/${book.id}`} tabIndex={-1}>
                   <Cover book={book} className="queue-row__img" />
@@ -266,8 +267,8 @@ export function ReadingListPage() {
                     ) : (
                       <IconHeadphones size={12} />
                     )}
-                    {book.author ?? 'Unknown author'}
-                    {pct > 0.001 && ` · ${formatPct(pct)}`}
+                    {book.author ?? t('library.queue.unknownAuthor')}
+                    {pct > 0.001 && ` · ${f.percent(pct)}`}
                   </span>
                   {item.note && <span className="queue-row__note">{item.note}</span>}
                   {pct > 0.001 && (
@@ -279,7 +280,7 @@ export function ReadingListPage() {
                 <span className="queue-row__tools">
                   <button
                     className="sidebar__iconbtn"
-                    aria-label={`More for ${book.title}`}
+                    aria-label={t('library.queue.moreFor', { title: book.title })}
                     aria-expanded={menu === id}
                     onClick={(e) => {
                       if (menu === id) {
@@ -305,7 +306,7 @@ export function ReadingListPage() {
                   <div
                     className={`queue-menu ${menuUp ? 'is-up' : ''}`}
                     role="group"
-                    aria-label={`Move ${book.title}`}
+                    aria-label={t('library.queue.moveGroup', { title: book.title })}
                   >
                     <button
                       className="list-row"
@@ -315,7 +316,7 @@ export function ReadingListPage() {
                         setMenu(null);
                       }}
                     >
-                      Move to top
+                      {t('library.queue.moveTop')}
                     </button>
                     <button
                       className="list-row"
@@ -325,7 +326,7 @@ export function ReadingListPage() {
                         setMenu(null);
                       }}
                     >
-                      Move up
+                      {t('library.queue.moveUp')}
                     </button>
                     <button
                       className="list-row"
@@ -335,7 +336,7 @@ export function ReadingListPage() {
                         setMenu(null);
                       }}
                     >
-                      Move down
+                      {t('library.queue.moveDown')}
                     </button>
                     <button
                       className="list-row"
@@ -345,11 +346,11 @@ export function ReadingListPage() {
                         setMenu(null);
                       }}
                     >
-                      Move to bottom
+                      {t('library.queue.moveBottom')}
                     </button>
                     <button className="list-row" onClick={() => void remove(id)}>
                       <IconTrash size={16} />
-                      <span className="grow">Take off the list</span>
+                      <span className="grow">{t('library.queue.takeOff')}</span>
                     </button>
                   </div>
                 )}

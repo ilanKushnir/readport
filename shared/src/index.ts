@@ -9,3 +9,4 @@ export * from './languages.js';
 export * from './reconcile.js';
 export * from './pairing.js';
 export * from './invites.js';
+export * from './locales.js';

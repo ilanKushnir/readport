@@ -4,8 +4,10 @@ import { type Annotation } from '@readport/shared';
 import { api } from '../api/client';
 import { useToast } from '../components/ui';
 import { IconBookmark, IconSearch, IconTrash } from '../components/icons';
-import { COLOR_LABELS, HIGHLIGHT_COLORS, colorOf, isHighlightColor } from '../reader/marks';
-import { formatDate } from '../lib/format';
+import { HIGHLIGHT_COLORS, colorOf, isHighlightColor } from '../reader/marks';
+import { useT } from '../i18n';
+import { useFormat } from '../i18n/useFormat';
+import { type MessageKey } from '../i18n/messages/en';
 
 /**
  * Everything you have marked, in one place.
@@ -23,16 +25,18 @@ type Marked = Annotation & { bookTitle: string; bookAuthor: string | null };
 
 type KindFilter = 'all' | 'note' | 'highlight' | 'bookmark';
 
-const KINDS: [KindFilter, string][] = [
+const KINDS: [KindFilter, MessageKey][] = [
   // "All", not "Everything": four labels have to share a phone's width, and
   // this is the word the library filter already uses for the same idea.
-  ['all', 'All'],
-  ['note', 'Notes'],
-  ['highlight', 'Highlights'],
-  ['bookmark', 'Bookmarks'],
+  ['all', 'notes.filter.all'],
+  ['note', 'notes.filter.notes'],
+  ['highlight', 'notes.filter.highlights'],
+  ['bookmark', 'notes.filter.bookmarks'],
 ];
 
 export function NotesPage() {
+  const t = useT();
+  const f = useFormat();
   const [all, setAll] = useState<Marked[] | null>(null);
   const [kind, setKind] = useState<KindFilter>('all');
   const [query, setQuery] = useState('');
@@ -97,7 +101,7 @@ export function NotesPage() {
       await api(`/api/annotations/${a.id}`, { method: 'DELETE' });
       setAll((list) => (list ?? []).filter((x) => x.id !== a.id));
     } catch {
-      toast.show('Could not delete - are you offline?');
+      toast.show(t('notes.deleteFailed'));
     }
   };
 
@@ -110,15 +114,13 @@ export function NotesPage() {
   return (
     <main className="app-main notes-page">
       <header className="page-head">
-        <h1>Notes &amp; marks</h1>
+        <h1>{t('notes.title')}</h1>
         <p>
           {all === null
-            ? 'Loading…'
+            ? t('common.loading')
             : all.length === 0
-              ? 'Nothing marked yet.'
-              : `${counts.note} note${counts.note === 1 ? '' : 's'} · ${counts.highlight} highlight${
-                  counts.highlight === 1 ? '' : 's'
-                } · ${counts.bookmark} bookmark${counts.bookmark === 1 ? '' : 's'}`}
+              ? t('notes.emptyLede')
+              : t('notes.counts', counts)}
         </p>
       </header>
 
@@ -130,26 +132,26 @@ export function NotesPage() {
               className="input"
               type="search"
               value={query}
-              placeholder="Search your notes, quotes and books"
-              aria-label="Search your marks"
+              placeholder={t('notes.searchPlaceholder')}
+              aria-label={t('notes.searchLabel')}
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
-          <div className="segmented" role="group" aria-label="Kind">
+          <div className="segmented" role="group" aria-label={t('notes.kind')}>
             {KINDS.map(([k, label]) => (
               <button key={k} aria-pressed={kind === k} onClick={() => setKind(k)}>
-                {label}
+                {t(label)}
               </button>
             ))}
           </div>
           {(kind === 'all' || kind === 'highlight') && (
-            <div className="swatches" role="group" aria-label="Highlight colour">
+            <div className="swatches" role="group" aria-label={t('notes.highlightColour')}>
               {HIGHLIGHT_COLORS.map((c) => (
                 <button
                   key={c}
                   className={`swatch swatch--${c}`}
                   aria-pressed={color === c}
-                  aria-label={`Only ${COLOR_LABELS[c].toLowerCase()} highlights`}
+                  aria-label={t('notes.onlyColour', { color: c })}
                   onClick={() => setColor((cur) => (cur === c ? null : c))}
                 />
               ))}
@@ -161,19 +163,16 @@ export function NotesPage() {
       {all !== null && all.length === 0 && (
         <div className="empty-state">
           <IconBookmark size={28} />
-          <h2>Nothing marked yet</h2>
-          <p>
-            Select a passage while reading to highlight it or write a note, and tap the ribbon to
-            bookmark a page. Everything you mark lands here.
-          </p>
+          <h2>{t('notes.emptyTitle')}</h2>
+          <p>{t('notes.emptyBody')}</p>
           <Link className="btn" to="/">
-            Open the library
+            {t('notes.openLibrary')}
           </Link>
         </div>
       )}
 
       {all !== null && all.length > 0 && shown.length === 0 && (
-        <p className="empty-state">Nothing matches that.</p>
+        <p className="empty-state">{t('notes.noMatch')}</p>
       )}
 
       {byBook.map(([bookId, group]) => (
@@ -188,7 +187,7 @@ export function NotesPage() {
                 <button
                   className="note-card__body"
                   onClick={() => open(a)}
-                  aria-label={`Open ${a.kind} in ${group.title}`}
+                  aria-label={t('notes.openIn', { kind: a.kind, title: group.title })}
                 >
                   {a.kind === 'highlight' && isHighlightColor(a.color) && (
                     <span
@@ -202,14 +201,14 @@ export function NotesPage() {
                   {a.note && <p className="note-card__note">{a.note}</p>}
                   {!a.selectedText && !a.note && (
                     <p className="note-card__note note-card__note--plain">
-                      {a.kind === 'bookmark' ? 'Bookmarked page' : 'Marked passage'}
+                      {a.kind === 'bookmark' ? t('notes.bookmarkedPage') : t('notes.markedPassage')}
                     </p>
                   )}
-                  <span className="note-card__meta">{formatDate(a.createdAt)}</span>
+                  <span className="note-card__meta">{f.date(a.createdAt)}</span>
                 </button>
                 <button
                   className="icon-btn note-card__delete"
-                  aria-label="Delete"
+                  aria-label={t('common.delete')}
                   onClick={() => void remove(a)}
                 >
                   <IconTrash size={15} />

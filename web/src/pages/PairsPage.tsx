@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LANGUAGES, languageLabel, type Settings } from '@readport/shared';
-import { api, actionFailed } from '../api/client';
+import { LANGUAGES, type Settings } from '@readport/shared';
+import { api, failureMessage } from '../api/client';
 import { type BookSummary, type PairDto, type ProcessingSummary } from '../lib/types';
 import { Cover, EmptyState, Sheet, useToast } from '../components/ui';
 import { useSession } from '../state/session';
@@ -15,10 +15,12 @@ import {
   IconLink,
   IconSwitch,
 } from '../components/icons';
-import { formatDuration, formatPct, formatSpan } from '../lib/format';
+import { formatDuration } from '../lib/format';
 import { PipelineDiagram, ProcessingQueue } from '../components/Processing';
-import { MANUAL_LINK_NOTE, UNALIGNED_PAIR_NOTE } from '../lib/pairLabel';
 import { bucketCoverage } from '../lib/coverageBars';
+import { useT } from '../i18n';
+import { useFormat } from '../i18n/useFormat';
+import { type MessageKey } from '../i18n/messages/en';
 
 type PairAction = 'confirm' | 'reject' | 'unlink' | 'align';
 
@@ -26,18 +28,20 @@ type PairAction = 'confirm' | 'reject' | 'unlink' | 'align';
  * Two outcomes, not two settings - the same pair of choices Settings offers,
  * worded for the moment you are about to start a queue.
  */
-const ACCURACY: [Settings['alignPrecision'], string, string][] = [
-  ['standard', 'Standard', 'Minutes per book · lands on the paragraph'],
-  ['exact', 'Sentence-perfect', 'Hours per book · lands on the sentence'],
+const ACCURACY: [Settings['alignPrecision'], MessageKey, MessageKey][] = [
+  ['standard', 'pairs.work.precision.standard', 'pairs.work.precision.standardBlurb'],
+  ['exact', 'pairs.work.precision.exact', 'pairs.work.precision.exactBlurb'],
 ];
 
 export function PairsPage() {
+  const t = useT();
+  const f = useFormat();
   const { user } = useSession();
   const [pairs, setPairs] = useState<PairDto[] | null>(null);
   const [summary, setSummary] = useState<ProcessingSummary | null>(null);
   /** Multi-select for bulk "align these". */
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<MessageKey | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [confirmingAll, setConfirmingAll] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
@@ -62,7 +66,7 @@ export function PairsPage() {
       setSummary(res.summary ?? null);
       setError(null);
     } catch {
-      setError('Could not load pairing data.');
+      setError('pairs.loadFailed');
     }
     try {
       const s = await api<{ settings: Settings }>('/api/settings');
@@ -79,7 +83,7 @@ export function PairsPage() {
       await api('/api/settings', { method: 'PUT', body: patch });
     } catch (err) {
       setSettings(previous);
-      toast.show(actionFailed(err, 'Could not save that.'));
+      toast.show(failureMessage(err, t('pairs.toast.couldNotSave'), t));
     }
   };
   useEffect(() => {
@@ -108,18 +112,10 @@ export function PairsPage() {
     setBusyId(pairId);
     try {
       await api(`/api/pairs/${pairId}/${action}`, { method: 'POST' });
-      toast.show(
-        action === 'confirm'
-          ? 'Pair confirmed - alignment queued'
-          : action === 'align'
-            ? 'Alignment queued'
-            : action === 'reject'
-              ? 'Suggestion dismissed'
-              : 'Pair unlinked',
-      );
+      toast.show(t('pairs.toast.acted', { action }));
       await load();
     } catch {
-      toast.show('Action failed');
+      toast.show(t('pairs.toast.actionFailed'));
     } finally {
       setBusyId(null);
     }
@@ -142,12 +138,12 @@ export function PairsPage() {
       });
       toast.show(
         res.confirmed > 0
-          ? `Linked ${res.confirmed} book${res.confirmed === 1 ? '' : 's'} - alignment queued`
-          : 'Nothing left to link',
+          ? t('pairs.toast.linkedMany', { n: res.confirmed })
+          : t('pairs.toast.nothingToLink'),
       );
       await load();
     } catch (err) {
-      toast.show(actionFailed(err, 'Could not link those pairs.'));
+      toast.show(failureMessage(err, t('pairs.toast.couldNotLink'), t));
     } finally {
       setConfirmingAll(false);
     }
@@ -157,11 +153,13 @@ export function PairsPage() {
     try {
       await api(`/api/pairs/${pairId}/language`, { method: 'POST', body: { language } });
       toast.show(
-        language ? `Narration language set to ${languageLabel(language)}` : 'Language reset',
+        language
+          ? t('pairs.toast.languageSet', { name: f.languageName(language) })
+          : t('pairs.toast.languageReset'),
       );
       await load();
     } catch (err) {
-      toast.show(actionFailed(err, 'Could not change the language.'));
+      toast.show(failureMessage(err, t('pairs.toast.couldNotChangeLanguage'), t));
     }
   };
 
@@ -169,15 +167,15 @@ export function PairsPage() {
     try {
       await api(`/api/models/${modelId}/download`, { method: 'POST' });
       // One model, every language: there is nothing to name here.
-      toast.show('Downloading the alignment model - alignment resumes when it lands', {
-        label: 'Watch progress',
+      toast.show(t('pairs.toast.modelDownloading'), {
+        label: t('pairs.toast.watchProgress'),
         onClick: () => {
           location.assign('/settings#alignment');
         },
       });
       await load();
     } catch (err) {
-      toast.show(actionFailed(err, 'Could not start the download.'));
+      toast.show(failureMessage(err, t('pairs.toast.couldNotDownload'), t));
     }
   };
 
@@ -185,7 +183,7 @@ export function PairsPage() {
     return (
       <main className="app-main" id="main-content" tabIndex={-1}>
         <div className="banner banner--error" role="alert">
-          <IconAlert size={18} /> {error}
+          <IconAlert size={18} /> {t(error)}
         </div>
       </main>
     );
@@ -218,13 +216,13 @@ export function PairsPage() {
       });
       toast.show(
         res.queued > 0
-          ? `Queued ${res.queued} book${res.queued === 1 ? '' : 's'} for alignment`
-          : 'Nothing new to queue',
+          ? t('pairs.toast.queuedMany', { n: res.queued })
+          : t('pairs.toast.nothingToQueue'),
       );
       setSelected(new Set());
       await load();
     } catch {
-      toast.show('Could not queue those pairs');
+      toast.show(t('pairs.toast.couldNotQueue'));
     }
   };
 
@@ -232,11 +230,8 @@ export function PairsPage() {
     <main className="app-main" id="main-content" tabIndex={-1}>
       <header className="page-head page-head--row">
         <div>
-          <h1>Pairing</h1>
-          <p>
-            Ebook and audiobook editions of the same work. Metadata alone never links anything:
-            strong matches are verified against the narration first, uncertain ones wait for you.
-          </p>
+          <h1>{t('nav.pairing')}</h1>
+          <p>{t('pairs.lede')}</p>
         </div>
         <div className="page-head__actions">
           <button
@@ -244,46 +239,39 @@ export function PairsPage() {
             onClick={() => setHowOpen((v) => !v)}
             aria-expanded={howOpen}
           >
-            How it works
+            {t('pairs.howItWorks')}
           </button>
           <button className="btn btn--secondary" onClick={() => setLinkOpen(true)}>
-            <IconLink size={16} /> Link manually
+            <IconLink size={16} /> {t('pairs.linkManually')}
           </button>
         </div>
       </header>
       {howOpen && (
-        <section className="panel panel--soft" aria-label="How alignment works">
+        <section className="panel panel--soft" aria-label={t('pairs.howItWorksLabel')}>
           <PipelineDiagram />
         </section>
       )}
       <ProcessingQueue canManage={isAdmin} onChange={() => void load()} />
 
       {isAdmin && summary && startable.length > 0 && (
-        <section className="worksum" aria-label="Alignment work">
+        <section className="worksum" aria-label={t('pairs.work.label')}>
           <div className="worksum__body">
-            <h2 className="worksum__title">
-              {startable.length} verified {startable.length === 1 ? 'book is' : 'books are'} ready
-              to align
-            </h2>
+            <h2 className="worksum__title">{t('pairs.work.ready', { n: startable.length })}</h2>
             <p className="worksum__lede">
-              {summary.estimatedMs != null ? (
-                <>
-                  {formatSpan(summary.estimatedMs)} of computing for{' '}
-                  {formatDuration(summary.pendingAudioMs)} of audio, measured from this
-                  server&rsquo;s own speed. They run one at a time and you can stop any of them.
-                </>
-              ) : (
-                <>
-                  {formatDuration(summary.pendingAudioMs)} of audio in total. The first run will
-                  measure how fast this server aligns, and the estimate appears here.
-                </>
-              )}
+              {summary.estimatedMs != null
+                ? t('pairs.work.estimate', {
+                    computing: f.span(summary.estimatedMs),
+                    audio: formatDuration(summary.pendingAudioMs),
+                  })
+                : t('pairs.work.noEstimate', {
+                    audio: formatDuration(summary.pendingAudioMs),
+                  })}
             </p>
           </div>
           <div className="worksum__actions">
             {selected.size > 0 && (
               <button className="btn btn--ghost" onClick={() => setSelected(new Set())}>
-                Clear {selected.size}
+                {t('pairs.work.clearSelection', { n: selected.size })}
               </button>
             )}
             <button
@@ -293,19 +281,19 @@ export function PairsPage() {
               }
             >
               {selected.size > 0
-                ? `Start ${selected.size} selected`
-                : `Start all ${startable.length}`}
+                ? t('pairs.work.startSelected', { n: selected.size })
+                : t('pairs.work.startAll', { n: startable.length })}
             </button>
           </div>
           {settings && (
             <div className="worksum__choices">
               <label className="rs-toggle rs-toggle--tight">
                 <span>
-                  Align every new match
+                  {t('pairs.work.autoAlign')}
                   <span className="hint" style={{ display: 'block' }}>
                     {settings.autoAlign
-                      ? 'New matches queue themselves. Turn off to start books yourself.'
-                      : 'Nothing runs on its own - start books from here.'}
+                      ? t('pairs.work.autoAlignOn')
+                      : t('pairs.work.autoAlignOff')}
                   </span>
                 </span>
                 <input
@@ -318,8 +306,8 @@ export function PairsPage() {
               <div
                 className="seg"
                 role="radiogroup"
-                aria-label="How closely alignment listens"
-                title="How closely alignment listens to the narration"
+                aria-label={t('pairs.work.precisionLabel')}
+                title={t('pairs.work.precisionTitle')}
               >
                 {ACCURACY.map(([value, label, blurb]) => (
                   <button
@@ -330,8 +318,8 @@ export function PairsPage() {
                     className={`seg__opt ${settings.alignPrecision === value ? 'is-on' : ''}`}
                     onClick={() => void saveSetting({ alignPrecision: value })}
                   >
-                    <strong>{label}</strong>
-                    <span>{blurb}</span>
+                    <strong>{t(label)}</strong>
+                    <span>{t(blurb)}</span>
                   </button>
                 ))}
               </div>
@@ -344,7 +332,7 @@ export function PairsPage() {
           onClose={() => setLinkOpen(false)}
           onLinked={() => {
             setLinkOpen(false);
-            toast.show('Pair linked - alignment queued');
+            toast.show(t('pairs.toast.manualLinked'));
             void load();
           }}
         />
@@ -356,23 +344,25 @@ export function PairsPage() {
           <div className="skeleton" style={{ height: 180 }} />
         </div>
       ) : pairs.length === 0 ? (
-        <EmptyState icon={<IconLink size={42} />} title="No pair suggestions yet">
-          Pair candidates appear after a library scan finds ebook and audiobook editions with
-          matching metadata. Nothing is ever linked without strong evidence.
+        <EmptyState icon={<IconLink size={42} />} title={t('pairs.emptyTitle')}>
+          {t('pairs.emptyBody')}
         </EmptyState>
       ) : (
         <>
           {candidates.length > 0 && (
-            <section aria-label="Needs review">
+            <section aria-label={t('pairs.section.needsReview')}>
               <h2 className="section-title">
-                Needs review <span className="section-title__count">{candidates.length}</span>
+                {t('pairs.section.needsReview')}{' '}
+                <span className="section-title__count">{f.number(candidates.length)}</span>
                 {isAdmin && candidates.length > 1 && (
                   <button
                     className="btn btn--ghost section-title__action"
                     disabled={confirmingAll}
                     onClick={() => void confirmAll(candidates.map((p) => p.id))}
                   >
-                    {confirmingAll ? 'Linking…' : `Link all ${candidates.length}`}
+                    {confirmingAll
+                      ? t('pairs.section.linking')
+                      : t('pairs.section.linkAll', { n: candidates.length })}
                   </button>
                 )}
               </h2>
@@ -394,9 +384,10 @@ export function PairsPage() {
             </section>
           )}
           {linked.length > 0 && (
-            <section aria-label="Linked pairs">
+            <section aria-label={t('pairs.section.linkedLabel')}>
               <h2 className="section-title">
-                Linked <span className="section-title__count">{linked.length}</span>
+                {t('pairs.section.linked')}{' '}
+                <span className="section-title__count">{f.number(linked.length)}</span>
               </h2>
               {linked.map((p) => (
                 <PairCard
@@ -416,9 +407,10 @@ export function PairsPage() {
             </section>
           )}
           {rejected.length > 0 && (
-            <section aria-label="Dismissed pairs">
+            <section aria-label={t('pairs.section.dismissedLabel')}>
               <h2 className="section-title">
-                Dismissed <span className="section-title__count">{rejected.length}</span>
+                {t('pairs.section.dismissed')}{' '}
+                <span className="section-title__count">{f.number(rejected.length)}</span>
               </h2>
               {rejected.map((p) => (
                 <PairCard
@@ -452,6 +444,7 @@ function ScoreCell({
   value: string;
   good?: boolean | null;
 }) {
+  const t = useT();
   return (
     <div className={`evidence-cell ${good === true ? 'is-good' : good === false ? 'is-bad' : ''}`}>
       {label}
@@ -463,7 +456,10 @@ function ScoreCell({
         {good === false && <IconAlert size={13} aria-hidden="true" />}
         {value}
         {good !== null && good !== undefined && (
-          <span className="visually-hidden">{good ? ' - good' : ' - poor'}</span>
+          <span className="visually-hidden">
+            {' '}
+            {t(good ? 'pairs.evidence.good' : 'pairs.evidence.poor')}
+          </span>
         )}
       </b>
     </div>
@@ -479,6 +475,7 @@ function EditionTile({
   kind: 'ebook' | 'audio';
   extra?: string;
 }) {
+  const t = useT();
   return (
     <Link to={book ? `/book/${book.id}` : '/pairs'} className="edition-tile">
       <span className="edition-tile__cover">
@@ -492,9 +489,9 @@ function EditionTile({
       <span className="edition-tile__body">
         <span className="edition-tile__kind">
           {kind === 'ebook' ? <IconBookOpen size={12} /> : <IconHeadphones size={12} />}
-          {kind === 'ebook' ? 'Ebook' : 'Audiobook'}
+          {kind === 'ebook' ? t('common.ebook') : t('common.audiobook')}
         </span>
-        <span className="edition-tile__title">{book?.title ?? 'Unknown'}</span>
+        <span className="edition-tile__title">{book?.title ?? t('common.unknown')}</span>
         <span className="edition-tile__meta">
           {book?.author ?? '-'}
           {extra ? ` · ${extra}` : ''}
@@ -529,42 +526,21 @@ function PairCard({
   selected?: boolean;
   onSelect?: (id: string) => void;
 }) {
+  const t = useT();
+  const f = useFormat();
   const e = pair.evidence;
   const notes = (e.notes ?? []).flatMap((n): { text: string; done: boolean }[] => {
     if (pair.status === 'candidate' || !n.startsWith('Strong metadata match')) {
       return [{ text: n, done: false }];
     }
     if (pair.status === 'auto') {
-      return [
-        {
-          text: 'Strong metadata match - content verification passed; linked automatically.',
-          done: true,
-        },
-      ];
+      return [{ text: t('pairs.card.verifiedNote'), done: true }];
     }
     return [];
   });
-  const statusLabel =
-    pair.status === 'auto'
-      ? 'Linked automatically'
-      : pair.status === 'confirmed'
-        ? 'Confirmed by you'
-        : pair.status === 'candidate'
-          ? 'Suggested'
-          : 'Dismissed';
   const job = pair.lastAlignJob;
   const running = job && (job.state === 'queued' || job.state === 'running');
   const lang = pair.language;
-  const langSourceLabel =
-    lang.source === 'override'
-      ? 'set by you'
-      : lang.source === 'alignment'
-        ? 'detected'
-        : lang.source === 'ebook-metadata'
-          ? 'from the ebook'
-          : lang.source === 'audio-tags'
-            ? 'from the audio tags'
-            : 'unknown - will be detected';
 
   return (
     <article
@@ -577,9 +553,11 @@ function PairCard({
             type="checkbox"
             checked={!!selected}
             onChange={() => onSelect(pair.id)}
-            aria-label={`Select ${pair.ebook?.title ?? 'this pair'} for alignment`}
+            aria-label={t('pairs.card.selectForAlignment', {
+              title: pair.ebook?.title ?? t('pairs.card.thisPair'),
+            })}
           />
-          <span>Select</span>
+          <span>{t('pairs.card.select')}</span>
         </label>
       )}
       <div className="pair-card__editions">
@@ -598,12 +576,12 @@ function PairCard({
         <span
           className={`badge ${pair.status === 'auto' || pair.status === 'confirmed' ? 'badge--paired' : pair.status === 'rejected' ? 'badge--muted' : ''}`}
         >
-          {statusLabel}
+          {t('pairs.card.status', { status: pair.status })}
         </span>
         {pair.handoff?.available && (
           <span className="badge badge--sync">
-            <IconSwitch size={11} /> Switch ready · {formatPct(pair.handoff.exactSentenceCoverage)}{' '}
-            exact
+            <IconSwitch size={11} />{' '}
+            {t('pairs.card.switchReady', { pct: f.percent(pair.handoff.exactSentenceCoverage) })}
           </span>
         )}
         {/* What THIS book will cost, beside the button that starts it. The
@@ -612,27 +590,31 @@ function PairCard({
             you said" happens. */}
         {!pair.alignment && speedRatio > 0 && pair.audio?.durationMs ? (
           <span className="badge badge--muted">
-            ≈ {formatSpan(pair.audio.durationMs / speedRatio)} to align
+            {t('pairs.card.timeToAlign', { span: f.span(pair.audio.durationMs / speedRatio) })}
           </span>
         ) : null}
-        <span className="pair-card__score">Match {formatPct(pair.score)}</span>
+        <span className="pair-card__score">
+          {t('pairs.card.match', { pct: f.percent(pair.score) })}
+        </span>
         <label className="lang-pick">
-          <span className="lang-pick__label">Narration</span>
+          <span className="lang-pick__label">{t('pairs.language.label')}</span>
           <select
             className="lang-pick__select"
             value={lang.override ?? ''}
             disabled={!isAdmin}
-            title={`Language ${langSourceLabel}`}
+            title={t('pairs.language.sourceTitle', { source: lang.source })}
             onChange={(ev) => onLanguage(pair.id, ev.target.value || null)}
           >
             <option value="">
               {lang.override
-                ? 'Auto'
-                : `Auto · ${lang.effective ? languageLabel(lang.effective) : 'detect'}`}
+                ? t('pairs.language.auto')
+                : lang.effective
+                  ? t('pairs.language.autoWith', { name: f.languageName(lang.effective) })
+                  : t('pairs.language.autoDetect')}
             </option>
             {LANGUAGES.map((l) => (
               <option key={l.code} value={l.code}>
-                {l.label} · {l.native}
+                {t('pairs.language.option', { name: f.languageName(l.code), native: l.native })}
               </option>
             ))}
           </select>
@@ -641,38 +623,46 @@ function PairCard({
 
       <div className="evidence-grid">
         {e.titleScore !== undefined && (
-          <ScoreCell label="Title" value={formatPct(e.titleScore)} good={e.titleScore > 0.85} />
+          <ScoreCell
+            label={t('pairs.evidence.title')}
+            value={f.percent(e.titleScore)}
+            good={e.titleScore > 0.85}
+          />
         )}
         {e.authorScore !== undefined && (
-          <ScoreCell label="Author" value={formatPct(e.authorScore)} good={e.authorScore > 0.85} />
+          <ScoreCell
+            label={t('pairs.evidence.author')}
+            value={f.percent(e.authorScore)}
+            good={e.authorScore > 0.85}
+          />
         )}
         <ScoreCell
-          label="Identifiers"
-          value={e.identifierMatch ? 'Match' : '-'}
+          label={t('pairs.evidence.identifiers')}
+          value={e.identifierMatch ? t('pairs.evidence.match') : '-'}
           good={e.identifierMatch ? true : null}
         />
         <ScoreCell
-          label="Language"
+          label={t('pairs.evidence.language')}
           value={
             e.languageMatch === null || e.languageMatch === undefined
-              ? 'Unknown'
+              ? t('common.unknown')
               : e.languageMatch
-                ? 'Match'
-                : 'Mismatch'
+                ? t('pairs.evidence.match')
+                : t('pairs.evidence.mismatch')
           }
           good={e.languageMatch ?? null}
         />
         {e.durationPagesRatio != null && (
           <ScoreCell
-            label="Length ratio"
-            value={`${e.durationPagesRatio.toFixed(2)}×`}
+            label={t('pairs.evidence.lengthRatio')}
+            value={t('pairs.evidence.ratio', { ratio: e.durationPagesRatio.toFixed(2) })}
             good={e.durationPagesRatio > 0.55 && e.durationPagesRatio < 1.9}
           />
         )}
         {e.contentScore != null && (
           <ScoreCell
-            label="Content overlap"
-            value={formatPct(e.contentScore)}
+            label={t('pairs.evidence.contentOverlap')}
+            value={f.percent(e.contentScore)}
             good={e.contentScore > 0.6}
           />
         )}
@@ -680,12 +670,12 @@ function PairCard({
 
       {notes.map((n, i) => (
         <div className="banner" key={i} style={{ marginBlockEnd: 8 }}>
-          {n.done ? <IconCheck size={15} /> : <IconAlert size={15} />} {n.text}
+          {n.done ? <IconCheck size={15} /> : <IconAlert size={15} />} <bdi>{n.text}</bdi>
         </div>
       ))}
       {pair.compat?.warning && (
         <div className="banner banner--error">
-          <IconAlert size={15} /> {pair.compat.warning}
+          <IconAlert size={15} /> <bdi>{pair.compat.warning}</bdi>
         </div>
       )}
 
@@ -694,9 +684,14 @@ function PairCard({
           <span className="spinner" style={{ width: 16, height: 16 }} />
           <span className="grow">
             <span style={{ fontWeight: 600 }}>
-              {job.state === 'queued' ? 'Alignment queued' : 'Aligning'}
+              {job.state === 'queued' ? t('pairs.job.queued') : t('pairs.job.aligning')}
             </span>
-            {job.detail ? ` - ${job.detail}` : ''}
+            {job.detail ? (
+              <>
+                {' - '}
+                <bdi>{job.detail}</bdi>
+              </>
+            ) : null}
             <span className="progressbar" aria-hidden="true">
               <span style={{ width: `${Math.round(job.progress * 100)}%` }} />
             </span>
@@ -712,9 +707,11 @@ function PairCard({
                 old branch here compared against a model id that has not
                 existed since forced alignment landed, so it always fell
                 through to a model name nobody could act on. */}
-            <strong>Alignment model needed.</strong>{' '}
-            {job.modelMissing.message.replace(/[ --]*(download|get) it in Settings.*$/i, '')}.
-            Download it and this alignment runs by itself when it lands.
+            <strong>{t('pairs.job.modelNeeded')}</strong>{' '}
+            <bdi>
+              {job.modelMissing.message.replace(/[ --]*(download|get) it in Settings.*$/i, '')}
+            </bdi>
+            . {t('pairs.job.modelDownloadHint')}
           </span>
           <button
             className="btn"
@@ -722,10 +719,10 @@ function PairCard({
             disabled={!isAdmin}
             onClick={() => onDownloadModel(job.modelMissing!.modelId)}
           >
-            Download
+            {t('pairs.job.download')}
           </button>
           <Link to="/settings#alignment" className="btn btn--ghost" style={{ minHeight: 38 }}>
-            Models
+            {t('pairs.job.models')}
           </Link>
         </div>
       )}
@@ -733,8 +730,13 @@ function PairCard({
         <div className="banner banner--error" role="alert">
           <IconAlert size={15} />
           <span className="grow">
-            Alignment failed. Try again, or check the server log.
-            {job.error && <small className="hint"> {job.error}</small>}
+            {t('pairs.job.failed')}
+            {job.error && (
+              <small className="hint">
+                {' '}
+                <bdi>{job.error}</bdi>
+              </small>
+            )}
           </span>
           {isAdmin && (
             <button
@@ -742,7 +744,7 @@ function PairCard({
               style={{ minHeight: 36 }}
               onClick={() => onAction(pair.id, 'align')}
             >
-              Retry
+              {t('common.retry')}
             </button>
           )}
         </div>
@@ -751,19 +753,28 @@ function PairCard({
       {pair.alignment ? (
         <div className="align-summary">
           <div className="align-summary__row">
-            <strong>Aligned</strong>
-            <span>{formatPct(pair.alignment.exactSentenceCoverage)} sentence-exact</span>
-            <span>coverage {formatPct(pair.alignment.coverage)}</span>
-            <span>confidence {formatPct(pair.alignment.meanConfidence)}</span>
-            <span>{pair.alignment.segmentCount} sentences</span>
+            <strong>{t('pairs.aligned.title')}</strong>
+            <span>
+              {t('pairs.aligned.sentenceExact', {
+                pct: f.percent(pair.alignment.exactSentenceCoverage),
+              })}
+            </span>
+            <span>{t('pairs.aligned.coverage', { pct: f.percent(pair.alignment.coverage) })}</span>
+            <span>
+              {t('pairs.aligned.confidence', { pct: f.percent(pair.alignment.meanConfidence) })}
+            </span>
+            <span>{t('pairs.aligned.sentences', { n: pair.alignment.segmentCount })}</span>
             <span className="soft">
-              {pair.alignment.model} · {languageLabel(pair.alignment.language)}
+              <bdi>{pair.alignment.model}</bdi> · {f.languageName(pair.alignment.language)}
             </span>
             {pair.alignment.gaps.length > 0 && (
               <span className="soft">
-                {pair.alignment.gaps.length} gap{pair.alignment.gaps.length > 1 ? 's' : ''} (e.g.{' '}
-                {pair.alignment.gaps[0]!.reason} {formatDuration(pair.alignment.gaps[0]!.fromMs)}–
-                {formatDuration(pair.alignment.gaps[0]!.toMs)})
+                {t('pairs.aligned.gaps', {
+                  n: pair.alignment.gaps.length,
+                  reason: pair.alignment.gaps[0]!.reason,
+                  from: formatDuration(pair.alignment.gaps[0]!.fromMs),
+                  to: formatDuration(pair.alignment.gaps[0]!.toMs),
+                })}
               </span>
             )}
           </div>
@@ -773,7 +784,9 @@ function PairCard({
         pair.status !== 'rejected' &&
         !running &&
         !job?.modelMissing && (
-          <div style={{ fontSize: 13.5, color: 'var(--rp-text-soft)' }}>{UNALIGNED_PAIR_NOTE}</div>
+          <div style={{ fontSize: 13.5, color: 'var(--rp-text-soft)' }}>
+            {t('pairs.card.unalignedNote')}
+          </div>
         )
       )}
 
@@ -785,14 +798,14 @@ function PairCard({
               disabled={busy || !isAdmin}
               onClick={() => onAction(pair.id, 'confirm')}
             >
-              <IconCheck size={16} /> Link editions
+              <IconCheck size={16} /> {t('pairs.actions.linkEditions')}
             </button>
             <button
               className="btn btn--secondary"
               disabled={busy || !isAdmin}
               onClick={() => onAction(pair.id, 'reject')}
             >
-              <IconClose size={16} /> Not a match
+              <IconClose size={16} /> {t('pairs.actions.notAMatch')}
             </button>
           </>
         )}
@@ -804,7 +817,9 @@ function PairCard({
                 disabled={busy || !isAdmin}
                 onClick={() => onAction(pair.id, 'align')}
               >
-                {pair.alignment ? 'Re-run alignment' : 'Run alignment'}
+                {pair.alignment
+                  ? t('pairs.actions.rerunAlignment')
+                  : t('pairs.actions.runAlignment')}
               </button>
             )}
             <button
@@ -812,7 +827,7 @@ function PairCard({
               disabled={busy || !isAdmin}
               onClick={() => onAction(pair.id, 'unlink')}
             >
-              Unlink
+              {t('pairs.actions.unlink')}
             </button>
           </>
         )}
@@ -822,7 +837,7 @@ function PairCard({
             disabled={busy || !isAdmin}
             onClick={() => onAction(pair.id, 'confirm')}
           >
-            Link anyway
+            {t('pairs.actions.linkAnyway')}
           </button>
         )}
       </div>
@@ -835,11 +850,12 @@ function PairCard({
  * Complements automatic suggestions for titles whose metadata never matches.
  */
 function ManualLinkSheet({ onClose, onLinked }: { onClose: () => void; onLinked: () => void }) {
+  const t = useT();
   const [books, setBooks] = useState<BookSummary[] | null>(null);
   const [ebookId, setEbookId] = useState('');
   const [audioId, setAudioId] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<MessageKey | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -848,7 +864,7 @@ function ManualLinkSheet({ onClose, onLinked }: { onClose: () => void; onLinked:
         if (alive) setBooks(r.books);
       })
       .catch(() => {
-        if (alive) setError('Could not load the library.');
+        if (alive) setError('pairs.manual.libraryFailed');
       });
     return () => {
       alive = false;
@@ -865,31 +881,31 @@ function ManualLinkSheet({ onClose, onLinked }: { onClose: () => void; onLinked:
       await api('/api/pairs/link', { method: 'POST', body: { ebookId, audioId } });
       onLinked();
     } catch {
-      setError('Linking failed.');
+      setError('pairs.manual.linkFailed');
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <Sheet title="Link two books manually" onClose={onClose}>
+    <Sheet title={t('pairs.manual.title')} onClose={onClose}>
       <p style={{ color: 'var(--rp-text-soft)', fontSize: 13.5, marginBlockStart: 0 }}>
-        {MANUAL_LINK_NOTE}
+        {t('pairs.manual.note')}
       </p>
       {error && (
         <div className="banner banner--error" role="alert">
-          {error}
+          {t(error)}
         </div>
       )}
       <div className="field">
-        <label htmlFor="ml-ebook">Ebook</label>
+        <label htmlFor="ml-ebook">{t('common.ebook')}</label>
         <select
           id="ml-ebook"
           className="input"
           value={ebookId}
           onChange={(e) => setEbookId(e.target.value)}
         >
-          <option value="">Choose an ebook…</option>
+          <option value="">{t('pairs.manual.chooseEbook')}</option>
           {ebooks.map((b) => (
             <option key={b.id} value={b.id}>
               {b.title}
@@ -899,14 +915,14 @@ function ManualLinkSheet({ onClose, onLinked }: { onClose: () => void; onLinked:
         </select>
       </div>
       <div className="field">
-        <label htmlFor="ml-audio">Audiobook</label>
+        <label htmlFor="ml-audio">{t('common.audiobook')}</label>
         <select
           id="ml-audio"
           className="input"
           value={audioId}
           onChange={(e) => setAudioId(e.target.value)}
         >
-          <option value="">Choose an audiobook…</option>
+          <option value="">{t('pairs.manual.chooseAudiobook')}</option>
           {audios.map((b) => (
             <option key={b.id} value={b.id}>
               {b.title}
@@ -916,13 +932,15 @@ function ManualLinkSheet({ onClose, onLinked }: { onClose: () => void; onLinked:
         </select>
       </div>
       <button className="btn" disabled={busy || !ebookId || !audioId} onClick={() => void submit()}>
-        <IconLink size={16} /> Link editions
+        <IconLink size={16} /> {t('pairs.actions.linkEditions')}
       </button>
     </Sheet>
   );
 }
 
 function CoverageStrip({ pair }: { pair: PairDto }) {
+  const t = useT();
+  const f = useFormat();
   const [bars, setBars] = useState<{ minute: number; confidence: number }[] | null>(null);
   useEffect(() => {
     let alive = true;
@@ -946,7 +964,7 @@ function CoverageStrip({ pair }: { pair: PairDto }) {
     <div
       className="coverage-strip"
       role="img"
-      aria-label={`Alignment confidence per minute across ${bars.length} minutes, average ${formatPct(avg)}`}
+      aria-label={t('pairs.coverage.label', { n: bars.length, pct: f.percent(avg) })}
     >
       {shown.map((b) => (
         <span
@@ -957,8 +975,12 @@ function CoverageStrip({ pair }: { pair: PairDto }) {
           }}
           title={
             b.minutes === 1
-              ? `Minute ${b.minute}: ${formatPct(b.confidence)}`
-              : `Minutes ${b.minute}–${b.minute + b.minutes - 1}: ${formatPct(b.confidence)}`
+              ? t('pairs.coverage.minute', { minute: b.minute, pct: f.percent(b.confidence) })
+              : t('pairs.coverage.minutes', {
+                  from: b.minute,
+                  to: b.minute + b.minutes - 1,
+                  pct: f.percent(b.confidence),
+                })
           }
         />
       ))}

@@ -1,5 +1,15 @@
 import { type HandoffStatus, type PairStatus } from '@readport/shared';
-import { formatPct } from './format';
+import { type MessageKey } from '../i18n/messages/en';
+import { type MessageValues } from '../i18n/format';
+
+/**
+ * A sentence for the interface to say, as its catalog key and the values it
+ * needs. Translated where it is shown: `t(message.key, message.values)`.
+ */
+export interface PairMessage {
+  key: MessageKey;
+  values?: MessageValues;
+}
 
 /**
  * Honest paired-edition status line. Claims are grounded in what the
@@ -14,16 +24,19 @@ export function pairStatusLabel(pair: {
   status: PairStatus;
   switchable: boolean;
   handoff: HandoffStatus | null;
-}): string {
+}): PairMessage {
   if (pair.switchable && pair.handoff) {
-    return `Read/listen handoff is ready - ${formatPct(
-      pair.handoff.exactSentenceCoverage,
-    )} of sentences switch exactly; the rest is approximate or unavailable.`;
+    return {
+      key: 'library.pair.handoffReady',
+      values: {
+        pct: Math.round(Math.min(1, Math.max(0, pair.handoff.exactSentenceCoverage)) * 100),
+      },
+    };
   }
   if (pair.status === 'candidate') {
-    return 'A possible matching edition was found - review it in Pairing.';
+    return { key: 'library.pair.candidate' };
   }
-  return 'Paired edition linked. Switching between text and audio is unavailable until alignment completes.';
+  return { key: 'library.pair.linkedUnaligned' };
 }
 
 /**
@@ -32,12 +45,10 @@ export function pairStatusLabel(pair: {
  * UNAVAILABLE - it is never "approximate", and the UI must not claim any
  * accuracy.
  */
-export const UNALIGNED_PAIR_NOTE =
-  'Not aligned yet - switching between editions is unavailable until alignment completes.';
+export const UNALIGNED_PAIR_NOTE: MessageKey = 'library.pair.unalignedNote';
 
 /** Manual-link sheet copy; same honesty rule as UNALIGNED_PAIR_NOTE. */
-export const MANUAL_LINK_NOTE =
-  'Choose an ebook and an audiobook of the same work. Alignment runs after linking; switching between editions is unavailable until alignment completes.';
+export const MANUAL_LINK_NOTE: MessageKey = 'library.pair.manualLinkNote';
 
 /**
  * What switching between the two editions will actually do, in one sentence.
@@ -54,16 +65,16 @@ export const MANUAL_LINK_NOTE =
 export function switchNote(
   pair: { status: PairStatus; switchable: boolean; handoff: HandoffStatus | null },
   isEbook: boolean,
-): string {
-  const other = isEbook ? 'the audiobook' : 'the ebook';
+): PairMessage {
+  const values = { kind: isEbook ? 'ebook' : 'audio' };
   if (!pair.switchable || !pair.handoff) {
-    return `You own ${other} too. Timing the two together has not finished, so moving between them will start at the beginning for now.`;
+    return { key: 'library.pair.switchUnaligned', values };
   }
   // Most sentences land exactly: worth saying plainly, because it is the
   // thing that makes reading and listening interchangeable.
   if (pair.handoff.exactSentenceCoverage >= 0.6) {
-    return `You own ${other} too, and switching between them picks up at the same sentence.`;
+    return { key: 'library.pair.switchExact', values };
   }
   // Otherwise be straight about it rather than calling it ready.
-  return `You own ${other} too. Switching lands close to where you are, though not always on the exact sentence.`;
+  return { key: 'library.pair.switchClose', values };
 }

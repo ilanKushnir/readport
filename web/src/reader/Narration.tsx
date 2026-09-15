@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type TrackInfo } from '@readport/shared';
 import { api } from '../api/client';
+import { useT } from '../i18n';
+import { type MessageKey } from '../i18n/messages/en';
 import { type SentenceIndexEntry } from '../lib/types';
 import { recordCheckpoint, resumeLocator } from '../progress/engine';
 import { loadPlayback, setBookSpeed, speedFor } from '../player/prefs';
@@ -69,7 +71,8 @@ export interface NarrationApi {
    */
   chapterAt: (bookMs: number) => number | null;
   speed: number;
-  error: string | null;
+  /** Why the narration cannot play, as a catalog key; null while all is well. */
+  error: MessageKey | null;
   toggle: () => void;
   setSpeed: (rate: number) => void;
   back: () => void;
@@ -151,7 +154,7 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
   const [bounds, setBounds] = useState<ChapterBound[] | null>(null);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeedState] = useState(() => speedFor(loadPlayback(), audioBookId ?? ''));
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<MessageKey | null>(null);
   /** The timings request failed, as opposed to returning none. */
   const [segmentsFailed, setSegmentsFailed] = useState(false);
   const [backSeconds] = useState(() => loadPlayback().skipBack);
@@ -198,7 +201,7 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
         setError(null);
       })
       .catch(() => {
-        if (alive) setError('The audiobook could not be loaded.');
+        if (alive) setError('reader.readAlong.audiobookFailed');
       });
     return () => {
       alive = false;
@@ -478,7 +481,7 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
   const toggle = useCallback(() => {
     const el = audioRef.current;
     if (!el) return;
-    if (el.paused) void el.play().catch(() => setError('This audio could not be played.'));
+    if (el.paused) void el.play().catch(() => setError('reader.readAlong.playFailed'));
     else el.pause();
   }, []);
 
@@ -525,7 +528,7 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
       onPause={() => setPlaying(false)}
       onTimeUpdate={onTimeUpdate}
       onEnded={onEnded}
-      onError={() => setError('This audio format could not be played by your browser.')}
+      onError={() => setError('reader.readAlong.formatFailed')}
     />
   ) : null;
 
@@ -585,6 +588,7 @@ export function NarrationBar({
   autoScroll: boolean | null;
   onAutoScroll: (on: boolean) => void;
 }) {
+  const t = useT();
   const [speedOpen, setSpeedOpen] = useState(false);
 
   /**
@@ -612,24 +616,24 @@ export function NarrationBar({
   }, [speedOpen]);
 
   const status = n.error
-    ? n.error
+    ? t(n.error)
     : !n.ready
-      ? 'Finding the narration…'
+      ? t('reader.readAlong.finding')
       : n.timingsFailed
-        ? 'Could not load this chapter’s timings'
+        ? t('reader.readAlong.timingsFailed')
         : n.emptyChapter
-          ? 'Nothing timed in this chapter'
+          ? t('reader.readAlong.nothingTimed')
           : n.state === 'gap'
-            ? 'No timed text here'
+            ? t('reader.readAlong.gap')
             : formatDuration(n.bookMs);
 
   return (
-    <div className="readalong" role="group" aria-label="Read along">
+    <div className="readalong" role="group" aria-label={t('reader.readAlong.group')}>
       <button
         className="readalong__play"
         onClick={n.toggle}
         disabled={!n.ready || (n.emptyChapter && !n.playing)}
-        aria-label={n.playing ? 'Pause narration' : 'Play narration'}
+        aria-label={n.playing ? t('reader.readAlong.pause') : t('reader.readAlong.play')}
       >
         {n.playing ? <IconPause size={20} /> : <IconPlay size={20} />}
       </button>
@@ -639,7 +643,7 @@ export function NarrationBar({
       {n.emptyChapter && !n.playing && !n.timingsFailed && (
         <button className="readalong__resume" onClick={n.skipUntimed}>
           <IconTarget size={15} />
-          <span>Find the narration</span>
+          <span>{t('reader.readAlong.find')}</span>
         </button>
       )}
 
@@ -647,8 +651,8 @@ export function NarrationBar({
         className="readalong__btn"
         onClick={n.back}
         disabled={!n.ready}
-        aria-label={`Back ${n.backSeconds} seconds`}
-        title={`Back ${n.backSeconds} seconds`}
+        aria-label={t('reader.readAlong.back', { n: n.backSeconds })}
+        title={t('reader.readAlong.back', { n: n.backSeconds })}
       >
         <IconSkipBack size={18} label={String(n.backSeconds)} />
       </button>
@@ -665,11 +669,11 @@ export function NarrationBar({
         <button
           className="readalong__resume"
           onClick={onResume}
-          aria-label="Back to the voice"
-          title="Back to the voice"
+          aria-label={t('reader.readAlong.backToVoice')}
+          title={t('reader.readAlong.backToVoice')}
         >
           <IconTarget size={15} />
-          <span>Back to the voice</span>
+          <span>{t('reader.readAlong.backToVoice')}</span>
         </button>
       )}
 
@@ -680,8 +684,12 @@ export function NarrationBar({
           className="readalong__btn"
           aria-pressed={autoScroll}
           onClick={() => onAutoScroll(!autoScroll)}
-          aria-label={autoScroll ? 'Stop scrolling with the voice' : 'Scroll with the voice'}
-          title={autoScroll ? 'Stop scrolling with the voice' : 'Scroll with the voice'}
+          aria-label={
+            autoScroll ? t('reader.readAlong.autoScrollOff') : t('reader.readAlong.autoScrollOn')
+          }
+          title={
+            autoScroll ? t('reader.readAlong.autoScrollOff') : t('reader.readAlong.autoScrollOn')
+          }
         >
           <IconAutoScroll size={18} />
         </button>
@@ -692,10 +700,10 @@ export function NarrationBar({
           className="readalong__btn"
           onClick={() => setSpeedOpen((v) => !v)}
           aria-expanded={speedOpen}
-          aria-label={`Speed ${n.speed}×`}
+          aria-label={t('reader.readAlong.speed', { rate: n.speed })}
         >
           <IconSpeed size={18} />
-          <small>{n.speed}×</small>
+          <small>{t('reader.readAlong.rate', { rate: n.speed })}</small>
         </button>
         {speedOpen && (
           <div className="readalong__speeds" role="menu">
@@ -710,14 +718,14 @@ export function NarrationBar({
                   setSpeedOpen(false);
                 }}
               >
-                {s}×
+                {t('reader.readAlong.rate', { rate: s })}
               </button>
             ))}
           </div>
         )}
       </div>
 
-      <button className="readalong__btn" onClick={onClose} aria-label="Stop reading along">
+      <button className="readalong__btn" onClick={onClose} aria-label={t('reader.readAlong.stop')}>
         <IconClose size={18} />
       </button>
     </div>

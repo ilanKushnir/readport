@@ -1,0 +1,267 @@
+/**
+ * Strings of the library surface: the grid and its shelves, the Continue
+ * band, Reading Now, the reading list, the book page and offline downloads.
+ * Keys are `library.*`; shelf and facet names live in common.ts.
+ */
+export const library = {
+  // The library page: what it says when a shelf cannot be fetched
+  'library.readingNowRefreshFailed':
+    'Reading Now could not be refreshed. Reconnect and retry; your progress is kept on this device.',
+  'library.offlineShowingDownloads':
+    'You appear to be offline. Showing the titles downloaded to this device.',
+  'library.loadFailed': 'Could not load the library. Check the server connection.',
+  'library.shelf': 'Shelf',
+  'library.shelfRemoved': 'Shelf removed',
+  'library.missingOnDrive':
+    '{n, plural, one {# book on this shelf is on a drive that is not mounted.} other {# books on this shelf are on a drive that is not mounted.}}',
+  'library.stats':
+    '{ebooks, plural, one {# ebook} other {# ebooks}} · {audio, plural, one {# audiobook} other {# audiobooks}}{paired, plural, =0 {} other { · # paired}}',
+  'library.scanning': 'Scanning your libraries - new books appear as they are indexed.',
+  // The toolbar: search, format, sort
+  'library.searchPlaceholder': 'Search title, author, series',
+  'library.searchLabel': 'Search this shelf',
+  'library.kindGroup': 'Library type',
+  'library.kind.all': 'All',
+  'library.kind.ebooks': 'Ebooks',
+  'library.kind.audiobooks': 'Audiobooks',
+  'library.sortBy': 'Sort by',
+  'library.sort.title': 'By title',
+  'library.sort.author': 'By author',
+  'library.sort.shelfOrder': 'Shelf order',
+  'library.sort.recent': 'Recently active',
+  'library.sort.added': 'Recently added',
+  // The Continue band and its hero card
+  'library.hero.title': 'Continue',
+  'library.hero.allInProgress': 'All in progress · {n}',
+  'library.continueIn': '{kind, select, ebook {Continue reading} other {Continue listening}}',
+  'library.hero.resume': '{kind, select, ebook {Resume reading} other {Resume listening}}',
+  'library.hero.instead': '{kind, select, ebook {Listen instead} other {Read instead}}',
+  'library.hero.switchSameSpot': 'Continue in the other edition at the same place',
+  'library.hero.otherEdition': 'The other edition of this book',
+  // Book cards in the grid
+  'library.card.details': '{title} details',
+  'library.card.audioFormat': 'AUDIO',
+  'library.card.sync': 'SYNC',
+  'library.card.syncedTitle': 'Synced - switching lands in the same place',
+  'library.card.downloadedTitle': 'Downloaded to this device',
+  'library.card.finished': 'Finished',
+  'library.card.indexing': 'Indexing…',
+  'library.card.indexingFailed': 'Indexing failed',
+  'library.card.addTo': 'Add to…',
+  'library.card.addLabel': 'Add {title} to a shelf or your reading list',
+  // Empty shelves
+  'library.empty.scanningTitle': 'Reading your shelves',
+  'library.empty.scanningBody':
+    '{app} is going through your folders. Books appear here as it finds them.',
+  'library.empty.goneTitle': 'That shelf is no longer here',
+  'library.empty.goneBody':
+    'It was removed - on this device or another one. The books that were on it are all still in your library.',
+  'library.empty.backToLibrary': 'Back to the library',
+  'library.empty.noMatchesTitle': 'No matches',
+  'library.empty.noMatchesBody': 'Nothing here matches this search or filter.',
+  'library.empty.deviceTitle': 'Nothing downloaded in this browser',
+  'library.empty.deviceBody':
+    'Downloads stay on the device that made them and are removed when you sign out. Open a book and choose Download to keep it here.',
+  'library.empty.shelfTitle': 'This shelf is empty',
+  'library.empty.shelfBody': 'Press the + on any cover in the library, then pick this shelf.',
+  'library.empty.browseLibrary': 'Browse the library',
+  'library.empty.facetTitle': 'Nothing under {value}',
+  'library.empty.facetBody':
+    '{facet} come from the books themselves, so this one goes away when the last book carrying it does.',
+  'library.empty.autoTitle': 'Nothing here yet',
+  'library.empty.auto.reading-now':
+    'Start reading or listening and that edition appears here until you finish it.',
+  'library.empty.auto.finished': 'Books you read to the end collect here on their own.',
+  'library.empty.auto.both-formats':
+    'This fills up as {app} matches an ebook to its audiobook. The Pairing page shows what it is considering.',
+  'library.empty.auto.recently-added': 'Nothing new has turned up in the last month.',
+  'library.empty.libraryTitle': 'Your library is empty',
+  'library.empty.libraryBody':
+    '{app} reads ebook and audiobook folders you already have, and never writes to them. Choose those folders in Settings → Libraries; each one is tested before it is saved.',
+  // The Reading Now shelf: rows and the reset confirmation
+  'library.readingNow.needsServerTitle': 'Reading Now needs the server',
+  'library.readingNow.needsServerBody':
+    'Your place in every book is kept on this device and will sync when you are back online. Downloaded titles are on the On this device shelf.',
+  'library.readingNow.listLabel': 'Books you are reading or listening to',
+  'library.readingNow.details': '{title}, {kind, select, ebook {Ebook} other {Audiobook}} details',
+  'library.readingNow.resetButton': 'Reset progress…',
+  'library.readingNow.resetTitle': 'Reset reading progress?',
+  'library.readingNow.resetBody':
+    'Reset your progress, checkpoints and reading history for “{title}” ({kind, select, ebook {ebook} other {audiobook}})? It leaves Reading Now and opens from the beginning next time.',
+  'library.readingNow.pairedKeepsProgress': 'The paired edition keeps its own progress.',
+  'library.readingNow.resetKeeps':
+    'The book, its files, alignment, bookmarks, highlights, notes, shelves, reading list and downloads are kept. Nobody else’s progress changes.',
+  'library.readingNow.resetFailed':
+    'The reset could not be confirmed, so the book stays here. Trying again is safe.',
+  'library.readingNow.resetting': 'Resetting…',
+  'library.readingNow.resetConfirm': 'Reset reading progress',
+  // The reading list (the queue)
+  'library.queue.lede': 'What you plan to read next, in the order you plan to read it.',
+  'library.queue.offlineCached': 'You appear to be offline. This is the queue as it last looked.',
+  'library.queue.offlineNoList':
+    'You appear to be offline, so your reading list could not be fetched.',
+  'library.queue.loadFailed': 'Could not load your reading list.',
+  'library.queue.missingOnDrive':
+    '{n, plural, one {# book is on a drive that is not mounted, so it is not shown here.} other {# books are on a drive that is not mounted, so they are not shown here.}}',
+  'library.queue.loadFailedTitle': 'Your reading list could not be loaded',
+  'library.queue.loadFailedBody':
+    'Nothing is lost - the list is on the server and will be here when it answers.',
+  'library.queue.emptyTitle': 'Nothing queued yet',
+  'library.queue.emptyBody':
+    'Press the + on any cover, then Read next to put a book at the front of the line, or Add to reading list to put it at the end.',
+  'library.queue.unknownAuthor': 'Unknown author',
+  'library.queue.thisBook': 'this book',
+  'library.queue.moreFor': 'More for {title}',
+  'library.queue.moveGroup': 'Move {title}',
+  'library.queue.moveTop': 'Move to top',
+  'library.queue.moveUp': 'Move up',
+  'library.queue.moveDown': 'Move down',
+  'library.queue.moveBottom': 'Move to bottom',
+  'library.queue.takeOff': 'Take off the list',
+  'library.queue.takenOff': 'Taken off your reading list',
+  'library.queue.undo': 'Undo',
+  'library.queue.removeFailed': 'Could not remove that just now.',
+  'library.queue.reorderFailed': 'Could not save the new order - check the connection.',
+  // The book page: hero, banners, actions
+  'library.book.loadFailed': 'Could not load this book.',
+  'library.book.seriesIndex': '#{n}',
+  'library.book.chapters': '{n, plural, one {# chapter} other {# chapters}}',
+  'library.book.audioUnsupported':
+    'This browser cannot play {format} audio. The file was detected and kept in your library, but listening here needs a browser with {format} support.',
+  'library.book.indexingFailed': 'Indexing failed:',
+  'library.book.stillIndexing':
+    '{app} is still reading this book. It opens as soon as indexing finishes.',
+  'library.book.filesMissing': 'The source files for this book are missing from the library mount.',
+  'library.book.progress': '{pct} {kind, select, ebook {read} other {listened}}',
+  'library.book.stillIndexedTitle': 'Still being indexed',
+  'library.book.open': '{kind, select, ebook {Read} other {Listen}}',
+  'library.book.openOther': '{kind, select, ebook {Listen} other {Read}}',
+  'library.book.fromHere': '{kind, select, ebook {Listen from here} other {Read from here}}',
+  'library.book.opening': 'Opening…',
+  'library.book.saveCopy': 'Save a copy',
+  'library.book.saveFiles': 'Save files…',
+  'library.book.saveFilesHint':
+    '{n, plural, one {# file.} other {# files.}} Saving them is one at a time.',
+  'library.book.part': 'Part {n}',
+  'library.book.otherNotOnDevice':
+    'The {kind, select, ebook {audiobook} other {ebook}} is not on this device, so switching needs a connection.',
+  'library.book.reviewPairing': 'Review pairing',
+  'library.book.candidateFound':
+    'A possible {kind, select, ebook {audiobook} other {ebook}} edition was found and is waiting for review.',
+  'library.book.review': 'Review',
+  'library.book.switchNotStored':
+    'This spot was not stored for offline switching - opening the other edition.',
+  'library.book.switchNoPosition': 'No aligned position here - opening the other edition.',
+  'library.book.switchFailed': 'Could not resolve the position - opening the other edition.',
+  // The book page: chapters, annotations, description
+  'library.book.chaptersLabel': 'Chapters',
+  'library.book.chaptersHead': 'Chapters ({n})',
+  'library.book.annotationsLabel': 'Bookmarks and highlights',
+  'library.book.annotationsHead': 'Bookmarks & highlights ({n})',
+  'library.book.annotationKind':
+    '{kind, select, bookmark {Bookmark} highlight {Highlight} other {Note}}',
+  'library.book.about': 'About',
+  'library.book.noChaptersTitle': 'No chapters listed',
+  'library.book.noChaptersBody':
+    'This book has no chapter metadata; you can still {kind, select, ebook {read} other {listen}} normally.',
+  // Shelves this book is on
+  'library.book.membershipLabel': 'Shelves this book is on',
+  'library.book.takeOffQueue': 'Take off the reading list',
+  'library.book.takeOffShelf': 'Take off {name}',
+  'library.book.takenOffShelf': 'Taken off {name}',
+  // The language chip and where a language came from
+  'library.book.language': 'Language',
+  'library.book.languageUnknown': 'Language unknown',
+  'library.book.languageTitle':
+    'Language {source, select, manual {set by hand} metadata {from the file} pair {from the paired edition} detected {read from the text} other {}}',
+  'library.book.languageWithSource':
+    '{name} · {source, select, manual {set by hand} metadata {from the file} pair {from the paired edition} detected {read from the text} other {}}',
+  'library.book.languageAutoOption': 'Auto',
+  'library.book.languageUnknownSet': 'Unknown · set by hand?',
+  'library.book.languageSet': 'Language set to {name}',
+  'library.book.languageAuto': 'Language follows the file again',
+  'library.book.languageFailed': 'Could not change the language.',
+  // What owning both editions means (lib/pairLabel.ts)
+  'library.pair.handoffReady':
+    'Read/listen handoff is ready - {pct}% of sentences switch exactly; the rest is approximate or unavailable.',
+  'library.pair.candidate': 'A possible matching edition was found - review it in Pairing.',
+  'library.pair.linkedUnaligned':
+    'Paired edition linked. Switching between text and audio is unavailable until alignment completes.',
+  'library.pair.unalignedNote':
+    'Not aligned yet - switching between editions is unavailable until alignment completes.',
+  'library.pair.manualLinkNote':
+    'Choose an ebook and an audiobook of the same work. Alignment runs after linking; switching between editions is unavailable until alignment completes.',
+  'library.pair.switchUnaligned':
+    'You own {kind, select, ebook {the audiobook} other {the ebook}} too. Timing the two together has not finished, so moving between them will start at the beginning for now.',
+  'library.pair.switchExact':
+    'You own {kind, select, ebook {the audiobook} other {the ebook}} too, and switching between them picks up at the same sentence.',
+  'library.pair.switchClose':
+    'You own {kind, select, ebook {the audiobook} other {the ebook}} too. Switching lands close to where you are, though not always on the exact sentence.',
+  // Downloads in progress on the On this device shelf
+  'library.download.inProgress': 'Downloads in progress',
+  'library.download.title': 'Downloads',
+  'library.download.downloadingN': 'Downloading {n}',
+  'library.download.interrupted': 'Interrupted download',
+  'library.download.starting': 'Starting…',
+  'library.download.progress': '{stored} of {total} · {pct}',
+  'library.download.stop': 'Stop',
+  'library.download.failed': 'Download failed',
+  // The offline button on the book page
+  'library.download.download': 'Download',
+  'library.download.downloaded': 'Downloaded',
+  'library.download.downloading': 'Downloading',
+  'library.download.bytesOf': '{stored} of {total}',
+  'library.download.forOffline': 'Download for offline',
+  'library.download.retryLabel': 'Download for offline - the last attempt failed',
+  'library.download.downloadingPct': 'Downloading for offline, {pct}',
+  'library.download.availableManage': 'Available offline - manage the download',
+  // Download toasts
+  'library.download.startingOne': 'Downloading for offline…',
+  'library.download.startingBoth': 'Downloading both editions…',
+  'library.download.stopped': 'Download stopped',
+  'library.download.available': 'Available offline',
+  'library.download.doneBoth': 'Both editions are available offline',
+  'library.download.removed': 'Offline copy removed',
+  'library.download.needsHttps':
+    'Offline downloads need HTTPS (or localhost). See the self-hosting guide in the {app} README.',
+  // The offline sheet: before, during and after a download
+  'library.download.askTitle': 'Download for offline?',
+  'library.download.askLede':
+    'Keep {title} on this device for flights and dead zones - about {bytes}{kind, select, ebook { including images} other { of audio}}. {kind, select, ebook {Reading} other {Listening}} works fully offline and your position syncs back when you reconnect. Signing out removes offline copies.',
+  'library.download.companionSeparate':
+    'The {kind, select, ebook {audiobook} other {ebook}} edition is a separate download{hasSize, select, true { of about {size}} other {}}. Take only this one and you will have the {kind, select, ebook {text} other {audio}} offline but not the other, and no way to switch between them until you reconnect.',
+  'library.download.partialLede':
+    '{bytes} from the last attempt is still on this device. Starting again continues from there; removing it frees the space now.',
+  'library.download.interruptedLede':
+    'The download was interrupted - starting again continues from where it stopped.',
+  'library.download.both': 'Download both{hasSize, select, true { ({size})} other {}}',
+  'library.download.onlyThis': '{kind, select, ebook {Ebook} other {Audiobook}} only ({size})',
+  'library.download.retry': 'Retry download',
+  'library.download.removePartial': 'Remove partial download',
+  'library.download.notNow': 'Not now',
+  'library.download.progressLede':
+    '{done} of {total, plural, one {# part} other {# parts}} · {bytes} so far. You can keep using the app meanwhile.',
+  'library.download.cancel': 'Cancel download',
+  'library.download.storedLede':
+    '{title} is stored on this device ({bytes}). You can {kind, select, ebook {read} other {listen to}} it with no connection; progress syncs when you are back online.',
+  'library.download.companionMissing':
+    'The {kind, select, ebook {audiobook} other {ebook}} edition is not on this device{hasSize, select, true { ({size})} other {}}. Add it to switch between reading and listening offline.',
+  'library.download.addOther': '{kind, select, ebook {Add the audiobook} other {Add the ebook}}',
+  'library.download.remove': 'Remove offline copy',
+  'library.download.keep': 'Keep',
+  // Why a download stopped (offline/downloads.ts error codes)
+  'library.download.error.no-cache-storage': 'Offline storage is not available in this browser.',
+  'library.download.error.out-of-space':
+    'There is not enough room on this device. Remove an offline copy or free up space, then try again.',
+  'library.download.error.http': 'The server could not send part of this book.',
+  'library.download.error.invalid-response': 'The server sent something this app could not read.',
+  'library.download.error.size-mismatch': 'Part of the download arrived incomplete.',
+  'library.download.error.integrity':
+    'Part of the download did not match what the server promised, so it was not kept.',
+  'library.download.error.missing-integrity':
+    'The server did not provide the checks this download needs.',
+  'library.download.error.no-range': 'The server does not support downloading audio in parts.',
+  'library.download.error.wrong-range': 'The server sent the wrong part of an audio file.',
+  'library.download.error.source-changed':
+    'The book changed on the server during the download. Start again to fetch the new version.',
+} as const;

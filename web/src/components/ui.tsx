@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { type BookSummary } from '@readport/shared';
+import { useT } from '../i18n';
 import { IconClose } from './icons';
 
 /* ----------------------------------------------------------------- Sheet */
@@ -131,6 +132,7 @@ export function Sheet({
   onClose: () => void;
   children: ReactNode;
 }) {
+  const t = useT();
   const ref = useRef<HTMLDivElement>(null);
   useFocusTrap(ref, onClose);
   useScrollLock();
@@ -148,7 +150,7 @@ export function Sheet({
         <div className="sheet__grab" aria-hidden="true" />
         <div className="sheet__header">
           <span className="sheet__title">{title}</span>
-          <button className="icon-btn" onClick={onClose} aria-label="Close">
+          <button className="icon-btn" onClick={onClose} aria-label={t('common.close')}>
             <IconClose />
           </button>
         </div>
@@ -173,6 +175,7 @@ export function Drawer({
   onClose: () => void;
   children: ReactNode;
 }) {
+  const t = useT();
   const ref = useRef<HTMLDivElement>(null);
   useFocusTrap(ref, onClose);
   useScrollLock();
@@ -189,7 +192,7 @@ export function Drawer({
       >
         <div className="sheet__header">
           <span className="sheet__title">{title}</span>
-          <button className="icon-btn" onClick={onClose} aria-label="Close">
+          <button className="icon-btn" onClick={onClose} aria-label={t('common.close')}>
             <IconClose />
           </button>
         </div>

@@ -31,7 +31,7 @@
   margin: 4px 0;
 }
 .reading-now__author {
-  color: var(--rp-text-muted);
+  color: var(--rp-text-soft);
 }
 .reading-now__meta {
   display: flex;
@@ -39,7 +39,7 @@
   flex-wrap: wrap;
   gap: 6px 10px;
   font-size: 13.5px;
-  color: var(--rp-text-muted);
+  color: var(--rp-text-soft);
 }
 .reading-now__meta svg {
   flex-shrink: 0;

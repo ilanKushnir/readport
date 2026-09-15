@@ -4,7 +4,8 @@ import { type BookSummary } from '@readport/shared';
 import { Cover, Sheet } from '../components/ui';
 import { IconBookOpen, IconHeadphones } from '../components/icons';
 import { resetBookProgress } from '../progress/engine';
-import { ago, formatDuration, formatPct } from '../lib/format';
+import { useT } from '../i18n';
+import { useFormat } from '../i18n/useFormat';
 import './reading-now.css';
 
 /**
@@ -22,21 +23,24 @@ export function ReadingNow({
   books: BookSummary[];
   onReset: (id: string) => void;
 }) {
+  const t = useT();
+  const f = useFormat();
   const [selected, setSelected] = useState<BookSummary | null>(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
   return (
     <>
-      <ul className="reading-now" aria-label="Books you are reading or listening to">
+      <ul className="reading-now" aria-label={t('library.readingNow.listLabel')}>
         {books.map((book) => {
           const isEbook = book.kind === 'ebook';
           const pct = book.progress?.pct ?? 0;
-          const edition = isEbook ? 'Ebook' : 'Audiobook';
-          const left =
-            !isEbook && book.durationMs ? formatDuration(book.durationMs * (1 - pct)) : null;
+          const left = !isEbook && book.durationMs ? f.duration(book.durationMs * (1 - pct)) : null;
           return (
             <li className="reading-now__row" key={book.id}>
-              <Link to={`/book/${book.id}`} aria-label={`${book.title}, ${edition} details`}>
+              <Link
+                to={`/book/${book.id}`}
+                aria-label={t('library.readingNow.details', { title: book.title, kind: book.kind })}
+              >
                 <Cover book={book} className="reading-now__cover" />
               </Link>
               <div className="reading-now__body">
@@ -45,11 +49,11 @@ export function ReadingNow({
                 <p className="reading-now__meta">
                   {isEbook ? <IconBookOpen size={13} /> : <IconHeadphones size={13} />}
                   <span>
-                    {edition} · {formatPct(pct)}
-                    {left ? ` · ${left} left` : ''}
+                    {isEbook ? t('common.ebook') : t('common.audiobook')} · {f.percent(pct)}
+                    {left ? ` · ${t('format.left', { duration: left })}` : ''}
                   </span>
                   {book.progress?.updatedAt && (
-                    <span className="reading-now__when">{ago(book.progress.updatedAt)}</span>
+                    <span className="reading-now__when">{f.ago(book.progress.updatedAt)}</span>
                   )}
                 </p>
                 <span className="progressbar" aria-hidden="true">
@@ -60,16 +64,16 @@ export function ReadingNow({
                     className="btn btn--secondary"
                     to={isEbook ? `/read/${book.id}` : `/listen/${book.id}`}
                   >
-                    {isEbook ? 'Resume reading' : 'Resume listening'}
+                    {t('library.hero.resume', { kind: book.kind })}
                   </Link>
                   <button
                     className="btn btn--ghost"
                     onClick={() => {
                       setSelected(book);
-                      setError(null);
+                      setFailed(false);
                     }}
                   >
-                    Reset progress…
+                    {t('library.readingNow.resetButton')}
                   </button>
                 </div>
               </div>
@@ -79,52 +83,45 @@ export function ReadingNow({
       </ul>
       {selected && (
         <Sheet
-          title="Reset reading progress?"
+          title={t('library.readingNow.resetTitle')}
           onClose={() => {
             if (!busy) setSelected(null);
           }}
         >
-          <p>
-            Reset your progress, checkpoints and reading history for “{selected.title}” (
-            {selected.kind === 'ebook' ? 'ebook' : 'audiobook'})? It leaves Reading Now and opens
-            from the beginning next time.
-          </p>
+          <p>{t('library.readingNow.resetBody', { title: selected.title, kind: selected.kind })}</p>
           <p>
             {selected.pair && selected.pair.status !== 'candidate'
-              ? 'The paired edition keeps its own progress. '
+              ? `${t('library.readingNow.pairedKeepsProgress')} `
               : ''}
-            The book, its files, alignment, bookmarks, highlights, notes, shelves, reading list and
-            downloads are kept. Nobody else’s progress changes.
+            {t('library.readingNow.resetKeeps')}
           </p>
-          {error && <p role="alert">{error}</p>}
+          {failed && <p role="alert">{t('library.readingNow.resetFailed')}</p>}
           <div className="reading-now__actions">
             <button
               className="btn btn--secondary"
               disabled={busy}
               onClick={() => setSelected(null)}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               className="btn btn--danger"
               disabled={busy}
               onClick={async () => {
                 setBusy(true);
-                setError(null);
+                setFailed(false);
                 try {
                   await resetBookProgress(selected.id);
                   onReset(selected.id);
                   setSelected(null);
                 } catch {
-                  setError(
-                    'The reset could not be confirmed, so the book stays here. Trying again is safe.',
-                  );
+                  setFailed(true);
                 } finally {
                   setBusy(false);
                 }
               }}
             >
-              {busy ? 'Resetting…' : 'Reset reading progress'}
+              {busy ? t('library.readingNow.resetting') : t('library.readingNow.resetConfirm')}
             </button>
           </div>
         </Sheet>

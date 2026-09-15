@@ -13,6 +13,7 @@ import {
   syncedReaderPrefsSchema,
 } from '@readport/shared';
 import { api } from '../api/client';
+import { type MessageKey } from '../i18n/messages/en';
 
 export {
   DEFAULT_READER_PREFS as DEFAULT_PREFS,
@@ -146,41 +147,42 @@ export function effectiveTheme(theme: ReaderPrefs['theme'], systemDark: boolean)
   return systemDark ? 'night' : 'paper';
 }
 
-export const FONTS: Record<ReaderFont, { label: string; stack: string; note: string }> = {
+/** Each face's name and note are catalog keys: translated where they are shown. */
+export const FONTS: Record<ReaderFont, { label: MessageKey; stack: string; note: MessageKey }> = {
   literata: {
-    label: 'Literata',
+    label: 'reader.font.literata',
     stack: "'Literata', 'Iowan Old Style', Georgia, serif",
-    note: 'Bundled · designed for screens',
+    note: 'reader.fontNote.literata',
   },
   iowan: {
-    label: 'Iowan Old Style',
+    label: 'reader.font.iowan',
     stack: "'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif",
-    note: 'Apple Books default',
+    note: 'reader.fontNote.iowan',
   },
   charter: {
-    label: 'Charter',
+    label: 'reader.font.charter',
     stack: "'Charter', 'Bitstream Charter', 'Sitka Text', Cambria, Georgia, serif",
-    note: 'Crisp, compact serif',
+    note: 'reader.fontNote.charter',
   },
   palatino: {
-    label: 'Palatino',
+    label: 'reader.font.palatino',
     stack: "'Palatino', 'Palatino Linotype', 'Book Antiqua', 'URW Palladio L', Georgia, serif",
-    note: 'Classic book face',
+    note: 'reader.fontNote.palatino',
   },
   georgia: {
-    label: 'Georgia',
+    label: 'reader.font.georgia',
     stack: "Georgia, 'Times New Roman', serif",
-    note: 'Sturdy and familiar',
+    note: 'reader.fontNote.georgia',
   },
   baskerville: {
-    label: 'Baskerville',
+    label: 'reader.font.baskerville',
     stack: "'Baskerville', 'Libre Baskerville', 'Baskerville Old Face', Georgia, serif",
-    note: 'Elegant transitional serif',
+    note: 'reader.fontNote.baskerville',
   },
   sans: {
-    label: 'System sans',
+    label: 'reader.font.sans',
     stack: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
-    note: 'Your device’s interface font',
+    note: 'reader.fontNote.sans',
   },
 };
 

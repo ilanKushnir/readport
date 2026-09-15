@@ -6,6 +6,7 @@ import {
   playbackPrefsSchema,
   prunePerBookSpeeds,
   syncedReaderPrefsSchema,
+  uiLocaleSchema,
 } from '@readport/shared';
 import { type AppContext } from '../../context.js';
 import { nowIso } from '../../db/index.js';
@@ -37,6 +38,8 @@ const KEYS = {
   reader: syncedReaderPrefsSchema,
   /** Playback speed and skip lengths, which are about the book, not the device. */
   playback: playbackPrefsSchema,
+  /** The language the interface speaks to this person, on every device. */
+  locale: z.object({ locale: uiLocaleSchema }),
 } as const;
 
 type PrefKey = keyof typeof KEYS;
@@ -112,6 +115,29 @@ export function registerPrefsRoutes(app: FastifyInstance, ctx: AppContext): void
     // without hard-coding them in two places.
     const prefs: SidebarPrefs = value ?? { facets: [], chosen: false };
     return { sidebar: prefs };
+  });
+
+  /**
+   * The interface language. An account-level choice - the same on every
+   * device - that outranks whatever the browser suggests; null means "not
+   * chosen", and the client falls back to the browser's language, then to
+   * English.
+   */
+  app.get('/api/prefs/locale', async (req) => ({
+    locale: readPref(ctx, req.user!.id, 'locale')?.locale ?? null,
+  }));
+
+  app.put('/api/prefs/locale', async (req, reply) => {
+    const body = z.object({ locale: uiLocaleSchema.nullable() }).safeParse(req.body);
+    if (!body.success) return reply.code(400).send({ error: 'unsupported-locale' });
+    if (body.data.locale === null) {
+      ctx.db
+        .prepare("DELETE FROM user_prefs WHERE user_id = ? AND key = 'locale'")
+        .run(req.user!.id);
+    } else {
+      writePref(ctx, req.user!.id, 'locale', { locale: body.data.locale });
+    }
+    return { locale: body.data.locale };
   });
 
   app.put('/api/prefs/sidebar', async (req, reply) => {

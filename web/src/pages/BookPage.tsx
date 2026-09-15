@@ -6,7 +6,7 @@ import {
   type BookSummary,
   type EbookLocator,
 } from '@readport/shared';
-import { actionFailed, api, isOffline } from '../api/client';
+import { api, failureMessage, isOffline } from '../api/client';
 import { type Annotation, type BookDetail, type ResolveResponse } from '../lib/types';
 import { Cover, EmptyState, Sheet, useToast } from '../components/ui';
 import { AddToSheet } from '../components/AddToSheet';
@@ -26,11 +26,15 @@ import {
   IconSwitch,
   IconTrash,
 } from '../components/icons';
-import { formatBytes, formatDuration, formatPct, ordinal } from '../lib/format';
-import { languageName } from '../lib/languageName';
+import { useT } from '../i18n';
+import { useFormat } from '../i18n/useFormat';
+import { type MessageKey } from '../i18n/messages/en';
 import {
   cachedSwitch,
   cancelDownload,
+  DownloadError,
+  downloadErrorKey,
+  downloadFraction,
   downloadPercent,
   getDownloadState,
   removeDownload,
@@ -50,12 +54,14 @@ interface Companion {
 }
 
 export function BookPage() {
+  const t = useT();
+  const f = useFormat();
   const { id = '' } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const toast = useToast();
   const [detail, setDetail] = useState<BookDetail | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<MessageKey | null>(null);
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [dl, setDl] = useState<DownloadState | null>(null);
   const [companion, setCompanion] = useState<Companion | null>(null);
@@ -86,7 +92,7 @@ export function BookPage() {
       );
       setAnnotations(anns.annotations);
     } catch {
-      setError('Could not load this book.');
+      setError('library.book.loadFailed');
     }
     setDl(await getDownloadState(id));
   }, [id]);
@@ -168,16 +174,14 @@ export function BookPage() {
         // answers for this book, so the handoff lands where it would online.
         const stored = await cachedSwitch(id, progress.locator);
         if (!stored) {
-          toast.show('This spot was not stored for offline switching - opening the other edition.');
+          toast.show(t('library.book.switchNotStored'));
           navigate(otherRoute);
           return;
         }
         res = stored;
       }
       if (!res.to) {
-        toast.show(
-          res.resolution.reason ?? 'No aligned position here - opening the other edition.',
-        );
+        toast.show(res.resolution.reason ?? t('library.book.switchNoPosition'));
         navigate(otherRoute);
         return;
       }
@@ -196,12 +200,12 @@ export function BookPage() {
         );
       }
     } catch {
-      toast.show('Could not resolve the position - opening the other edition.');
+      toast.show(t('library.book.switchFailed'));
       navigate(otherRoute);
     } finally {
       setSwitching(false);
     }
-  }, [detail, id, navigate, toast]);
+  }, [detail, id, navigate, toast, t]);
 
   // `?switch=1` (from the library's "Listen/Read instead") switches right away.
   useEffect(() => {
@@ -214,7 +218,7 @@ export function BookPage() {
     return (
       <main className="app-main" id="main-content" tabIndex={-1}>
         <div className="banner banner--error" role="alert">
-          <IconAlert size={18} /> {error}
+          <IconAlert size={18} /> {t(error)}
         </div>
       </main>
     );
@@ -237,6 +241,7 @@ export function BookPage() {
   const isEbook = book.kind === 'ebook';
   const pct = book.progress?.pct ?? 0;
   const pair = book.pair && book.pair.status !== 'candidate' ? book.pair : null;
+  const pairNote = pair ? switchNote(pair, isEbook) : null;
   /**
    * Discovered but not yet indexed, and with nothing usable from a previous
    * pass. A scan inserts every book it finds up front and then indexes them a
@@ -269,21 +274,25 @@ export function BookPage() {
       if ((await getDownloadState(target.id))?.status !== 'done') targets.push(target);
     }
     try {
-      toast.show(targets.length > 1 ? 'Downloading both editions…' : 'Downloading for offline…');
+      toast.show(
+        targets.length > 1 ? t('library.download.startingBoth') : t('library.download.startingOne'),
+      );
       for (const target of targets) {
         await startDownload(target.id, target.onUpdate);
         const state = await getDownloadState(target.id);
         if (state?.status === 'done') continue;
-        if (state?.status === 'cancelled') toast.show('Download stopped');
-        else toast.show(`Download failed: ${state?.error ?? 'unknown'}`);
+        if (state?.status === 'cancelled') toast.show(t('library.download.stopped'));
+        else toast.show(t(downloadErrorKey(state?.errorCode)));
         return;
       }
-      toast.show(wanted.length > 1 ? 'Both editions are available offline' : 'Available offline');
+      toast.show(
+        wanted.length > 1 ? t('library.download.doneBoth') : t('library.download.available'),
+      );
     } catch (err) {
       toast.show(
-        (err as Error).message.includes('Cache Storage')
-          ? 'Offline downloads need HTTPS (or localhost). See the self-hosting guide in the ReadPort README.'
-          : `Download failed: ${(err as Error).message}`,
+        err instanceof DownloadError && err.code === 'no-cache-storage'
+          ? t('library.download.needsHttps', { app: t('common.appName') })
+          : failureMessage(err, t('library.download.failed'), t),
       );
     } finally {
       setDl(await getDownloadState(id));
@@ -327,12 +336,12 @@ export function BookPage() {
         <div className="book-hero__body">
           <div className="book-hero__eyebrow">
             {isEbook ? <IconBookOpen size={14} /> : <IconHeadphones size={14} />}
-            {isEbook ? 'Ebook' : 'Audiobook'}
+            {isEbook ? t('common.ebook') : t('common.audiobook')}
             {book.series && (
               <>
                 {' · '}
                 {book.series}
-                {book.seriesIdx ? ` #${book.seriesIdx}` : ''}
+                {book.seriesIdx ? ` ${t('library.book.seriesIndex', { n: book.seriesIdx })}` : ''}
               </>
             )}
           </div>
@@ -345,30 +354,31 @@ export function BookPage() {
               canEdit={user?.role === 'admin' || user?.role === 'curator'}
               onChanged={() => void load()}
             />
-            {!isEbook && book.durationMs != null && <span>{formatDuration(book.durationMs)}</span>}
-            {detail.chapters.length > 0 && <span>{detail.chapters.length} chapters</span>}
-            <span>{formatBytes(book.sizeBytes)}</span>
+            {!isEbook && book.durationMs != null && <span>{f.duration(book.durationMs)}</span>}
+            {detail.chapters.length > 0 && (
+              <span>{t('library.book.chapters', { n: detail.chapters.length })}</span>
+            )}
+            <span>{f.bytes(book.sizeBytes)}</span>
           </div>
-          {audioSupport && !audioSupport.supported && (
+          {audioSupport && !audioSupport.supported && audioSupport.reason && (
             <div className="banner" role="note">
-              <IconAlert size={16} /> {audioSupport.reason}
+              <IconAlert size={16} /> {t(audioSupport.reason, { format: audioSupport.format })}
             </div>
           )}
           {book.scanState === 'error' && (
             <div className="banner banner--error" role="alert">
-              <IconAlert size={16} /> Indexing failed: {book.scanError}
+              <IconAlert size={16} /> {t('library.book.indexingFailed')} <bdi>{book.scanError}</bdi>
             </div>
           )}
           {notReadyYet && (
             <div className="banner" role="status">
-              <IconAlert size={16} /> ReadPort is still reading this book. It opens as soon as
-              indexing finishes.
+              <IconAlert size={16} />{' '}
+              {t('library.book.stillIndexing', { app: t('common.appName') })}
             </div>
           )}
           {book.scanState === 'missing' && (
             <div className="banner banner--error" role="alert">
-              <IconAlert size={16} /> The source files for this book are missing from the library
-              mount.
+              <IconAlert size={16} /> {t('library.book.filesMissing')}
             </div>
           )}
           {book.progress && pct > 0.001 && (
@@ -378,10 +388,10 @@ export function BookPage() {
               </span>
               <span>
                 {book.progress.finished
-                  ? 'Finished'
-                  : `${formatPct(pct)} ${isEbook ? 'read' : 'listened'}`}
+                  ? t('library.card.finished')
+                  : t('library.book.progress', { pct: f.percent(pct), kind: book.kind })}
                 {!isEbook && !book.progress.finished && book.durationMs
-                  ? ` · ${formatDuration(book.durationMs * (1 - pct))} left`
+                  ? ` · ${t('format.left', { duration: f.duration(book.durationMs * (1 - pct)) })}`
                   : ''}
               </span>
             </div>
@@ -391,20 +401,35 @@ export function BookPage() {
               // Opening one of these lands on "Cannot open book" for an ebook,
               // or on a player with no audio at all - a dead end whose only
               // exit is back to a page that looks perfectly healthy.
-              <button className="btn" disabled title="Still being indexed">
-                {isEbook ? <IconBookOpen size={18} /> : <IconHeadphones size={18} />} Indexing…
+              <button className="btn" disabled title={t('library.book.stillIndexedTitle')}>
+                {isEbook ? <IconBookOpen size={18} /> : <IconHeadphones size={18} />}{' '}
+                {t('library.card.indexing')}
               </button>
             ) : isEbook ? (
               <Link className="btn" to={`/read/${book.id}`}>
-                <IconBookOpen size={18} /> {pct > 0.001 ? 'Continue reading' : 'Read'}
+                <IconBookOpen size={18} />{' '}
+                {pct > 0.001
+                  ? t('library.continueIn', { kind: book.kind })
+                  : t('library.book.open', { kind: book.kind })}
               </Link>
             ) : audioSupport && !audioSupport.supported ? (
-              <button className="btn" disabled title={audioSupport.reason ?? undefined}>
-                <IconHeadphones size={18} /> Listen
+              <button
+                className="btn"
+                disabled
+                title={
+                  audioSupport.reason
+                    ? t(audioSupport.reason, { format: audioSupport.format })
+                    : undefined
+                }
+              >
+                <IconHeadphones size={18} /> {t('library.book.open', { kind: book.kind })}
               </button>
             ) : (
               <Link className="btn" to={`/listen/${book.id}`}>
-                <IconHeadphones size={18} /> {pct > 0.001 ? 'Continue listening' : 'Listen'}
+                <IconHeadphones size={18} />{' '}
+                {pct > 0.001
+                  ? t('library.continueIn', { kind: book.kind })
+                  : t('library.book.open', { kind: book.kind })}
               </Link>
             )}
             {pair && (
@@ -417,18 +442,14 @@ export function BookPage() {
               >
                 {isEbook ? <IconHeadphones size={17} /> : <IconBookOpen size={17} />}
                 {switching
-                  ? 'Opening…'
+                  ? t('library.book.opening')
                   : pair.switchable && pct > 0.001
-                    ? isEbook
-                      ? 'Listen from here'
-                      : 'Read from here'
-                    : isEbook
-                      ? 'Listen'
-                      : 'Read'}
+                    ? t('library.book.fromHere', { kind: book.kind })
+                    : t('library.book.openOther', { kind: book.kind })}
               </button>
             )}
             <button className="btn btn--secondary" onClick={() => setAddTo(true)}>
-              <IconShelf size={17} /> Add to…
+              <IconShelf size={17} /> {t('library.card.addTo')}
             </button>
             <OfflineButton dl={dl} onClick={() => void openOfflineSheet()} />
             {user?.canExport && !notReadyYet && (
@@ -456,22 +477,24 @@ export function BookPage() {
                 download=""
               >
                 <IconDownload size={17} />
-                {isEbook || detail.tracks.length <= 1 ? 'Save a copy' : 'Save files…'}
+                {isEbook || detail.tracks.length <= 1
+                  ? t('library.book.saveCopy')
+                  : t('library.book.saveFiles')}
               </a>
             )}
           </div>
-          {pair && (
+          {pair && pairNote && (
             // One quiet line, not a card. What it says is the only thing a
             // reader needs to know: what happens when they switch.
             <p className="book-hero__pairnote">
               <IconSwitch size={14} />
               <span>
-                {switchNote(pair, isEbook)}{' '}
+                {t(pairNote.key, pairNote.values)}{' '}
                 {dl?.status === 'done' &&
                   companionDl !== undefined &&
                   companionDl?.status !== 'done' &&
-                  `The ${isEbook ? 'audiobook' : 'ebook'} is not on this device, so switching needs a connection. `}
-                <Link to="/pairs">Review pairing</Link>
+                  `${t('library.book.otherNotOnDevice', { kind: book.kind })} `}
+                <Link to="/pairs">{t('library.book.reviewPairing')}</Link>
               </span>
             </p>
           )}
@@ -485,7 +508,7 @@ export function BookPage() {
                 );
                 await loadMembership();
                 await refreshShelves();
-                toast.show(`Taken off ${name}`);
+                toast.show(t('library.book.takenOffShelf', { name }));
               })()
             }
             onRemoveQueue={() =>
@@ -493,7 +516,7 @@ export function BookPage() {
                 await api(`/api/reading-list/${id}`, { method: 'DELETE' }).catch(() => {});
                 await loadMembership();
                 await refreshShelves();
-                toast.show('Taken off your reading list');
+                toast.show(t('library.queue.takenOff'));
               })()
             }
           />
@@ -503,19 +526,18 @@ export function BookPage() {
       {book.pair && book.pair.status === 'candidate' && (
         <div className="banner" role="note">
           <IconLink size={16} />
-          <span style={{ flex: 1 }}>
-            A possible {isEbook ? 'audiobook' : 'ebook'} edition was found and is waiting for
-            review.
-          </span>
+          <span style={{ flex: 1 }}>{t('library.book.candidateFound', { kind: book.kind })}</span>
           <Link to="/pairs" className="btn btn--ghost" style={{ minHeight: 36 }}>
-            Review
+            {t('library.book.review')}
           </Link>
         </div>
       )}
 
       {detail.chapters.length > 0 && (
-        <section className="list-card" aria-label="Chapters">
-          <div className="list-card__head">Chapters ({detail.chapters.length})</div>
+        <section className="list-card" aria-label={t('library.book.chaptersLabel')}>
+          <div className="list-card__head">
+            {t('library.book.chaptersHead', { n: detail.chapters.length })}
+          </div>
           {detail.chapters.map((c, i) => (
             <button
               key={c.idx}
@@ -527,14 +549,12 @@ export function BookPage() {
               }
             >
               <span className="soft" style={{ width: 24, textAlign: 'end' }}>
-                {i + 1}
+                {f.number(i + 1)}
               </span>
               <span className="grow">{c.title}</span>
               {c.startMs != null && (
                 <span className="soft">
-                  {c.endMs != null
-                    ? formatDuration(c.endMs - c.startMs)
-                    : formatDuration(c.startMs)}
+                  {c.endMs != null ? f.duration(c.endMs - c.startMs) : f.duration(c.startMs)}
                 </span>
               )}
             </button>
@@ -543,8 +563,10 @@ export function BookPage() {
       )}
 
       {annotations.length > 0 && (
-        <section className="list-card" aria-label="Bookmarks and highlights">
-          <div className="list-card__head">Bookmarks & highlights ({annotations.length})</div>
+        <section className="list-card" aria-label={t('library.book.annotationsLabel')}>
+          <div className="list-card__head">
+            {t('library.book.annotationsHead', { n: annotations.length })}
+          </div>
           {annotations.map((a) => (
             <button
               key={a.id}
@@ -563,14 +585,14 @@ export function BookPage() {
             >
               <IconBookmark size={16} filled={a.kind === 'bookmark'} />
               <span className="grow" style={{ whiteSpace: 'normal' }}>
-                {a.selectedText ?? a.note ?? (a.kind === 'bookmark' ? 'Bookmark' : a.kind)}
+                {a.selectedText ?? a.note ?? t('library.book.annotationKind', { kind: a.kind })}
                 {a.note && a.selectedText && (
                   <span style={{ display: 'block', fontSize: 13, color: 'var(--rp-text-soft)' }}>
                     {a.note}
                   </span>
                 )}
               </span>
-              <span className="soft">{formatPct(a.locator.pct)}</span>
+              <span className="soft">{f.percent(a.locator.pct)}</span>
             </button>
           ))}
         </section>
@@ -578,13 +600,13 @@ export function BookPage() {
 
       {detail.description && (
         <section style={{ maxWidth: '65ch' }}>
-          <h2 className="section-title">About</h2>
+          <h2 className="section-title">{t('library.book.about')}</h2>
           <p style={{ color: 'var(--rp-text-soft)' }}>{detail.description}</p>
         </section>
       )}
       {detail.chapters.length === 0 && annotations.length === 0 && !detail.description && (
-        <EmptyState title="No chapters listed">
-          This book has no chapter metadata; you can still {isEbook ? 'read' : 'listen'} normally.
+        <EmptyState title={t('library.book.noChaptersTitle')}>
+          {t('library.book.noChaptersBody', { kind: book.kind })}
         </EmptyState>
       )}
       {offlineSheet && (
@@ -606,7 +628,7 @@ export function BookPage() {
             await removeDownload(id);
             setDl(await getDownloadState(id));
             setOfflineSheet(false);
-            toast.show('Offline copy removed');
+            toast.show(t('library.download.removed'));
           }}
         />
       )}
@@ -621,11 +643,11 @@ export function BookPage() {
       {saveOpen && (
         // An audiobook is many files and the server does not build archives,
         // so the reader picks. Listed as they play, with their own names.
-        <Sheet title="Save a copy" onClose={() => setSaveOpen(false)}>
+        <Sheet title={t('library.book.saveCopy')} onClose={() => setSaveOpen(false)}>
           <p className="hint" style={{ marginBlockEnd: 'var(--sp-3)' }}>
-            {detail.tracks.length} files. Saving them is one at a time.
+            {t('library.book.saveFilesHint', { n: detail.tracks.length })}
           </p>
-          {detail.tracks.map((t, i) => (
+          {detail.tracks.map((track, i) => (
             <a
               key={i}
               className="list-row"
@@ -633,8 +655,8 @@ export function BookPage() {
               download=""
             >
               <IconDownload size={16} />
-              <span className="grow">{t.title || `Part ${i + 1}`}</span>
-              <span className="soft">{t.format.toUpperCase()}</span>
+              <span className="grow">{track.title || t('library.book.part', { n: i + 1 })}</span>
+              <span className="soft">{track.format.toUpperCase()}</span>
             </a>
           ))}
         </Sheet>
@@ -658,17 +680,19 @@ function MembershipChips({
   onRemoveShelf: (shelfId: string, name: string) => void;
   onRemoveQueue: () => void;
 }) {
+  const t = useT();
+  const f = useFormat();
   if (!member || (member.shelfIds.length === 0 && !member.onReadingList)) return null;
   return (
-    <div className="membership" role="group" aria-label="Shelves this book is on">
+    <div className="membership" role="group" aria-label={t('library.book.membershipLabel')}>
       {member.onReadingList && (
         <span className="membership__chip">
           <IconList size={13} />
-          Reading list
-          {member.readingListPosition ? ` · ${ordinal(member.readingListPosition)}` : ''}
+          {t('shelves.readingList')}
+          {member.readingListPosition ? ` · ${f.ordinal(member.readingListPosition)}` : ''}
           <button
             className="membership__x"
-            aria-label="Take off the reading list"
+            aria-label={t('library.book.takeOffQueue')}
             onClick={onRemoveQueue}
           >
             <IconClose size={13} />
@@ -684,7 +708,7 @@ function MembershipChips({
             {name}
             <button
               className="membership__x"
-              aria-label={`Take off ${name}`}
+              aria-label={t('library.book.takeOffShelf', { name })}
               onClick={() => onRemoveShelf(sid, name)}
             >
               <IconClose size={13} />
@@ -702,6 +726,8 @@ function MembershipChips({
  * flights happen.
  */
 function OfflineButton({ dl, onClick }: { dl: DownloadState | null; onClick: () => void }) {
+  const t = useT();
+  const f = useFormat();
   const downloading = dl?.status === 'downloading';
   const done = dl?.status === 'done';
   const failed = dl?.status === 'error';
@@ -712,17 +738,17 @@ function OfflineButton({ dl, onClick }: { dl: DownloadState | null; onClick: () 
       onClick={onClick}
       aria-label={
         done
-          ? 'Available offline - manage the download'
+          ? t('library.download.availableManage')
           : downloading
-            ? `Downloading for offline, ${pctDone}%`
+            ? t('library.download.downloadingPct', { pct: f.percent(downloadFraction(dl)) })
             : failed
-              ? 'Download for offline - the last attempt failed'
-              : 'Download for offline'
+              ? t('library.download.retryLabel')
+              : t('library.download.forOffline')
       }
     >
       {downloading ? (
         <span className="offline-btn__ring" style={{ '--pct': pctDone } as React.CSSProperties}>
-          <span className="offline-btn__pct">{pctDone}</span>
+          <span className="offline-btn__pct">{f.number(pctDone)}</span>
         </span>
       ) : done ? (
         <IconOffline size={18} />
@@ -733,19 +759,22 @@ function OfflineButton({ dl, onClick }: { dl: DownloadState | null; onClick: () 
       )}
       {downloading ? (
         <span className="offline-btn__label">
-          Downloading
+          {t('library.download.downloading')}
           {dl.estimatedBytes > 0 && (
             <span className="offline-btn__bytes">
-              {formatBytes(dl.storedBytes)} of {formatBytes(dl.estimatedBytes)}
+              {t('library.download.bytesOf', {
+                stored: f.bytes(dl.storedBytes),
+                total: f.bytes(dl.estimatedBytes),
+              })}
             </span>
           )}
         </span>
       ) : done ? (
-        'Downloaded'
+        t('library.download.downloaded')
       ) : failed ? (
-        'Retry'
+        t('common.retry')
       ) : (
-        'Download'
+        t('library.download.download')
       )}
     </button>
   );
@@ -775,97 +804,116 @@ function OfflineSheet({
   onCancel: () => void;
   onRemove: () => void;
 }) {
+  const t = useT();
+  const f = useFormat();
   const downloading = dl?.status === 'downloading';
   const done = dl?.status === 'done';
-  const isEbook = book.kind === 'ebook';
-  const otherMedium = isEbook ? 'audiobook' : 'ebook';
+  const kind = book.kind;
   const companionStored = companionDl?.status === 'done';
+  const companionSize = {
+    hasSize: !!companion && companion.sizeBytes > 0,
+    size: companion ? f.bytes(companion.sizeBytes) : '',
+  };
   // Bytes a stopped or failed attempt left on the device. They are reused by
   // the next attempt, but until then they are silent occupied space.
   const partialBytes = dl && !done && !downloading ? dl.storedBytes : 0;
   return (
     <Sheet
-      title={done ? 'Available offline' : downloading ? 'Downloading' : 'Download for offline?'}
+      title={
+        done
+          ? t('library.download.available')
+          : downloading
+            ? t('library.download.downloading')
+            : t('library.download.askTitle')
+      }
       onClose={onClose}
     >
       {done ? (
         <>
           <p className="sheet__lede">
-            <strong>{book.title}</strong> is stored on this device ({formatBytes(dl.storedBytes)}).
-            You can {isEbook ? 'read' : 'listen to'} it with no connection; progress syncs when you
-            are back online.
+            {t('library.download.storedLede', {
+              title: book.title,
+              bytes: f.bytes(dl.storedBytes),
+              kind,
+            })}
           </p>
           {companion && !companionStored && (
             <div className="banner" role="note">
               <IconAlert size={15} />
               <span style={{ flex: 1 }}>
-                The {otherMedium} edition is not on this device
-                {companion.sizeBytes > 0 ? ` (${formatBytes(companion.sizeBytes)})` : ''}. Add it to
-                switch between reading and listening offline.
+                {t('library.download.companionMissing', { kind, ...companionSize })}
               </span>
             </div>
           )}
           <div className="sheet__actions">
             {companion && !companionStored && (
               <button className="btn" onClick={() => onDownload(true)}>
-                <IconDownload size={16} /> Add the {otherMedium}
+                <IconDownload size={16} /> {t('library.download.addOther', { kind })}
               </button>
             )}
             <button className="btn btn--danger" onClick={onRemove}>
-              <IconTrash size={16} /> Remove offline copy
+              <IconTrash size={16} /> {t('library.download.remove')}
             </button>
             <button className="btn btn--secondary" onClick={onClose}>
-              Keep
+              {t('library.download.keep')}
             </button>
           </div>
         </>
       ) : downloading ? (
         <>
           <p className="sheet__lede">
-            {dl.doneUrls} of {dl.totalUrls} parts · {formatBytes(dl.storedBytes)} so far. You can
-            keep using the app meanwhile.
+            {t('library.download.progressLede', {
+              done: dl.doneUrls,
+              total: dl.totalUrls,
+              bytes: f.bytes(dl.storedBytes),
+            })}
           </p>
           <span className="progressbar" aria-hidden="true" style={{ height: 6 }}>
             <span style={{ width: `${dl.totalUrls ? (dl.doneUrls / dl.totalUrls) * 100 : 0}%` }} />
           </span>
           <div className="sheet__actions">
             <button className="btn btn--secondary" onClick={onCancel}>
-              Cancel download
+              {t('library.download.cancel')}
             </button>
             <button className="btn btn--ghost" onClick={onClose}>
-              Close
+              {t('common.close')}
             </button>
           </div>
         </>
       ) : (
         <>
           <p className="sheet__lede">
-            Keep <strong>{book.title}</strong> on this device for flights and dead zones - about{' '}
-            <strong>{formatBytes(book.sizeBytes)}</strong>
-            {isEbook ? ' including images' : ' of audio'}. {isEbook ? 'Reading' : 'Listening'} works
-            fully offline and your position syncs back when you reconnect. Signing out removes
-            offline copies.
+            {t('library.download.askLede', {
+              title: book.title,
+              bytes: f.bytes(book.sizeBytes),
+              kind,
+            })}
           </p>
           {companion && !companionStored && (
             <p className="sheet__lede">
-              The {otherMedium} edition is a separate download
-              {companion.sizeBytes > 0 ? ` of about ${formatBytes(companion.sizeBytes)}` : ''}. Take
-              only this one and you will have the {isEbook ? 'text' : 'audio'} offline but not the
-              other, and no way to switch between them until you reconnect.
+              {t('library.download.companionSeparate', { kind, ...companionSize })}
             </p>
           )}
           {partialBytes > 0 && (
             <p className="sheet__lede">
-              {formatBytes(partialBytes)} from the last attempt is still on this device. Starting
-              again continues from there; removing it frees the space now.
+              {t('library.download.partialLede', { bytes: f.bytes(partialBytes) })}
             </p>
           )}
           {dl?.status === 'error' && (
             <div className="banner banner--error" role="alert">
               <IconAlert size={15} />
               <span>
-                The download was interrupted - starting again continues from where it stopped.
-                {dl.error && <small className="hint"> {dl.error}</small>}
+                {t('library.download.interruptedLede')}
+                {dl.errorCode ? (
+                  <small className="hint"> {t(downloadErrorKey(dl.errorCode))}</small>
+                ) : (
+                  dl.error && (
+                    <small className="hint">
+                      {' '}
+                      <bdi>{dl.error}</bdi>
+                    </small>
+                  )
+                )}
               </span>
             </div>
           )}
@@ -873,27 +921,31 @@ function OfflineSheet({
             {companion && !companionStored ? (
               <>
                 <button className="btn" onClick={() => onDownload(true)}>
-                  <IconDownload size={16} /> Download both
-                  {companion.sizeBytes > 0
-                    ? ` (${formatBytes(book.sizeBytes + companion.sizeBytes)})`
-                    : ''}
+                  <IconDownload size={16} />{' '}
+                  {t('library.download.both', {
+                    hasSize: companion.sizeBytes > 0,
+                    size: f.bytes(book.sizeBytes + companion.sizeBytes),
+                  })}
                 </button>
                 <button className="btn btn--secondary" onClick={() => onDownload(false)}>
-                  {isEbook ? 'Ebook' : 'Audiobook'} only ({formatBytes(book.sizeBytes)})
+                  {t('library.download.onlyThis', { kind, size: f.bytes(book.sizeBytes) })}
                 </button>
               </>
             ) : (
               <button className="btn" onClick={() => onDownload(false)}>
-                <IconDownload size={16} /> {dl?.status === 'error' ? 'Retry download' : 'Download'}
+                <IconDownload size={16} />{' '}
+                {dl?.status === 'error'
+                  ? t('library.download.retry')
+                  : t('library.download.download')}
               </button>
             )}
             {partialBytes > 0 && (
               <button className="btn btn--danger" onClick={onRemove}>
-                <IconTrash size={16} /> Remove partial download
+                <IconTrash size={16} /> {t('library.download.removePartial')}
               </button>
             )}
             <button className="btn btn--ghost" onClick={onClose}>
-              Not now
+              {t('library.download.notNow')}
             </button>
           </div>
         </>
@@ -901,13 +953,6 @@ function OfflineSheet({
     </Sheet>
   );
 }
-
-const SOURCE_WORDS: Record<NonNullable<BookSummary['languageSource']>, string> = {
-  manual: 'set by hand',
-  metadata: 'from the file',
-  pair: 'from the paired edition',
-  detected: 'read from the text',
-};
 
 /**
  * The book's language, where it came from, and - for a curator - a way to
@@ -923,20 +968,24 @@ function LanguageChip({
   canEdit: boolean;
   onChanged: () => void;
 }) {
+  const t = useT();
+  const f = useFormat();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const source = book.languageSource ?? null;
   const title = book.language
-    ? `Language ${SOURCE_WORDS[source ?? 'metadata']}`
-    : 'Language unknown';
+    ? t('library.book.languageTitle', { source: source ?? 'metadata' })
+    : t('library.book.languageUnknown');
   if (!canEdit) {
     return (
-      <span title={title}>{book.language ? languageName(book.language) : 'Language unknown'}</span>
+      <span title={title}>
+        {book.language ? f.languageName(book.language) : t('library.book.languageUnknown')}
+      </span>
     );
   }
   return (
     <label className="lang-pick" title={title}>
-      <span className="visually-hidden">Language</span>
+      <span className="visually-hidden">{t('library.book.language')}</span>
       <select
         className="lang-pick__select"
         disabled={busy}
@@ -948,12 +997,12 @@ function LanguageChip({
             await api(`/api/books/${book.id}/language`, { method: 'POST', body: { language } });
             toast.show(
               language
-                ? `Language set to ${languageName(language)}`
-                : 'Language follows the file again',
+                ? t('library.book.languageSet', { name: f.languageName(language) })
+                : t('library.book.languageAuto'),
             );
             onChanged();
           } catch (err) {
-            toast.show(actionFailed(err, 'Could not change the language.'));
+            toast.show(failureMessage(err, t('library.book.languageFailed'), t));
           } finally {
             setBusy(false);
           }
@@ -961,14 +1010,17 @@ function LanguageChip({
       >
         <option value="">
           {source === 'manual'
-            ? 'Auto'
+            ? t('library.book.languageAutoOption')
             : book.language
-              ? `${languageName(book.language)} · ${SOURCE_WORDS[source ?? 'metadata']}`
-              : 'Unknown · set by hand?'}
+              ? t('library.book.languageWithSource', {
+                  name: f.languageName(book.language),
+                  source: source ?? 'metadata',
+                })
+              : t('library.book.languageUnknownSet')}
         </option>
         {BOOK_LANGUAGES.map((l) => (
           <option key={l.code} value={l.code}>
-            {languageName(l.code)}
+            {f.languageName(l.code)}
           </option>
         ))}
       </select>
