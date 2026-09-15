@@ -17,6 +17,8 @@ data/
 cache/
 models/
 qa-output/
+# Screenshots the scripts/qa-*.mjs sweeps drop in the repo root.
+/qa-*.png
 *.tsbuildinfo
 .playwright-mcp/
 

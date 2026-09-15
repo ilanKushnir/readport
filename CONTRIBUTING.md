@@ -74,11 +74,13 @@ npm run dev:web          # http://localhost:5183
 
 Database, cache and models default to `./data`, `./cache` and `./models`, all
 gitignored; delete the first to start over from the first-run wizard.
-`RP_SETUP_TOKEN` is what unlocks that wizard, and if you do not set one the
-server generates one and prints it at startup. `RP_ALIGNMENT_DIRS` is the one
-writable library root: point it at the committed `./alignments` folder and
-you will see `.rpalign` files appear there as pairs finish, and get them
-imported again on the next scan after you wipe the database.
+`RP_SETUP_TOKEN` is optional: leave it unset and the wizard simply opens (the
+server logs that setup is OPEN), set it and the wizard asks for it. Either
+way the window shuts permanently once an account exists.
+`RP_ALIGNMENT_DIRS` is the one writable library root: point it at the
+committed `./alignments` folder and you will see `.rpalign` files appear
+there as pairs finish, and get them imported again on the next scan after you
+wipe the database.
 
 Production-style run: `npm run build` then `node server/dist/index.js`
 (serves the built web app itself).

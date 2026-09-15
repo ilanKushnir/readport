@@ -4,6 +4,28 @@
   "private": true,
   "license": "AGPL-3.0-or-later",
   "description": "Self-hosted tandem reading: a non-destructive reader/player overlay for existing ebook and audiobook libraries.",
+  "keywords": [
+    "self-hosted",
+    "selfhosted",
+    "ebook",
+    "epub",
+    "audiobook",
+    "reader",
+    "audiobook-player",
+    "forced-alignment",
+    "read-along",
+    "pwa",
+    "docker"
+  ],
+  "homepage": "https://github.com/ilanKushnir/readport#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ilanKushnir/readport.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ilanKushnir/readport/issues"
+  },
+  "author": "Ilan Kushnir",
   "type": "module",
   "engines": {
     "node": ">=24.0.0"

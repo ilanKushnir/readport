@@ -37,9 +37,13 @@ them is not covered by the guarantees below.
 - **Library folders are read-only** and are mounted that way in the stock
   Compose file. The alignment folder is the one exception, and it holds only
   files ReadPort itself wrote.
-- **There is no open registration.** The first account is created once, with a
-  one-time token printed in the server log; after that an admin adds people or
-  sends invite links.
+- **There is no open registration.** First-run setup is a one-time window: on
+  a server with no accounts, whoever reaches it first creates the admin, and
+  the window closes for good the moment that account exists. Set
+  `RP_SETUP_TOKEN` to require a token for that step, which is what you want if
+  the server is reachable from somewhere hostile before you have finished
+  setting it up. After the admin exists, an admin adds people or sends invite
+  links; nothing else can create an account.
 
 ## What is in scope
 

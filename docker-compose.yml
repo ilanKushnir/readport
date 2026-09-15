@@ -1,26 +1,41 @@
 # ReadPort self-hosting quick start.
 #
 #   1. cp .env.example .env   (set RP_SESSION_SECRET: openssl rand -hex 32)
-#   2. Edit the library mounts below to point at your real folders.
-#   3. docker compose up -d
+#   2. In that same .env, point RP_EBOOK_PATH / RP_AUDIOBOOK_PATH /
+#      RP_ALIGNMENT_PATH at your real folders on the host. Nothing in this
+#      file needs editing, so `git pull` stays conflict-free.
+#   3. docker compose up -d --build
 #   4. Open http://<host>:8383 and create the admin account.
+#
+# Out of the box the mounts point at the bundled sample library, so the stack
+# comes up with something to read before you have pointed it anywhere.
 #
 # PWA installation (Add to Home Screen) requires HTTPS - put a reverse proxy
 # (Caddy, Traefik, nginx) with a certificate in front. See docs/self-hosting.md.
 
 services:
   readport:
+    # Built from this checkout, which works on every architecture and is why
+    # it is the default. Published images exist at
+    # ghcr.io/ilankushnir/readport (tags: the version, e.g. `0.12.0`, plus
+    # `latest` on releases) but are built for linux/amd64 ONLY - on amd64 you
+    # may replace the `build: .` line below with:
+    #   image: ghcr.io/ilankushnir/readport:0.12.0
+    # Pin the version rather than tracking `latest`, so an upgrade is a thing
+    # you decide to do.
     build: .
-    # Or, when published: image: ghcr.io/ilankushnir/readport:latest
     container_name: readport
     restart: unless-stopped
     ports:
-      - '8383:8383'
+      - '${RP_HTTP_PORT:-8383}:8383'
+    # No healthcheck here on purpose: the image carries its own HEALTHCHECK
+    # (GET /api/health), which Compose inherits. `docker compose ps` shows it.
     environment:
       PUID: ${PUID:-1000}
       PGID: ${PGID:-1000}
       TZ: ${TZ:-Etc/UTC}
       RP_SESSION_SECRET: ${RP_SESSION_SECRET:?set RP_SESSION_SECRET in .env}
+      RP_SESSION_DAYS: ${RP_SESSION_DAYS:-30}
       # Optional lock on first-run setup. Empty (the default) means you just
       # open the app and create your admin account. Set it if this will be
       # reachable from somewhere hostile before you have done that.
@@ -30,15 +45,25 @@ services:
       # X-Forwarded-For). Behind a reverse proxy set "1" (local/private
       # proxies) or a comma-separated list of proxy IPs/CIDRs.
       RP_TRUST_PROXY: ${RP_TRUST_PROXY:-0}
+      # Behind a tunnel (Cloudflare, ngrok) the hop above is not the client;
+      # name the header carrying the real address and the peers allowed to
+      # set it. Rate-limit keys only - never an identity. See docs/security.md.
+      RP_CLIENT_IP_HEADER: ${RP_CLIENT_IP_HEADER:-}
+      RP_CLIENT_IP_SOURCES: ${RP_CLIENT_IP_SOURCES:-}
       RP_EBOOK_DIRS: /library/ebooks
       RP_AUDIOBOOK_DIRS: /library/audiobooks
-      # Where finished alignments are saved. THE ONE FOLDER READPORT WRITES TO,
-      # which is why it has no :ro below. Keep it across rebuilds and a new
-      # container adopts everything it already worked out - the first-run
-      # wizard asks, and Settings → Libraries can change the answer later.
+      # Where finished alignments are saved. THE ONE LIBRARY FOLDER READPORT
+      # WRITES TO, which is why it has no :ro below. Keep it across rebuilds
+      # and a new container adopts everything it already worked out - a scan
+      # imports from here before it aligns anything. Set here, the folder is
+      # pinned: the wizard and Settings show it rather than asking. Remove
+      # the line to choose it in the app instead; with none at all, files go
+      # to /data/alignments inside the rp-data volume, which survives
+      # container replacement and image upgrades (not `down -v`).
       RP_ALIGNMENT_DIRS: /library/alignments
       RP_DEFAULT_LANGUAGE: ${RP_DEFAULT_LANGUAGE:-en}
       RP_SCAN_INTERVAL_MINUTES: ${RP_SCAN_INTERVAL_MINUTES:-60}
+      RP_LOG_LEVEL: ${RP_LOG_LEVEL:-info}
       # Optional reverse-proxy SSO (Authentik etc.) - see docs/security.md.
       RP_PROXY_AUTH_HEADER: ${RP_PROXY_AUTH_HEADER:-}
       RP_PROXY_AUTH_SOURCES: ${RP_PROXY_AUTH_SOURCES:-}
@@ -56,12 +81,14 @@ services:
       - rp-cache:/cache
       - rp-models:/models
       # Source libraries: ALWAYS read-only. Point these at your existing
-      # Calibre/CWA, Kavita, Audiobookshelf, or plain folders.
-      - ./fixtures/library/ebooks:/library/ebooks:ro
-      - ./fixtures/library/audiobooks:/library/audiobooks:ro
+      # Calibre/CWA, Kavita, Audiobookshelf, or plain folders - in .env, not
+      # here. Defaults are the sample library committed in this repo.
+      - ${RP_EBOOK_PATH:-./fixtures/library/ebooks}:/library/ebooks:ro
+      - ${RP_AUDIOBOOK_PATH:-./fixtures/library/audiobooks}:/library/audiobooks:ro
       # Read-write ON PURPOSE: alignments are saved here so they survive a
-      # rebuild. Do not add :ro to this one.
-      - ./alignments:/library/alignments
+      # rebuild. Do not add :ro to this one, and chown it to PUID:PGID on the
+      # host if you point it somewhere new.
+      - ${RP_ALIGNMENT_PATH:-./alignments}:/library/alignments
     deploy:
       resources:
         limits:
@@ -84,9 +111,17 @@ services:
       PUID: ${PUID:-1000}
       PGID: ${PGID:-1000}
       TZ: ${TZ:-Etc/UTC}
+      # The worker opens the same database; it writes no sessions, but sharing
+      # the secret keeps it from generating a second one into /data.
+      RP_SESSION_SECRET: ${RP_SESSION_SECRET:?set RP_SESSION_SECRET in .env}
       RP_EBOOK_DIRS: /library/ebooks
       RP_AUDIOBOOK_DIRS: /library/audiobooks
       RP_ALIGNMENT_DIRS: /library/alignments
+      # The worker is what aligns, so the language of last resort and the
+      # rescan interval have to reach it too, not only the web container.
+      RP_DEFAULT_LANGUAGE: ${RP_DEFAULT_LANGUAGE:-en}
+      RP_SCAN_INTERVAL_MINUTES: ${RP_SCAN_INTERVAL_MINUTES:-60}
+      RP_LOG_LEVEL: ${RP_LOG_LEVEL:-info}
       RP_JOB_CONCURRENCY: ${RP_JOB_CONCURRENCY:-2}
       # ONNX intra-op threads for alignment - the knob worth tuning first.
       RP_ALIGN_THREADS: ${RP_ALIGN_THREADS:-4}
@@ -99,10 +134,10 @@ services:
       - rp-data:/data
       - rp-cache:/cache
       - rp-models:/models
-      - ./fixtures/library/ebooks:/library/ebooks:ro
-      - ./fixtures/library/audiobooks:/library/audiobooks:ro
+      - ${RP_EBOOK_PATH:-./fixtures/library/ebooks}:/library/ebooks:ro
+      - ${RP_AUDIOBOOK_PATH:-./fixtures/library/audiobooks}:/library/audiobooks:ro
       # The worker is what writes them when RP_INLINE_WORKER=0.
-      - ./alignments:/library/alignments
+      - ${RP_ALIGNMENT_PATH:-./alignments}:/library/alignments
     deploy:
       resources:
         limits:

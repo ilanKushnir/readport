@@ -43,7 +43,24 @@ bundled `docker-compose.yml` reads.
 | `RP_PROXY_AUTH_SOURCES`    | -                                  | Comma-separated proxy IPs/CIDRs whose header is trusted (checked on the TCP peer). Required for proxy SSO.                                                                                                                                                                                                                                 |
 | `RP_PROXY_AUTH_ADMINS`     | -                                  | Comma-separated usernames (as sent by the proxy) that get the admin role. On an empty instance the first proxied user is admin regardless.                                                                                                                                                                                                 |
 | `RP_LOG_LEVEL`             | `info`                             | fatal/error/warn/info/debug/trace.                                                                                                                                                                                                                                                                                                         |
+| `RP_ORT_DIR`               | unset                              | Escape hatch: an extra directory to resolve `onnxruntime-node` from when the native runtime lives outside the app tree. Unset in every supported deployment - the image installs it where a plain import finds it.                                                                                                                         |
 | `PUID` / `PGID` / `TZ`     | `1000`/`1000`/`Etc/UTC`            | Container user mapping and timezone (entrypoint).                                                                                                                                                                                                                                                                                          |
+
+## Host paths (docker-compose.yml only)
+
+Four names in `.env` are read by the **compose file**, not by the server. They
+exist so pointing ReadPort at your library never means editing a tracked file:
+
+| Variable            | Default                         | Description                                                                                              |
+| ------------------- | ------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `RP_EBOOK_PATH`     | `./fixtures/library/ebooks`     | Host folder mounted at `/library/ebooks`, read-only.                                                     |
+| `RP_AUDIOBOOK_PATH` | `./fixtures/library/audiobooks` | Host folder mounted at `/library/audiobooks`, read-only.                                                 |
+| `RP_ALIGNMENT_PATH` | `./alignments`                  | Host folder mounted read-write at `/library/alignments`. `chown` it to `PUID`:`PGID` before first use.   |
+| `RP_HTTP_PORT`      | `8383`                          | Host port published for the web UI. The container always listens on 8383, so `RP_PORT` is not used here. |
+
+The defaults are the sample library committed in this repo, so `docker compose
+up -d --build` with nothing but `RP_SESSION_SECRET` set brings up a stack that
+already has something to read.
 
 There is deliberately no variable for how closely the aligner listens or for
 whether it starts on its own. Those two decide what the server does with the
@@ -169,9 +186,10 @@ handed back undecided rather than aligned wrongly - so leaving this on is how
 most libraries sort themselves out overnight.
 
 Turn it off and nothing is computed until you press Start on the Pairing page,
-individually, over a multi-select, or with "Start all". Either way, a scan first
-queues an import from the alignment folder, ahead of the alignments it just
-queued, so a redeploy restores rather than recomputes.
+individually, over a multi-select, or with "Start all". Either way, a scan
+imports from the alignment folder before it queues any alignment, and an
+alignment job that finds its pair already aligned does nothing, so a redeploy
+restores rather than recomputes.
 
 ### What is deliberately not a setting
 
