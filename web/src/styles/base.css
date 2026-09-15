@@ -438,13 +438,25 @@ body:has(.app-body) {
   color: var(--rp-on-primary);
   background: var(--rp-primary);
 }
+/* The reading column is capped, but the SCROLLER is not: `max-width` here
+   used to cap the scroll container itself, so on a wide desktop the
+   scrollbar was drawn where that column ended - a bar down the middle of
+   the screen with page either side of it. The pane now fills the space it
+   was given and the column is centred inside it with padding, which puts
+   the scrollbar back where every other app keeps it: against the edge.
+
+   `100%` is the grid area (.app-body is a grid), so the column is centred in
+   the pane whether or not the shelves are docked beside it. A page that
+   wants a narrower measure - settings and people are mostly prose and
+   controls, which do not want to be 1160px wide - sets `--rp-measure`
+   rather than its own `max-width`, which would cap the scroller again. */
 .app-main {
+  --rp-measure: 1160px;
   flex: 1;
   width: 100%;
-  max-width: 1160px;
-  margin: 0 auto;
-  padding: var(--sp-5) max(var(--sp-4), var(--rp-safe-right)) calc(96px + var(--rp-safe-bottom))
-    max(var(--sp-4), var(--rp-safe-left));
+  padding-block: var(--sp-5) calc(96px + var(--rp-safe-bottom));
+  padding-inline: max(var(--sp-4), var(--rp-safe-left), calc((100% - var(--rp-measure)) / 2))
+    max(var(--sp-4), var(--rp-safe-right), calc((100% - var(--rp-measure)) / 2));
 }
 
 .tabbar {
@@ -481,6 +493,13 @@ body:has(.app-body) {
 .tabbar a[aria-current='page'] {
   color: var(--rp-interactive);
 }
+/* A button among links: without this the browser's own button face shows
+   through, and one tab looks raised where the other four are flat. */
+.tabbar__shelves {
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
 
 @media (min-width: 744px) {
   .app-nav {
@@ -506,6 +525,13 @@ body:has(.app-body) {
   flex: 1 1 220px;
   max-width: 420px;
 }
+/* The sort is a short label with a chevron; letting it grow like the search
+   box pushed it onto a row of its own at iPad widths, 420px wide for four
+   words. Content-sized, all three controls share one row. */
+.toolbar .input--select {
+  flex: 0 1 auto;
+  max-width: none;
+}
 .searchbox {
   position: relative;
   flex: 1 1 220px;
@@ -527,6 +553,7 @@ body:has(.app-body) {
   display: flex;
   gap: var(--sp-2);
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   padding-block: 2px;
   scrollbar-width: none;
 }
@@ -1316,6 +1343,7 @@ body:has(.app-body) {
   font-size: 14px;
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 4px 12px;
 }
 .book-hero__actions {
@@ -2129,7 +2157,7 @@ body:has(.app-body) {
   }
   .pipeline__arrow {
     inset-inline-end: auto;
-    left: 24px;
+    inset-inline-start: 24px;
     top: auto;
     bottom: calc(-1 * var(--sp-3) - 1px);
     width: 2px;
@@ -2138,7 +2166,7 @@ body:has(.app-body) {
   }
   .pipeline__arrow::after {
     inset-inline-end: auto;
-    left: -4px;
+    inset-inline-start: -4px;
     top: auto;
     bottom: -1px;
     border-inline-start-color: transparent;
@@ -2957,11 +2985,14 @@ body:has(.app-body) {
   font-variant-numeric: tabular-nums;
 }
 .dash__value small {
+  display: inline-block;
   font-family: var(--rp-font-ui);
   font-size: 12.5px;
   font-weight: 500;
   color: var(--rp-text-soft);
   margin-inline-start: 4px;
+  /* "on this device" drops to the next line whole, never "on this / device". */
+  white-space: nowrap;
 }
 .dash__detail {
   font-size: 12.5px;
@@ -3087,6 +3118,14 @@ body:has(.app-body) {
   }
 }
 
+/* An arrow that means "back" or "forward" points the other way when the
+   interface reads right-to-left. Only icons that mean a DIRECTION on the
+   page carry data-mirror; a skip-back on the player is about time and does
+   not turn round. */
+[dir='rtl'] svg[data-mirror] {
+  transform: scaleX(-1);
+}
+
 /* ---------------------------------------------------------------- shelves */
 /* A dozen shelf rows in front of the grid is a dozen tab stops; this is the
    way past them, and the app's first focusable element. */
@@ -3128,6 +3167,11 @@ body:has(.app-body) {
   min-width: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+  /* Reserve the gutter on BOTH sides where the scrollbar takes up room
+     (Windows, Linux): one-sided, it would shift the centred column half a
+     scrollbar off-centre, and shift it again whenever a short page stopped
+     scrolling. Overlay scrollbars - macOS, iOS, Android - reserve nothing. */
+  scrollbar-gutter: stable both-edges;
 }
 .app-rail {
   display: none;
@@ -3531,7 +3575,9 @@ body[data-rp-dragging] * {
 }
 .book-card__add {
   position: absolute;
-  top: var(--sp-2);
+  /* The bottom corner: a cover's title sits at the top, in whichever
+     direction the book reads, and on a phone the button is always shown. */
+  bottom: var(--sp-2);
   inset-inline-end: var(--sp-2);
   width: 30px;
   height: 30px;
@@ -4218,9 +4264,9 @@ body[data-rp-dragging] * {
     width: 44px;
     height: 44px;
   }
-  /* The header button is the ONLY way into the shelves on a phone, and the
-     two buttons below are the only way to make the first shelf and to move
-     one without a drag. The primary navigation, the rail's own foot and the
+  /* The header button names the shelf a phone is looking at and reopens the
+     sheet; the two buttons below are the only way to make the first shelf
+     and to move one without a drag. The primary navigation, the rail's own foot and the
      "pick what to show" link are touched just as often on an iPad. */
   .app-header__shelves,
   .sidebar__newbtn,
