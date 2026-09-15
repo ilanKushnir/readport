@@ -32,8 +32,13 @@
   restarts and expired windows are pruned daily. Keying the account limit
   on the caller's IP means a remote attacker cannot lock the real owner out
   of a known username. Forwarded headers (`X-Forwarded-For`) are ignored
-  unless the operator explicitly trusts a proxy via `RP_TRUST_PROXY`, so a
-  direct attacker cannot rotate spoofed IPs past the limit.
+  unless the operator explicitly trusts a proxy via `RP_TRUST_PROXY`, so at
+  the default (`0`) a direct attacker cannot rotate spoofed IPs past the
+  limit. **Trusting a proxy hands that guarantee to the proxy.** With
+  `RP_TRUST_PROXY=1` every address in the private ranges is believed, so any
+  client already inside the LAN can spoof `X-Forwarded-For` and get an
+  unlimited number of login and setup attempts. Name the proxy's actual
+  address instead of `1` whenever you can.
 - **Behind a tunnel, name every hop or the limits invert.** `X-Forwarded-For`
   is only walked back through the addresses in `RP_TRUST_PROXY`; a hop
   further out than that - a Cloudflare tunnel daemon, say - is where the walk
@@ -59,10 +64,13 @@
   400; a regression test covers the encoded-prefix case.
 - **Roles.** `admin` (everything: people, libraries, models, settings),
   `curator` (pairing decisions - link/unlink/confirm/reject/align - and job
-  cancel/retry), `reader` (read and listen). Rescans, settings, model
-  downloads, the bulk import and export of alignment files, and people
-  management stay admin-only. Every account keeps its own progress,
-  annotations, and offline copies; nothing is shared between users.
+  cancel/retry), `reader` (read and listen). _Changing_ settings, triggering
+  rescans and model downloads, the bulk import and export of alignment files,
+  and people management stay admin-only. Reading them does not: a `GET` of
+  `/api/settings` or `/api/models` answers any signed-in role, so every
+  account can see the configured library paths and the account count. Every
+  account keeps its own progress, annotations, and offline copies; nothing is
+  shared between users.
 - **No open registration.** Accounts exist only because an admin created
   them (with a password told in person) or issued a one-time **invite
   link** (`/join/<token>`). Invite tokens are 192-bit random values stored
@@ -217,9 +225,10 @@ strict allowlist over a spec-compliant HTML parser (parse5):
   images are removed.
 - EPUB archives are extracted by a **bounded streaming unzipper**: the
   compressed file is read in small chunks (never fully buffered) and every
-  limit is enforced on actual streamed bytes - compressed size (100 MB),
-  per-entry decompressed size (64 MB), total decompressed size (300 MB),
-  entry count (4096), and an overall expansion-ratio bomb heuristic - plus
+  limit is enforced on actual streamed bytes - compressed size (400 MB),
+  per-entry decompressed size (96 MB), total decompressed size (900 MB),
+  entry count (20,000), and an overall expansion-ratio bomb heuristic
+  (150×; see `EPUB_ZIP_LIMITS` in `server/src/epub/zip.ts`) - plus
   per-chapter (4 MB), metadata-document (10 MB), spine-length, and asset
   caps. Entries are path-normalized; nothing from an archive is ever
   written under an attacker-controlled path, and re-indexing swaps a fresh
@@ -329,10 +338,41 @@ only ever read back as a count.
 What remains is worth saying plainly. On a fresh install a file whose
 fingerprints match a real pair is believed, and the worst a planted one can do
 is send a listener to the wrong place in the narration - visible immediately,
-and undone by aligning the pair again. Decompression is bounded by the
-container's memory limit rather than by a cap of its own, so a file crafted to
-expand enormously costs an import job rather than being rejected outright.
-Both are accepted V1 limitations of trusting a folder the operator chose.
+and undone by aligning the pair again. That is an accepted V1 limitation of
+trusting a folder the operator chose. Decompression itself is capped at 64 MiB
+(`ALIGNMENT_DECOMPRESSED_LIMIT`), so a file crafted to expand enormously is
+refused rather than allowed to exhaust the container.
+
+## Agent API keys
+
+A read-only key (Settings → Agent access) lets an assistant or script see one
+person's library, lists and progress under `/api/agent/v1`, and nothing else.
+docs/api.md has the route catalog and the DTO contract; the security posture
+is:
+
+- The key is `rp_<8 hex>_<48 hex>`: a public prefix, shown in Settings, and
+  a 192-bit random secret shown once. Only a SHA-256 of the whole key is
+  stored; lookup is by prefix and the comparison is constant-time, and an
+  unknown prefix is hashed and compared too, so the response time does not say
+  whether a prefix exists.
+- A key is a fixed `agent:read` scope. Roles and export permissions cannot
+  widen it; it cannot reach the browser API, manage keys, or perform any
+  method but GET; a browser session or a proxy identity cannot reach the
+  agent routes. Revocation and disabling the owner take effect on the next
+  request.
+- Reads are budgeted per owner (120 per minute, shared across their keys,
+  atomically in SQLite so several processes cannot each spend the last slot);
+  refusals - a key that does not resolve, a valid key on a forbidden route -
+  are budgeted per client address (300 per minute) so an address cannot try
+  credentials or probe the catalog without limit. `Retry-After` on a 429 is
+  measured, not a round number. The address is only ever a cost bound, never
+  an identity.
+- Every request carrying an Authorization header is audited as a structured
+  `agent-api` line with the verified key and user ids, the catalog route
+  template and the outcome - never the credential, the query string or any
+  content. Fastify's own request line omits query strings too.
+- Rotating a password or signing out everywhere does not revoke keys; they
+  are listed in Settings with the time they were last used, and revoked there.
 
 ## Container posture
 
@@ -345,9 +385,11 @@ Both are accepted V1 limitations of trusting a folder the operator chose.
 - One native dependency, `onnxruntime-node`, which runs the alignment model;
   SQLite is Node's built-in `node:sqlite` and nothing else compiles. The
   supply-chain surface is therefore that one prebuilt runtime plus a short
-  list of pure-JavaScript packages, all pinned by `package-lock.json` and
-  installed with `--ignore-scripts` in both image stages, so no dependency's
-  install script runs during the build.
+  list of pure-JavaScript packages, every one pinned to an exact version **and
+  to a SHA-512 integrity hash** in `package-lock.json`, so `npm ci` refuses a
+  tarball whose contents have changed; they are installed with
+  `--ignore-scripts` in both image stages, so no dependency's install script
+  runs during the build.
 
 ## Secrets and logging
 

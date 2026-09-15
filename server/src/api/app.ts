@@ -129,6 +129,19 @@ export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyIn
       // Book chapter fragments/assets carry their own stricter handling.
       reply.header('content-security-policy', CSP);
     }
+    // An API answer is one person's data, and it used to go out with no cache
+    // directive at all - which leaves it to a shared cache's heuristics. The
+    // audience for this server is someone putting a reverse proxy in front of
+    // it, and "cache everything" is one rule away in every CDN dashboard: a
+    // cached /api/auth/me or /api/annotations is one reader's account handed
+    // to the next. Set the safe default here and let the routes that really
+    // do serve cacheable content - covers, chapters, assets, tracks - replace
+    // it with their own `private, max-age=…` afterwards. Offline downloads
+    // are unaffected: the service worker stores them through the Cache
+    // Storage API, which does not consult HTTP cache directives.
+    if ((decodedPathname(req.url) ?? '').startsWith('/api/')) {
+      reply.header('cache-control', 'private, no-store');
+    }
     // Who this request counts as, for rate limiting only.
     req.clientIp = clientIp(req);
     // Said once, at the moment it is demonstrably wrong: a forwarded header

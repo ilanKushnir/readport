@@ -6,6 +6,19 @@ on:
     tags: ['v*']
   pull_request:
 
+# Least privilege by default: these jobs only ever read the repository, and
+# `npm ci` runs dependency install scripts, so the token they run beside
+# should not be able to write. The publish job re-grants exactly what it
+# needs (packages: write) for itself.
+permissions:
+  contents: read
+
+# A second push to the same branch supersedes the first; main and tags are
+# never cancelled, because the publish job hangs off them.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   checks:
     runs-on: ubuntu-latest
@@ -41,6 +54,37 @@ jobs:
           grep -q "rp-shell-" web/dist/sw.js
           ! grep -q "__RP_PRECACHE__" web/dist/sw.js
           grep -q '"/assets/' web/dist/sw.js
+
+  # Config drift is the failure an operator hits first and a test suite never
+  # sees: a variable the server reads that .env.example and the reference
+  # table have never heard of. Cheap to check, so it is checked.
+  config-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Every RP_* the server reads is documented
+        run: |
+          status=0
+          vars=$(grep -rhoE 'RP_[A-Z0-9_]+' server/src --include='*.ts' \
+            | grep -vE '_FILE$' | sort -u)
+          for v in $vars; do
+            grep -q "$v" .env.example \
+              || { echo "::error file=.env.example::$v is read by the server but not in .env.example"; status=1; }
+            grep -q "$v" docs/configuration.md \
+              || { echo "::error file=docs/configuration.md::$v is read by the server but not in docs/configuration.md"; status=1; }
+          done
+          exit $status
+      - name: Compose passes the operator-facing variables through
+        run: |
+          status=0
+          for v in RP_SESSION_SECRET RP_SETUP_TOKEN RP_TRUST_PROXY RP_TRUST_HTTPS \
+                   RP_CLIENT_IP_HEADER RP_CLIENT_IP_SOURCES RP_SESSION_DAYS \
+                   RP_LOG_LEVEL RP_DEFAULT_LANGUAGE RP_SCAN_INTERVAL_MINUTES \
+                   RP_INLINE_WORKER RP_JOB_CONCURRENCY RP_ALIGN_THREADS; do
+            grep -q "$v" docker-compose.yml \
+              || { echo "::error file=docker-compose.yml::$v is documented in .env.example but the stock compose file ignores it"; status=1; }
+          done
+          exit $status
 
   docker:
     runs-on: ubuntu-latest
@@ -148,7 +192,7 @@ jobs:
   # cannot run against a red main: a separate workflow on the same trigger
   # raced the checks and could tag :latest from a commit that never passed.
   publish:
-    needs: [checks, docker]
+    needs: [checks, docker, config-docs]
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:

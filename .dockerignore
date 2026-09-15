@@ -1,14 +1,47 @@
+# Build context = what `npm ci` + the three workspace builds need, and
+# nothing else. Everything listed here is either rebuilt inside the image,
+# mounted at run time, or has no business in a published layer.
+
+# Rebuilt in the image
 node_modules
 **/node_modules
 **/dist
+**/*.tsbuildinfo
+
+# Repo plumbing
 .git
+.github
+.claude
+.editorconfig
+.prettierignore
+.prettierrc.json
+eslint.config.mjs
+
+# Mounted at run time, never baked in
 data
 cache
 models
-qa-output
+alignments
 fixtures
+
+# Dev-only: docs, QA harnesses and generators are not part of the runtime
 docs
+design
+scripts
+web/qa
+qa-output
+qa-*.png
+
+# Local secrets and noise (LICENSE and package.json are COPYed, keep them).
+# Dockerignore patterns are anchored at the context root, so a bare `.env`
+# would leave `server/.env` or `web/.env.local` in the context - and the
+# build stage does `COPY server server` / `COPY web web`.
 .env
 .env.*
+**/.env
+**/.env.*
 *.log
+**/*.log
+.DS_Store
+**/.DS_Store
 .tastemaker
