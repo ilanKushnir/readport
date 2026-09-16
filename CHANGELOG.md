@@ -4,7 +4,7 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
-## Unreleased
+## 0.13.0 - 2026-09-16
 
 ### Added
 
