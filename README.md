@@ -52,6 +52,18 @@ Then the two editions become one book:
   marker is dropped and the bar says so. A pair that fails verification is handed
   back undecided, not aligned wrongly.
 
+Synced text and audio is not a new idea, and
+[Storyteller](https://gitlab.com/storyteller-platform/storyteller) got here
+first. It is more mature than this, it has native mobile apps, and it produces a
+**portable** artifact - an EPUB 3 with Media Overlays that plays in any reader
+supporting the spec. If that is what you want, use it.
+
+ReadPort is a different shape. It is a reader over the library you already have
+rather than a pipeline that produces a file: it scans your folders, works out by
+itself which editions are the same book, never writes to them, and keeps the
+timings in a sidecar. Nothing portable comes out of the other end, and the
+read-along only works inside ReadPort.
+
 ---
 
 ## The rest of it
