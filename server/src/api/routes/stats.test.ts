@@ -54,6 +54,8 @@ interface Session {
   pctStart: number;
   pctEnd: number;
   pctAdvanced: number;
+  rereads: number;
+  rereadPct: number;
 }
 interface Body {
   generatedAt: string;
@@ -80,6 +82,7 @@ interface Body {
     sessions: number;
     firstSessionAt: string | null;
     booksFinished: number;
+    rereads: number;
   };
 }
 const stats = async (query = '', user = 'alice'): Promise<Body> => {
@@ -180,6 +183,8 @@ beforeAll(async () => {
       event('tape', 0.8, 'open', ago(90 * 60_000), 'audio'),
       event('tape', 0.85, 'heartbeat', ago(82 * 60_000), 'audio'),
       event('tape', 0.9, 'heartbeat', ago(74 * 60_000), 'audio'),
+      // The skip-back button, once: half a percent of the tape.
+      event('tape', 0.895, 'seek', ago(73 * 60_000), 'audio'),
       event('tape', 0.95, 'heartbeat', ago(66 * 60_000), 'audio'),
       event('tape', 1, 'finish', finishAt, 'audio'),
     ],
@@ -230,15 +235,20 @@ describe('GET /api/stats', () => {
       pctStart: 0.12,
       pctEnd: 0.19,
       pctAdvanced: expect.closeTo(0.07, 10),
+      rereads: 0,
+      rereadPct: 0,
     });
-    // Thirty minutes by the clock, but the fixture's heartbeats are eight
-    // minutes apart and a playing narration reports every fifteen seconds:
-    // each step is a pause, and a pause counts twenty seconds at most.
+    // Thirty minutes by the clock, but the fixture's heartbeats are minutes
+    // apart and a playing narration reports every fifteen seconds: each
+    // step is a pause, and a pause counts twenty seconds at most. The one
+    // step back is a skip-back, counted with the ground it went back over.
     expect(body.sessions[0]).toMatchObject({
       bookId: 'tape',
       medium: 'audio',
-      seconds: 80,
+      seconds: 100,
       pctEnd: 1,
+      rereads: 1,
+      rereadPct: expect.closeTo(0.005, 10),
     });
 
     expect(Object.keys(body.books).sort()).toEqual(['blank', 'novel', 'tape']);
@@ -277,14 +287,15 @@ describe('GET /api/stats', () => {
       lastReadAt: blankEnd,
     });
 
-    // The novel's one five-minute step and the tape's four pauses at twenty
+    // The novel's one five-minute step and the tape's five pauses at twenty
     // seconds each, plus the two rows written straight into the table with
     // no active time, which are measured by the clock as they always were.
     expect(body.allTime).toEqual({
-      seconds: 300 + 80 + 1800 + 600,
+      seconds: 300 + 100 + 1800 + 600,
       sessions: 4,
       firstSessionAt: goneStart,
       booksFinished: 1,
+      rereads: 1,
     });
   });
 
@@ -336,7 +347,10 @@ describe('GET /api/stats', () => {
       sessions: 3001,
       firstSessionAt: ago(3001 * 5 * 60_000 + 60_000),
       booksFinished: 0,
+      rereads: 0,
     });
+    // Rows written straight into the table, from before re-reads were kept.
+    expect(body.sessions[0]).toMatchObject({ rereads: 0, rereadPct: 0 });
   });
 
   it("is nobody's business but the caller's", async () => {
@@ -349,6 +363,7 @@ describe('GET /api/stats', () => {
       sessions: 0,
       firstSessionAt: null,
       booksFinished: 0,
+      rereads: 0,
     });
   });
 });

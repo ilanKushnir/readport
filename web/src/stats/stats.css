@@ -144,6 +144,21 @@
   }
 }
 
+/* --- focus: the heatmap's sibling ------------------------------------- */
+
+/* One row in the heatmap's own cells and ink, so it reads as the same
+   drawing continued: here the ink is how steadily the reader held the
+   thread at that hour, not how much they read. */
+.focus__lead {
+  margin: 0 0 var(--sp-3);
+  font-size: 14.5px;
+  color: var(--rp-text);
+}
+.heat--focus .heat__legend {
+  /* The ends of this ramp are phrases, not "less" and "more". */
+  grid-template-columns: auto repeat(5, 14px) auto;
+}
+
 /* --- the one suggestion ----------------------------------------------- */
 
 .stats-best {

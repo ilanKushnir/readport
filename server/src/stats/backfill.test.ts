@@ -24,13 +24,16 @@ interface Row {
   pctEnd: number;
   pctAdvanced: number;
   events: number;
+  rereads: number;
+  rereadPct: number;
 }
 const sessions = (db: DB): Row[] =>
   db
     .prepare(
       `SELECT user_id AS userId, book_id AS bookId, medium, device_id AS deviceId,
               started_at AS startedAt, ended_at AS endedAt, pct_start AS pctStart,
-              pct_end AS pctEnd, pct_advanced AS pctAdvanced, events
+              pct_end AS pctEnd, pct_advanced AS pctAdvanced, events,
+              rereads, reread_pct AS rereadPct
          FROM reading_sessions ORDER BY user_id, book_id, device_id, medium, started_at`,
     )
     .all() as unknown as Row[];
@@ -197,6 +200,8 @@ describe('backfillReadingSessions', () => {
       ev(0, 0.1, 'open'),
       ev(1 * MIN, 0.12, 'heartbeat'),
       ev(2 * MIN, 0.14, 'heartbeat'),
+      // A skip back of fifteen seconds' worth, then a jump to the start.
+      ev(2 * MIN + 30_000, 0.137, 'seek'),
       ev(3 * MIN, 0.05, 'seek'),
       ev(4 * MIN, 0.07, 'heartbeat'),
       ev(30 * MIN, 0.07, 'open'),
@@ -215,6 +220,7 @@ describe('backfillReadingSessions', () => {
     ]);
     const live = sessions(db);
     expect(live).toHaveLength(4);
+    expect(live.map((r) => r.rereads)).toEqual([0, 1, 0, 0]);
     db.exec('DELETE FROM reading_sessions');
     expect(backfillReadingSessions(db, quiet)).toBe(4);
     expect(sessions(db)).toEqual(live);

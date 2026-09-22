@@ -12,8 +12,11 @@ import { type DB } from '../db/index.js';
  * from its first event to its last, less the stretches nobody was reading
  * (`active_ms`, see ACTIVE_STEP_CAP_MS); distance is the sum of FORWARD
  * movement in pct, so re-reading a page counts as time spent and not as
- * ground covered. Timestamps are the event's corrected, server-clamped time - the
- * one the pipeline judged it by - never the raw client clock.
+ * ground covered. A small step BACK is counted on its own account, as a
+ * re-read (`rereads`, `reread_pct`, see REREAD_MAX_PCT): the thread slipped
+ * and the reader went back for it. Timestamps are the event's corrected,
+ * server-clamped time - the one the pipeline judged it by - never the raw
+ * client clock.
  */
 
 /**
@@ -83,9 +86,13 @@ interface Neighbour {
   events: number;
   /** Null on a sitting from before active time was kept: wall-clock stands for it. */
   active_ms: number | null;
+  /** Steps back of a page or two, and the ground they went back over. */
+  rereads: number;
+  reread_pct: number;
 }
 
-const COLS = 'id, started_at, ended_at, pct_start, pct_end, pct_advanced, events, active_ms';
+const COLS =
+  'id, started_at, ended_at, pct_start, pct_end, pct_advanced, events, active_ms, rereads, reread_pct';
 const KEY = 'user_id = ? AND book_id = ? AND medium = ? AND device_id = ?';
 
 /**
@@ -114,6 +121,44 @@ const forward = (from: number, to: number, elapsedMs: number): number => {
 };
 
 /**
+ * The most of a book a step back may cover and still be a re-read.
+ *
+ * A re-read is going back a little, for the thread: the eye reached the
+ * bottom of a page and the sense had not come with it, so back a page it
+ * went. Further back than that is navigation - a chapter picked from the
+ * contents, a bookmark, a reset to the start - and navigation says nothing
+ * about how the reading went. The fold only has `pct`, so "a page or two"
+ * is expressed as a share of the book: for an ebook, PLAUSIBLE_STEP_FLOOR's
+ * own measure of a page, two percent - a page of the shortest book, a few
+ * pages of a novel, and in either case far short of a chapter. For audio the
+ * skip-back button is fifteen seconds and people tap it a few times in a
+ * row; three minutes covers that, and one and a half percent is three
+ * minutes of a three-hour audiobook. Of a ten-hour one it is nine minutes,
+ * wide for a skip-back, still well inside any chapter.
+ */
+export const REREAD_MAX_PCT: Record<SessionMedium, number> = {
+  ebook: PLAUSIBLE_STEP_FLOOR,
+  audio: 0.015,
+};
+/**
+ * A step back smaller than this is jitter, not a re-read: a scroll settling
+ * a few lines up, a re-layout after a font change, a heartbeat reporting the
+ * paragraph the page begins with. A twentieth of a percent of the book is a
+ * few lines of a novel and a couple of seconds of narration.
+ */
+export const REREAD_JITTER_PCT = 0.0005;
+
+/**
+ * The distance a step back covers when it is a re-read, else zero: a step
+ * back by more than jitter and no further than a page or two, in the
+ * measure of its medium.
+ */
+const reread = (medium: SessionMedium, from: number, to: number): number => {
+  const back = from - to;
+  return back > REREAD_JITTER_PCT && back <= REREAD_MAX_PCT[medium] ? back : 0;
+};
+
+/**
  * Prepare the statements once per batch; each event then costs one SELECT
  * and one write (two, in the rare merge). Timestamps are ISO-8601 UTC in one
  * fixed format, so they compare correctly as text in SQL.
@@ -136,23 +181,28 @@ export function prepareSessionFolder(db: DB): SessionFolder {
   );
   const insert = db.prepare(
     `INSERT INTO reading_sessions
-       (user_id, book_id, medium, device_id, started_at, ended_at, pct_start, pct_end, pct_advanced, events, active_ms)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 1, 0)`,
+       (user_id, book_id, medium, device_id, started_at, ended_at, pct_start, pct_end, pct_advanced,
+        events, active_ms, rereads, reread_pct)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 1, 0, 0, 0)`,
   );
   // `active_ms + ?` leaves a null null: a sitting from before active time was
-  // kept goes on being measured by the clock, never by half a rule.
+  // kept goes on being measured by the clock, never by half a rule. The
+  // re-read counters have no such past - a sitting from before they were
+  // kept holds zeros, and a step back into it counts from there.
   const extend = db.prepare(
     `UPDATE reading_sessions SET ended_at = ?, pct_end = ?, pct_advanced = pct_advanced + ?,
-       events = events + 1, active_ms = active_ms + ? WHERE id = ?`,
+       events = events + 1, active_ms = active_ms + ?,
+       rereads = rereads + ?, reread_pct = reread_pct + ? WHERE id = ?`,
   );
   const extendBack = db.prepare(
     `UPDATE reading_sessions SET started_at = ?, pct_start = ?, pct_advanced = pct_advanced + ?,
-       events = events + 1, active_ms = active_ms + ? WHERE id = ?`,
+       events = events + 1, active_ms = active_ms + ?,
+       rereads = rereads + ?, reread_pct = reread_pct + ? WHERE id = ?`,
   );
   const touch = db.prepare('UPDATE reading_sessions SET events = events + 1 WHERE id = ?');
   const merge = db.prepare(
-    `UPDATE reading_sessions SET ended_at = ?, pct_end = ?, pct_advanced = ?, events = ?, active_ms = ?
-      WHERE id = ?`,
+    `UPDATE reading_sessions SET ended_at = ?, pct_end = ?, pct_advanced = ?, events = ?, active_ms = ?,
+       rereads = ?, reread_pct = ? WHERE id = ?`,
   );
   const remove = db.prepare('DELETE FROM reading_sessions WHERE id = ?');
 
@@ -190,6 +240,10 @@ export function prepareSessionFolder(db: DB): SessionFolder {
         // the very moment the reader stopped.
         const toPrev = at - Date.parse(prev.ended_at);
         const toNext = Date.parse(next.started_at) - at;
+        // The bridging event makes two steps, one to each half, and either
+        // may be a step back; both halves bring their own counts.
+        const backIn = reread(medium, prev.pct_end, pct);
+        const backOut = reread(medium, pct, next.pct_start);
         merge.run(
           next.ended_at,
           next.pct_end,
@@ -201,6 +255,8 @@ export function prepareSessionFolder(db: DB): SessionFolder {
           prev.active_ms === null || next.active_ms === null
             ? null
             : prev.active_ms + counted(medium, toPrev) + counted(medium, toNext) + next.active_ms,
+          prev.rereads + (backIn > 0 ? 1 : 0) + (backOut > 0 ? 1 : 0) + next.rereads,
+          prev.reread_pct + backIn + backOut + next.reread_pct,
           prev.id,
         );
         remove.run(next.id);
@@ -208,18 +264,30 @@ export function prepareSessionFolder(db: DB): SessionFolder {
       }
       if (prev && joinsPrev) {
         const step = at - Date.parse(prev.ended_at);
-        extend.run(atIso, pct, forward(prev.pct_end, pct, step), counted(medium, step), prev.id);
+        const back = reread(medium, prev.pct_end, pct);
+        extend.run(
+          atIso,
+          pct,
+          forward(prev.pct_end, pct, step),
+          counted(medium, step),
+          back > 0 ? 1 : 0,
+          back,
+          prev.id,
+        );
         return 'extended';
       }
       if (next && joinsNext) {
         // Older than the sitting it belongs to - an offline queue replaying
         // behind the position that ended it - so the sitting began earlier.
         const step = Date.parse(next.started_at) - at;
+        const back = reread(medium, pct, next.pct_start);
         extendBack.run(
           atIso,
           pct,
           forward(pct, next.pct_start, step),
           counted(medium, step),
+          back > 0 ? 1 : 0,
+          back,
           next.id,
         );
         return 'extended-back';

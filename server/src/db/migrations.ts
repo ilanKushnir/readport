@@ -629,4 +629,19 @@ DELETE FROM reading_sessions
  WHERE started_at >= strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-29 days');
 `,
   },
+  {
+    version: 21,
+    sql: `
+-- Focus. A step back inside a sitting - a page or two, not a chapter - is
+-- a re-read: the eye lost the thread and went back for it. Counted per
+-- sitting, with the ground covered again, so the stats page can tell the
+-- hours a reader holds the thread from the hours they do not. A long way
+-- back is navigation and is not this. The recent sittings are cleared and
+-- derived again at start so they carry the count too (see version 19).
+ALTER TABLE reading_sessions ADD COLUMN rereads INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE reading_sessions ADD COLUMN reread_pct REAL NOT NULL DEFAULT 0;
+DELETE FROM reading_sessions
+ WHERE started_at >= strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-29 days');
+`,
+  },
 ];

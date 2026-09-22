@@ -2,7 +2,13 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { type ProgressEvent } from '@readport/shared';
 import { openMemoryDatabase, type DB } from '../db/index.js';
 import { applyProgressEvents, resetProgress } from '../progress/service.js';
-import { ACTIVE_STEP_CAP_MS, prepareSessionFolder, SESSION_GAP_MS } from './sessions.js';
+import {
+  ACTIVE_STEP_CAP_MS,
+  prepareSessionFolder,
+  REREAD_JITTER_PCT,
+  REREAD_MAX_PCT,
+  SESSION_GAP_MS,
+} from './sessions.js';
 
 /**
  * The diary behind the stats page. Every accepted progress event is one more
@@ -29,13 +35,16 @@ interface Row {
   pctAdvanced: number;
   events: number;
   activeMs: number | null;
+  rereads: number;
+  rereadPct: number;
 }
 const sessions = (): Row[] =>
   db
     .prepare(
       `SELECT book_id AS bookId, medium, device_id AS deviceId, started_at AS startedAt,
               ended_at AS endedAt, pct_start AS pctStart, pct_end AS pctEnd,
-              pct_advanced AS pctAdvanced, events, active_ms AS activeMs
+              pct_advanced AS pctAdvanced, events, active_ms AS activeMs,
+              rereads, reread_pct AS rereadPct
          FROM reading_sessions WHERE user_id = ? ORDER BY started_at, id`,
     )
     .all(uid) as unknown as Row[];
@@ -105,6 +114,9 @@ describe('folding accepted events into sittings', () => {
       pctStart: 0.5,
       pctEnd: 0.4,
       events: 3,
+      // A fifth of the book back is a chapter picked, not a page re-read.
+      rereads: 0,
+      rereadPct: 0,
     });
     expect(s!.pctAdvanced).toBeCloseTo(0.1, 10);
   });
@@ -240,6 +252,87 @@ describe('folding accepted events into sittings', () => {
   });
 });
 
+describe('going back a little', () => {
+  const audio = (offsetMs: number, pct: number, over: Partial<ProgressEvent> = {}) =>
+    ev(offsetMs, pct, {
+      bookId: 'tape',
+      locator: { medium: 'audio', trackIdx: 0, positionMs: 0, pct },
+      ...over,
+    });
+
+  it('a page back is a re-read: counted and measured, and still not ground covered', () => {
+    apply([
+      ev(0, 0.3, { intent: 'open' }),
+      ev(1 * MIN, 0.31, { intent: 'page' }),
+      // A page and a half back, for the thread; then on again.
+      ev(2 * MIN, 0.295, { intent: 'seek' }),
+      ev(3 * MIN, 0.305, { intent: 'page' }),
+    ]);
+    const [s, ...rest] = sessions();
+    expect(rest).toEqual([]);
+    expect(s).toMatchObject({ events: 4, rereads: 1 });
+    expect(s!.rereadPct).toBeCloseTo(0.015, 10);
+    // Distance is what it always was: the two forward steps, nothing for the one back.
+    expect(s!.pctAdvanced).toBeCloseTo(0.02, 10);
+  });
+
+  it('further back than a page or two is navigation, not a re-read', () => {
+    // Three percent of the book is where the chapter began, picked from the
+    // contents; the rule does not know why, only that no page is that long.
+    apply([ev(0, 0.5, { intent: 'open' }), ev(1 * MIN, 0.47, { intent: 'seek' })]);
+    expect(sessions()[0]).toMatchObject({ events: 2, rereads: 0, rereadPct: 0 });
+    expect(0.5 - 0.47).toBeGreaterThan(REREAD_MAX_PCT.ebook);
+  });
+
+  it('a few lines of jitter are not a step back', () => {
+    // A scroll settling a paragraph up, twice: a fiftieth of a percent each.
+    apply([ev(0, 0.3, { intent: 'open' }), ev(1 * MIN, 0.2998), ev(2 * MIN, 0.2996)]);
+    expect(sessions()[0]).toMatchObject({ events: 3, rereads: 0, rereadPct: 0 });
+    expect(0.3 - 0.2998).toBeLessThan(REREAD_JITTER_PCT);
+  });
+
+  it('skip-backs in a narration are re-reads; a chapter back is not', () => {
+    apply([
+      audio(0, 0.5, { intent: 'open' }),
+      audio(15_000, 0.501),
+      // The fifteen-second button, twice in a row: a third of a percent each.
+      audio(30_000, 0.498, { intent: 'seek' }),
+      audio(32_000, 0.495, { intent: 'seek' }),
+      audio(47_000, 0.496),
+      // Then a tenth of the book back: the chapter list, not the thread.
+      audio(60_000, 0.4, { intent: 'seek' }),
+    ]);
+    const [s, ...rest] = sessions();
+    expect(rest).toEqual([]);
+    expect(s).toMatchObject({ bookId: 'tape', medium: 'audio', events: 6, rereads: 2 });
+    expect(s!.rereadPct).toBeCloseTo(0.006, 10);
+  });
+
+  it('a page or two is measured in the medium', () => {
+    // The same step back - under two percent, over one and a half - is a
+    // page of an ebook and a chapter's worth of narration.
+    apply([ev(0, 0.5, { intent: 'open' }), ev(1 * MIN, 0.482, { intent: 'seek' })]);
+    apply([audio(0, 0.5, { intent: 'open' }), audio(1 * MIN, 0.482, { intent: 'seek' })]);
+    expect(sessions().map((s) => [s.medium, s.rereads])).toEqual([
+      ['ebook', 1],
+      ['audio', 0],
+    ]);
+  });
+
+  it('a sitting from before re-reads were kept reads zero, and counts from there', () => {
+    db.prepare(
+      `INSERT INTO reading_sessions
+         (user_id, book_id, medium, device_id, started_at, ended_at, pct_start, pct_end, pct_advanced, events, active_ms)
+       VALUES (?, 'book', 'ebook', 'phone', ?, ?, 0.1, 0.2, 0.1, 3, 120000)`,
+    ).run(uid, at(0), at(5 * MIN));
+    expect(sessions()[0]).toMatchObject({ events: 3, rereads: 0, rereadPct: 0 });
+    apply([ev(7 * MIN, 0.19)]);
+    const [s] = sessions();
+    expect(s).toMatchObject({ endedAt: at(7 * MIN), events: 4, rereads: 1 });
+    expect(s!.rereadPct).toBeCloseTo(0.01, 10);
+  });
+});
+
 describe('replay order', () => {
   const fold = (offsetMs: number, pct: number) =>
     prepareSessionFolder(db).fold(uid, 'book', 'ebook', 'phone', at(offsetMs), pct);
@@ -279,8 +372,40 @@ describe('replay order', () => {
     fold(5 * MIN, 0.2);
     expect(fold(2 * MIN, 0.9)).toBe('inside');
     const [s] = sessions();
-    expect(s).toMatchObject({ startedAt: at(0), endedAt: at(5 * MIN), pctEnd: 0.2, events: 3 });
+    expect(s).toMatchObject({
+      startedAt: at(0),
+      endedAt: at(5 * MIN),
+      pctEnd: 0.2,
+      events: 3,
+      rereads: 0,
+    });
     expect(s!.pctAdvanced).toBeCloseTo(0.1, 10);
+  });
+
+  it('the counters survive a merge, and the bridging event can be a step back itself', () => {
+    // The unload beacon delivered the sitting's end first, a page back in it...
+    expect(fold(30 * MIN, 0.2)).toBe('new');
+    expect(fold(35 * MIN, 0.19)).toBe('extended');
+    // ...then its start arrived, with a page back of its own...
+    expect(fold(0, 0.1)).toBe('new');
+    expect(fold(5 * MIN, 0.12)).toBe('extended');
+    expect(fold(10 * MIN, 0.11)).toBe('extended');
+    // ...and the event that joins the halves steps half a page back into the later one.
+    expect(fold(20 * MIN, 0.205)).toBe('merged');
+    const [s, ...rest] = sessions();
+    expect(rest).toEqual([]);
+    expect(s).toMatchObject({ startedAt: at(0), endedAt: at(35 * MIN), events: 6, rereads: 3 });
+    expect(s!.rereadPct).toBeCloseTo(0.025, 10);
+    expect(s!.pctAdvanced).toBeCloseTo(0.115, 10);
+  });
+
+  it('a step back replayed behind its sitting is still a step back', () => {
+    fold(20 * MIN, 0.2);
+    expect(fold(15 * MIN, 0.21)).toBe('extended-back');
+    const [s] = sessions();
+    expect(s).toMatchObject({ startedAt: at(15 * MIN), pctStart: 0.21, pctEnd: 0.2, rereads: 1 });
+    expect(s!.rereadPct).toBeCloseTo(0.01, 10);
+    expect(s!.pctAdvanced).toBe(0);
   });
 
   it("an older event within the gap of a sitting's start moves the start back", () => {

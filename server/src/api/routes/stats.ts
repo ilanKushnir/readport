@@ -32,6 +32,9 @@ interface SessionDto {
   pctStart: number;
   pctEnd: number;
   pctAdvanced: number;
+  /** Steps back of a page or two inside the sitting, and the ground they went back over. */
+  rereads: number;
+  rereadPct: number;
 }
 
 interface BookDto {
@@ -58,6 +61,7 @@ export interface StatsResponse {
     sessions: number;
     firstSessionAt: string | null;
     booksFinished: number;
+    rereads: number;
   };
 }
 
@@ -72,6 +76,8 @@ interface SessionRow {
   pct_end: number;
   pct_advanced: number;
   active_ms: number | null;
+  rereads: number;
+  reread_pct: number;
 }
 
 interface BookRow {
@@ -127,7 +133,7 @@ export function registerStatsRoutes(app: FastifyInstance, ctx: AppContext): void
     const rows = db
       .prepare(
         `SELECT id, book_id, medium, device_id, started_at, ended_at, pct_start, pct_end,
-                pct_advanced, active_ms
+                pct_advanced, active_ms, rereads, reread_pct
            FROM reading_sessions WHERE user_id = ? AND ended_at >= ?
           ORDER BY started_at DESC, id DESC LIMIT ?`,
       )
@@ -153,6 +159,10 @@ export function registerStatsRoutes(app: FastifyInstance, ctx: AppContext): void
       pctStart: Number(r.pct_start),
       pctEnd: Number(r.pct_end),
       pctAdvanced: Number(r.pct_advanced),
+      // Going back a page or two for the thread (stats/sessions.ts); a
+      // sitting from before that was kept reads zero, as it should.
+      rereads: Number(r.rereads),
+      rereadPct: Number(r.reread_pct),
     }));
 
     // One entry per book the sessions name. Anchored on the id rather than
@@ -214,10 +224,11 @@ export function registerStatsRoutes(app: FastifyInstance, ctx: AppContext): void
         `SELECT COUNT(*) AS sessions,
                 COALESCE(SUM(COALESCE(active_ms / 1000.0,
                                       (julianday(ended_at) - julianday(started_at)) * 86400.0)), 0) AS seconds,
-                MIN(started_at) AS first
+                MIN(started_at) AS first,
+                COALESCE(SUM(rereads), 0) AS rereads
            FROM reading_sessions WHERE user_id = ?`,
       )
-      .get(userId) as { sessions: number; seconds: number; first: string | null };
+      .get(userId) as { sessions: number; seconds: number; first: string | null; rereads: number };
     const finishedBooks = db
       .prepare('SELECT COUNT(*) AS c FROM progress_state WHERE user_id = ? AND finished = 1')
       .get(userId) as { c: number };
@@ -233,6 +244,7 @@ export function registerStatsRoutes(app: FastifyInstance, ctx: AppContext): void
         sessions: Number(totals.sessions),
         firstSessionAt: totals.first ?? null,
         booksFinished: Number(finishedBooks.c),
+        rereads: Number(totals.rereads),
       },
     };
     return body;

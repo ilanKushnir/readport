@@ -18,6 +18,8 @@ const answer = {
       pctStart: 0.12,
       pctEnd: 0.19,
       pctAdvanced: 0.07,
+      rereads: 2,
+      rereadPct: 0.013,
     },
   ],
   books: {
@@ -39,6 +41,7 @@ const answer = {
     sessions: 412,
     firstSessionAt: '2025-01-01T00:00:00.000Z',
     booksFinished: 7,
+    rereads: 318,
   },
 };
 
@@ -58,6 +61,19 @@ describe('statsResponseSchema', () => {
         .success,
     ).toBe(false);
     expect(statsResponseSchema.safeParse({ ...answer, truncated: false }).success).toBe(false);
+    // Steps back are counted whole, and nobody went back minus once.
+    expect(
+      statsResponseSchema.safeParse({ ...answer, sessions: [{ ...session, rereads: 1.5 }] })
+        .success,
+    ).toBe(false);
+    expect(
+      statsResponseSchema.safeParse({ ...answer, sessions: [{ ...session, rereadPct: -0.01 }] })
+        .success,
+    ).toBe(false);
+    expect(
+      statsResponseSchema.safeParse({ ...answer, allTime: { ...answer.allTime, rereads: -1 } })
+        .success,
+    ).toBe(false);
     expect(
       statsResponseSchema.safeParse({ ...answer, allTime: { ...answer.allTime, seconds: -1 } })
         .success,

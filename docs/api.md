@@ -232,7 +232,26 @@ sum of forward movement only, so re-reading a page is time spent and not ground
 covered - and only forward movement at a pace a person reads at (nine percent
 of a book a minute, with a two-percent floor for a page turned a moment after
 the last event), so a chapter picked from the contents or a highlight jumped
-to moves the position without counting as reading. Resetting a book's progress deletes its position and its history but
+to moves the position without counting as reading.
+
+A step **back** of a page or two is a re-read, and a sitting counts them
+(`rereads`) with the ground they went back over (`rereadPct`): the eye reached
+the foot of a page and the sense had not come with it, so back it went. The
+fold only has the position as a share of the book, so "a page or two" is two
+percent of an ebook - a page of the shortest book, a few pages of a novel,
+short of any chapter - and one and a half percent of an audiobook, three
+minutes of a three-hour one, which covers the fifteen-second skip-back button
+tapped a few times in a row. A step back smaller than a twentieth of a percent
+is jitter (a scroll settling, a re-layout) and is not counted; a step back
+further than the limit is navigation - a chapter picked from the contents, a
+bookmark followed, a jump to the start - and says nothing about how the
+reading went, so it is not counted either. Re-reading is also how careful
+readers read: the count is offered as a signal of how well a sitting held the
+thread, not as a verdict. `pctAdvanced` is unchanged by any of this - going
+back is still time spent and not ground covered. Sittings from before the
+counters existed carry zeros.
+
+Resetting a book's progress deletes its position and its history but
 never its sessions - having read is not the same as where one is. At every
 start the diary is derived, with the same rule, from whatever progress
 history it does not cover yet: on a first start that is everything a library
@@ -244,7 +263,7 @@ The answer is `{generatedAt, since, sessions, truncated?, books, allTime}`.
 `days` is 1–365 and defaults to 90; `since` is 00:00 UTC on the day `days`
 days before `generatedAt`, and a session is in the window when it ended at or
 after `since`. `sessions` come newest first, each
-`{id, bookId, medium, deviceId, startedAt, endedAt, seconds, pctStart, pctEnd, pctAdvanced}`,
+`{id, bookId, medium, deviceId, startedAt, endedAt, seconds, pctStart, pctEnd, pctAdvanced, rereads, rereadPct}`,
 and at most 3000 of them: past that the newest are kept and `truncated: true`
 says so. Timestamps are UTC and there are no hour-of-day or weekday fields on
 purpose - only the browser knows the reader's timezone, so streaks and the
@@ -263,9 +282,10 @@ it was read in as its `kind`. `totalChars` is the ebook's indexed text length
   written; `lastReadAt` is the end of the latest session with that book, in any
   window.
 
-`allTime` is `{seconds, sessions, firstSessionAt, booksFinished}` over the
-whole diary regardless of `days`; `booksFinished` counts every edition the
-caller has finished, whether or not its file is still on disk.
+`allTime` is `{seconds, sessions, firstSessionAt, booksFinished, rereads}`
+over the whole diary regardless of `days`; `booksFinished` counts every
+edition the caller has finished, whether or not its file is still on disk, and
+`rereads` is every step back of a page or two the diary holds.
 
 ## Friends
 

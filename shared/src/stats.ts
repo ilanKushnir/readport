@@ -7,7 +7,8 @@ import { bookKindSchema } from './api.js';
  * A session is one sitting with one book on one device in one medium. Its
  * time is wall-clock from the first event of the sitting to the last; its
  * distance is forward movement only, so re-reading a page is time spent and
- * not ground covered. Everything is in UTC and there are no hour-of-day or
+ * not ground covered - and counted as a re-read, when the step back was a
+ * page or two. Everything is in UTC and there are no hour-of-day or
  * weekday fields on purpose: only the browser knows the reader's timezone,
  * so streaks and the hour a person reads at are the client's arithmetic.
  */
@@ -28,6 +29,13 @@ export const readingSessionSchema = z.object({
   pctEnd: z.number(),
   /** Sum of the forward moves inside the sitting; going back adds nothing. */
   pctAdvanced: z.number(),
+  /**
+   * Steps back of a page or two inside the sitting - re-reads, the thread
+   * lost and gone back for - and the ground they went back over. A chapter
+   * picked from the contents is navigation and is in neither.
+   */
+  rereads: z.number().int().nonnegative(),
+  rereadPct: z.number().nonnegative(),
 });
 export type ReadingSession = z.infer<typeof readingSessionSchema>;
 
@@ -69,6 +77,8 @@ export const statsResponseSchema = z.object({
     sessions: z.number().int().nonnegative(),
     firstSessionAt: z.string().nullable(),
     booksFinished: z.number().int().nonnegative(),
+    /** Every step back of a page or two the diary holds. */
+    rereads: z.number().int().nonnegative(),
   }),
 });
 export type StatsResponse = z.infer<typeof statsResponseSchema>;

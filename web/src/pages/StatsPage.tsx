@@ -9,6 +9,7 @@ import {
   bestWindow,
   bookInsights,
   dailyTotals,
+  focusModel,
   heatmap,
   hourBuckets,
   inLastDays,
@@ -21,6 +22,13 @@ import {
 import '../stats/stats.css';
 
 const WINDOW_DAYS = 90;
+/**
+ * The best-time card mentions focus only when it plainly helped: a fifth
+ * fewer steps back in that window than the reader's usual. A window that
+ * won on minutes and pace alone is not credited with a steadiness it does
+ * not have.
+ */
+const FOCUS_MENTION_INDEX = 0.8;
 
 /**
  * The reading stats page.
@@ -28,9 +36,10 @@ const WINDOW_DAYS = 90;
  * Description first, one suggestion last. Most of this page says what
  * happened - when, how long, how far - and only one section presumes to
  * advise, and only once it has two weeks of evidence. The heatmap is the
- * one graphic that carries the page; the rest is set as sentences and
- * figures, because a reader's habits are a thing to be read, not
- * dashboarded.
+ * one graphic that carries the page - the focus strip under it is drawn as
+ * its sibling, one row in the same cells and ink; the rest is set as
+ * sentences and figures, because a reader's habits are a thing to be read,
+ * not dashboarded.
  */
 export function StatsPage() {
   const t = useT();
@@ -63,6 +72,9 @@ export function StatsPage() {
     const weekSummary = summarise(week, data.books);
     const all = summarise(data.sessions, data.books);
     const buckets = hourBuckets(data.sessions);
+    // Focus is offered to the recommendation only once it has evidence of
+    // its own; before that the score is what it always was.
+    const focus = focusModel(data.sessions, now);
     const grid = heatmap(data.sessions);
     const weekdaySeconds = grid
       .slice(0, 5)
@@ -81,7 +93,8 @@ export function StatsPage() {
       grid,
       max: Math.max(1, ...grid.flat()),
       buckets,
-      best: bestWindow(buckets),
+      best: bestWindow(buckets, focus.ready ? focus.hours : null),
+      focus,
       ready: readiness(data.sessions),
       weekdayPct: Math.round((100 * weekdaySeconds) / Math.max(1, weekdaySeconds + weekendSeconds)),
       weekendPct: Math.round((100 * weekendSeconds) / Math.max(1, weekdaySeconds + weekendSeconds)),
@@ -146,7 +159,7 @@ export function StatsPage() {
     );
   }
 
-  const { week, all, streak: st, grid, max, best, ready, books, daily } = model;
+  const { week, all, streak: st, grid, max, best, focus, ready, books, daily } = model;
   const weeks = weeksOf(daily);
   const weekAvg = weeks.length ? weeks.reduce((a, w) => a + w.seconds, 0) / weeks.length : 0;
 
@@ -233,6 +246,88 @@ export function StatsPage() {
         <p className="stats-note">
           {t('stats.when.split', { weekdayPct: model.weekdayPct, weekendPct: model.weekendPct })}
         </p>
+      </section>
+
+      {/* ---- focus: the heatmap's sibling, one row of hours ---- */}
+      <section className="stats-section" aria-labelledby="stats-focus">
+        <h2 id="stats-focus">{t('stats.focus.title')}</h2>
+        <p className="stats-section__lede">{t('stats.focus.lede')}</p>
+        {!focus.ready ? (
+          <p className="stats-note">{t('stats.focus.collecting')}</p>
+        ) : (
+          <>
+            <p className="focus__lead">
+              {focus.week.seconds > 0
+                ? t('stats.focus.week', {
+                    n: focus.week.rereads,
+                    time: f.duration(focus.week.seconds * 1000),
+                    verdict: focus.week.verdict ?? 'none',
+                  })
+                : t('stats.focus.weekEmpty', {
+                    days: WINDOW_DAYS,
+                    n: focus.rereads,
+                    time: f.duration(focus.seconds * 1000),
+                  })}
+            </p>
+            <div className="heat heat--focus" role="img" aria-label={t('stats.focus.stripLabel')}>
+              <div className="heat__hours" aria-hidden="true">
+                <span />
+                {[0, 6, 12, 18].map((h) => (
+                  <span key={h} style={{ gridColumn: h + 2 }}>
+                    {hourLabel(h)}
+                  </span>
+                ))}
+              </div>
+              <div className="heat__row">
+                <span className="heat__day" aria-hidden="true" />
+                {focus.hours.map((b, h) => (
+                  <span
+                    key={h}
+                    className="heat__cell"
+                    style={
+                      {
+                        // An hour with too little reading to judge stays blank; a
+                        // judged one keeps a little ink even at its least steady,
+                        // so the two never look alike.
+                        '--heat': b.steadiness === null ? 0 : 0.15 + 0.85 * b.steadiness,
+                      } as React.CSSProperties
+                    }
+                    title={
+                      b.rate === null
+                        ? t('stats.focus.cellThin', { hour: hourLabel(h) })
+                        : t('stats.focus.cell', {
+                            hour: hourLabel(h),
+                            rate: f.number(Math.round(b.rate * 10) / 10),
+                          })
+                    }
+                  />
+                ))}
+              </div>
+              <div className="heat__legend" aria-hidden="true">
+                <span>{t('stats.focus.less')}</span>
+                {[0.15, 0.36, 0.57, 0.79, 1].map((v) => (
+                  <span
+                    key={v}
+                    className="heat__cell"
+                    style={{ '--heat': v } as React.CSSProperties}
+                  />
+                ))}
+                <span>{t('stats.focus.more')}</span>
+              </div>
+            </div>
+            {focus.steadiest ? (
+              <p className="stats-note">
+                {t('stats.focus.steadiest', {
+                  from: hourLabel(focus.steadiest.from),
+                  to: hourLabel(focus.steadiest.to % 24),
+                  pct: Math.round((1 - focus.steadiest.rate / (focus.rate ?? 1)) * 100),
+                })}
+              </p>
+            ) : focus.judgedHours >= 2 ? (
+              <p className="stats-note">{t('stats.focus.even')}</p>
+            ) : null}
+          </>
+        )}
       </section>
 
       {/* ---- the one suggestion ---- */}
@@ -445,6 +540,9 @@ function BestTime({
             : pacePct <= -8
               ? t('stats.best.paceSlower')
               : t('stats.best.paceUsual')}{' '}
+        {best.focusIndex !== null && best.focusIndex <= FOCUS_MENTION_INDEX
+          ? `${t('stats.best.focus')} `
+          : ''}
         {t('stats.best.share', { pct: share })}
       </p>
       <p className="best__advice">{t('stats.best.advice')}</p>

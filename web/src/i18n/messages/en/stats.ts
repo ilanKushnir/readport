@@ -38,6 +38,26 @@ export const stats = {
   'stats.when.weekends': 'Weekends',
   'stats.when.split': '{weekdayPct}% of your reading is on weekdays, {weekendPct}% at the weekend.',
 
+  // Focus: going back for the thread. "Went back" and "held the thread",
+  // never "distracted" - re-reading is also how careful readers read.
+  'stats.focus.title': 'Holding the thread',
+  'stats.focus.lede':
+    'A step back of a page or two is a re-read: the thread slipped and you went back for it. Careful readers do it too - this is about when you do it least.',
+  'stats.focus.collecting':
+    'Still collecting. Once a few more sittings have a step back in them, this page will say when you hold the thread best.',
+  'stats.focus.week':
+    '{n, plural, =0 {This week you have not gone back once in {time} of reading} one {This week you went back once in {time} of reading} other {This week you went back # times in {time} of reading}}{verdict, select, less {, less than usual.} more {, more than usual.} usual {, about your usual.} other {.}}',
+  'stats.focus.weekEmpty':
+    'Nothing yet this week. Over the last {days} days you went back {n, plural, =0 {not once} one {once} other {# times}} in {time} of reading.',
+  'stats.focus.stripLabel': 'When you hold the thread, by hour of the day',
+  'stats.focus.cell': '{hour}: went back about {rate} times an hour of reading',
+  'stats.focus.cellThin': '{hour}: not enough reading here to say',
+  'stats.focus.less': 'went back more',
+  'stats.focus.more': 'held the thread',
+  'stats.focus.steadiest':
+    'Between {from} and {to} you go back {pct}% less often than your usual: that is when you hold the thread best.',
+  'stats.focus.even': 'No hour stands out: you hold the thread about as well whenever you read.',
+
   // The recommendation
   'stats.best.title': 'Your best time to read',
   'stats.best.collecting':
@@ -54,6 +74,7 @@ export const stats = {
   'stats.best.paceUsual': 'Your pace there is about your usual.',
   'stats.best.paceSlower':
     'You read a little more slowly there, which is often a sign of reading more carefully.',
+  'stats.best.focus': 'You also go back for the thread less often there.',
   'stats.best.advice':
     'If you want to read more, that is the hour to protect. Everything else on this page is description; this is the one suggestion.',
   'stats.best.share': '{pct}% of all your reading happens there.',
