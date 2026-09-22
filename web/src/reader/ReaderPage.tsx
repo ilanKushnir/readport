@@ -1139,9 +1139,14 @@ export function ReaderPage() {
       // Trapped text is judged by geometry, not by scrollHeight, which
       // WebKit reports for a multi-column box as if it were one column - so
       // every chapter longer than a page "failed" on an iPhone and scrolled.
-      // Judged on every pass, so a chapter that failed while a font was
-      // still swapping in is paged again once it has settled.
-      setPaginationFailed(trappedContent(el));
+      // Judged only while the chapter is still in columns. Once it scrolls
+      // nothing is trapped, by construction - and judging it there used to
+      // put it back into columns, where it was trapped again, and so on at
+      // the speed of a render: the text and the footer blinking between the
+      // two layouts while the tab ground to a halt. The fallback holds until
+      // the chapter is loaded again or the mode changes; a late image can
+      // still tip a paged chapter into it, which is the case that matters.
+      if (!el.classList.contains('is-unpaginated') && trappedContent(el)) setPaginationFailed(true);
     };
 
     const pending = Array.from(content.querySelectorAll('img')).filter((img) => !img.complete);
