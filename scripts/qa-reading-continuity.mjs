@@ -2,7 +2,11 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 // QA_BROWSER=webkit runs the same checks in WebKit, the engine on every
-// iPhone; the default is Chromium.
+// iPhone; the default is Chromium. Known there: Playwright's WebKit build
+// cannot hit-test the page box once it is translated (elementFromPoint
+// answers the box, not the words), so every tap after the first page turn
+// is lost and the page-turn and carried-selection checks fail - Safari
+// itself hit-tests the same layout correctly.
 const engine = process.env.QA_BROWSER === 'webkit' ? 'webkit' : 'chromium';
 let browserType;
 try {

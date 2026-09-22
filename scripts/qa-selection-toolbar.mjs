@@ -14,7 +14,10 @@ try {
   browserType = createRequire('/usr/local/lib/node_modules/')('playwright')[engine];
 }
 const base = process.argv[2] ?? 'http://127.0.0.1:5197';
-assert(process.env.AGENT_BROWSER_EXECUTABLE_PATH, 'Set AGENT_BROWSER_EXECUTABLE_PATH');
+assert(
+  engine !== 'chromium' || process.env.AGENT_BROWSER_EXECUTABLE_PATH,
+  'Set AGENT_BROWSER_EXECUTABLE_PATH',
+);
 const browser = await browserType.launch({
   executablePath:
     engine === 'chromium' ? process.env.AGENT_BROWSER_EXECUTABLE_PATH || undefined : undefined,

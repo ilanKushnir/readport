@@ -2008,16 +2008,73 @@
 
 /* ------------------------------------------------------------- read along */
 
-/* The transport: one row inside the reader's bottom chrome. Deliberately
-   small - play, back, speed, stop - because everything else a listener wants
-   already lives in the player, one tap away. */
+/* The transport: a card that grows out of the Read along button in the
+   bar beneath it, with a beak pointing at the button, so the controls read
+   as that button's own. Deliberately small - play, back, speed, stop -
+   because everything else a listener wants already lives in the player,
+   one tap away. */
 .readalong {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  padding-block-end: var(--sp-2);
-  margin-block-end: var(--sp-2);
-  border-block-end: 1px solid color-mix(in srgb, var(--rd-text) 10%, transparent);
+  /* Hugs the inline end, where the button is; on a phone that is the
+     whole width. */
+  width: min(100%, 560px);
+  margin: 0 0 6px auto;
+  padding: 5px 8px 5px 5px;
+  border: 1px solid color-mix(in srgb, var(--rd-link) 35%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--rd-link) 8%, var(--rd-bg));
+  box-shadow: var(--rp-shadow-1);
+  transform-origin: 100% 100%;
+  animation: readalong-out var(--rp-duration-base) var(--rp-ease);
+}
+[dir='rtl'] .readalong {
+  transform-origin: 0 100%;
+}
+/* The beak: the border first, the fill a size smaller over it, both a
+   downward triangle centred on the button's own centre (20px in from the
+   end of the bar, since the button is 40px wide and last in its row). */
+.readalong::before,
+.readalong::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+.readalong::before {
+  inset-inline-end: 12px;
+  width: 16px;
+  height: 9px;
+  background: color-mix(in srgb, var(--rd-link) 35%, transparent);
+}
+.readalong::after {
+  inset-inline-end: 13px;
+  width: 14px;
+  height: 7.5px;
+  margin-top: -0.5px;
+  background: color-mix(in srgb, var(--rd-link) 8%, var(--rd-bg));
+}
+@keyframes readalong-out {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .readalong {
+    animation: none;
+  }
+}
+/* The button the card grew from: a halo in the card's tint, so the two
+   read as one thing. */
+.tandem-btn--lead[aria-pressed='true'] {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--rd-link) 22%, transparent);
 }
 .readalong__play {
   display: inline-flex;
