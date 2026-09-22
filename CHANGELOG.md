@@ -4,6 +4,29 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.15.2 - 2026-09-22
+
+### Fixed
+
+- **A page left open no longer counts as reading.** A sitting's time is now
+  the sum of its steps, each counted only up to what it can plausibly hold:
+  an ebook records a checkpoint when the position moves and nothing while
+  one page stays on screen, so a page is five minutes at most, and a device
+  left open on a page and picked up again inside the ten-minute gap counts
+  five minutes rather than nine. Audio reports every fifteen seconds while
+  it plays and nothing while paused, so a pause counts twenty seconds at
+  most. Sittings from before this rule keep their wall-clock time; the
+  recent ones, whose every heartbeat the progress history still holds, are
+  derived again with the new rule on first start. Narration left playing is
+  listening as far as the app can tell; the sleep timer is the tool for
+  that.
+
+### Upgrading
+
+- One migration adds a column to the reading diary and clears the sittings
+  of the last 29 days, which the first start derives again from the progress
+  history. Nothing else changes.
+
 ## 0.15.1 - 2026-09-22
 
 ### Fixed
