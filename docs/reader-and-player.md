@@ -26,10 +26,14 @@ Implemented:
 - Table of contents (EPUB 3 nav with NCX fallback, including sub-chapter
   fragment entries), footnote and internal fragment links, in-book search
   with jump-to-result, book-position slider, "N pages left in chapter".
-- Progress indicator in three flavours (Reading settings → Progress bar): **Full**
-  (slider, pages left, percentage), **Compact** (one thin line with a
-  percentage, no chapter text), or **Hidden**. It tracks live in scroll mode
-  as well as page mode.
+- The bars. Above: back, contents (chapters and bookmarks in one sheet,
+  opened on the chapter being read), type, and search drawn as the small
+  field it opens. Below, one row in one order on every screen: a people
+  button for the friends in the book, the progress bar with their beads,
+  the percentage, and round buttons for Read along and Listen. The bar
+  comes in three flavours (Reading settings → Progress bar): **Full**
+  (slider, with the pages left under it), **Compact** (one thin line), or
+  **Hidden**. It tracks live in scroll mode as well as page mode.
 - Themes: Auto (follows the system appearance), Paper, Sepia, Night, High
   contrast - independent of the app theme; the iPhone status bar follows the
   reader theme in standalone mode. A page-dimming slider (screen brightness
@@ -47,11 +51,16 @@ Implemented:
 - A selection can run past the page. Turn the page with one held and a
   _Continue selection_ pill waits at the top corner the reading is heading
   for; tap it and the next tap ends the selection, across as many pages as
-  it takes. A settled selection is framed line by line in the theme's
-  accent, with a small cross to drop it, and the selection menu has a Share
-  button: "Look what I read in {title}", the quotation (trimmed at a word
-  past 600 characters) and the book's share link, through the phone's share
-  tray where there is one and to the clipboard where there is not.
+  it takes. A settled selection is framed by one outline in the theme's
+  accent, with a small cross to drop it, and its menu is four icons:
+  highlight (the colours sit behind it), note, bookmark, and share - "Look
+  what I read in {title}", the quotation whole on its own lines, and the
+  book's share link, through the phone's share tray where there is one and
+  to the clipboard where there is not. A tapped highlight offers its colour,
+  a note, sharing and removal the same way. On a phone the platform's own
+  edit menu is taken down once a selection settles; a tap on the selected
+  words brings it back and ours steps aside, so one menu shows at a time.
+  Only the text is selectable: a drag cannot run into the chrome.
 - Progress with revision-checked sync, percent, page-within-chapter.
 - RTL books (`page-progression-direction`, or inferred from a Hebrew /
   Arabic / Persian / Urdu language tag when the OPF declares no direction),
@@ -187,11 +196,16 @@ at the sentence in front of you, the spoken sentence is washed as it is read,
 and the page turns itself to keep up. The player is untouched by this - this is
 the reader, with a voice.
 
-The wash sits on the line boxes of the words themselves, measured from the
-text at draw time and again after every relayout, so a font, a size or a
-rotation cannot leave it on a line the text has left; it is firmer at the edge
-the sentence starts on, dimmer while the aligner is unsure or the voice is
-paused, and distinct from a highlight, which stays flat and in its own colour.
+How the voice is shown is a choice (Reading settings → Following the
+voice): a **mark in the margin**, the default - a small tick beside the line
+being spoken, moving at the narrator's pace - or a **wash on the sentence**.
+Either is drawn inside the box the text moves in, so it scrolls with the
+text rather than chasing it. The wash sits on the line boxes of the words
+themselves, measured from the text at draw time and again after every
+relayout, so a font, a size or a rotation cannot leave it on a line the text
+has left; it is firmer at the edge the sentence starts on, dimmer while the
+aligner is unsure or the voice is paused, and distinct from a highlight,
+which stays flat and in its own colour.
 A sentence the page ends in the middle of turns the page the moment the voice
 crosses onto the next one - judged by where the voice is within the sentence,
 not by where the sentence starts - so the words being spoken are the words on
