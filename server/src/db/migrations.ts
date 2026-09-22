@@ -613,4 +613,20 @@ CREATE TABLE recommendations (
 CREATE INDEX idx_recommendations_to ON recommendations(to_user_id, dismissed_at, created_at);
 `,
   },
+  {
+    version: 19,
+    sql: `
+-- Idle time. A sitting's clock ran from its first event to its last, so a
+-- page left open for nine minutes and picked up again counted as nine
+-- minutes of reading. The fold now keeps active_ms: every step between two
+-- events counts up to what a page, or a stretch of narration, can plausibly
+-- hold (stats/sessions.ts). A sitting from before the column keeps its
+-- wall-clock time - null here means "measure by the clock" - except the
+-- recent ones, whose events the progress history still holds in full: they
+-- are cleared here and derived again at start, with the new rule.
+ALTER TABLE reading_sessions ADD COLUMN active_ms INTEGER;
+DELETE FROM reading_sessions
+ WHERE started_at >= strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-29 days');
+`,
+  },
 ];

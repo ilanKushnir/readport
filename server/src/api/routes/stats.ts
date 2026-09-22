@@ -71,6 +71,7 @@ interface SessionRow {
   pct_start: number;
   pct_end: number;
   pct_advanced: number;
+  active_ms: number | null;
 }
 
 interface BookRow {
@@ -125,7 +126,8 @@ export function registerStatsRoutes(app: FastifyInstance, ctx: AppContext): void
     // first. One more than the cap, so truncation is a fact, not a guess.
     const rows = db
       .prepare(
-        `SELECT id, book_id, medium, device_id, started_at, ended_at, pct_start, pct_end, pct_advanced
+        `SELECT id, book_id, medium, device_id, started_at, ended_at, pct_start, pct_end,
+                pct_advanced, active_ms
            FROM reading_sessions WHERE user_id = ? AND ended_at >= ?
           ORDER BY started_at DESC, id DESC LIMIT ?`,
       )
@@ -139,9 +141,14 @@ export function registerStatsRoutes(app: FastifyInstance, ctx: AppContext): void
       deviceId: String(r.device_id),
       startedAt: String(r.started_at),
       endedAt: String(r.ended_at),
+      // Reading time, not clock time: the sum of the sitting's steps, each
+      // capped at what a page or a stretch of narration can hold. A sitting
+      // from before that was kept is measured by the clock, as it always was.
       seconds: Math.max(
         0,
-        Math.round((Date.parse(String(r.ended_at)) - Date.parse(String(r.started_at))) / 1000),
+        Math.round(
+          (r.active_ms ?? Date.parse(String(r.ended_at)) - Date.parse(String(r.started_at))) / 1000,
+        ),
       ),
       pctStart: Number(r.pct_start),
       pctEnd: Number(r.pct_end),
@@ -205,7 +212,8 @@ export function registerStatsRoutes(app: FastifyInstance, ctx: AppContext): void
     const totals = db
       .prepare(
         `SELECT COUNT(*) AS sessions,
-                COALESCE(SUM((julianday(ended_at) - julianday(started_at)) * 86400.0), 0) AS seconds,
+                COALESCE(SUM(COALESCE(active_ms / 1000.0,
+                                      (julianday(ended_at) - julianday(started_at)) * 86400.0)), 0) AS seconds,
                 MIN(started_at) AS first
            FROM reading_sessions WHERE user_id = ?`,
       )

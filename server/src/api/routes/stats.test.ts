@@ -231,10 +231,13 @@ describe('GET /api/stats', () => {
       pctEnd: 0.19,
       pctAdvanced: expect.closeTo(0.07, 10),
     });
+    // Thirty minutes by the clock, but the fixture's heartbeats are eight
+    // minutes apart and a playing narration reports every fifteen seconds:
+    // each step is a pause, and a pause counts twenty seconds at most.
     expect(body.sessions[0]).toMatchObject({
       bookId: 'tape',
       medium: 'audio',
-      seconds: 1800,
+      seconds: 80,
       pctEnd: 1,
     });
 
@@ -274,8 +277,11 @@ describe('GET /api/stats', () => {
       lastReadAt: blankEnd,
     });
 
+    // The novel's one five-minute step and the tape's four pauses at twenty
+    // seconds each, plus the two rows written straight into the table with
+    // no active time, which are measured by the clock as they always were.
     expect(body.allTime).toEqual({
-      seconds: 300 + 1800 + 1800 + 600,
+      seconds: 300 + 80 + 1800 + 600,
       sessions: 4,
       firstSessionAt: goneStart,
       booksFinished: 1,

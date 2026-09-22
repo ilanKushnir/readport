@@ -218,16 +218,27 @@ keeps beside the position: every event it applies is folded, in the same
 transaction, into a **session** - one sitting with one book on one device in
 one medium (`ebook` or `audio`). An event within ten minutes of the sitting's
 last one extends it; anything later begins a new one, because a reader who
-put the book down for lunch has ended a sitting. Time is wall-clock from the
-sitting's first event to its last, and distance (`pctAdvanced`) is the sum of
-forward movement only, so re-reading a page is time spent and not ground
+put the book down for lunch has ended a sitting. Time (`seconds`) is the
+sitting's steps added up, each step counted only up to what it can plausibly
+hold: an ebook records a checkpoint when the position moves and nothing while
+one page stays on screen, so a step is time on one page and counts five
+minutes at most - a device left open on a page and picked up again inside
+the gap counts five minutes, not nine; audio checkpoints arrive every fifteen
+seconds while the narration plays and stop when it pauses, so a step longer
+than twenty seconds is a pause and counts twenty. Sittings recorded before
+this rule existed are measured by the clock, from first event to last, and
+say so with a null `active_ms` in the table. Distance (`pctAdvanced`) is the
+sum of forward movement only, so re-reading a page is time spent and not ground
 covered - and only forward movement at a pace a person reads at (nine percent
 of a book a minute, with a two-percent floor for a page turned a moment after
 the last event), so a chapter picked from the contents or a highlight jumped
 to moves the position without counting as reading. Resetting a book's progress deletes its position and its history but
-never its sessions - having read is not the same as where one is. On upgrade
-the diary is derived once, with the same rule, from the progress history a
-library already has.
+never its sessions - having read is not the same as where one is. At every
+start the diary is derived, with the same rule, from whatever progress
+history it does not cover yet: on a first start that is everything a library
+already has, and after an upgrade that changes the rule the recent sittings
+are cleared and derived again from the history that still holds their every
+heartbeat.
 
 The answer is `{generatedAt, since, sessions, truncated?, books, allTime}`.
 `days` is 1–365 and defaults to 90; `since` is 00:00 UTC on the day `days`

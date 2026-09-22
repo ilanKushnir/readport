@@ -9,9 +9,10 @@ import { type DB } from '../db/index.js';
  * Every event the progress pipeline ACCEPTS is folded here, inside the same
  * transaction that moved the position, so the diary can never disagree with
  * the position it was written from. Time inside a session is wall-clock,
- * from its first event to its last; distance is the sum of FORWARD movement
- * in pct, so re-reading a page counts as time spent and not as ground
- * covered. Timestamps are the event's corrected, server-clamped time - the
+ * from its first event to its last, less the stretches nobody was reading
+ * (`active_ms`, see ACTIVE_STEP_CAP_MS); distance is the sum of FORWARD
+ * movement in pct, so re-reading a page counts as time spent and not as
+ * ground covered. Timestamps are the event's corrected, server-clamped time - the
  * one the pipeline judged it by - never the raw client clock.
  */
 
@@ -26,6 +27,30 @@ import { type DB } from '../db/index.js';
 export const SESSION_GAP_MS = 10 * 60_000;
 
 export type SessionMedium = 'ebook' | 'audio';
+
+/**
+ * The most one step between two events can count as reading.
+ *
+ * An ebook records a checkpoint when the position moves - a page turned, a
+ * scroll settled - and nothing while the same page stays on screen. So the
+ * time between two checkpoints is time on one page, and a page cannot hold
+ * a reader for ever: five minutes covers a slow reader on a dense spread,
+ * and a device left open on a page and picked up again within the session
+ * gap counts five minutes rather than nine. Audio checkpoints arrive every
+ * fifteen seconds while the narration plays and stop when it pauses, so a
+ * step longer than a heartbeat and a bit is a pause, and a pause is not
+ * listening. What a sitting keeps in `active_ms` is the sum of its steps,
+ * each capped this way.
+ */
+export const ACTIVE_STEP_CAP_MS: Record<SessionMedium, number> = {
+  ebook: 5 * 60_000,
+  audio: 20_000,
+};
+
+/** How much of one step between two events was reading. */
+function counted(medium: SessionMedium, stepMs: number): number {
+  return Math.max(0, Math.min(stepMs, ACTIVE_STEP_CAP_MS[medium]));
+}
 
 /** What folding an event did, for callers that count or test. */
 export type SessionFoldOutcome = 'new' | 'extended' | 'extended-back' | 'inside' | 'merged';
@@ -56,9 +81,11 @@ interface Neighbour {
   pct_end: number;
   pct_advanced: number;
   events: number;
+  /** Null on a sitting from before active time was kept: wall-clock stands for it. */
+  active_ms: number | null;
 }
 
-const COLS = 'id, started_at, ended_at, pct_start, pct_end, pct_advanced, events';
+const COLS = 'id, started_at, ended_at, pct_start, pct_end, pct_advanced, events, active_ms';
 const KEY = 'user_id = ? AND book_id = ? AND medium = ? AND device_id = ?';
 
 /**
@@ -109,20 +136,23 @@ export function prepareSessionFolder(db: DB): SessionFolder {
   );
   const insert = db.prepare(
     `INSERT INTO reading_sessions
-       (user_id, book_id, medium, device_id, started_at, ended_at, pct_start, pct_end, pct_advanced, events)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 1)`,
+       (user_id, book_id, medium, device_id, started_at, ended_at, pct_start, pct_end, pct_advanced, events, active_ms)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 1, 0)`,
   );
+  // `active_ms + ?` leaves a null null: a sitting from before active time was
+  // kept goes on being measured by the clock, never by half a rule.
   const extend = db.prepare(
     `UPDATE reading_sessions SET ended_at = ?, pct_end = ?, pct_advanced = pct_advanced + ?,
-       events = events + 1 WHERE id = ?`,
+       events = events + 1, active_ms = active_ms + ? WHERE id = ?`,
   );
   const extendBack = db.prepare(
     `UPDATE reading_sessions SET started_at = ?, pct_start = ?, pct_advanced = pct_advanced + ?,
-       events = events + 1 WHERE id = ?`,
+       events = events + 1, active_ms = active_ms + ? WHERE id = ?`,
   );
   const touch = db.prepare('UPDATE reading_sessions SET events = events + 1 WHERE id = ?');
   const merge = db.prepare(
-    'UPDATE reading_sessions SET ended_at = ?, pct_end = ?, pct_advanced = ?, events = ? WHERE id = ?',
+    `UPDATE reading_sessions SET ended_at = ?, pct_end = ?, pct_advanced = ?, events = ?, active_ms = ?
+      WHERE id = ?`,
   );
   const remove = db.prepare('DELETE FROM reading_sessions WHERE id = ?');
 
@@ -158,30 +188,38 @@ export function prepareSessionFolder(db: DB): SessionFolder {
         // earlier events are now arriving in order, and this one has reached
         // the gap. Without a merge the sitting would stay split in two at
         // the very moment the reader stopped.
+        const toPrev = at - Date.parse(prev.ended_at);
+        const toNext = Date.parse(next.started_at) - at;
         merge.run(
           next.ended_at,
           next.pct_end,
           prev.pct_advanced +
-            forward(prev.pct_end, pct, at - Date.parse(prev.ended_at)) +
-            forward(pct, next.pct_start, Date.parse(next.started_at) - at) +
+            forward(prev.pct_end, pct, toPrev) +
+            forward(pct, next.pct_start, toNext) +
             next.pct_advanced,
           prev.events + next.events + 1,
+          prev.active_ms === null || next.active_ms === null
+            ? null
+            : prev.active_ms + counted(medium, toPrev) + counted(medium, toNext) + next.active_ms,
           prev.id,
         );
         remove.run(next.id);
         return 'merged';
       }
       if (prev && joinsPrev) {
-        extend.run(atIso, pct, forward(prev.pct_end, pct, at - Date.parse(prev.ended_at)), prev.id);
+        const step = at - Date.parse(prev.ended_at);
+        extend.run(atIso, pct, forward(prev.pct_end, pct, step), counted(medium, step), prev.id);
         return 'extended';
       }
       if (next && joinsNext) {
         // Older than the sitting it belongs to - an offline queue replaying
         // behind the position that ended it - so the sitting began earlier.
+        const step = Date.parse(next.started_at) - at;
         extendBack.run(
           atIso,
           pct,
-          forward(pct, next.pct_start, Date.parse(next.started_at) - at),
+          forward(pct, next.pct_start, step),
+          counted(medium, step),
           next.id,
         );
         return 'extended-back';

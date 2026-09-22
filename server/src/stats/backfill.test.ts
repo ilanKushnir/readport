@@ -143,15 +143,25 @@ describe('backfillReadingSessions', () => {
     expect(count(db)).toBe(5);
   });
 
-  it('leaves a diary that already has entries alone', () => {
+  it('derives only what the diary does not cover yet, key by key', () => {
     const db = fresh();
     seed(db);
+    // One sitting already on record for Ann's phone: its later events extend
+    // it rather than duplicate it, and every other key is derived in full.
     db.prepare(
       `INSERT INTO reading_sessions (user_id, book_id, medium, device_id, started_at, ended_at, pct_start, pct_end)
        VALUES ('ann', 'book', 'audio', 'phone', ?, ?, 0, 0)`,
     ).run(at(0), at(0));
+    expect(backfillReadingSessions(db, quiet)).toBe(4);
+    expect(count(db)).toBe(5);
+    const phone = sessions(db).filter((r) => r.userId === 'ann' && r.deviceId === 'phone');
+    expect(phone.map((r) => [r.medium, r.startedAt, r.endedAt, r.events])).toEqual([
+      ['audio', at(0), at(2 * MIN), 3],
+      ['audio', at(30 * MIN), at(31 * MIN), 2],
+      ['ebook', at(0), at(4 * MIN), 2],
+    ]);
+    // And once more changes nothing: the diary now covers everything.
     expect(backfillReadingSessions(db, quiet)).toBe(0);
-    expect(count(db)).toBe(1);
   });
 
   it('says nothing on a library with no history', () => {

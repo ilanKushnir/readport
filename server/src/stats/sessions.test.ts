@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { type ProgressEvent } from '@readport/shared';
 import { openMemoryDatabase, type DB } from '../db/index.js';
 import { applyProgressEvents, resetProgress } from '../progress/service.js';
-import { prepareSessionFolder, SESSION_GAP_MS } from './sessions.js';
+import { ACTIVE_STEP_CAP_MS, prepareSessionFolder, SESSION_GAP_MS } from './sessions.js';
 
 /**
  * The diary behind the stats page. Every accepted progress event is one more
@@ -28,13 +28,14 @@ interface Row {
   pctEnd: number;
   pctAdvanced: number;
   events: number;
+  activeMs: number | null;
 }
 const sessions = (): Row[] =>
   db
     .prepare(
       `SELECT book_id AS bookId, medium, device_id AS deviceId, started_at AS startedAt,
               ended_at AS endedAt, pct_start AS pctStart, pct_end AS pctEnd,
-              pct_advanced AS pctAdvanced, events
+              pct_advanced AS pctAdvanced, events, active_ms AS activeMs
          FROM reading_sessions WHERE user_id = ? ORDER BY started_at, id`,
     )
     .all(uid) as unknown as Row[];
@@ -106,6 +107,49 @@ describe('folding accepted events into sittings', () => {
       events: 3,
     });
     expect(s!.pctAdvanced).toBeCloseTo(0.1, 10);
+  });
+
+  it('a page left open counts what a page can hold, not the clock', () => {
+    // A page turned, nine minutes away from the device, the next page: the
+    // sitting is still one sitting - nine minutes is inside the gap - and
+    // it ran nine minutes by the clock, but only five of them were reading.
+    apply([ev(0, 0.1, { intent: 'open' }), ev(9 * MIN, 0.115, { intent: 'page' })]);
+    const [s] = sessions();
+    expect(s).toMatchObject({ startedAt: at(0), endedAt: at(9 * MIN), events: 2 });
+    expect(s!.activeMs).toBe(ACTIVE_STEP_CAP_MS.ebook);
+    // Three pages in three minutes: every step counts in full.
+    apply([ev(10 * MIN, 0.12, { intent: 'page' }), ev(11 * MIN, 0.125, { intent: 'page' })]);
+    expect(sessions()[0]!.activeMs).toBe(ACTIVE_STEP_CAP_MS.ebook + 2 * MIN);
+  });
+
+  it('a pause in the narration is not listening', () => {
+    const audio = (offsetMs: number, pct: number) =>
+      ev(offsetMs, pct, {
+        bookId: 'tape',
+        locator: { medium: 'audio', trackIdx: 0, positionMs: 0, pct },
+      });
+    // Heartbeats every fifteen seconds while it plays, then four minutes of
+    // silence, then it plays on: the silence counts as one heartbeat's worth.
+    apply([
+      { ...audio(0, 0.1), intent: 'open' },
+      audio(15_000, 0.101),
+      audio(30_000, 0.102),
+      audio(4 * MIN + 30_000, 0.103),
+    ]);
+    const [s] = sessions();
+    expect(s).toMatchObject({ bookId: 'tape', medium: 'audio', events: 4 });
+    expect(s!.activeMs).toBe(15_000 + 15_000 + ACTIVE_STEP_CAP_MS.audio);
+  });
+
+  it('a sitting from before active time was kept stays measured by the clock', () => {
+    db.prepare(
+      `INSERT INTO reading_sessions
+         (user_id, book_id, medium, device_id, started_at, ended_at, pct_start, pct_end, pct_advanced, events, active_ms)
+       VALUES (?, 'book', 'ebook', 'phone', ?, ?, 0.1, 0.2, 0.1, 3, NULL)`,
+    ).run(uid, at(0), at(5 * MIN));
+    apply([ev(7 * MIN, 0.21)]);
+    const [s] = sessions();
+    expect(s).toMatchObject({ endedAt: at(7 * MIN), events: 4, activeMs: null });
   });
 
   it('jumping ahead moves the position but is not ground covered', () => {
@@ -219,6 +263,13 @@ describe('replay order', () => {
       pctStart: 0,
       pctEnd: 0.3,
       events: 31,
+      // One event a minute counts in full up to the merge; the merge itself
+      // bridges minute twenty to minute thirty in one step, and a step is
+      // capped like any other. The events that then land inside the span
+      // add nothing - the fold keeps no memory of what came between - so a
+      // backlog delivered last-first can leave a sitting short by at most
+      // one cap. That is the price of never counting a pause as reading.
+      activeMs: 19 * MIN + MIN + ACTIVE_STEP_CAP_MS.ebook,
     });
     expect(s!.pctAdvanced).toBeCloseTo(0.3, 10);
   });
