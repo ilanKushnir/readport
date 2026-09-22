@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { type BookSummary } from '@readport/shared';
 import { Cover, Sheet } from '../components/ui';
-import { IconBookOpen, IconHeadphones } from '../components/icons';
+import { IconBookOpen, IconHeadphones, IconPlay, IconReset } from '../components/icons';
 import { resetBookProgress } from '../progress/engine';
 import { useT, type TranslateFn } from '../i18n';
 import { useFormat } from '../i18n/useFormat';
@@ -117,6 +117,7 @@ export function ReadingNow({
                     className="btn btn--secondary"
                     to={isEbook ? `/read/${book.id}` : `/listen/${book.id}`}
                   >
+                    {isEbook ? <IconBookOpen size={16} /> : <IconPlay size={16} />}
                     {t('library.hero.resume', { kind: book.kind })}
                   </Link>
                   {/* The same crossing the Continue band and the book page
@@ -131,11 +132,12 @@ export function ReadingNow({
                           : t('library.hero.otherEdition')
                       }
                     >
+                      {isEbook ? <IconHeadphones size={16} /> : <IconBookOpen size={16} />}
                       {t('library.hero.instead', { kind: book.kind })}
                     </Link>
                   )}
                   <button
-                    className="btn btn--ghost"
+                    className="btn btn--ghost reading-now__reset"
                     /* A row standing for a linked pair is one title and two
                        editions, so the label has to name the one it resets.
                        An unpaired row does not: the shorter word is better
@@ -145,6 +147,7 @@ export function ReadingNow({
                       setFailed(false);
                     }}
                   >
+                    <IconReset size={15} />
                     {book.pair
                       ? t('library.readingNow.resetEdition', {
                           kind: isEbook ? 'ebook' : 'audio',

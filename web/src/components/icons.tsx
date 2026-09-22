@@ -200,6 +200,13 @@ export const IconTarget = (p: P) => (
     <path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6" />
   </I>
 );
+/** Back to the beginning: a turn of the arrow, not a bin. */
+export const IconReset = (p: P) => (
+  <I {...p}>
+    <path d="M4.8 14.5A7.65 7.65 0 1 0 6.6 6.6" />
+    <path d="M2.7 5.2v5.1h5.1" />
+  </I>
+);
 export const IconTrash = (p: P) => (
   <I {...p}>
     <path d="M5 7h14M9.5 7V4.8h5V7M7 7l.8 12.2h8.4L17 7" />

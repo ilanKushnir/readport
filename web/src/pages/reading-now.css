@@ -55,8 +55,32 @@
 .reading-now__actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
   margin-top: 14px;
+}
+/* A row is one of several on the shelf, so its buttons sit a size below the
+   Continue band's; each names its action with the same icon the band and
+   the book page use for it. */
+.reading-now__actions .btn {
+  min-height: 40px;
+  padding-inline: 14px;
+  font-size: 14.5px;
+}
+.reading-now__actions .btn svg {
+  flex-shrink: 0;
+}
+/* Resetting is neither way into the book: it stands apart at the end of the
+   row, in soft ink, and only takes the ember when the pointer reaches it. */
+/* Two classes on purpose: this sheet can land before base.css, and a single
+   class would lose the colour to `.btn--ghost`. */
+.reading-now__actions .reading-now__reset {
+  margin-inline-start: auto;
+  color: var(--rp-text-soft);
+}
+.reading-now__actions .reading-now__reset:hover,
+.reading-now__actions .reading-now__reset:focus-visible {
+  color: var(--rp-interactive);
 }
 @media (max-width: 500px) {
   .reading-now__row {
@@ -70,5 +94,8 @@
   .reading-now__actions .btn {
     text-align: start;
     white-space: normal;
+  }
+  .reading-now__actions .reading-now__reset {
+    margin-inline-start: 0;
   }
 }
