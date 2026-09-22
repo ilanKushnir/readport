@@ -1701,5 +1701,11 @@ const messages: Record<string, string> = {
   'share.menu.whatsapp': 'Send på WhatsApp',
   'share.menu.withdraw': 'Trekk tilbake lenken',
   'share.menu.withdrawn': 'Lenke trukket tilbake',
+  // reader
+  'reader.chrome.searchPill': 'Søk',
+  'reader.mark.removeHighlight': 'Fjern utheving',
+  'reader.settings.voiceMark': 'Hvordan stemmen følges',
+  'reader.voiceMark.margin': 'Merke i margen',
+  'reader.voiceMark.wash': 'Tone på setningen',
 };
 export default messages;

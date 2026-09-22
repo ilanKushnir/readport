@@ -1699,5 +1699,11 @@ const messages: Record<string, string> = {
   'share.menu.whatsapp': 'Skicka på WhatsApp',
   'share.menu.withdraw': 'Återkalla länken',
   'share.menu.withdrawn': 'Länk återkallad',
+  // reader
+  'reader.chrome.searchPill': 'Sök',
+  'reader.mark.removeHighlight': 'Ta bort markering',
+  'reader.settings.voiceMark': 'Följer uppläsningen',
+  'reader.voiceMark.margin': 'Prick i marginalen',
+  'reader.voiceMark.wash': 'Nyans på meningen',
 };
 export default messages;

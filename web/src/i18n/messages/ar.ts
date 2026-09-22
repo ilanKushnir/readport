@@ -1774,5 +1774,11 @@ const messages: Record<string, string> = {
   'share.menu.whatsapp': 'إرسال عبر WhatsApp',
   'share.menu.withdraw': 'إلغاء الرابط',
   'share.menu.withdrawn': 'أُلغي الرابط',
+  // reader
+  'reader.chrome.searchPill': 'بحث',
+  'reader.mark.removeHighlight': 'إزالة التظليل',
+  'reader.settings.voiceMark': 'متابعة السرد',
+  'reader.voiceMark.margin': 'علامة في الهامش',
+  'reader.voiceMark.wash': 'صبغة على الجملة',
 };
 export default messages;

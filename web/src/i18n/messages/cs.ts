@@ -1726,5 +1726,11 @@ const messages: Record<string, string> = {
   'share.menu.whatsapp': 'Odeslat přes WhatsApp',
   'share.menu.withdraw': 'Odvolat odkaz',
   'share.menu.withdrawn': 'Odkaz odvolán',
+  // reader
+  'reader.chrome.searchPill': 'Hledat',
+  'reader.mark.removeHighlight': 'Odebrat zvýraznění',
+  'reader.settings.voiceMark': 'Sledování vyprávění',
+  'reader.voiceMark.margin': 'Značka na okraji',
+  'reader.voiceMark.wash': 'Zabarvení na větě',
 };
 export default messages;

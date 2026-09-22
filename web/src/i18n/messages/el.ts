@@ -1746,5 +1746,11 @@ const messages: Record<string, string> = {
   'share.menu.whatsapp': 'Αποστολή μέσω WhatsApp',
   'share.menu.withdraw': 'Απόσυρση συνδέσμου',
   'share.menu.withdrawn': 'Ο σύνδεσμος αποσύρθηκε',
+  // reader
+  'reader.chrome.searchPill': 'Αναζήτηση',
+  'reader.mark.removeHighlight': 'Αφαίρεση επισήμανσης',
+  'reader.settings.voiceMark': 'Πώς ακολουθείται η φωνή',
+  'reader.voiceMark.margin': 'Σημάδι στο περιθώριο',
+  'reader.voiceMark.wash': 'Απόχρωση στην πρόταση',
 };
 export default messages;

@@ -1719,6 +1719,12 @@ const messages: Record<string, string> = {
   'share.menu.whatsapp': 'WhatsAppで送信',
   'share.menu.withdraw': 'リンクを取り消す',
   'share.menu.withdrawn': 'リンクを取り消しました',
+  // reader
+  'reader.chrome.searchPill': '検索',
+  'reader.mark.removeHighlight': 'ハイライトを削除',
+  'reader.settings.voiceMark': '音声の表示方法',
+  'reader.voiceMark.margin': '余白の印',
+  'reader.voiceMark.wash': '文の色付け',
 };
 
 export default messages;

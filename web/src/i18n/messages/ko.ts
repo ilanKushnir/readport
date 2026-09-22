@@ -1679,5 +1679,11 @@ const messages: Record<string, string> = {
   'share.menu.whatsapp': 'WhatsApp으로 보내기',
   'share.menu.withdraw': '링크 철회',
   'share.menu.withdrawn': '링크 철회됨',
+  // reader
+  'reader.chrome.searchPill': '검색',
+  'reader.mark.removeHighlight': '하이라이트 제거',
+  'reader.settings.voiceMark': '낭독 따라가기',
+  'reader.voiceMark.margin': '여백 표시',
+  'reader.voiceMark.wash': '문장 음영',
 };
 export default messages;

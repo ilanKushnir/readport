@@ -1738,5 +1738,11 @@ const messages: Record<string, string> = {
   'share.menu.whatsapp': 'שליחה ב-WhatsApp',
   'share.menu.withdraw': 'ביטול הקישור',
   'share.menu.withdrawn': 'הקישור בוטל',
+  // reader
+  'reader.chrome.searchPill': 'חיפוש',
+  'reader.mark.removeHighlight': 'הסרת ההדגשה',
+  'reader.settings.voiceMark': 'מעקב אחרי הקריינות',
+  'reader.voiceMark.margin': 'סימון בשוליים',
+  'reader.voiceMark.wash': 'גוון על המשפט',
 };
 export default messages;

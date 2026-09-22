@@ -1714,5 +1714,11 @@ const messages: Record<string, string> = {
   'share.menu.whatsapp': 'Lähetä WhatsAppissa',
   'share.menu.withdraw': 'Peruuta linkki',
   'share.menu.withdrawn': 'Linkki peruutettu',
+  // reader
+  'reader.chrome.searchPill': 'Hae',
+  'reader.mark.removeHighlight': 'Poista korostus',
+  'reader.settings.voiceMark': 'Miten ääntä seurataan',
+  'reader.voiceMark.margin': 'Merkki marginaalissa',
+  'reader.voiceMark.wash': 'Sävy lauseella',
 };
 export default messages;

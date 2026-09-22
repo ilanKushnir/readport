@@ -1721,6 +1721,12 @@ const messages: Record<string, string> = {
   'share.menu.whatsapp': 'WhatsApp ile gönder',
   'share.menu.withdraw': 'Bağlantıyı geri çek',
   'share.menu.withdrawn': 'Bağlantı geri çekildi',
+  // reader
+  'reader.chrome.searchPill': 'Ara',
+  'reader.mark.removeHighlight': 'Vurgulamayı kaldır',
+  'reader.settings.voiceMark': 'Ses nasıl izlenir',
+  'reader.voiceMark.margin': 'Kenarda işaret',
+  'reader.voiceMark.wash': 'Cümlede ton',
 };
 
 export default messages;

@@ -1737,6 +1737,12 @@ const messages: Record<string, string> = {
   'share.menu.whatsapp': 'Enviar por WhatsApp',
   'share.menu.withdraw': 'Retirar enlace',
   'share.menu.withdrawn': 'Enlace retirado',
+  // reader
+  'reader.chrome.searchPill': 'Buscar',
+  'reader.mark.removeHighlight': 'Quitar subrayado',
+  'reader.settings.voiceMark': 'Cómo se sigue la voz',
+  'reader.voiceMark.margin': 'Marca al margen',
+  'reader.voiceMark.wash': 'Tinte de frase',
 };
 
 export default messages;

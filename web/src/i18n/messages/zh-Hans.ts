@@ -1619,5 +1619,11 @@ const messages: Record<string, string> = {
   'share.menu.whatsapp': '通过WhatsApp发送',
   'share.menu.withdraw': '撤销链接',
   'share.menu.withdrawn': '链接已撤销',
+  // reader
+  'reader.chrome.searchPill': '搜索',
+  'reader.mark.removeHighlight': '移除高亮',
+  'reader.settings.voiceMark': '跟随朗读',
+  'reader.voiceMark.margin': '页边标记',
+  'reader.voiceMark.wash': '句子晕染',
 };
 export default messages;

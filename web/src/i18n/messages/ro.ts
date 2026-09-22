@@ -1739,5 +1739,11 @@ const messages: Record<string, string> = {
   'share.menu.whatsapp': 'Trimite pe WhatsApp',
   'share.menu.withdraw': 'Revocă linkul',
   'share.menu.withdrawn': 'Link revocat',
+  // reader
+  'reader.chrome.searchPill': 'Caută',
+  'reader.mark.removeHighlight': 'Elimină evidențierea',
+  'reader.settings.voiceMark': 'Urmărirea narațiunii',
+  'reader.voiceMark.margin': 'Semn în margine',
+  'reader.voiceMark.wash': 'Nuanță pe propoziție',
 };
 export default messages;

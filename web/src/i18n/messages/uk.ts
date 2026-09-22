@@ -1739,6 +1739,12 @@ const messages: Record<string, string> = {
   'share.menu.whatsapp': 'Надіслати через WhatsApp',
   'share.menu.withdraw': 'Відкликати посилання',
   'share.menu.withdrawn': 'Посилання відкликано',
+  // reader
+  'reader.chrome.searchPill': 'Пошук',
+  'reader.mark.removeHighlight': 'Прибрати виділення',
+  'reader.settings.voiceMark': 'Відстеження голосу',
+  'reader.voiceMark.margin': 'Позначка на полях',
+  'reader.voiceMark.wash': 'Тонування речення',
 };
 
 export default messages;

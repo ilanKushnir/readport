@@ -1748,5 +1748,11 @@ const messages: Record<string, string> = {
   'share.menu.whatsapp': 'Versturen via WhatsApp',
   'share.menu.withdraw': 'Link intrekken',
   'share.menu.withdrawn': 'Link ingetrokken',
+  // reader
+  'reader.chrome.searchPill': 'Zoeken',
+  'reader.mark.removeHighlight': 'Markering verwijderen',
+  'reader.settings.voiceMark': 'Stemweergave',
+  'reader.voiceMark.margin': 'Streepje in marge',
+  'reader.voiceMark.wash': 'Waas over zin',
 } as const;
 export default messages;
