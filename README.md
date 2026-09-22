@@ -87,6 +87,16 @@ read-along only works inside ReadPort.
 - **23 interface languages**, chosen per account, Hebrew and Arabic right-to-left
   while every book keeps its own direction. Everything but English is
   model-generated and says so.
+- **Friends** - see where a friend is in a book, draw them on your progress
+  bar in a colour you pick, and put a book in front of them with a note.
+  Sharing is consent, per person, and nothing in the margins is ever shared.
+- **Your reading** - when you read, how much, how long a sitting runs, and
+  after two weeks of evidence the hour of the day you read best. Kept for
+  good, worked out in your own timezone, compared only with yourself.
+- **Highlights you can hand over** - every mark by book and chapter, sorted
+  by place or colour, exported as a clean PDF with the cover on the front.
+- **The apps beside it** - Calibre-Web Automated, Audiobookshelf, Shelfmark,
+  ReadMeABook, Kavita or anything else, one tap away under the shelves.
 
 <p align="center">
   <img src="docs/screenshots/phone-library.png" alt="ReadPort on a phone, showing a Continue card" width="31%">

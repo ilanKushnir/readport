@@ -4,6 +4,106 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.14.0 - 2026-09-22
+
+### Added
+
+- **"What's new."** A reader who was here before a release is told, once, on
+  the way in: the version, a short list of what changed, and older releases
+  one tap away with a divider per version. Three ways to close it. The seen
+  version lives on the account, so dismissing it on a phone dismisses it on
+  the laptop, and a brand-new account is never handed a changelog for
+  software it has not opened. Never over a book.
+- **Your reading.** A stats page at `/stats`, and a one-line strip on the
+  library home. Every sitting is recorded as it happens - one book, one
+  device, one stretch of time - and kept for good, unlike the progress
+  history it is derived from, which is compacted after a month. The page
+  says when you read (a week-by-hour map), how much, in which format, how
+  long a typical sitting runs, how far through each open book you are and
+  roughly how long is left at your own pace on it, and, after two weeks of
+  evidence, the one suggestion the page allows itself: the hour of the day
+  you read best, judged on how long your sittings run there and how fast
+  you move, relative to your own average - never to anyone else's. Hours
+  are worked out in the browser's own timezone, streaks need five minutes
+  to count a day, and one long Sunday is not allowed to become advice.
+- **Connected apps.** Settings → Connected apps takes the addresses of the
+  apps beside this library - Calibre-Web Automated, Audiobookshelf,
+  Shelfmark, ReadMeABook, Kavita, or anything else - and shows them as
+  tiles at the foot of the shelves for everyone on the server. A "smart
+  integration" switch sits beside each, disabled and labelled as coming:
+  reading those apps through their own APIs is not built yet, and the
+  settings page says so rather than implying it.
+- **Friends.** Everyone on a server already shares one library; a
+  friendship is consent to see each other's place in it. Ask, accept or
+  decline from a Friends page; each friend wears a colour you choose. Open
+  a book a friend has open and a small button sits by the progress bar:
+  it names where they are - chapter, percent, how long ago, how far ahead
+  or behind you - and a switch per friend draws them on your bar as a thin
+  mark in their colour, remembered per book. A friend listening to the
+  audiobook edition of a linked pair counts as being in the ebook, and the
+  other way round. Recommend a book to a friend with a one-line note; it
+  waits on their Friends page and as a dot on the tab until they look.
+  Sharing can be switched off, and then friends are told nothing at all.
+  Nothing written in the margins is ever shared.
+- **Highlights and notes, by book.** The Notes page opens on the books
+  that carry marks, with counts and the colours used; a book's own page
+  lists every highlight, note and bookmark under its chapter, sortable by
+  place, date or colour, filtered by kind and colour, each one a tap from
+  its place in the book. Export as PDF prints a clean document: a title
+  page with the cover and the counts, then the marks under running chapter
+  heads, colour bars that survive printing, passages in the reading face,
+  and right-to-left passages set the right way round.
+
+### Changed
+
+- **Release notes are the one exception to full translation.** They are
+  written in English when a release is cut; a language that has not caught
+  up shows the English line rather than holding the release. The dialog's
+  own chrome is translated everywhere.
+
+### Fixed
+
+- **A title owned in both formats appeared twice on Reading Now, Finished
+  and the Continue band.** Collapsed to one row, which stands for the
+  edition touched most recently - a row that resumed at page one of an
+  untouched ebook while the reader was half way through the narration was
+  the complaint. The row names the other edition's position and offers it;
+  a title finished in one format and under way in the other appears once on
+  each shelf and never twice on either; the sidebar counts rows, not
+  editions; reset stays per edition and the button now names which.
+- **Manual linking offered books that were already linked** - and the two
+  pickers did not even agree, since paired audiobooks were hidden behind
+  their ebooks while paired ebooks were offered. `filter=unpaired` now does
+  it in SQL. An unreviewed candidate still counts as unlinked: that is
+  exactly what somebody opens the sheet to correct.
+- **Turning an iPad lost the page.** The reader now re-lays itself out on
+  any change of viewport - orientation, a split view, a keyboard - and
+  lands back on the sentence it was showing, in one column or two; auto
+  layout decides one or two pages again after every turn. Every page turn
+  recorded the page after the one on screen when turns were instant (which
+  reduced motion forces), so each later relayout moved the reader forward:
+  fixed, and the place is re-checked on return from another app too.
+- **Jumping to a highlight in a two-page spread landed a page early.** The
+  jump measured against a page count that a rotation had made stale; it
+  now measures the live layout and verifies the passage is on screen.
+- **The contents panel opened on whichever tab was last used** and gave no
+  hint of the current chapter. It opens on Chapters, with the current one
+  marked; the audiobook's chapter list is marked the same way.
+- **The Look Up and Translate menu on an iPhone stopped appearing after a
+  few highlights.** A transition that never ended left the selection
+  toolbar re-measuring itself on every frame, which is what stops iOS from
+  drawing its own callout. The loop is gone, and the pointer kind that
+  decides how much room to leave for that callout is read per selection
+  rather than remembered from the last mouse click.
+
+### Upgrading
+
+- Two migrations run on first start: the reading diary and the friends
+  tables. The diary is then derived once from the progress history the
+  library already holds, so the stats page does not begin on upgrade day;
+  on a large library that first start takes a few seconds longer. Nothing
+  else changes: no new configuration, no change to the API already in use.
+
 ## 0.13.0 - 2026-09-16
 
 ### Added
