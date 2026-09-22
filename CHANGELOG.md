@@ -4,6 +4,25 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.19.1 - 2026-09-23
+
+### Fixed
+
+- **Page mode on an iPhone, at last.** WebKit lays out a single column
+  declared by count alone as no columns at all: one tall column running
+  off the page, which every check then rightly called trapped, so page
+  mode fell back to scrolling on every phone. The page box now declares
+  the width of its column as well as the count, which is what WebKit
+  needs to form the columns, and the overflow columns that are the pages.
+- **A figure taller than the page** is scaled to the page in page mode
+  instead of trapping the rest of the chapter below it.
+- **The voice's mark in a chapter that scrolls.** In the scrolling
+  fallback the mark was dropped whenever the page was to be driven for
+  the voice, and came back only once a scroll had detached the following.
+  The fallback now uses its own scrolling box everywhere the scroll mode
+  uses its own: the mark, the driven page, and a tap at the page's edge,
+  which moves a screen rather than a chapter.
+
 ## 0.19.0 - 2026-09-22
 
 ### Fixed
