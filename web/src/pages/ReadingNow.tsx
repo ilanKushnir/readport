@@ -4,17 +4,53 @@ import { type BookSummary } from '@readport/shared';
 import { Cover, Sheet } from '../components/ui';
 import { IconBookOpen, IconHeadphones } from '../components/icons';
 import { resetBookProgress } from '../progress/engine';
-import { useT } from '../i18n';
+import { useT, type TranslateFn } from '../i18n';
 import { useFormat } from '../i18n/useFormat';
 import './reading-now.css';
 
+/** The settled half of a pair, or nothing. A `candidate` is only a guess. */
+function settledPair(book: BookSummary) {
+  return book.pair && book.pair.status !== 'candidate' ? book.pair : null;
+}
+
 /**
- * The compact list behind the Reading Now shelf: one row per edition in
- * progress, with the way back in and the way out.
+ * Where the reader stands in the edition this row is NOT showing, in the
+ * words the book page already uses for the edition it is.
+ *
+ * Null when they have never opened it: "Audiobook · 0%" would be a claim
+ * about a book nobody has touched, and the row already offers to open it.
+ */
+function otherEditionState(
+  book: BookSummary,
+  t: TranslateFn,
+  percent: (n: number) => string,
+): string | null {
+  const pair = settledPair(book);
+  const state = pair?.otherProgress;
+  if (!pair || !state) return null;
+  const kind = pair.otherKind === 'ebook' ? t('common.ebook') : t('common.audiobook');
+  const where = state.finished
+    ? t('library.card.finished')
+    : t('library.book.progress', { pct: percent(state.pct), kind: pair.otherKind });
+  return `${kind} · ${where}`;
+}
+
+/**
+ * The compact list behind the Reading Now shelf: one row per TITLE in
+ * progress, with the way back in, the way across and the way out.
+ *
+ * A title owned in both formats is one row, not two. The row stands for the
+ * edition this reader moved in most recently - the server chooses it, because
+ * only the server knows both positions - and names the other one rather than
+ * swallowing it: progress is stored per edition, so the audiobook really is
+ * somewhere else in the book, and saying so is the difference between
+ * collapsing a duplicate and losing a position.
  *
  * The way out is honest about what it is. There is no "hide" here - progress
  * is the only thing that puts a book on this list, so leaving it means
- * erasing that progress, and the button says so before the dialog does.
+ * erasing that progress, and the button says so before the dialog does. It
+ * erases THIS edition's progress, which is the granularity the store has; the
+ * dialog names the edition and says the other one keeps its own.
  */
 export function ReadingNow({
   books,
@@ -28,6 +64,7 @@ export function ReadingNow({
   const [selected, setSelected] = useState<BookSummary | null>(null);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  const selectedOther = selected && otherEditionState(selected, t, f.percent);
   return (
     <>
       <ul className="reading-now" aria-label={t('library.readingNow.listLabel')}>
@@ -35,6 +72,8 @@ export function ReadingNow({
           const isEbook = book.kind === 'ebook';
           const pct = book.progress?.pct ?? 0;
           const left = !isEbook && book.durationMs ? f.duration(book.durationMs * (1 - pct)) : null;
+          const pair = settledPair(book);
+          const other = otherEditionState(book, t, f.percent);
           return (
             <li className="reading-now__row" key={book.id}>
               <Link
@@ -56,6 +95,20 @@ export function ReadingNow({
                     <span className="reading-now__when">{f.ago(book.progress.updatedAt)}</span>
                   )}
                 </p>
+                {/* The edition this row is not showing. Without it a reader
+                    who finished the ebook and is half way through the
+                    audiobook would see one row and no sign of the other
+                    position - which is the whole risk of collapsing. */}
+                {other && (
+                  <p className="reading-now__meta">
+                    {pair!.otherKind === 'ebook' ? (
+                      <IconBookOpen size={13} />
+                    ) : (
+                      <IconHeadphones size={13} />
+                    )}
+                    <span>{other}</span>
+                  </p>
+                )}
                 <span className="progressbar" aria-hidden="true">
                   <span style={{ width: `${pct * 100}%` }} />
                 </span>
@@ -66,14 +119,37 @@ export function ReadingNow({
                   >
                     {t('library.hero.resume', { kind: book.kind })}
                   </Link>
+                  {/* The same crossing the Continue band and the book page
+                      offer, in the same words. */}
+                  {pair && (
+                    <Link
+                      className="btn btn--ghost"
+                      to={`/book/${book.id}?switch=1`}
+                      title={
+                        pair.switchable
+                          ? t('library.hero.switchSameSpot')
+                          : t('library.hero.otherEdition')
+                      }
+                    >
+                      {t('library.hero.instead', { kind: book.kind })}
+                    </Link>
+                  )}
                   <button
                     className="btn btn--ghost"
+                    /* A row standing for a linked pair is one title and two
+                       editions, so the label has to name the one it resets.
+                       An unpaired row does not: the shorter word is better
+                       when there is nothing to disambiguate. */
                     onClick={() => {
                       setSelected(book);
                       setFailed(false);
                     }}
                   >
-                    {t('library.readingNow.resetButton')}
+                    {book.pair
+                      ? t('library.readingNow.resetEdition', {
+                          kind: isEbook ? 'ebook' : 'audio',
+                        })
+                      : t('library.readingNow.resetButton')}
                   </button>
                 </div>
               </div>
@@ -90,8 +166,11 @@ export function ReadingNow({
         >
           <p>{t('library.readingNow.resetBody', { title: selected.title, kind: selected.kind })}</p>
           <p>
-            {selected.pair && selected.pair.status !== 'candidate'
-              ? `${t('library.readingNow.pairedKeepsProgress')} `
+            {settledPair(selected)
+              ? // What "keeps its own progress" actually means, in numbers,
+                // when there is a number to give: a reader about to erase one
+                // position should be able to see the one that survives.
+                `${t('library.readingNow.pairedKeepsProgress')}${selectedOther ? ` (${selectedOther})` : ''} `
               : ''}
             {t('library.readingNow.resetKeeps')}
           </p>

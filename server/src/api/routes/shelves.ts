@@ -15,7 +15,12 @@ import {
   type ShelfSummary,
 } from '@readport/shared';
 import { type AppContext } from '../../context.js';
-import { FINISHED_WHERE, READING_NOW_WHERE } from '../../progress/service.js';
+import {
+  FINISHED_WHERE,
+  READING_NOW_WHERE,
+  finishedWhere,
+  readingNowWhere,
+} from '../../progress/service.js';
 import { type DB } from '../../db/index.js';
 import { nowIso } from '../../db/index.js';
 import { newId } from '../../util/ids.js';
@@ -153,17 +158,34 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
       Number((db.prepare(sql).get(...(params as never[])) as { c: number }).c);
 
     // The same predicate the shelf itself is filtered by, so the number on
-    // the rail is the number of rows behind it.
-    const readingNow = one(
-      `SELECT COUNT(*) AS c FROM progress_state p JOIN books b ON b.id = p.book_id
+    // the rail is the number of rows behind it - and the same collapse. A
+    // title owned in both formats is one row on these shelves, so it has to
+    // be one in the count as well: rows, minus the settled pairs whose two
+    // editions BOTH qualify and therefore arrive as a single row.
+    const bothSidesQualify = (where: (p: string, b: string) => string): number =>
+      one(
+        `SELECT COUNT(*) AS c FROM pairs pr
+           JOIN progress_state pe ON pe.book_id = pr.ebook_id
+           JOIN books be ON be.id = pr.ebook_id
+           JOIN progress_state pa ON pa.book_id = pr.audio_id
+           JOIN books ba ON ba.id = pr.audio_id
+          WHERE pr.status IN ('auto','confirmed')
+            AND ${where('pe', 'be')} AND ${where('pa', 'ba')}`,
+        userId,
+        userId,
+      );
+    const readingNow =
+      one(
+        `SELECT COUNT(*) AS c FROM progress_state p JOIN books b ON b.id = p.book_id
        WHERE ${READING_NOW_WHERE}`,
-      userId,
-    );
-    const finished = one(
-      `SELECT COUNT(*) AS c FROM progress_state p JOIN books b ON b.id = p.book_id
+        userId,
+      ) - bothSidesQualify(readingNowWhere);
+    const finished =
+      one(
+        `SELECT COUNT(*) AS c FROM progress_state p JOIN books b ON b.id = p.book_id
        WHERE ${FINISHED_WHERE}`,
-      userId,
-    );
+        userId,
+      ) - bothSidesQualify(finishedWhere);
     // One count per PAIR, not per book: a title owned twice is one title.
     const bothFormats = one(
       `SELECT COUNT(*) AS c FROM pairs p

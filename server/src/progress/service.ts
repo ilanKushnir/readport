@@ -71,12 +71,20 @@ export function getProgressState(db: DB, userId: string, bookId: string): Progre
  * and the home page's Continue band all read this one fragment. They used to
  * carry four private copies of the same predicate, which agreed only until
  * someone edited one of them.
+ *
+ * The alias arguments exist for the one query that has to apply the predicate
+ * TWICE - once per edition of a pair - to count the rows a collapsed shelf
+ * actually shows. Same rule, same place, said about two different tables.
  */
-export const READING_NOW_WHERE = `p.user_id = ? AND p.finished = 0 AND b.scan_state != 'missing'
-  AND json_extract(p.locator_json, '$.pct') > 0 AND json_extract(p.locator_json, '$.pct') < 1`;
+export const readingNowWhere = (p = 'p', b = 'b'): string =>
+  `${p}.user_id = ? AND ${p}.finished = 0 AND ${b}.scan_state != 'missing'
+  AND json_extract(${p}.locator_json, '$.pct') > 0 AND json_extract(${p}.locator_json, '$.pct') < 1`;
+export const READING_NOW_WHERE = readingNowWhere();
 
 /** The Finished shelf's counterpart: read to the end, and still on disk. */
-export const FINISHED_WHERE = `p.user_id = ? AND p.finished = 1 AND b.scan_state != 'missing'`;
+export const finishedWhere = (p = 'p', b = 'b'): string =>
+  `${p}.user_id = ? AND ${p}.finished = 1 AND ${b}.scan_state != 'missing'`;
+export const FINISHED_WHERE = finishedWhere();
 
 /** Whether a summary's progress meets the Reading Now predicate above. */
 export function isReadingNow(progress: { pct: number; finished: boolean } | null): boolean {

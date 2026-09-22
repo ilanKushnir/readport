@@ -56,12 +56,23 @@ export function bookRowToSummary(
     // cleaned up), so this must tolerate finding nothing.
     const other = db.prepare('SELECT kind, format FROM books WHERE id = ?').get(otherBookId) as
       { kind: string; format: string } | undefined;
+    // And where this reader stands in it. A collapsed row speaks for both
+    // editions, so it has to be able to name the one it is not showing -
+    // otherwise collapsing would hide half the progress it collapsed.
+    const otherState = getProgressState(db, userId, otherBookId);
     pair = {
       pairId: String(pairRow.id),
       otherBookId,
       otherKind: (other?.kind ??
         (String(row.kind) === 'ebook' ? 'audio' : 'ebook')) as BookSummary['kind'],
       otherFormat: other?.format ?? '',
+      otherProgress: otherState
+        ? {
+            pct: otherState.locator.pct,
+            updatedAt: otherState.updatedAt,
+            finished: otherState.finished,
+          }
+        : null,
       status: String(pairRow.status) as NonNullable<BookSummary['pair']>['status'],
       switchable: isSwitchable(handle),
       handoff: handoffStatus(handle),
@@ -99,33 +110,56 @@ export function bookRowToSummary(
 /**
  * Collapse both halves of a matched pair down to a single entry.
  *
- * The ebook side is kept because that is the side with the cover, the fuller
- * title and the page count; the audio side stands in when there is no ebook
- * row to keep. Order is preserved - the survivor sits where it already was,
- * so an alphabetical shelf stays alphabetical.
+ * By default the ebook side is kept because that is the side with the cover,
+ * the fuller title and the page count; the audio side stands in when there is
+ * no ebook row to keep. Order is preserved - the survivor sits where it
+ * already was, so an alphabetical shelf stays alphabetical.
  *
  * Only settled pairs collapse. A `candidate` is a guess the user has not
  * confirmed, and hiding a book behind a guess would lose it.
  *
  * @param pairedOnly drop everything that is not half of a settled pair.
+ * @param prefer which half survives. `touched` keeps the edition this reader
+ *   moved in most recently, which is the only sensible answer on a shelf
+ *   built out of progress: the row has to open where they actually are, and
+ *   an untouched ebook standing in for the audiobook they are half way
+ *   through would be a row that resumes at page one. Ties - two editions
+ *   written in the same millisecond, which one queue drain routinely does -
+ *   fall back to the ebook rule so the shelf is stable between requests.
  */
 export function onePerPair(
   books: BookSummary[],
-  { pairedOnly = false }: { pairedOnly?: boolean } = {},
+  {
+    pairedOnly = false,
+    prefer = 'ebook',
+  }: { pairedOnly?: boolean; prefer?: 'ebook' | 'touched' } = {},
 ): BookSummary[] {
   const settled = (b: BookSummary) => b.pair && b.pair.status !== 'candidate';
-  const winner = new Map<string, string>();
+  const touchedAt = (b: BookSummary) =>
+    b.progress ? Date.parse(b.progress.updatedAt) : Number.NEGATIVE_INFINITY;
+  const winner = new Map<string, BookSummary>();
   for (const b of books) {
     if (!settled(b)) continue;
     const pairId = b.pair!.pairId;
     const kept = winner.get(pairId);
-    if (kept === undefined || b.kind === 'ebook') winner.set(pairId, b.id);
+    if (kept === undefined) {
+      winner.set(pairId, b);
+      continue;
+    }
+    if (prefer === 'touched' && touchedAt(b) !== touchedAt(kept)) {
+      if (touchedAt(b) > touchedAt(kept)) winner.set(pairId, b);
+      continue;
+    }
+    if (b.kind === 'ebook') winner.set(pairId, b);
   }
   return books.filter((b) => {
     if (!settled(b)) return !pairedOnly;
-    return winner.get(b.pair!.pairId) === b.id;
+    return winner.get(b.pair!.pairId)?.id === b.id;
   });
 }
+
+/** How many books the home page's Continue band carries. */
+const CONTINUE_RAIL = 8;
 
 const libraryQuerySchema = z.object({
   query: z.string().max(200).optional(),
@@ -136,7 +170,15 @@ const libraryQuerySchema = z.object({
    * exclusion and the continue rail.
    */
   filter: z
-    .enum(['paired', 'reading-now', 'in-progress', 'finished', 'both-formats', 'recently-added'])
+    .enum([
+      'paired',
+      'unpaired',
+      'reading-now',
+      'in-progress',
+      'finished',
+      'both-formats',
+      'recently-added',
+    ])
     .optional(),
   sort: z.enum(['title', 'author', 'recent', 'added']).optional(),
   /**
@@ -154,6 +196,18 @@ const libraryQuerySchema = z.object({
    */
   collapse: z.enum(['pair', 'none']).optional(),
 });
+
+/**
+ * The shelves made of progress rather than of the library: the filters whose
+ * rows come from `progress_state`, and which therefore collapse a pair by
+ * what the reader touched last rather than by which format it is.
+ * `in-progress` is the older name for `reading-now` and answers the same.
+ */
+function progressShelf(
+  filter: string | undefined,
+): filter is 'reading-now' | 'in-progress' | 'finished' {
+  return filter === 'reading-now' || filter === 'in-progress' || filter === 'finished';
+}
 
 /**
  * The SQL that narrows the library for one request, shared by the grid and
@@ -177,6 +231,22 @@ function narrowing(
     args.push(userId);
   } else {
     where.push("b.scan_state != 'missing'");
+  }
+  // Books that are not already half of a settled pair: what the manual
+  // linker is allowed to offer. In SQL, with the rest of the narrowing,
+  // because a library where most titles are owned twice would otherwise
+  // build a summary for every book on the server only to throw half of
+  // them away - and the pickers are two <select>s, not a paged grid.
+  //
+  // A `candidate` does NOT count as linked. It is a guess nobody has
+  // answered yet, and the manual linker is exactly where a reader goes when
+  // the guess is wrong, so hiding the book behind it would remove the cure
+  // along with the symptom.
+  if (q.filter === 'unpaired') {
+    where.push(
+      `NOT EXISTS (SELECT 1 FROM pairs pr WHERE pr.status IN ('auto','confirmed')
+         AND (pr.ebook_id = b.id OR pr.audio_id = b.id))`,
+    );
   }
   if (q.kind === 'ebook' || q.kind === 'audio') {
     where.push('b.kind = ?');
@@ -242,16 +312,41 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
       }
     }
     if (q.filter === 'both-formats') books = onePerPair(books, { pairedOnly: true });
-    else if (q.kind === undefined && q.filter === undefined && q.collapse !== 'none') {
-      // A title owned twice is ONE title. Without this the shelf shows the
-      // same book beside itself, once per format, which is how it read on a
-      // library where most books are owned both ways.
+    else if (progressShelf(q.filter) && q.kind === undefined && q.collapse !== 'none') {
+      // A title owned twice is ONE title here too.
       //
-      // Only the open shelf (and the facet views, which are the same shelf
-      // narrowed by author or series) collapses. Every named filter keeps its
-      // own meaning: `paired` is about pairs and wants both halves, and
-      // `in-progress` / `finished` are per-book - finishing the audiobook is
-      // not finishing the ebook, and merging them would hide one of the two.
+      // This used NOT to happen, deliberately: progress is stored per book id
+      // (`progress_state` is keyed on user_id + book_id), so finishing the
+      // audiobook is not finishing the ebook, and a naive merge would hide
+      // one of the two positions. That reasoning was right about the data and
+      // wrong about the shelf - a reader who owns both formats saw the same
+      // title twice in Reading Now and had to remember which row was which.
+      //
+      // What the old comment was protecting is kept instead of dropped:
+      //  - the SURVIVOR is the edition this reader touched last, so the row
+      //    resumes where they actually are;
+      //  - the survivor is chosen from the editions that QUALIFY for this
+      //    shelf, because the SQL above already returned only those. So a
+      //    reader who finished the ebook and is half way through the
+      //    audiobook gets the audiobook on Reading Now and the ebook on
+      //    Finished: once on each shelf, never twice on either, and neither
+      //    fact is hidden;
+      //  - the row still carries the other edition's position
+      //    (`pair.otherProgress`), so the client can name it and offer it;
+      //  - resetting is still per edition, which is the granularity the
+      //    store has;
+      //  - and asking for one format (`kind=audio`) is still answered in that
+      //    format. A question about editions deserves an answer about
+      //    editions, so no collapse there, same as the open shelf.
+      books = onePerPair(books, { prefer: 'touched' });
+    } else if (q.kind === undefined && q.filter === undefined && q.collapse !== 'none') {
+      // The open shelf (and the facet views, which are the same shelf
+      // narrowed by author or series). Here the ebook is the better survivor:
+      // it has the cover, the fuller title and the page count, and nothing on
+      // this shelf depends on where the reader is.
+      //
+      // `paired` still keeps both halves - it is about pairs, and a pair with
+      // one half shown is not reviewable.
       books = onePerPair(books);
     }
     if (q.filter === 'recently-added') {
@@ -292,14 +387,23 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
     const home =
       q.filter === undefined && q.facet === undefined && !q.query && q.kind === undefined;
     const continueRail = home
-      ? (
-          db
-            .prepare(
-              `SELECT b.* FROM progress_state p JOIN books b ON b.id = p.book_id
-               WHERE ${READING_NOW_WHERE} ORDER BY p.updated_at DESC LIMIT 8`,
-            )
-            .all(userId) as Record<string, unknown>[]
-        ).map((r) => bookRowToSummary(ctx, userId, r))
+      ? onePerPair(
+          (
+            db
+              .prepare(
+                // Twice the band's width, because a pair read in both formats
+                // takes two rows here and leaves one - so the band still fills
+                // for a reader who owns most of their library twice.
+                `SELECT b.* FROM progress_state p JOIN books b ON b.id = p.book_id
+                 WHERE ${READING_NOW_WHERE} ORDER BY p.updated_at DESC LIMIT ${CONTINUE_RAIL * 2}`,
+              )
+              .all(userId) as Record<string, unknown>[]
+          ).map((r) => bookRowToSummary(ctx, userId, r)),
+          // Already in most-recent-first order, so the survivor of a pair is
+          // the edition in front - the one being read now, not the one that
+          // was read last month.
+          { prefer: 'touched' },
+        ).slice(0, CONTINUE_RAIL)
       : [];
 
     const scanning = db

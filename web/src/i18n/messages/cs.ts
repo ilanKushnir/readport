@@ -1275,5 +1275,7 @@ const messages: Record<string, string> = {
   'whatsnew.hideOlder': 'Skrýt starší verze',
   'whatsnew.olderHeading': 'Verze {version}',
   'whatsnew.done': 'Začít číst',
+  'library.readingNow.resetEdition':
+    '{kind, select, ebook {Vynulovat postup e-knihy…} other {Vynulovat postup audioknihy…}}',
 };
 export default messages;

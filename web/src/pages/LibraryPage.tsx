@@ -899,7 +899,27 @@ function BookCard({
       : book.scanState === 'indexing' || book.scanState === 'discovered'
         ? t('library.card.indexing')
         : null;
+  const f = useFormat();
   const pair = book.pair && book.pair.status !== 'candidate' ? book.pair : null;
+  // One card, two editions, two positions. The card's own bar shows where the
+  // edition it stands for is; when that edition is finished (or was never
+  // opened) and the OTHER one is still under way, the bar shows that instead,
+  // and says whose it is. A collapsed card must not be the reason a position
+  // disappears - which is exactly what "Finished" alone would do to a title
+  // whose audiobook is half done.
+  const otherUnderWay =
+    pair?.otherProgress && !pair.otherProgress.finished && pair.otherProgress.pct > 0.001
+      ? pair.otherProgress
+      : null;
+  const own = book.progress && book.progress.pct > 0.001 && !book.progress.finished;
+  const bar = own ? book.progress!.pct : otherUnderWay ? otherUnderWay.pct : null;
+  const barTitle =
+    !own && otherUnderWay && pair
+      ? `${pair.otherKind === 'ebook' ? t('common.ebook') : t('common.audiobook')} · ${t(
+          'library.book.progress',
+          { pct: f.percent(otherUnderWay.pct), kind: pair.otherKind },
+        )}`
+      : undefined;
   return (
     // Two format badges wrap to a second row on a phone-width cover, which
     // lands on top of the placeholder title. Only these cards need the extra
@@ -937,9 +957,14 @@ function BookCard({
               <IconDownload size={12} />
             </span>
           )}
-          {book.progress && book.progress.pct > 0.001 && !book.progress.finished && (
-            <span className="book-card__progress" aria-hidden="true">
-              <span style={{ width: `${book.progress.pct * 100}%` }} />
+          {bar !== null && (
+            <span
+              className="book-card__progress"
+              {...(barTitle
+                ? { role: 'img', 'aria-label': barTitle, title: barTitle }
+                : { 'aria-hidden': true })}
+            >
+              <span style={{ width: `${bar * 100}%` }} />
             </span>
           )}
           {book.progress?.finished && (

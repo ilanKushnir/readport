@@ -1260,5 +1260,7 @@ const messages: Record<string, string> = {
   'whatsnew.hideOlder': 'Dölj äldre versioner',
   'whatsnew.olderHeading': 'Version {version}',
   'whatsnew.done': 'Börja läsa',
+  'library.readingNow.resetEdition':
+    '{kind, select, ebook {Nollställ e-bokens läsläge…} other {Nollställ ljudbokens läsläge…}}',
 };
 export default messages;

@@ -110,6 +110,12 @@ beforeAll(async () => {
     },
   ]);
   await send([event('foreign', 0.4), event('ebook', 0.7)], 'bob');
+  // One queue drain writes both editions of a pair inside the same
+  // millisecond as often as not, and the progress shelves now keep whichever
+  // was touched LAST - so leave no doubt about which that is here.
+  db.prepare("UPDATE progress_state SET updated_at = ? WHERE book_id = 'ebook'").run(
+    new Date(Date.now() + 1000).toISOString(),
+  );
 });
 afterAll(async () => {
   await app.close();
@@ -118,22 +124,30 @@ afterAll(async () => {
 });
 
 describe('Reading Now contract', () => {
-  it('accepts the actual auto-shelf ID; includes each independently active edition, not completed/absent/zero/foreign progress', async () => {
+  it('accepts the actual auto-shelf ID; one row per title, not per edition, and no completed/absent/zero/foreign progress', async () => {
     const res = await request('/api/library?filter=reading-now');
     expect(res.statusCode).toBe(200);
+    // `ebook` and `audio` are one linked title, so they are one row - the
+    // ebook, because that is the edition touched last. `audio2` is the only
+    // half of its pair in progress and stands for its own title.
     expect(
       res
         .json()
         .books.map((b: { id: string }) => b.id)
         .sort(),
-    ).toEqual(['audio', 'audio2', 'ebook', 'tiny']);
+    ).toEqual(['audio2', 'ebook', 'tiny']);
+    // The collapsed row still carries the position it is not showing.
+    const collapsed = res.json().books.find((b: { id: string }) => b.id === 'ebook');
+    expect(collapsed.pair.otherBookId).toBe('audio');
+    expect(collapsed.pair.otherProgress).toMatchObject({ pct: 0.3, finished: false });
     const legacy = await request('/api/library?filter=in-progress');
     expect(legacy.json().books).toEqual(res.json().books);
+    // The number on the rail is the number of rows behind it.
     expect(
       (await request('/api/shelves'))
         .json()
         .auto.find((s: { id: string }) => s.id === 'reading-now').count,
-    ).toBe(4);
+    ).toBe(3);
     expect(
       (await request('/api/library?filter=reading-now', 'bob'))
         .json()
@@ -151,6 +165,9 @@ describe('Reading Now contract', () => {
     const rail = home.continueRail.map((b: { id: string }) => b.id);
     expect(rail).toContain('audio2');
     expect(rail).toContain('ebook');
+    // And the band collapses the same way the shelf does: one entry for a
+    // title being read in both formats, the edition touched last.
+    expect(rail).not.toContain('audio');
     expect(rail).not.toContain('missing');
     expect(rail).not.toContain('done');
     // Narrowed views do not carry the band.

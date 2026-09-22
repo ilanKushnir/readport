@@ -1277,6 +1277,8 @@ const messages: Record<string, string> = {
   'whatsnew.hideOlder': 'Önceki sürümleri gizle',
   'whatsnew.olderHeading': 'Sürüm {version}',
   'whatsnew.done': 'Okumaya başla',
+  'library.readingNow.resetEdition':
+    '{kind, select, ebook {E-kitap ilerlemesini sıfırla…} other {Sesli kitap ilerlemesini sıfırla…}}',
 };
 
 export default messages;

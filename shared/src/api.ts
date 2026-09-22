@@ -41,6 +41,22 @@ export const bookSummarySchema = z.object({
        */
       otherKind: bookKindSchema,
       otherFormat: z.string(),
+      /**
+       * Where THIS person stands in the counterpart, when they have opened
+       * it at all. Progress is per book id, so the two editions genuinely
+       * carry separate positions; a card that stands for both of them has to
+       * be able to say "finished the ebook, half way through the audiobook".
+       * Without this, collapsing a pair to one row would be the thing that
+       * hides one of the two - which is why the progress shelves used not to
+       * collapse at all.
+       *
+       * Optional so a summary cached by an older build still parses; null
+       * means the counterpart has never been opened.
+       */
+      otherProgress: z
+        .object({ pct: z.number(), updatedAt: z.string(), finished: z.boolean() })
+        .nullable()
+        .optional(),
       status: pairStatusSchema,
       /** Handoff is available (does NOT claim sentence exactness - see handoff). */
       switchable: z.boolean(),

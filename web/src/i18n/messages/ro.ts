@@ -1286,5 +1286,7 @@ const messages: Record<string, string> = {
   'whatsnew.hideOlder': 'Ascunde versiunile anterioare',
   'whatsnew.olderHeading': 'Versiunea {version}',
   'whatsnew.done': 'Începe să citești',
+  'library.readingNow.resetEdition':
+    '{kind, select, ebook {Resetează progresul cărții electronice…} other {Resetează progresul cărții audio…}}',
 };
 export default messages;

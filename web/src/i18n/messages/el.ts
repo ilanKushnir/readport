@@ -1300,5 +1300,7 @@ const messages: Record<string, string> = {
   'whatsnew.hideOlder': 'Απόκρυψη παλαιότερων εκδόσεων',
   'whatsnew.olderHeading': 'Έκδοση {version}',
   'whatsnew.done': 'Ξεκίνα την ανάγνωση',
+  'library.readingNow.resetEdition':
+    '{kind, select, ebook {Μηδενισμός προόδου ηλεκτρονικού βιβλίου…} other {Μηδενισμός προόδου ηχητικού βιβλίου…}}',
 };
 export default messages;

@@ -1288,6 +1288,8 @@ const messages: Record<string, string> = {
   'whatsnew.hideOlder': 'Сховати попередні версії',
   'whatsnew.olderHeading': 'Версія {version}',
   'whatsnew.done': 'Почати читати',
+  'library.readingNow.resetEdition':
+    '{kind, select, ebook {Скинути прогрес електронної книги…} other {Скинути прогрес аудіокниги…}}',
 };
 
 export default messages;

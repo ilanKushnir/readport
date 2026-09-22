@@ -1302,5 +1302,7 @@ const messages: Record<string, string> = {
   'whatsnew.hideOlder': 'Oudere versies verbergen',
   'whatsnew.olderHeading': 'Versie {version}',
   'whatsnew.done': 'Beginnen met lezen',
+  'library.readingNow.resetEdition':
+    '{kind, select, ebook {Voortgang van het e-book wissen…} other {Voortgang van het luisterboek wissen…}}',
 } as const;
 export default messages;

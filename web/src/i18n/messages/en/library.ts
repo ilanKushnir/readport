@@ -85,6 +85,10 @@ export const library = {
   'library.readingNow.listLabel': 'Books you are reading or listening to',
   'library.readingNow.details': '{title}, {kind, select, ebook {Ebook} other {Audiobook}} details',
   'library.readingNow.resetButton': 'Reset progress…',
+  // A row that stands for a linked pair must say WHICH edition it resets:
+  // "Reset progress…" under a title owned twice is a question, not a label.
+  'library.readingNow.resetEdition':
+    '{kind, select, ebook {Reset ebook progress…} other {Reset audiobook progress…}}',
   'library.readingNow.resetTitle': 'Reset reading progress?',
   'library.readingNow.resetBody':
     'Reset your progress, checkpoints and reading history for “{title}” ({kind, select, ebook {ebook} other {audiobook}})? It leaves Reading Now and opens from the beginning next time.',

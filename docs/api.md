@@ -247,9 +247,11 @@ book's metadata. Nothing is ever written back to the library's files.
 
 `continueRail` is a list of whole book summaries - the eight most recently
 touched, unfinished editions - computed from progress rather than from the
-list above it, because the list is collapsed to one card per pair and the
-edition in progress is not always the card. It is filled only for the open
-library (no query, kind, filter or facet).
+list above it, because the list above it answers a different question. It is
+collapsed to one card per settled pair like every other shelf, and the
+edition that survives is the one touched most recently, so the card resumes
+where the reader actually is rather than at page one of the other format. It
+is filled only for the open library (no query, kind, filter or facet).
 
 A facet narrows EDITIONS, before a pair collapses to one card, so a French
 audiobook paired with an English ebook is under `language:fr`. The language
@@ -302,11 +304,25 @@ key, and a neighbour that moved underneath answers `409 stale-order`.
 | GET    | `/api/books/:id/shelves`                  | `{shelfIds, onReadingList, readingListPosition}` for the book page                 |
 
 The automatic shelves are NOT endpoints of their own: `filter=reading-now` is
-`in-progress`, and `both-formats` and `recently-added` are two more values on
-`GET /api/library?filter=`, so one code path still owns filtering, sorting and
-the missing-book exclusion. `both-formats` keeps one row per pair (the ebook
-side, or the audio side when the ebook is missing), because a title owned
-twice is one title. "On this device" has no endpoint at all - downloads live
+`in-progress`, and `both-formats`, `recently-added` and `unpaired` are three
+more values on `GET /api/library?filter=`, so one code path still owns
+filtering, sorting and the missing-book exclusion. `both-formats` keeps one
+row per pair (the ebook side, or the audio side when the ebook is missing),
+because a title owned twice is one title.
+
+The PROGRESS shelves collapse a settled pair too, and there the surviving row
+is the edition touched most recently rather than the ebook - a row that
+resumed at page one of an untouched ebook, while the reader was half way
+through the narration, was the whole complaint. The row it keeps carries
+`pair.otherProgress`, so a single card can still name the position it is not
+showing; a title finished in one format and under way in the other therefore
+appears once on Finished and once on Reading Now, and never twice on either.
+`kind=ebook` or `kind=audio` suppresses the collapse, because a question
+about editions deserves an answer about editions.
+
+`filter=unpaired` returns only books that belong to no settled pair, which is
+what the manual linking sheet offers. A `candidate` does not count as paired:
+an unreviewed guess is exactly what somebody opens that sheet to correct. "On this device" has no endpoint at all - downloads live
 in one browser and only that browser can count them.
 
 `PUT /api/reading-list/:bookId` with a `position` or an `afterBookId` MOVES a

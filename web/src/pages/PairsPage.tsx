@@ -846,8 +846,19 @@ function PairCard({
 }
 
 /**
- * Manual arbitrary pairing: pick any ebook and any audiobook and link them.
- * Complements automatic suggestions for titles whose metadata never matches.
+ * Manual arbitrary pairing: pick any UNLINKED ebook and any unlinked
+ * audiobook and link them. Complements automatic suggestions for titles whose
+ * metadata never matches.
+ *
+ * The pickers used to offer the whole library, so a book that was already
+ * linked sat in the list looking available - and choosing it either re-made
+ * the link it already had or proposed a second one. `filter=unpaired` asks
+ * the server for what is actually linkable, in SQL, because a library where
+ * most titles are owned twice would otherwise send most of itself here to be
+ * discarded in the browser.
+ *
+ * A `candidate` still appears: it is a suggestion nobody has answered, and
+ * this sheet is where a reader goes when the suggestion is wrong.
  */
 function ManualLinkSheet({ onClose, onLinked }: { onClose: () => void; onLinked: () => void }) {
   const t = useT();
@@ -859,7 +870,7 @@ function ManualLinkSheet({ onClose, onLinked }: { onClose: () => void; onLinked:
 
   useEffect(() => {
     let alive = true;
-    api<{ books: BookSummary[] }>('/api/library')
+    api<{ books: BookSummary[] }>('/api/library?filter=unpaired')
       .then((r) => {
         if (alive) setBooks(r.books);
       })

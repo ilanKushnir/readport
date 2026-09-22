@@ -1303,5 +1303,7 @@ const messages: Record<string, string> = {
   'whatsnew.hideOlder': 'הסתרת גרסאות קודמות',
   'whatsnew.olderHeading': 'גרסה {version}',
   'whatsnew.done': 'אפשר להתחיל לקרוא',
+  'library.readingNow.resetEdition':
+    '{kind, select, ebook {איפוס התקדמות בספר האלקטרוני…} other {איפוס התקדמות בספר הקול…}}',
 };
 export default messages;

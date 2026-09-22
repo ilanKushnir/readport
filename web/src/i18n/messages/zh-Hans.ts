@@ -1197,5 +1197,7 @@ const messages: Record<string, string> = {
   'whatsnew.hideOlder': '隐藏早期版本',
   'whatsnew.olderHeading': '版本 {version}',
   'whatsnew.done': '开始阅读',
+  'library.readingNow.resetEdition':
+    '{kind, select, ebook {重置电子书进度…} other {重置有声书进度…}}',
 };
 export default messages;
