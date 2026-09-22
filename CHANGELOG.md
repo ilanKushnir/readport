@@ -4,6 +4,14 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.14.2 - 2026-09-22
+
+### Fixed
+
+- **A book opened and closed again appeared under On the go** with 0:00 in
+  and an empty bar. A book is on the go once you have spent a minute with it
+  or covered any ground.
+
 ## 0.14.1 - 2026-09-22
 
 ### Changed
