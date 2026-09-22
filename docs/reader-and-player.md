@@ -45,6 +45,10 @@ Implemented:
   stepper, variable weight, line height, margins, ragged/justified,
   hyphenation toggle. The chapter is tagged with the book's language so
   hyphenation and RTL fallback are language-aware.
+- In page mode a figure taller than the page is scaled to fit it, so a
+  chapter with a full-page picture still pages. A chapter with something
+  the columns cannot break at all scrolls instead, and says so in the
+  footer.
 - Bookmarks, highlights in five colours, and notes on text selections,
   anchored to sentence IDs/character offsets (rendered with the CSS Custom
   Highlight API; on browsers without it the annotations still save and list,
