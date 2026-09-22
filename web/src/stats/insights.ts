@@ -363,6 +363,14 @@ export interface BookProgressInsight {
  * estimate uses the book's own pace, not the reader's average: a dense
  * history book and a thriller are not read at the same speed.
  */
+/**
+ * The least a book must have had to be "on the go": a minute with it, or
+ * some ground covered. Opening a book and closing it again leaves a sitting
+ * of a few seconds at 0%, and a row saying "0:00 in" for it is not a book
+ * anybody is reading.
+ */
+export const ON_THE_GO_MIN_SECONDS = 60;
+
 export function bookInsights(data: StatsResponse): BookProgressInsight[] {
   const byBook = new Map<string, StatsSession[]>();
   for (const s of data.sessions) {
@@ -376,6 +384,7 @@ export function bookInsights(data: StatsResponse): BookProgressInsight[] {
     if (!book) continue;
     const seconds = sessions.reduce((a, s) => a + s.seconds, 0);
     const pctAdvanced = sessions.reduce((a, s) => a + s.pctAdvanced, 0);
+    if (seconds < ON_THE_GO_MIN_SECONDS && pctAdvanced < 0.005 && book.pct < 0.005) continue;
     const lastReadAt = sessions
       .map((s) => s.endedAt)
       .sort()

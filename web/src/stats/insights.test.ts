@@ -251,6 +251,25 @@ describe('summarise and bookInsights', () => {
     expect(Math.round(b1!.secondsToFinish! / 60)).toBe(150);
   });
 
+  it('leaves out a book that was only opened and closed again', () => {
+    const glanced: Record<string, StatsBook> = {
+      ...books,
+      b3: { ...books.b1!, id: 'b3', title: 'Glanced at', pct: 0 },
+    };
+    const data: StatsResponse = {
+      generatedAt: '',
+      since: '',
+      sessions: [
+        sitting('2026-09-21T20:00:00', 30, { pctAdvanced: 0.1 }),
+        // Twenty seconds at the first page: a tap on the wrong cover.
+        sitting('2026-09-22T09:00:00', 0, { bookId: 'b3', seconds: 20, pctAdvanced: 0 }),
+      ],
+      books: glanced,
+      allTime: { seconds: 0, sessions: 0, firstSessionAt: null, booksFinished: 0 },
+    };
+    expect(bookInsights(data).map((b) => b.book.id)).toEqual(['b1']);
+  });
+
   it('refuses to estimate from too little', () => {
     const data: StatsResponse = {
       generatedAt: '',
