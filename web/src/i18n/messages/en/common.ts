@@ -36,6 +36,7 @@ export const common = {
   'nav.pairing': 'Pairing',
   'nav.settings': 'Settings',
   'nav.friends': 'Friends',
+  'nav.more': 'More',
   'nav.friendsAttention': 'Friend requests or recommendations waiting',
   'nav.shelves': 'Shelves',
   'nav.showShelves': 'Show shelves',
@@ -66,6 +67,7 @@ export const common = {
   'shelves.recently-added': 'Recently added',
   'shelves.on-this-device': 'On this device',
   'shelves.readingList': 'Reading list',
+  'shelves.allBooks': 'All books',
   'language.pickerTitle': 'Interface language',
   'language.followBrowser': 'Follow the browser ({name})',
   'language.generatedNote':

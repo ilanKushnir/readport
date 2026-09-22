@@ -18,6 +18,7 @@ import {
   IconPlus,
   IconShelf,
   IconMore,
+  IconStats,
 } from './icons';
 import { useReorder } from './reorder';
 import { BrowseGroups } from './BrowseGroups';
@@ -38,6 +39,7 @@ const AUTO_ICONS: Record<AutoShelfId, typeof IconBookOpen> = {
 
 function Row({
   to,
+  end,
   icon,
   label,
   count,
@@ -46,6 +48,8 @@ function Row({
   children,
 }: {
   to: string;
+  /** Match this route exactly: the library home is "/" and would otherwise light up everywhere. */
+  end?: boolean;
   icon: React.ReactNode;
   label: string;
   count: number | null;
@@ -59,6 +63,7 @@ function Row({
     <li className="sidebar__item">
       <NavLink
         to={to}
+        end={end}
         className={({ isActive }) =>
           `sidebar__row${isActive ? ' is-active' : ''}${count === 0 ? ' is-zero' : ''}`
         }
@@ -213,6 +218,17 @@ export function Sidebar({
 
       <h2 className="sidebar__heading">{t('nav.shelves')}</h2>
       <ul className="sidebar__group">
+        {/* The whole library, first: every shelf below is a slice of it, and
+            the way back to all of it should not depend on a header that a
+            phone does not show. */}
+        <Row
+          to="/"
+          end
+          icon={<IconLibrary size={18} />}
+          label={t('shelves.allBooks')}
+          count={null}
+          onNavigate={onNavigate}
+        />
         {AUTO_SHELVES.map((s) => {
           const Icon = AUTO_ICONS[s.id];
           const count = overview?.auto.find((a) => a.id === s.id)?.count ?? 0;
@@ -448,6 +464,29 @@ export function Sidebar({
       {/* Last, because it is the library describing itself rather than
           anything the reader made: shelves they built come first. */}
       <BrowseGroups onNavigate={onNavigate} />
+
+      {/* On a phone the header nav is gone and the tab bar holds five, so
+          the rest of the app is reached from here; where the header shows,
+          this group is hidden and the header has them. */}
+      <section className="sidebar__phonenav" aria-label={t('nav.more')}>
+        <h2 className="sidebar__heading">{t('nav.more')}</h2>
+        <ul className="sidebar__group">
+          <Row
+            to="/stats"
+            icon={<IconStats size={18} />}
+            label={t('nav.stats')}
+            count={null}
+            onNavigate={onNavigate}
+          />
+          <Row
+            to="/pairs"
+            icon={<IconLink size={18} />}
+            label={t('nav.pairing')}
+            count={null}
+            onNavigate={onNavigate}
+          />
+        </ul>
+      </section>
 
       {/* After the library and before the way out: the other apps in this
           household, when the admin has named any. */}
