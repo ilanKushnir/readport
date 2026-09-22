@@ -90,8 +90,9 @@ read-along only works inside ReadPort.
   while every book keeps its own direction. Everything but English is
   model-generated and says so.
 - **Friends** - see where a friend is in a book as a bead on your progress
-  bar, in a colour you pick, and put a book in front of them with a note.
-  Sharing is consent, per person, and nothing in the margins is ever shared.
+  bar, in a colour you pick, see when they are in it right now, and put a
+  book in front of them with a note. Sharing is consent, per person, and
+  nothing in the margins is ever shared.
 - **A link to a book** - share one to WhatsApp or anywhere else and it
   previews with the cover; a friend with an account saves it as recommended
   by you, and anyone else can ask to join, for an admin to approve.

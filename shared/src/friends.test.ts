@@ -1,3 +1,4 @@
+import { LIVE_WINDOW_MS, liveNow } from './friends.js';
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_FRIENDS_PREFS,
@@ -80,5 +81,21 @@ describe('friendsPrefsSchema', () => {
     expect(friendsPrefsSchema.safeParse({ colours: { user_1: '#3d6b4f' } }).success).toBe(false);
     expect(friendsPrefsSchema.safeParse({ shown: { book_1: ['user_1'] } }).success).toBe(true);
     expect(friendsPrefsSchema.safeParse({ shown: { book_1: 'user_1' } }).success).toBe(false);
+  });
+});
+
+describe('liveNow', () => {
+  const now = Date.parse('2026-09-22T12:00:00.000Z');
+  const ago = (ms: number) => new Date(now - ms).toISOString();
+  it('calls a reader present for six minutes past a page turn, a listener for ninety seconds', () => {
+    expect(liveNow('ebook', ago(5 * 60_000), now)).toBe(true);
+    expect(liveNow('ebook', ago(LIVE_WINDOW_MS.ebook + 1), now)).toBe(false);
+    expect(liveNow('audio', ago(60_000), now)).toBe(true);
+    expect(liveNow('audio', ago(LIVE_WINDOW_MS.audio + 1), now)).toBe(false);
+  });
+  it('tolerates a device a little ahead of the server, and refuses garbage', () => {
+    expect(liveNow('ebook', ago(-30_000), now)).toBe(true);
+    expect(liveNow('ebook', ago(-120_000), now)).toBe(false);
+    expect(liveNow('ebook', 'not a date', now)).toBe(false);
   });
 });

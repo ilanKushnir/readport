@@ -19,6 +19,9 @@
   --rp-border-strong: #c4b8a5;
   --rp-interactive: #944320;
   --rp-danger: #a83a2c;
+  /* Here right now: a friend's presence, calm and green, never the ember. */
+  --rp-live: #2f7d4f;
+  --rp-live-ink: #23613b;
   --rp-focus: #b4532a;
   --rp-shadow-1: 0 1px 2px rgb(60 40 20 / 0.06), 0 2px 10px rgb(60 40 20 / 0.06);
   --rp-shadow-2: 0 2px 6px rgb(60 40 20 / 0.08), 0 14px 36px rgb(60 40 20 / 0.14);
@@ -83,6 +86,9 @@
   --rp-border-strong: #4d4238;
   --rp-interactive: #e69c74;
   --rp-danger: #e08a7a;
+  /* Here right now: a friend's presence, calm and green, never the ember. */
+  --rp-live: #6cc48c;
+  --rp-live-ink: #9fdcb4;
   --rp-focus: #e69c74;
   --rp-shadow-1: 0 1px 2px rgb(0 0 0 / 0.4), 0 2px 8px rgb(0 0 0 / 0.35);
   --rp-shadow-2: 0 2px 6px rgb(0 0 0 / 0.5), 0 14px 36px rgb(0 0 0 / 0.5);
@@ -106,6 +112,9 @@
     --rp-border-strong: #4d4238;
     --rp-interactive: #e69c74;
     --rp-danger: #e08a7a;
+    /* Here right now: a friend's presence, calm and green, never the ember. */
+    --rp-live: #6cc48c;
+    --rp-live-ink: #9fdcb4;
     --rp-focus: #e69c74;
     --rp-shadow-1: 0 1px 2px rgb(0 0 0 / 0.4), 0 2px 8px rgb(0 0 0 / 0.35);
     --rp-shadow-2: 0 2px 6px rgb(0 0 0 / 0.5), 0 14px 36px rgb(0 0 0 / 0.5);

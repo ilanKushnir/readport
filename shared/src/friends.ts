@@ -109,3 +109,23 @@ export const DEFAULT_FRIENDS_PREFS: FriendsPrefs = {
   colours: {},
   shown: {},
 };
+
+/**
+ * How recently a friend's position must have moved for them to be in the
+ * book right now. Reading sends a position on every page turn, and a page
+ * takes a few minutes; listening reports every fifteen seconds while it
+ * plays and nothing while it is paused. So a reader is here for six minutes
+ * past their last turn, a listener for a minute and a half past their last
+ * report, and both simply fall quiet rather than "leave".
+ */
+export const LIVE_WINDOW_MS = { ebook: 6 * 60_000, audio: 90_000 } as const;
+
+/** Whether a position updated at `updatedAt` means someone is in the book now. */
+export function liveNow(medium: 'ebook' | 'audio', updatedAt: string, now = Date.now()): boolean {
+  const at = Date.parse(updatedAt);
+  if (!Number.isFinite(at)) return false;
+  const age = now - at;
+  // A minute of clock skew is tolerated the other way: a server a little
+  // behind the device that just wrote is not a reason to call it absent.
+  return age >= -60_000 && age <= LIVE_WINDOW_MS[medium];
+}

@@ -35,6 +35,10 @@ export const friends = {
   'friends.list.reading': '{kind, select, ebook {Reading} other {Listening to}} {title} · {pct}',
   'friends.list.notSharing': 'Not sharing progress',
   'friends.list.nothingOnTheGo': 'Nothing on the go',
+  // Here right now: a position that moved within the last few minutes
+  'friends.live.reading': 'Reading now',
+  'friends.live.listening': 'Listening now',
+  'friends.live.here': '{name} is in this book right now',
   'friends.list.recommend': 'Recommend a book…',
   'friends.list.remove': 'Remove',
   'friends.list.removeYes': 'Yes, remove {name}',

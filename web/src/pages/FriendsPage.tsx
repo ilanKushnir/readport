@@ -52,6 +52,8 @@ export interface Friend extends Person {
     kind: 'ebook' | 'audio';
     pct: number;
     updatedAt: string;
+    /** In it right now; absent from a server that does not say. */
+    live?: boolean;
   } | null;
 }
 
@@ -83,8 +85,13 @@ export interface FriendProgressEntry extends Person {
   pct: number;
   finished: boolean;
   updatedAt: string;
+  /** In the book right now; absent from a server that does not say. */
+  live?: boolean;
   chapterTitle: string | null;
 }
+
+/** How often a page asks again who is here now: presence lasts minutes, not seconds. */
+const LIVE_REFRESH_MS = 60_000;
 
 /* ----------------------------------------------------------- pure helpers */
 
@@ -182,6 +189,19 @@ export function FriendsPage() {
   }, [refreshSession]);
   useEffect(() => {
     void load();
+  }, [load]);
+  // Who is reading right now changes by the minute: ask again while the
+  // page is in front, and on coming back to it.
+  useEffect(() => {
+    const tick = () => {
+      if (document.visibilityState === 'visible') void load();
+    };
+    const timer = setInterval(tick, LIVE_REFRESH_MS);
+    document.addEventListener('visibilitychange', tick);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', tick);
+    };
   }, [load]);
 
   /** One action, one toast, one reload; `countsChanged` also refreshes the nav's dots. */
@@ -571,6 +591,19 @@ function FriendRow({
         <div className="friends-row__body">
           <span className="friends-row__name">{friend.displayName}</span>
           <span className="friends-row__line">
+            {friend.sharesProgress && friend.reading?.live && (
+              <span
+                className="live-chip"
+                title={t('friends.live.here', { name: friend.displayName })}
+              >
+                <span className="live-dot" aria-hidden="true" />
+                {t(
+                  friend.reading.kind === 'audio'
+                    ? 'friends.live.listening'
+                    : 'friends.live.reading',
+                )}
+              </span>
+            )}
             {friend.sharesProgress && friend.reading ? (
               <Link to={`/book/${friend.reading.bookId}`}>{text}</Link>
             ) : (
@@ -998,18 +1031,25 @@ export function BookFriendsRow({ book }: { book: Pick<BookSummary, 'id' | 'title
   useEffect(() => {
     let alive = true;
     setState(null);
-    api<{ friends: FriendProgressEntry[]; friendCount: number }>(
-      `/api/friends/progress?bookId=${encodeURIComponent(book.id)}`,
-    )
-      .then((r) => {
-        if (alive) setState(r);
-      })
-      .catch(() => {
-        // Offline, or a server without friends yet: the page is simply
-        // without the row.
-      });
+    const ask = () =>
+      api<{ friends: FriendProgressEntry[]; friendCount: number }>(
+        `/api/friends/progress?bookId=${encodeURIComponent(book.id)}`,
+      )
+        .then((r) => {
+          if (alive) setState(r);
+        })
+        .catch(() => {
+          // Offline, or a server without friends yet: the page is simply
+          // without the row.
+        });
+    void ask();
+    // Who is in the book right now changes by the minute.
+    const timer = setInterval(() => {
+      if (document.visibilityState === 'visible') void ask();
+    }, LIVE_REFRESH_MS);
     return () => {
       alive = false;
+      clearInterval(timer);
     };
   }, [book.id]);
 
@@ -1027,6 +1067,14 @@ export function BookFriendsRow({ book }: { book: Pick<BookSummary, 'id' | 'title
               aria-hidden="true"
             />
             {t(line.key, line.values)}
+            {e.live && (
+              <span className="live-chip" title={t('friends.live.here', { name: e.displayName })}>
+                <span className="live-dot" aria-hidden="true" />
+                {t(
+                  e.locator.medium === 'audio' ? 'friends.live.listening' : 'friends.live.reading',
+                )}
+              </span>
+            )}
           </span>
         );
       })}

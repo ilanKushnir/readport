@@ -32,6 +32,8 @@ export interface FriendProgress {
   pct: number;
   finished: boolean;
   updatedAt: string;
+  /** In the book right now; absent from a server that does not say. */
+  live?: boolean;
   chapterTitle?: string | null;
 }
 
@@ -86,6 +88,20 @@ export function useFriendsOnBook(bookId: string | null) {
   useEffect(() => {
     void load();
   }, [load]);
+  // A friend who is here now was not here a minute ago: ask again while
+  // the book is open and the tab is in front, and on coming back to it.
+  useEffect(() => {
+    if (!bookId) return;
+    const tick = () => {
+      if (document.visibilityState === 'visible') void load();
+    };
+    const timer = setInterval(tick, LIVE_REFRESH_MS);
+    document.addEventListener('visibilitychange', tick);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', tick);
+    };
+  }, [bookId, load]);
 
   // A friend's place moves while you read; ask again now and then, and when
   // the tab comes back. Cheap: one small request.
@@ -135,6 +151,8 @@ export function useFriendsOnBook(bookId: string | null) {
 
 /** A bead's diameter on the bar, as friends-bar.css draws it. */
 const BEAD_PX = 15;
+/** How often the bar asks again who is here: presence lasts minutes, not seconds. */
+const LIVE_REFRESH_MS = 60_000;
 
 /** The first letter of a name, as a bead can carry it. */
 function initialOf(name: string): string {
@@ -200,7 +218,7 @@ export function FriendMarkers({
         <button
           key={x.userId}
           type="button"
-          className="fbead"
+          className={`fbead${x.live ? ' fbead--live' : ''}`}
           style={
             {
               insetInlineStart: `${Math.min(100, Math.max(0, x.pct * 100))}%`,
@@ -208,7 +226,10 @@ export function FriendMarkers({
               ...friendColourStyle(x.colour),
             } as React.CSSProperties
           }
-          aria-label={t('friends.bar.bead', { name: x.displayName, pct: f.percent(x.pct) })}
+          aria-label={t(x.live ? 'friends.bar.beadLive' : 'friends.bar.bead', {
+            name: x.displayName,
+            pct: f.percent(x.pct),
+          })}
           title={`${x.displayName} · ${f.percent(x.pct)}`}
           onClick={(e) => {
             e.stopPropagation();
@@ -269,7 +290,7 @@ export function FriendsButton({
         {shown.map((x) => (
           <span
             key={x.userId}
-            className="fbead fbead--static"
+            className={`fbead fbead--static${x.live ? ' fbead--live' : ''}`}
             style={friendColourStyle(x.colour) as React.CSSProperties}
             aria-hidden="true"
           >
@@ -369,7 +390,22 @@ function FriendsCard({
                   {initialOf(x.displayName)}
                 </span>
                 <div className="fcard__body">
-                  <div className="fcard__name">{x.displayName}</div>
+                  <div className="fcard__name">
+                    {x.displayName}
+                    {x.live && (
+                      <span
+                        className="live-chip"
+                        title={t('friends.live.here', { name: x.displayName })}
+                      >
+                        <span className="live-dot" aria-hidden="true" />
+                        {t(
+                          x.locator.medium === 'audio'
+                            ? 'friends.live.listening'
+                            : 'friends.live.reading',
+                        )}
+                      </span>
+                    )}
+                  </div>
                   <div className="fcard__where">
                     {x.finished
                       ? t('friends.bar.finished')
@@ -379,8 +415,7 @@ function FriendsCard({
                             pct: f.percent(x.pct),
                           })
                         : f.percent(x.pct)}
-                    {' · '}
-                    {f.ago(x.updatedAt)}
+                    {x.live ? '' : ` · ${f.ago(x.updatedAt)}`}
                   </div>
                   <div className="fcard__delta">
                     {x.finished

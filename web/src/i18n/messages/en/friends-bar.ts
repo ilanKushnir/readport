@@ -4,6 +4,7 @@
  */
 export const friendsBar = {
   'friends.bar.bead': '{name}, at {pct}',
+  'friends.bar.beadLive': '{name}, at {pct}, in the book right now',
   'friends.bar.button':
     '{n, plural, one {# friend is reading this} other {# friends are reading this}}',
   'friends.bar.title': 'Friends in this book',

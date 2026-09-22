@@ -56,6 +56,40 @@
   cursor: inherit;
 }
 
+/* Here right now: a halo in the friend's colour that breathes, slowly, on
+   the bead. Slow because the bead sits beside text being read; a blink
+   would be a fly in the room. With reduced motion the halo stands still. */
+.fbead {
+  position: relative;
+}
+.fbead--live::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid var(--friend);
+  opacity: 0.55;
+  animation: fbead-breathe 2.6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes fbead-breathe {
+  0%,
+  100% {
+    transform: scale(0.85);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.2;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fbead--live::after {
+    animation: none;
+    opacity: 0.55;
+  }
+}
+
 /* ------------------------------------------------------- beads on a bar */
 /* The bar it sits on is `position: relative`; the beads are laid over it,
    centred on its track line. Each host draws its track at its own height,
@@ -249,6 +283,10 @@
   gap: 2px;
 }
 .fcard__name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
   font-weight: 600;
   font-size: 14.5px;
 }

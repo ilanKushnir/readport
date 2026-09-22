@@ -1,4 +1,4 @@
-import { type Locator } from '@readport/shared';
+import { type Locator, liveNow } from '@readport/shared';
 import { type AppContext } from '../context.js';
 import { type DB } from '../db/index.js';
 import { getProgressState, READING_NOW_WHERE } from '../progress/service.js';
@@ -120,6 +120,8 @@ export interface CurrentlyReading {
   kind: 'ebook' | 'audio';
   pct: number;
   updatedAt: string;
+  /** In it right now: the position moved within the medium's live window. */
+  live: boolean;
 }
 
 /**
@@ -139,8 +141,11 @@ export function currentlyReading(db: DB, userId: string): CurrentlyReading | nul
     | undefined;
   if (!row) return null;
   let pct = 0;
+  let medium: 'ebook' | 'audio' = row.kind === 'audio' ? 'audio' : 'ebook';
   try {
-    pct = Number(JSON.parse(row.locator_json).pct) || 0;
+    const locator = JSON.parse(row.locator_json) as { pct?: unknown; medium?: unknown };
+    pct = Number(locator.pct) || 0;
+    if (locator.medium === 'audio' || locator.medium === 'ebook') medium = locator.medium;
   } catch {
     return null;
   }
@@ -150,6 +155,7 @@ export function currentlyReading(db: DB, userId: string): CurrentlyReading | nul
     kind: row.kind === 'audio' ? 'audio' : 'ebook',
     pct,
     updatedAt: row.updated_at,
+    live: liveNow(medium, row.updated_at),
   };
 }
 
@@ -191,6 +197,8 @@ export interface FriendProgress extends Person {
   pct: number;
   finished: boolean;
   updatedAt: string;
+  /** In the book right now, by the medium's live window (see shared liveNow). */
+  live: boolean;
   chapterTitle: string | null;
 }
 
@@ -245,12 +253,15 @@ export function friendProgress(
       pct: state.locator.pct,
       finished: state.finished,
       updatedAt: state.updatedAt,
+      live: liveNow(state.locator.medium, state.updatedAt),
       chapterTitle: chapterTitleFor(ctx.db, edition, state.locator),
     });
   }
-  // Furthest along first; a tie goes to whoever was there most recently.
+  // Whoever is in the book right now first; then furthest along; a tie
+  // goes to whoever was there most recently.
   return out.sort(
     (a, b) =>
+      Number(b.live) - Number(a.live) ||
       Number(b.finished) - Number(a.finished) ||
       b.pct - a.pct ||
       Date.parse(b.updatedAt) - Date.parse(a.updatedAt),
