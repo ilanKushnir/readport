@@ -6,6 +6,7 @@ import { useFocusTrap, useScrollLock } from '../components/ui';
 import { useT } from '../i18n';
 import { useSession } from '../state/session';
 import { CHANGELOG, LATEST_RELEASE_VERSION, shouldAnnounce } from './changelog';
+import { WHATS_NEW_EVENT } from './open';
 import './whatsnew.css';
 
 /**
@@ -53,6 +54,13 @@ export function WhatsNew() {
     if (readSeen() === LATEST_RELEASE_VERSION) return;
     setOpen(true);
   }, [phase, whatsNewSeen]);
+
+  // Asked for, seen or not: the version at the foot of Settings.
+  useEffect(() => {
+    const on = () => setOpen(true);
+    document.addEventListener(WHATS_NEW_EVENT, on);
+    return () => document.removeEventListener(WHATS_NEW_EVENT, on);
+  }, []);
 
   const dismiss = () => {
     setOpen(false);

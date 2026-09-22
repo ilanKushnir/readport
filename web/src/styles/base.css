@@ -1418,6 +1418,49 @@ body:has(.app-body) {
   }
 }
 
+/* --- the foot of Settings: which build this is, and where it comes from --- */
+.settings-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-block-start: var(--sp-6);
+  padding-block-start: var(--sp-4);
+  border-block-start: 1px solid var(--rp-border);
+  color: var(--rp-text-soft);
+  font-size: 13px;
+}
+.settings-foot__version,
+.settings-foot__github {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  margin: -6px -10px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+.settings-foot__version:hover,
+.settings-foot__github:hover {
+  background: var(--rp-surface);
+  color: var(--rp-text);
+}
+.settings-foot__name {
+  font-family: var(--rp-font-reading);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--rp-text);
+}
+.settings-foot__num {
+  font-variant-numeric: tabular-nums;
+}
+
 .list-card {
   background: var(--rp-surface-raised);
   border: 1px solid var(--rp-border);

@@ -3,7 +3,14 @@ import { DEFAULT_UI_LOCALE, suggestUiLocale, type Job, type Settings } from '@re
 import { api, ApiError, failureMessage } from '../api/client';
 import { useSession } from '../state/session';
 import { useToast } from '../components/ui';
-import { IconAlert, IconCheck, IconDownload, IconTrash } from '../components/icons';
+import {
+  IconAlert,
+  IconCheck,
+  IconDownload,
+  IconGitHub,
+  IconTrash,
+  ReadPortMark,
+} from '../components/icons';
 import { useI18n, useT, type TranslateFn } from '../i18n';
 import { useFormat } from '../i18n/useFormat';
 import { type MessageKey } from '../i18n/messages/en';
@@ -11,6 +18,7 @@ import { storageEstimate } from '../offline/downloads';
 import { alignerModel, type ModelInfo, type ModelsResponse } from '../lib/types';
 import { applyAppThemeColor } from '../lib/themeColor';
 import { ConnectedAppsSection } from './ConnectedApps';
+import { openWhatsNew } from '../whatsnew/open';
 import { Link } from 'react-router-dom';
 import { folderApi, LibraryFolders } from '../components/LibraryFolders';
 
@@ -463,6 +471,31 @@ export function SettingsPage() {
       {isAdmin && <ConnectedAppsSection key={JSON.stringify(s.apps)} initial={s.apps} />}
 
       <ApiKeysSection />
+
+      {/* Which build this is, and where it comes from. The version is the
+          one way back to What's new after it has been dismissed. */}
+      <footer className="settings-foot">
+        <button
+          type="button"
+          className="settings-foot__version"
+          onClick={openWhatsNew}
+          title={t('whatsnew.title')}
+        >
+          <ReadPortMark size={18} style={{ color: 'var(--rp-primary)' }} />
+          <span className="settings-foot__name">{t('common.appName')}</span>
+          <span className="settings-foot__num">
+            {t('whatsnew.eyebrow', { version: __APP_VERSION__ })}
+          </span>
+        </button>
+        <a
+          className="settings-foot__github"
+          href="https://github.com/ilanKushnir/readport"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <IconGitHub size={17} /> GitHub
+        </a>
+      </footer>
     </main>
   );
 }

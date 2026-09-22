@@ -4,6 +4,11 @@ import { createHash } from 'node:crypto';
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 
+/** The workspace version, stamped into the bundle for the foot of Settings. */
+const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'package.json'), 'utf8')) as {
+  version: string;
+};
+
 /**
  * Injects the app-shell precache manifest into the built service worker.
  * After the bundle is written, every hashed JS/CSS asset plus local fonts
@@ -54,6 +59,7 @@ function swPrecachePlugin(): Plugin {
 
 export default defineConfig({
   plugins: [react(), swPrecachePlugin()],
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   server: {
     port: 5183,
     proxy: {
