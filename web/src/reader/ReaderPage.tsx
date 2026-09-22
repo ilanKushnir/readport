@@ -660,6 +660,9 @@ export function ReaderPage() {
     pages.style.left = `${layout.inset + safeL}px`;
     content.style.setProperty('--rd-cols', String(layout.columns));
     content.style.setProperty('--rd-colgap', `${layout.columnGap}px`);
+    // A hair under the real width: the count caps the columns, and a width
+    // that rounding put a fraction over the room would have cost one.
+    content.style.setProperty('--rd-colw', `${Math.max(1, Math.floor(layout.columnWidth) - 2)}px`);
     return layout;
   }, [prefs.margin, prefs.columns]);
 
@@ -1520,8 +1523,10 @@ export function ReaderPage() {
     if (chapterLoadingRef.current) return;
     // Only an explicit successful relocation gives the voice control again.
     detachFollowing();
-    if (prefs.mode === 'scroll') {
-      const s = scrollerRef.current;
+    // The paginated fallback scrolls too: a chapter that would not divide
+    // into pages is turned a screen at a time, not into the next chapter.
+    if (prefs.mode === 'scroll' || paginationFailed) {
+      const s = scrollBox();
       if (s) s.scrollTop += s.clientHeight * 0.9;
       return;
     }
@@ -1533,6 +1538,8 @@ export function ReaderPage() {
     else if (manifest) finishBook();
   }, [
     prefs.mode,
+    paginationFailed,
+    scrollBox,
     page,
     pageCount,
     manifest,
@@ -1548,8 +1555,8 @@ export function ReaderPage() {
   const prevPage = useCallback(() => {
     if (chapterLoadingRef.current) return;
     detachFollowing();
-    if (prefs.mode === 'scroll') {
-      const s = scrollerRef.current;
+    if (prefs.mode === 'scroll' || paginationFailed) {
+      const s = scrollBox();
       if (s) s.scrollTop -= s.clientHeight * 0.9;
       return;
     }
@@ -1569,7 +1576,17 @@ export function ReaderPage() {
       needsClaimRef.current = false;
       void recordCheckpoint(id, 'seek', locatorAt(manifest, [], spineIdx - 1, back));
     }
-  }, [prefs.mode, page, spineIdx, manifest, goToPage, carrySelection, id]);
+  }, [
+    prefs.mode,
+    paginationFailed,
+    scrollBox,
+    page,
+    spineIdx,
+    manifest,
+    goToPage,
+    carrySelection,
+    id,
+  ]);
 
   /* -------------------------------------------------------- read along */
 
@@ -2031,7 +2048,7 @@ export function ReaderPage() {
     // moved to meet it. Its position is therefore a constant, and what varies
     // is where the page has to be.
     if (nailed) {
-      const scroller = scrollerRef.current;
+      const scroller = scrollBox();
       setPace(
         position && scroller
           ? {
@@ -2080,6 +2097,7 @@ export function ReaderPage() {
     following,
     reduceMotion,
     rtl,
+    scrollBox,
   ]);
 
   // The clock moves the marker; so does the reader. Recomputing only on the
@@ -3285,7 +3303,7 @@ export function ReaderPage() {
           target={resumeMark}
           map={() => textMapRef.current}
           container={getHost}
-          scroller={() => scrollerRef.current}
+          scroller={getScroller}
           layoutKey={layoutKey}
         />
       )}

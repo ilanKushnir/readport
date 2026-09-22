@@ -150,9 +150,23 @@
   margin: 0;
   padding: 0;
   column-count: var(--rd-cols, 1);
+  /* Declared as well as the count. WebKit lays out `column-count: 1` as no
+     columns at all - one tall column running off the page, which is what
+     "page mode" was on every iPhone - and forms them, with the overflow
+     columns that are the pages, only when a width is given. */
+  column-width: var(--rd-colw, auto);
   column-gap: var(--rd-colgap, 96px);
   column-fill: auto;
   will-change: transform;
+}
+/* A figure taller than the page is monolithic: the columns cannot break
+   it, so it would trap everything after it below the page's foot and tip
+   the chapter into scrolling. Scaled to the page instead, as a book would. */
+.reader-content--paginated img,
+.reader-content--paginated svg,
+.reader-content--paginated video {
+  max-height: calc(100dvh - var(--rd-chrome-top, 72px) - var(--rd-chrome-bottom, 120px) - 40px);
+  object-fit: contain;
 }
 /* The catch when a chapter refuses to divide into pages: it scrolls, so no
    text is ever stranded below an edge with no page to turn to. */
@@ -166,6 +180,7 @@
   height: auto;
   min-height: 100%;
   column-count: 1;
+  column-width: auto;
   transform: none !important;
 }
 

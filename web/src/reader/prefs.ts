@@ -222,6 +222,13 @@ export interface PageLayout {
    */
   stride: number;
   pad: number;
+  /**
+   * The width of one column, declared on the content as well as the count.
+   * WebKit lays out `column-count: 1` as no columns at all - one tall
+   * column running off the page - and forms them, with the overflow columns
+   * that are the pages, only when a width is given.
+   */
+  columnWidth: number;
 }
 
 export function computePageLayout(
@@ -237,7 +244,8 @@ export function computePageLayout(
   // n equal columns of width c: n·c + (n−1)·gap = width − 2·pad, so
   // stride = n·(c + gap) = width − 2·pad + gap for every n.
   const stride = width - 2 * pad + columnGap;
-  return { width, inset, columns, columnGap, stride, pad };
+  const columnWidth = (width - 2 * pad - (columns - 1) * columnGap) / columns;
+  return { width, inset, columns, columnGap, stride, pad, columnWidth };
 }
 
 /** Number of pages given the content element's scrollWidth. */

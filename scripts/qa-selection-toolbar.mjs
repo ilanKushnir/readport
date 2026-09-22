@@ -4,17 +4,20 @@
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
-let chromium;
+// QA_BROWSER=webkit runs the same checks in WebKit, the engine on every
+// iPhone; the default is Chromium.
+const engine = process.env.QA_BROWSER === 'webkit' ? 'webkit' : 'chromium';
+let browserType;
 try {
-  // A project-local or NODE_PATH install first; the global path is a fallback.
-  ({ chromium } = require('playwright'));
+  browserType = require('playwright')[engine];
 } catch {
-  ({ chromium } = createRequire('/usr/local/lib/node_modules/')('playwright'));
+  browserType = createRequire('/usr/local/lib/node_modules/')('playwright')[engine];
 }
 const base = process.argv[2] ?? 'http://127.0.0.1:5197';
 assert(process.env.AGENT_BROWSER_EXECUTABLE_PATH, 'Set AGENT_BROWSER_EXECUTABLE_PATH');
-const browser = await chromium.launch({
-  executablePath: process.env.AGENT_BROWSER_EXECUTABLE_PATH,
+const browser = await browserType.launch({
+  executablePath:
+    engine === 'chromium' ? process.env.AGENT_BROWSER_EXECUTABLE_PATH || undefined : undefined,
 });
 let passed = 0;
 const passage =
