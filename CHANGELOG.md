@@ -4,6 +4,47 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.18.0 - 2026-09-22
+
+### Fixed
+
+- **Pages on a phone.** The pages view scrolled whole chapters on an
+  iPhone: the fallback to scrolling fired whenever the chapter's
+  `scrollHeight` ran past its box, and WebKit reports a multi-column box's
+  `scrollHeight` as if it were one column, so every chapter longer than a
+  page "failed" and never recovered. Trapped text is judged by geometry
+  now, on every pass, so a chapter is paged again once its fonts have
+  settled.
+- **Marks that keep up with the text.** The resumed line, the margin
+  mark, the spoken sentence, the blink and the selection frame were
+  positioned in the viewport and moved by script on scroll, a frame or
+  two behind the text on a phone. They live inside the scrolling box now
+  and move with it natively. The margin mark is held to the sentence being
+  spoken, so it no longer drifts a line or two above the wash.
+- **A selection that ends where the text does.** Only the text is
+  selectable, so a drag to the foot of the page no longer runs into the
+  chrome and lights the screen blue.
+- **The library no longer pans sideways on a phone.**
+
+### Changed
+
+- **The reader's bars.** Above: back, contents (chapters and bookmarks in
+  one sheet, opened on the chapter being read, which is now unmistakable),
+  type, and search drawn as the small field it opens. Below: a people
+  button for the friends in the book, the bar with their beads, the
+  percentage, and round buttons for Read along and Listen. The page's own
+  bookmark moved to the top of the bookmarks tab.
+- **The selection.** One outline around the whole selection instead of a box
+  per line; a toolbar of four icons, highlight, note, bookmark and share,
+  with the colours behind the highlighter; a tapped highlight offers its
+  colour, a note, sharing and removal the same way; the docked strip is
+  gone. On a phone the platform's own edit menu is taken down once a
+  selection settles, and a tap on the selected words brings it back while
+  ours steps aside, so one menu shows at a time. A shared passage goes out
+  whole, on its own lines, with the link on a line of its own.
+- **Following the voice** is a setting: a mark in the margin (the default)
+  or a wash on the sentence, one at a time.
+
 ## 0.17.0 - 2026-09-22
 
 ### Added
