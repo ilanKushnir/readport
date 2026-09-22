@@ -1678,10 +1678,8 @@ const messages: Record<string, string> = {
 
   // share
   'share.button': 'Distribuie',
-  'share.sheet.title': 'Distribuie {title}',
   'share.sheet.lede':
     'Oricine are linkul vede coperta, titlul și numele tău și poate cere să se alăture acestei biblioteci.',
-  'share.sheet.linkLabel': 'Link',
   'share.sheet.copy': 'Copiază linkul',
   'share.sheet.copied': 'Link copiat',
   'share.sheet.copyFailed': 'Selectează și copiază linkul',

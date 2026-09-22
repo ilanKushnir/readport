@@ -92,6 +92,17 @@ export function sharedBookOf(share: ActiveShare): SharedBook {
   };
 }
 
+/** The caller's live share for this book, or null: a look, not a mint. */
+export function existingShare(db: DB, bookId: string, userId: string): string | null {
+  const row = db
+    .prepare(
+      `SELECT token FROM book_shares WHERE book_id = ? AND created_by = ? AND revoked_at IS NULL
+       ORDER BY created_at DESC LIMIT 1`,
+    )
+    .get(bookId, userId) as { token: string } | undefined;
+  return row?.token ?? null;
+}
+
 /** The caller's live share for this book, minting one when there is none. */
 export function getOrCreateShare(db: DB, bookId: string, userId: string): string {
   const existing = db

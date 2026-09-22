@@ -1685,10 +1685,8 @@ const messages: Record<string, string> = {
 
   // share
   'share.button': 'Κοινή χρήση',
-  'share.sheet.title': 'Κοινή χρήση: {title}',
   'share.sheet.lede':
     'Όποιος έχει τον σύνδεσμο βλέπει το εξώφυλλο, τον τίτλο και το όνομά σου, και μπορεί να ζητήσει να συμμετάσχει σε αυτή τη βιβλιοθήκη.',
-  'share.sheet.linkLabel': 'Σύνδεσμος',
   'share.sheet.copy': 'Αντιγραφή συνδέσμου',
   'share.sheet.copied': 'Ο σύνδεσμος αντιγράφηκε',
   'share.sheet.copyFailed': 'Επίλεξε και αντέγραψε τον σύνδεσμο',

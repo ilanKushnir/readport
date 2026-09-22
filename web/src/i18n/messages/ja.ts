@@ -1657,10 +1657,8 @@ const messages: Record<string, string> = {
 
   // share
   'share.button': '共有',
-  'share.sheet.title': '『{title}』を共有',
   'share.sheet.lede':
     'リンクを持つ人は誰でも表紙とタイトル、あなたの名前を見ることができ、このライブラリへの参加をリクエストできます。',
-  'share.sheet.linkLabel': 'リンク',
   'share.sheet.copy': 'リンクをコピー',
   'share.sheet.copied': 'リンクをコピーしました',
   'share.sheet.copyFailed': 'リンクを選択してコピーしてください',

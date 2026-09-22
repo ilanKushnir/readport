@@ -1654,10 +1654,8 @@ const messages: Record<string, string> = {
 
   // share
   'share.button': 'Jaa',
-  'share.sheet.title': 'Jaa {title}',
   'share.sheet.lede':
     'Kuka tahansa, jolla on linkki, näkee kannen, nimekkeen ja nimesi, ja voi pyytää päästä tähän kirjastoon.',
-  'share.sheet.linkLabel': 'Linkki',
   'share.sheet.copy': 'Kopioi linkki',
   'share.sheet.copied': 'Linkki kopioitu',
   'share.sheet.copyFailed': 'Valitse ja kopioi linkki',

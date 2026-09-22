@@ -4,12 +4,10 @@
  * it, and the "recommended by" line on the reading list. Keys are `share.*`.
  */
 export const share = {
-  // The Share sheet on the book page
+  // The Share menu on the book page
   'share.button': 'Share',
-  'share.sheet.title': 'Share {title}',
   'share.sheet.lede':
     'Anyone with the link sees the cover, the title and your name, and can ask to join this library.',
-  'share.sheet.linkLabel': 'Link',
   'share.sheet.copy': 'Copy link',
   'share.sheet.copied': 'Link copied',
   'share.sheet.copyFailed': 'Select and copy the link',
@@ -17,6 +15,9 @@ export const share = {
   'share.sheet.text': '{name} shared {title} with you on ReadPort',
   'share.sheet.creating': 'Making the link…',
   'share.sheet.failed': 'Could not make a link just now.',
+  'share.menu.whatsapp': 'Send on WhatsApp',
+  'share.menu.withdraw': 'Withdraw the link',
+  'share.menu.withdrawn': 'Link withdrawn',
 
   // The share page
   'share.page.checking': 'Checking the link…',

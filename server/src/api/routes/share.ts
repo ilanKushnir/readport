@@ -14,6 +14,7 @@ import {
   activeShare,
   countShareOpen,
   createJoinRequest,
+  existingShare,
   getOrCreateShare,
   joinStatus,
   publicBase,
@@ -105,6 +106,20 @@ export function registerShareRoutes(
     if (!share) return reply.code(404).send({ error: 'not-found' });
     const body: CreateShareResponse = { url: absolute(req, share), token };
     return body;
+  });
+
+  /**
+   * The caller's link for this book if one is live, without making one:
+   * the share menu asks this on opening, so that looking at the menu is not
+   * the same as handing out a link.
+   */
+  app.get('/api/books/:id/share', async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const book = db.prepare("SELECT 1 FROM books WHERE id = ? AND scan_state != 'missing'").get(id);
+    if (!book) return reply.code(404).send({ error: 'not-found' });
+    const token = existingShare(db, id, req.user!.id);
+    const share = token ? activeShare(db, token) : null;
+    return share ? { url: absolute(req, share), token: share.token } : { url: null, token: null };
   });
 
   /** Revoke: the creator, or an admin. A miss is a 404 so a token cannot be probed. */

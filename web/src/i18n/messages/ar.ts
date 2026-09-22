@@ -1715,10 +1715,8 @@ const messages: Record<string, string> = {
 
   // share
   'share.button': 'مشاركة',
-  'share.sheet.title': 'مشاركة {title}',
   'share.sheet.lede':
     'أي شخص لديه الرابط يرى الغلاف والعنوان واسمك، ويمكنه طلب الانضمام إلى هذه المكتبة.',
-  'share.sheet.linkLabel': 'الرابط',
   'share.sheet.copy': 'نسخ الرابط',
   'share.sheet.copied': 'تم نسخ الرابط',
   'share.sheet.copyFailed': 'حدّد الرابط وانسخه',

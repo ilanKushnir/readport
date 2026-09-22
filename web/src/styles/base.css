@@ -1392,6 +1392,103 @@ body:has(.app-body) {
   gap: var(--sp-3);
   margin-block-start: var(--sp-3);
 }
+/* The tools row under it: keeping, sharing, saving. Quieter than the ways
+   to open the book, and one line on a desk. */
+.book-hero__tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px var(--sp-2);
+  margin-block-start: var(--sp-2);
+  margin-inline-start: calc(-1 * var(--sp-2));
+}
+.book-tool {
+  min-height: 38px;
+  padding-inline: var(--sp-2) var(--sp-3);
+  font-size: 14px;
+}
+
+/* Share: one button, a small menu under it. */
+.share-menu {
+  position: relative;
+  display: inline-block;
+}
+.share-menu__pop {
+  position: absolute;
+  top: calc(100% + 4px);
+  inset-inline-start: 0;
+  z-index: 30;
+  min-width: 240px;
+  padding: 6px;
+  background: var(--rp-surface-raised);
+  border: 1px solid var(--rp-border);
+  border-radius: 14px;
+  box-shadow: var(--rp-shadow-2);
+  animation: share-menu-in var(--rp-duration-quick) var(--rp-ease);
+}
+.share-menu__pop.is-end {
+  inset-inline-start: auto;
+  inset-inline-end: 0;
+}
+.share-menu__hint {
+  margin: 6px 10px 8px;
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--rp-text-soft);
+}
+.share-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--rp-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: start;
+  cursor: pointer;
+}
+.share-menu__item:hover,
+.share-menu__item:focus-visible {
+  background: var(--rp-surface);
+}
+.share-menu__item:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.share-menu__item svg {
+  flex: none;
+  color: var(--rp-interactive);
+}
+.share-menu__item--quiet {
+  color: var(--rp-text-soft);
+  font-size: 13px;
+  font-weight: 400;
+}
+.share-menu__item--quiet svg {
+  color: inherit;
+}
+.share-menu__sep {
+  height: 1px;
+  margin: 6px 4px;
+  background: var(--rp-border);
+}
+@keyframes share-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .share-menu__pop {
+    animation: none;
+  }
+}
+
 /* On a phone the cover took 128 of the 343px available and the body kept the
    remaining 191 - so the title wrapped to three lines, the metadata to two,
    and each action button, which needs ~180px for its icon, padding and label,
@@ -1415,6 +1512,30 @@ body:has(.app-body) {
   }
   .book-hero__actions > :first-child {
     grid-column: 1 / -1;
+  }
+  /* The tools become a row of four, icon over a short label, the way a
+     phone lays out the actions under a thing. */
+  .book-hero__tools {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    margin: var(--sp-3) 0 0;
+  }
+  .book-tool,
+  .share-menu > .book-tool {
+    width: 100%;
+    flex-direction: column;
+    gap: 5px;
+    min-height: 58px;
+    padding: 8px 2px;
+    font-size: 11.5px;
+    line-height: 1.15;
+    white-space: normal;
+    text-align: center;
+  }
+  .book-tool svg {
+    width: 20px;
+    height: 20px;
   }
 }
 

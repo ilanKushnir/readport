@@ -1643,10 +1643,8 @@ const messages: Record<string, string> = {
 
   // share
   'share.button': 'Del',
-  'share.sheet.title': 'Del {title}',
   'share.sheet.lede':
     'Alle med linket ser omslaget, titlen og dit navn, og kan bede om at deltage i dette bibliotek.',
-  'share.sheet.linkLabel': 'Link',
   'share.sheet.copy': 'Kopier link',
   'share.sheet.copied': 'Link kopieret',
   'share.sheet.copyFailed': 'Marker og kopier linket',

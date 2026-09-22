@@ -1660,10 +1660,8 @@ const messages: Record<string, string> = {
 
   // share
   'share.button': 'Paylaş',
-  'share.sheet.title': '{title} kitabını paylaş',
   'share.sheet.lede':
     'Bağlantıya sahip olan herkes kapağı, başlığı ve adınızı görür ve bu kitaplığa katılmak için istek gönderebilir.',
-  'share.sheet.linkLabel': 'Bağlantı',
   'share.sheet.copy': 'Bağlantıyı kopyala',
   'share.sheet.copied': 'Bağlantı kopyalandı',
   'share.sheet.copyFailed': 'Bağlantıyı seçip kopyalayın',

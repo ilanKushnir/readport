@@ -25,6 +25,14 @@ const enc = encodeURIComponent;
 export const createShare = (bookId: string) =>
   api<CreateShareResponse>(`/api/books/${enc(bookId)}/share`, { method: 'POST' });
 
+/** The caller's link for this book if one is live, without making one. */
+export const currentShare = (bookId: string) =>
+  api<{ url: string | null; token: string | null }>(`/api/books/${enc(bookId)}/share`);
+
+/** Withdraw a link: the next share makes a fresh one. */
+export const revokeShare = (token: string) =>
+  api<{ ok: true }>(`/api/share/${enc(token)}`, { method: 'DELETE' });
+
 export const peekShare = (token: string) => api<SharePeek>(`/api/share/${enc(token)}`);
 
 /** The shared book onto the caller's reading list, credited to the sharer. */

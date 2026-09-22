@@ -521,3 +521,20 @@ describe('the app shell', () => {
     expect(res.body).not.toContain('og:type" content="book"');
   });
 });
+
+describe('looking for a link without making one', () => {
+  it('answers null until a share exists, then that share, then null again once withdrawn', async () => {
+    expect((await as('astra', '/api/books/b1/share')).json()).toEqual({ url: null, token: null });
+    const made = (await as('astra', '/api/books/b1/share', 'POST')).json() as {
+      url: string;
+      token: string;
+    };
+    expect((await as('astra', '/api/books/b1/share')).json()).toEqual(made);
+    // Somebody else's link for the same book is not this caller's.
+    const bobs = (await as('bob', '/api/books/b1/share')).json() as { token: string | null };
+    expect(bobs.token).not.toBe(made.token);
+    await as('astra', `/api/share/${made.token}`, 'DELETE');
+    expect((await as('astra', '/api/books/b1/share')).json()).toEqual({ url: null, token: null });
+    expect((await as('astra', '/api/books/nope/share')).statusCode).toBe(404);
+  });
+});

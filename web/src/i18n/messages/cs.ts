@@ -1666,10 +1666,8 @@ const messages: Record<string, string> = {
 
   // share
   'share.button': 'Sdílet',
-  'share.sheet.title': 'Sdílet {title}',
   'share.sheet.lede':
     'Kdokoli s odkazem uvidí obálku, název a vaše jméno a může požádat o připojení k této knihovně.',
-  'share.sheet.linkLabel': 'Odkaz',
   'share.sheet.copy': 'Kopírovat odkaz',
   'share.sheet.copied': 'Odkaz zkopírován',
   'share.sheet.copyFailed': 'Vyberte a zkopírujte odkaz',

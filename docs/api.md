@@ -313,7 +313,7 @@ sharesProgress, reading}`, where `reading` is the book they touched most
 recently and have not finished (`{bookId, title, kind, pct, updatedAt}`) or
 `null`; `people[]` are the other active accounts you have no row with.
 `/api/friends/progress` returns `{friends: [{userId, username, displayName,
-colour, locator, pct, finished, updatedAt, chapterTitle}], friendCount}`,
+colour, locator, pct, finished, updatedAt, live, chapterTitle}], friendCount}`,
 furthest along first. A linked pair counts as one work: a friend listening to
 the audiobook edition is in the ebook you are reading, at the edition they
 touched last. Two absences are deliberate and reported as nothing at all,
@@ -657,20 +657,21 @@ something about a book - the teaser a link preview shows, and the page the
 person lands on - and the way in for whoever follows it: sign in, or ask to
 join and wait for an admin.
 
-| Method | Path                             | Notes                                                                                        |
-| ------ | -------------------------------- | -------------------------------------------------------------------------------------------- |
-| POST   | `/api/books/:id/share`           | the caller's live share for this book, made on first ask → exactly `{url, token}`            |
-| DELETE | `/api/share/:token`              | revoke; the creator or an admin. A miss is 404, never 403                                    |
-| POST   | `/api/share/:token/add`          | the shared book onto the caller's reading list, credited to the sharer → `{added, bookId}`   |
-| GET    | `/api/share/:token`              | public, rate limited; `{valid: true, book, sharedBy: {displayName}}` or `{valid: false}`     |
-| POST   | `/api/share/:token/join`         | public, rate limited; `{email, name?, message?}` → 201 `{status: 'pending'}` (200 if it was) |
-| GET    | `/api/share/:token/join?email=`  | public, rate limited; `{status: none \| pending \| approved \| declined, inviteToken?}`      |
-| GET    | `/s/:token`                      | public; the app shell with the book's Open Graph tags in the head                            |
-| GET    | `/s/:token/image.png`            | public; the 1200×630 link preview, cached an hour                                            |
-| GET    | `/s/:token/cover`                | public; the cover on its own, for the share page's teaser                                    |
-| GET    | `/api/join-requests`             | admin; pending requests first, then what was decided in the last 30 days                     |
-| POST   | `/api/join-requests/:id/approve` | admin; mints a reader invitation (7 days, named after the request) → `{request}`             |
-| POST   | `/api/join-requests/:id/decline` | admin → `{request}`; a decided request answers 409 `already-decided`                         |
+| Method | Path                             | Notes                                                                                            |
+| ------ | -------------------------------- | ------------------------------------------------------------------------------------------------ |
+| GET    | `/api/books/:id/share`           | the caller's live share for this book if one exists, else `{url: null, token: null}`; makes none |
+| POST   | `/api/books/:id/share`           | the caller's live share for this book, made on first ask → exactly `{url, token}`                |
+| DELETE | `/api/share/:token`              | revoke; the creator or an admin. A miss is 404, never 403                                        |
+| POST   | `/api/share/:token/add`          | the shared book onto the caller's reading list, credited to the sharer → `{added, bookId}`       |
+| GET    | `/api/share/:token`              | public, rate limited; `{valid: true, book, sharedBy: {displayName}}` or `{valid: false}`         |
+| POST   | `/api/share/:token/join`         | public, rate limited; `{email, name?, message?}` → 201 `{status: 'pending'}` (200 if it was)     |
+| GET    | `/api/share/:token/join?email=`  | public, rate limited; `{status: none \| pending \| approved \| declined, inviteToken?}`          |
+| GET    | `/s/:token`                      | public; the app shell with the book's Open Graph tags in the head                                |
+| GET    | `/s/:token/image.png`            | public; the 1200×630 link preview, cached an hour                                                |
+| GET    | `/s/:token/cover`                | public; the cover on its own, for the share page's teaser                                        |
+| GET    | `/api/join-requests`             | admin; pending requests first, then what was decided in the last 30 days                         |
+| POST   | `/api/join-requests/:id/approve` | admin; mints a reader invitation (7 days, named after the request) → `{request}`                 |
+| POST   | `/api/join-requests/:id/decline` | admin → `{request}`; a decided request answers 409 `already-decided`                             |
 
 The token is 24 random bytes as base64url and the whole credential; the
 routes accept 22 to 64 URL-safe characters. `url` is built from the

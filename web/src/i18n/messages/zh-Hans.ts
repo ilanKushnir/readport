@@ -1564,9 +1564,7 @@ const messages: Record<string, string> = {
 
   // share
   'share.button': '分享',
-  'share.sheet.title': '分享{title}',
   'share.sheet.lede': '任何持有链接的人都能看到封面、书名和你的名字，还可以申请加入这个书库。',
-  'share.sheet.linkLabel': '链接',
   'share.sheet.copy': '复制链接',
   'share.sheet.copied': '链接已复制',
   'share.sheet.copyFailed': '请选中链接并复制',

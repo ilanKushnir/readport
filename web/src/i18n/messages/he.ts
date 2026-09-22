@@ -1680,10 +1680,8 @@ const messages: Record<string, string> = {
 
   // share
   'share.button': 'שיתוף',
-  'share.sheet.title': 'שיתוף {title}',
   'share.sheet.lede':
     'כל מי שיש לו את הקישור רואה את הכריכה, הכותרת והשם שלך, ויכול לבקש להצטרף לספרייה הזו.',
-  'share.sheet.linkLabel': 'קישור',
   'share.sheet.copy': 'העתקת הקישור',
   'share.sheet.copied': 'הקישור הועתק',
   'share.sheet.copyFailed': 'יש לבחור ולהעתיק את הקישור',

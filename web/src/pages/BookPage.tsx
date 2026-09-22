@@ -11,7 +11,7 @@ import { type Annotation, type BookDetail, type ResolveResponse } from '../lib/t
 import { Cover, EmptyState, Sheet, useToast } from '../components/ui';
 import { AddToSheet } from '../components/AddToSheet';
 import { BookFriendsRow } from './FriendsPage';
-import { ShareSheet } from '../share/ShareSheet';
+import { ShareMenu } from '../share/ShareMenu';
 import { useShelves } from '../state/shelves';
 import { useSession } from '../state/session';
 import {
@@ -27,7 +27,6 @@ import {
   IconShelf,
   IconSwitch,
   IconTrash,
-  IconShare,
 } from '../components/icons';
 import { useT } from '../i18n';
 import { useFormat } from '../i18n/useFormat';
@@ -74,7 +73,6 @@ export function BookPage() {
   const [switching, setSwitching] = useState(false);
   const [offlineSheet, setOfflineSheet] = useState(false);
   const [addTo, setAddTo] = useState(false);
-  const [shareOpen, setShareOpen] = useState(false);
   /** Multi-file audiobook: which file to save. */
   const [saveOpen, setSaveOpen] = useState(false);
   const { user } = useSession();
@@ -452,20 +450,23 @@ export function BookPage() {
                     : t('library.book.openOther', { kind: book.kind })}
               </button>
             )}
-            <button className="btn btn--secondary" onClick={() => setAddTo(true)}>
-              <IconShelf size={17} /> {t('library.card.addTo')}
-            </button>
-            <button className="btn btn--secondary" onClick={() => setShareOpen(true)}>
-              <IconShare size={17} /> {t('share.button')}
+          </div>
+          {/* Keeping, sharing and saving: a quieter row than the ways to
+              open the book, and one line on a desk. */}
+          <div className="book-hero__tools">
+            <button className="btn btn--ghost book-tool" onClick={() => setAddTo(true)}>
+              <IconShelf size={17} />
+              <span>{t('library.card.addTo')}</span>
             </button>
             <OfflineButton dl={dl} onClick={() => void openOfflineSheet()} />
+            <ShareMenu bookId={id} title={book.title} />
             {user?.canExport && !notReadyYet && (
               // A real link, not a button: the browser has to perform the
               // save itself. Distinct from the offline copy above, which
               // keeps the book inside the app and can be removed again -
               // this one hands over a file that leaves with the reader.
               <a
-                className="btn btn--ghost"
+                className="btn btn--ghost book-tool"
                 href={
                   isEbook
                     ? `/api/books/${book.id}/export`
@@ -484,9 +485,11 @@ export function BookPage() {
                 download=""
               >
                 <IconDownload size={17} />
-                {isEbook || detail.tracks.length <= 1
-                  ? t('library.book.saveCopy')
-                  : t('library.book.saveFiles')}
+                <span>
+                  {isEbook || detail.tracks.length <= 1
+                    ? t('library.book.saveCopy')
+                    : t('library.book.saveFiles')}
+                </span>
               </a>
             )}
           </div>
@@ -650,9 +653,6 @@ export function BookPage() {
           onChanged={() => void loadMembership()}
         />
       )}
-      {shareOpen && (
-        <ShareSheet bookId={id} title={book.title} onClose={() => setShareOpen(false)} />
-      )}
       {saveOpen && (
         // An audiobook is many files and the server does not build archives,
         // so the reader picks. Listed as they play, with their own names.
@@ -747,7 +747,7 @@ function OfflineButton({ dl, onClick }: { dl: DownloadState | null; onClick: () 
   const pctDone = downloading ? downloadPercent(dl) : 0;
   return (
     <button
-      className={`btn btn--secondary offline-btn ${done ? 'is-done' : ''} ${downloading ? 'is-busy' : ''}`}
+      className={`btn btn--ghost book-tool offline-btn ${done ? 'is-done' : ''} ${downloading ? 'is-busy' : ''}`}
       onClick={onClick}
       aria-label={
         done

@@ -1619,10 +1619,8 @@ const messages: Record<string, string> = {
 
   // share
   'share.button': '공유',
-  'share.sheet.title': '{title} 공유',
   'share.sheet.lede':
     '링크를 가진 누구나 표지와 제목, 당신의 이름을 볼 수 있고, 이 라이브러리에 가입을 요청할 수 있습니다.',
-  'share.sheet.linkLabel': '링크',
   'share.sheet.copy': '링크 복사',
   'share.sheet.copied': '링크 복사됨',
   'share.sheet.copyFailed': '링크를 선택하여 복사하세요',

@@ -1675,10 +1675,8 @@ const messages: Record<string, string> = {
 
   // share
   'share.button': 'Поделиться',
-  'share.sheet.title': 'Поделиться «{title}»',
   'share.sheet.lede':
     'Любой, у кого есть ссылка, увидит обложку, название и ваше имя — и сможет попроситься в эту библиотеку.',
-  'share.sheet.linkLabel': 'Ссылка',
   'share.sheet.copy': 'Скопировать ссылку',
   'share.sheet.copied': 'Ссылка скопирована',
   'share.sheet.copyFailed': 'Выделите и скопируйте ссылку',

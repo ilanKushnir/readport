@@ -1686,10 +1686,8 @@ const messages: Record<string, string> = {
 
   // share
   'share.button': 'Delen',
-  'share.sheet.title': '{title} delen',
   'share.sheet.lede':
     'Iedereen met de link ziet de omslag, de titel en je naam, en kan vragen om lid te worden van deze mediatheek.',
-  'share.sheet.linkLabel': 'Link',
   'share.sheet.copy': 'Link kopiëren',
   'share.sheet.copied': 'Link gekopieerd',
   'share.sheet.copyFailed': 'Selecteer en kopieer de link',
