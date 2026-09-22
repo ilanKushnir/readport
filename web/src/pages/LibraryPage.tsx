@@ -10,6 +10,7 @@ import {
 } from '@readport/shared';
 import { api, ApiError } from '../api/client';
 import { useShelves } from '../state/shelves';
+import { StatsStrip } from '../stats/StatsStrip';
 import { useFacets } from '../state/facets';
 import { useT } from '../i18n';
 import { useFormat } from '../i18n/useFormat';
@@ -439,6 +440,10 @@ export function LibraryPage() {
           )}
         </section>
       )}
+
+      {/* This week so far, one tap from the whole picture. Home only: a
+          shelf or a search is a question about books, not about the reader. */}
+      {showing.kind === 'library' && kind === 'all' && !query && <StatsStrip />}
 
       <section className="band band--library" aria-labelledby="library-h">
         <div className="band__head">

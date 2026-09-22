@@ -292,6 +292,12 @@ export const IconStar = (p: P) => (
   </I>
 );
 /** Two figures, for the people a book is by or read by. */
+export const IconStats = (p: P) => (
+  <I {...p}>
+    <path d="M4 20h16" />
+    <path d="M7 16.5v-5.2M12 16.5V7.4M17 16.5v-2.9" />
+  </I>
+);
 export const IconPeople = (p: P) => (
   <I {...p}>
     <circle cx="9.3" cy="8.2" r="3.1" />

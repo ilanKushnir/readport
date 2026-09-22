@@ -9,6 +9,7 @@ import { people } from './people';
 import { settings } from './settings';
 import { notes } from './notes';
 import { whatsnew } from './whatsnew';
+import { stats } from './stats';
 
 /**
  * The English catalog: every string the interface shows, as `area.key`.
@@ -31,6 +32,7 @@ export const en = {
   ...settings,
   ...notes,
   ...whatsnew,
+  ...stats,
 } as const;
 
 export type MessageKey = keyof typeof en;

@@ -24,6 +24,10 @@ function ev(partial: Partial<ProgressEvent>): ProgressEvent {
 
 beforeEach(() => {
   db = openMemoryDatabase();
+  // Applied events fold into reading_sessions, which references the user.
+  db.prepare(
+    `INSERT INTO users (id, username, password_hash, role, created_at) VALUES (?, ?, 'h', 'reader', ?)`,
+  ).run(uid, uid, new Date().toISOString());
   n = 0;
 });
 

@@ -9,6 +9,7 @@ import {
   type ProgressState,
 } from '@readport/shared';
 import { type DB, nowIso } from '../db/index.js';
+import { prepareSessionFolder } from '../stats/sessions.js';
 
 /**
  * Authoritative progress pipeline: append-only event history + reconciled
@@ -149,6 +150,10 @@ export function applyProgressEvents(
   const skewMs = Number.isFinite(opts.skewMs) ? opts.skewMs! : 0;
   for (const ev of events) books.add(ev.bookId);
   if (events.length === 0) return { results, state: null, states: [] };
+  // The stats record. Every event that moves the position is also one more
+  // moment of a sitting, and folding it inside the same transaction is what
+  // keeps the diary and the position from ever disagreeing (stats/sessions.ts).
+  const sessions = prepareSessionFolder(db);
 
   db.exec('BEGIN IMMEDIATE');
   try {
@@ -275,6 +280,7 @@ export function applyProgressEvents(
           nowIso(),
         );
       }
+      sessions.fold(userId, ev.bookId, ev.locator.medium, ev.deviceId, effectiveAt, ev.locator.pct);
       results.push({ eventId: ev.eventId, status: 'applied' });
     }
     db.exec('COMMIT');

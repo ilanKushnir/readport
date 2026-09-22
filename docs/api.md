@@ -207,6 +207,55 @@ can restyle the palette without rewriting anyone's marks. `PATCH` is how a
 colour is changed after the fact and how a note gets its text. Deletes are
 soft: the row is tombstoned rather than removed.
 
+## Reading statistics
+
+| Method | Path                 | Notes                                                                 |
+| ------ | -------------------- | --------------------------------------------------------------------- |
+| GET    | `/api/stats?days=90` | own sittings in the window, the books they name, whole-history totals |
+
+The stats page draws from `reading_sessions`, a diary the progress pipeline
+keeps beside the position: every event it applies is folded, in the same
+transaction, into a **session** - one sitting with one book on one device in
+one medium (`ebook` or `audio`). An event within ten minutes of the sitting's
+last one extends it; anything later begins a new one, because a reader who
+put the book down for lunch has ended a sitting. Time is wall-clock from the
+sitting's first event to its last, and distance (`pctAdvanced`) is the sum of
+forward movement only, so re-reading a page is time spent and not ground
+covered - and only forward movement at a pace a person reads at (nine percent
+of a book a minute, with a two-percent floor for a page turned a moment after
+the last event), so a chapter picked from the contents or a highlight jumped
+to moves the position without counting as reading. Resetting a book's progress deletes its position and its history but
+never its sessions - having read is not the same as where one is. On upgrade
+the diary is derived once, with the same rule, from the progress history a
+library already has.
+
+The answer is `{generatedAt, since, sessions, truncated?, books, allTime}`.
+`days` is 1–365 and defaults to 90; `since` is 00:00 UTC on the day `days`
+days before `generatedAt`, and a session is in the window when it ended at or
+after `since`. `sessions` come newest first, each
+`{id, bookId, medium, deviceId, startedAt, endedAt, seconds, pctStart, pctEnd, pctAdvanced}`,
+and at most 3000 of them: past that the newest are kept and `truncated: true`
+says so. Timestamps are UTC and there are no hour-of-day or weekday fields on
+purpose - only the browser knows the reader's timezone, so streaks and the
+hour a person reads at are the client's arithmetic.
+
+`books` has one entry per book the sessions name, keyed by id:
+`{id, title, author, kind, totalChars, durationMs, pct, finished, finishedAt, lastReadAt}`,
+joined from the library and from the caller's own progress. A book that has
+since left the library still gets an entry, with `title: null` and the medium
+it was read in as its `kind`. `totalChars` is the ebook's indexed text length
+
+- the figure the reader's manifest is built on - and `null` until the book has
+  been indexed; `durationMs` is the audiobook's length. `pct` is the current
+  position, 0 when there is none. `finishedAt` is the time of the finishing
+  event while the history still holds it, else the time the state was last
+  written; `lastReadAt` is the end of the latest session with that book, in any
+  window.
+
+`allTime` is `{seconds, sessions, firstSessionAt, booksFinished}` over the
+whole diary regardless of `days`; `booksFinished` counts every edition the
+caller has finished, whether or not its file is still on disk.
+
 ## Browsing by the library's own metadata
 
 `GET /api/facets` answers what _this_ library can be browsed by, computed from

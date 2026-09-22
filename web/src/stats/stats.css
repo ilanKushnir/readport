@@ -1,0 +1,309 @@
+/* The stats page. Set as prose and figures on the page's own paper; the
+   heatmap is the one drawing. Ember intensity on the surface is the whole
+   palette, so the drawing reads as ink density rather than as a chart. */
+
+.stats-page {
+  --rp-measure: 760px;
+}
+
+.stats-lead {
+  font-family: var(--rp-font-reading);
+  font-size: clamp(19px, 2.4vw, 23px);
+  line-height: 1.4;
+  margin: 0 0 var(--sp-5);
+  text-wrap: balance;
+}
+
+.stats-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--sp-3) var(--sp-5);
+  margin: 0 0 var(--sp-7);
+  padding: 0;
+}
+.stats-figures div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-inline-start: var(--sp-3);
+  border-inline-start: 2px solid var(--rp-border-strong);
+}
+.stats-figures dt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rp-text-soft);
+}
+.stats-figures dd {
+  margin: 0;
+  font-family: var(--rp-font-reading);
+  font-size: 24px;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+.stats-figures dd small {
+  display: block;
+  font-family: var(--rp-font-ui);
+  font-size: 12.5px;
+  color: var(--rp-text-soft);
+  margin-top: 4px;
+}
+.stats-figures--small dd {
+  font-size: 19px;
+}
+.stats-figures--small {
+  margin-block-end: var(--sp-3);
+}
+
+.stats-section {
+  padding-block: var(--sp-5);
+  border-block-start: 1px solid var(--rp-border);
+}
+.stats-section h2 {
+  font-family: var(--rp-font-reading);
+  font-size: 20px;
+  margin: 0 0 var(--sp-1);
+}
+.stats-section__lede {
+  margin: 0 0 var(--sp-4);
+  color: var(--rp-text-soft);
+  font-size: 14px;
+}
+.stats-note {
+  margin: var(--sp-3) 0 0;
+  color: var(--rp-text-soft);
+  font-size: 13.5px;
+}
+
+/* --- the heatmap ------------------------------------------------------ */
+
+.heat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  --heat-cell: minmax(0, 1fr);
+}
+.heat__hours,
+.heat__row,
+.heat__legend {
+  display: grid;
+  grid-template-columns: 36px repeat(24, var(--heat-cell));
+  gap: 3px;
+  align-items: center;
+}
+.heat__hours span {
+  font-size: 10.5px;
+  color: var(--rp-text-soft);
+  font-variant-numeric: tabular-nums;
+}
+.heat__day {
+  font-size: 11px;
+  color: var(--rp-text-soft);
+}
+.heat__cell {
+  display: block;
+  aspect-ratio: 1;
+  border-radius: 3px;
+  /* Ember ink at the intensity of this hour, on the page's own surface. */
+  background: color-mix(in srgb, var(--rp-primary) calc(var(--heat, 0) * 88%), var(--rp-surface));
+  border: 1px solid
+    color-mix(in srgb, var(--rp-primary) calc(var(--heat, 0) * 30%), var(--rp-border));
+}
+.heat__legend {
+  grid-template-columns: 36px repeat(5, 14px) auto;
+  margin-block-start: var(--sp-2);
+  font-size: 11px;
+  color: var(--rp-text-soft);
+}
+.heat__legend .heat__cell {
+  width: 14px;
+}
+.heat__legend span:first-child {
+  text-align: end;
+  padding-inline-end: 6px;
+}
+.heat__legend span:last-child {
+  padding-inline-start: 6px;
+}
+
+@media (max-width: 560px) {
+  .heat__hours,
+  .heat__row {
+    grid-template-columns: 30px repeat(24, var(--heat-cell));
+    gap: 2px;
+  }
+  .heat__cell {
+    border-radius: 2px;
+  }
+  .heat__legend {
+    grid-template-columns: 30px repeat(5, 14px) auto;
+  }
+}
+
+/* --- the one suggestion ----------------------------------------------- */
+
+.stats-best {
+  /* The only section allowed a fill: it is the only one that speaks. */
+  background: var(--rp-surface);
+  border: 1px solid var(--rp-border);
+  border-radius: var(--radius-card);
+  padding: var(--sp-5);
+}
+.best {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.best__window {
+  margin: 0;
+  font-family: var(--rp-font-reading);
+  font-size: clamp(19px, 2.4vw, 22px);
+  line-height: 1.35;
+}
+.best__why {
+  margin: 0;
+  font-size: 14.5px;
+  color: var(--rp-text);
+}
+.best__advice {
+  margin: var(--sp-2) 0 0;
+  font-size: 13.5px;
+  color: var(--rp-text-soft);
+}
+
+/* --- reading and listening -------------------------------------------- */
+
+.split {
+  display: flex;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--rp-surface);
+  border: 1px solid var(--rp-border);
+  margin: 0 0 var(--sp-3);
+}
+.split__read {
+  background: var(--rp-primary);
+}
+.split__listen {
+  background: var(--rp-accent);
+}
+
+/* --- books ------------------------------------------------------------ */
+
+.stats-books {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.stats-books__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--sp-3);
+  margin-block-end: 6px;
+}
+.stats-books__title {
+  font-family: var(--rp-font-reading);
+  font-size: 16px;
+  color: var(--rp-text);
+  text-decoration: none;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.stats-books__title:hover {
+  text-decoration: underline;
+}
+.stats-books__title--gone {
+  color: var(--rp-text-soft);
+  font-style: italic;
+}
+.stats-books__pct {
+  font-variant-numeric: tabular-nums;
+  color: var(--rp-text-soft);
+  font-size: 13.5px;
+  flex-shrink: 0;
+}
+.stats-books__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--rp-text-soft);
+}
+
+/* --- weeks ------------------------------------------------------------ */
+
+.weeks {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: var(--sp-2);
+  height: 96px;
+  align-items: end;
+}
+.weeks__col {
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+.weeks__bar {
+  display: block;
+  width: 100%;
+  border-radius: 3px 3px 0 0;
+  background: color-mix(in srgb, var(--rp-primary) 70%, var(--rp-surface));
+  border: 1px solid color-mix(in srgb, var(--rp-primary) 40%, var(--rp-border));
+  border-bottom: 0;
+}
+
+/* --- the strip on the library home ------------------------------------ */
+
+.stats-strip {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-4);
+  margin: 0 0 var(--sp-5);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--rp-border);
+  border-radius: var(--radius-card);
+  text-decoration: none;
+  color: var(--rp-text);
+  background: var(--rp-surface);
+}
+.stats-strip:hover {
+  border-color: var(--rp-border-strong);
+}
+.stats-strip__label {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rp-text-soft);
+}
+.stats-strip__figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-4);
+  font-family: var(--rp-font-reading);
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+  flex: 1;
+}
+.stats-strip__go {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--rp-interactive);
+  margin-inline-start: auto;
+}

@@ -493,6 +493,10 @@ body:has(.app-body) {
 .tabbar a[aria-current='page'] {
   color: var(--rp-interactive);
 }
+/* Entries the phone tab bar has no room for; the header keeps them. */
+.tabbar .nav-wide {
+  display: none;
+}
 /* A button among links: without this the browser's own button face shows
    through, and one tab looks raised where the other four are flat. */
 .tabbar__shelves {

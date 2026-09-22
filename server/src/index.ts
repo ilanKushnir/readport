@@ -8,6 +8,7 @@ import { type AppContext } from './context.js';
 import { startWorker } from './jobs/worker.js';
 import { enqueueJob, pruneFinishedJobs } from './jobs/queue.js';
 import { compactProgressHistory } from './progress/service.js';
+import { backfillReadingSessions } from './stats/backfill.js';
 import { requeueAlignmentsWaitingFor } from './jobs/handlers.js';
 import { pruneLoginThrottle } from './auth/sessions.js';
 import { libraryRoots } from './domain/settings.js';
@@ -26,6 +27,17 @@ const ctx: AppContext = {
 };
 
 ctx.setupToken = ensureSetupToken(config, db, ctx.log);
+
+// The reading diary behind the stats page, derived once from the progress
+// history a library had before the diary existed. Not worth refusing to
+// start over: a failure is logged, and tried again next start.
+try {
+  backfillReadingSessions(db, ctx.log);
+} catch (err) {
+  ctx.log.error(
+    `Could not derive reading sessions from progress history: ${(err as Error).message}`,
+  );
+}
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 // dist/index.js -> ../../web/dist ; src/index.ts (dev) -> ../../web/dist

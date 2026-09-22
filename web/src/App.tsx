@@ -21,6 +21,7 @@ import {
   IconLink,
   IconNotes,
   IconSettings,
+  IconStats,
   IconShelf,
   ReadPortMark,
 } from './components/icons';
@@ -34,6 +35,7 @@ import { ReadingListPage } from './pages/ReadingListPage';
 import { BookPage } from './pages/BookPage';
 import { ReaderPage } from './reader/ReaderPage';
 import { PlayerPage } from './player/PlayerPage';
+import { StatsPage } from './pages/StatsPage';
 import { NotesPage } from './pages/NotesPage';
 import { PairsPage } from './pages/PairsPage';
 import { SettingsPage } from './pages/SettingsPage';
@@ -250,7 +252,13 @@ function Shell() {
       <NavLink to="/notes">
         <IconNotes size={18} /> {t('nav.notes')}
       </NavLink>
-      <NavLink to="/pairs">
+      {/* Stats and Pairing sit out of the phone tab bar: five tabs is what a
+          narrow screen holds, and both stay reachable elsewhere (the library
+          home's stats strip, and the settings and book pages for pairing). */}
+      <NavLink to="/stats" className="nav-wide">
+        <IconStats size={18} /> {t('nav.stats')}
+      </NavLink>
+      <NavLink to="/pairs" className="nav-wide">
         <IconLink size={18} /> {t('nav.pairing')}
       </NavLink>
       <NavLink to="/settings">
@@ -335,6 +343,7 @@ const router = createBrowserRouter([
       { path: '/read/:id', element: <ReaderPage /> },
       { path: '/listen/:id', element: <PlayerPage /> },
       { path: '/notes', element: <NotesPage /> },
+      { path: '/stats', element: <StatsPage /> },
       { path: '/pairs', element: <PairsPage /> },
       { path: '/settings', element: <SettingsPage /> },
       { path: '/settings/people', element: <PeoplePage /> },
