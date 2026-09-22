@@ -1737,5 +1737,15 @@ const messages: Record<string, string> = {
     'Αυτό το αίτημα εγκρίθηκε και ο λογαριασμός δημιουργήθηκε. Συνδέσου για να ανοίξεις το βιβλίο.',
   'share.join.inviteLapsed': 'Αυτή η πρόσκληση έχει λήξει. Ζήτα ξανά να συμμετάσχεις.',
   'share.recommendedBy': 'Πρόταση από {name}',
+  // friends
+  'friends.bar.beadLive': '{name}, στο {pct}, τώρα στο βιβλίο',
+  'friends.live.reading': 'Διαβάζει τώρα',
+  'friends.live.listening': 'Ακούει τώρα',
+  'friends.live.here': 'Ο/Η {name} είναι τώρα σε αυτό το βιβλίο',
+
+  // share
+  'share.menu.whatsapp': 'Αποστολή μέσω WhatsApp',
+  'share.menu.withdraw': 'Απόσυρση συνδέσμου',
+  'share.menu.withdrawn': 'Ο σύνδεσμος αποσύρθηκε',
 };
 export default messages;

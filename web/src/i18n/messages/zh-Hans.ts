@@ -1610,5 +1610,15 @@ const messages: Record<string, string> = {
   'share.join.approvedUsedBody': '此申请已获批准，账户已创建。登录即可打开这本书。',
   'share.join.inviteLapsed': '此邀请已失效。请再次申请加入。',
   'share.recommendedBy': '由{name}推荐',
+  // friends
+  'friends.bar.beadLive': '{name}，进度{pct}，现在在这本书里',
+  'friends.live.reading': '正在阅读',
+  'friends.live.listening': '正在收听',
+  'friends.live.here': '{name}现在在这本书里',
+
+  // share
+  'share.menu.whatsapp': '通过WhatsApp发送',
+  'share.menu.withdraw': '撤销链接',
+  'share.menu.withdrawn': '链接已撤销',
 };
 export default messages;

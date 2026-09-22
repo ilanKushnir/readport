@@ -1729,5 +1729,15 @@ const messages: Record<string, string> = {
   'share.join.approvedUsedBody': 'הבקשה אושרה והחשבון נוצר. יש להתחבר כדי לפתוח את הספר.',
   'share.join.inviteLapsed': 'תוקף ההזמנה הזו פג. אפשר לבקש להצטרף שוב.',
   'share.recommendedBy': 'המלצה של {name}',
+  // friends
+  'friends.bar.beadLive': '{name}, ב-{pct}, בספר כעת',
+  'friends.live.reading': 'בקריאה כעת',
+  'friends.live.listening': 'בהאזנה כעת',
+  'friends.live.here': '{name} נמצא/ת בספר הזה כרגע',
+
+  // share
+  'share.menu.whatsapp': 'שליחה ב-WhatsApp',
+  'share.menu.withdraw': 'ביטול הקישור',
+  'share.menu.withdrawn': 'הקישור בוטל',
 };
 export default messages;

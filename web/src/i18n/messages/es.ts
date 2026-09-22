@@ -1728,6 +1728,16 @@ const messages: Record<string, string> = {
     'Esta solicitud fue aprobada y se creó la cuenta. Inicia sesión para abrir el libro.',
   'share.join.inviteLapsed': 'Esta invitación ha caducado. Vuelve a pedir unirte.',
   'share.recommendedBy': 'Recomendado por {name}',
+  // friends
+  'friends.bar.beadLive': '{name}, en {pct}, ahora mismo en el libro',
+  'friends.live.reading': 'Leyendo ahora',
+  'friends.live.listening': 'Escuchando ahora',
+  'friends.live.here': '{name} está en este libro ahora mismo',
+
+  // share
+  'share.menu.whatsapp': 'Enviar por WhatsApp',
+  'share.menu.withdraw': 'Retirar enlace',
+  'share.menu.withdrawn': 'Enlace retirado',
 };
 
 export default messages;

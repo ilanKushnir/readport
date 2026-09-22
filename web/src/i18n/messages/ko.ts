@@ -1670,5 +1670,15 @@ const messages: Record<string, string> = {
     '이 요청이 승인되어 계정이 만들어졌습니다. 로그인하여 책을 여세요.',
   'share.join.inviteLapsed': '초대가 만료되었습니다. 다시 가입을 요청하세요.',
   'share.recommendedBy': '{name}님의 추천',
+  // friends
+  'friends.bar.beadLive': '{name}, {pct} 지점, 지금 이 책에 있음',
+  'friends.live.reading': '지금 읽는 중',
+  'friends.live.listening': '지금 듣는 중',
+  'friends.live.here': '{name}님이 지금 이 책에 있습니다',
+
+  // share
+  'share.menu.whatsapp': 'WhatsApp으로 보내기',
+  'share.menu.withdraw': '링크 철회',
+  'share.menu.withdrawn': '링크 철회됨',
 };
 export default messages;

@@ -1726,6 +1726,16 @@ const messages: Record<string, string> = {
     'Запрос был одобрен, и учётная запись уже создана. Войдите, чтобы открыть книгу.',
   'share.join.inviteLapsed': 'Это приглашение больше не действует. Попроситесь ещё раз.',
   'share.recommendedBy': 'Рекомендовано {name}',
+  // friends
+  'friends.bar.beadLive': '{name}, на {pct}, сейчас в этой книге',
+  'friends.live.reading': 'Читает сейчас',
+  'friends.live.listening': 'Слушает сейчас',
+  'friends.live.here': '{name} сейчас в этой книге',
+
+  // share
+  'share.menu.whatsapp': 'Отправить в WhatsApp',
+  'share.menu.withdraw': 'Отозвать ссылку',
+  'share.menu.withdrawn': 'Ссылка отозвана',
 };
 
 export default messages;

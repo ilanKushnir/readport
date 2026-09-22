@@ -1712,6 +1712,16 @@ const messages: Record<string, string> = {
     'Bu istek onaylandı ve hesap oluşturuldu. Kitabı açmak için oturum açın.',
   'share.join.inviteLapsed': 'Bu davetin süresi doldu. Katılmak için tekrar istek gönderin.',
   'share.recommendedBy': '{name} tarafından önerildi',
+  // friends
+  'friends.bar.beadLive': '{name}, {pct} konumunda, şu anda kitapta',
+  'friends.live.reading': 'Şu an okuyor',
+  'friends.live.listening': 'Şu an dinliyor',
+  'friends.live.here': '{name} şu anda bu kitapta',
+
+  // share
+  'share.menu.whatsapp': 'WhatsApp ile gönder',
+  'share.menu.withdraw': 'Bağlantıyı geri çek',
+  'share.menu.withdrawn': 'Bağlantı geri çekildi',
 };
 
 export default messages;

@@ -1765,5 +1765,15 @@ const messages: Record<string, string> = {
     'تمت الموافقة على هذا الطلب وأُنشئ الحساب. سجّل الدخول لفتح الكتاب.',
   'share.join.inviteLapsed': 'انتهت صلاحية هذه الدعوة. اطلب الانضمام مرة أخرى.',
   'share.recommendedBy': 'توصية من {name}',
+  // friends
+  'friends.bar.beadLive': '{name}، عند {pct}، في الكتاب الآن',
+  'friends.live.reading': 'قيد القراءة الآن',
+  'friends.live.listening': 'قيد الاستماع الآن',
+  'friends.live.here': '{name} في هذا الكتاب الآن',
+
+  // share
+  'share.menu.whatsapp': 'إرسال عبر WhatsApp',
+  'share.menu.withdraw': 'إلغاء الرابط',
+  'share.menu.withdrawn': 'أُلغي الرابط',
 };
 export default messages;

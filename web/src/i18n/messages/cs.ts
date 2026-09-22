@@ -1717,5 +1717,15 @@ const messages: Record<string, string> = {
     'Tato žádost byla potvrzena a účet vytvořen. Přihlaste se a otevřete knihu.',
   'share.join.inviteLapsed': 'Platnost této pozvánky vypršela. Požádejte o připojení znovu.',
   'share.recommendedBy': 'Doporučeno od {name}',
+  // friends
+  'friends.bar.beadLive': '{name}, na {pct}, v knize právě teď',
+  'friends.live.reading': 'Právě čte',
+  'friends.live.listening': 'Právě poslouchá',
+  'friends.live.here': '{name} je v této knize právě teď',
+
+  // share
+  'share.menu.whatsapp': 'Odeslat přes WhatsApp',
+  'share.menu.withdraw': 'Odvolat odkaz',
+  'share.menu.withdrawn': 'Odkaz odvolán',
 };
 export default messages;

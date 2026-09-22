@@ -1705,5 +1705,15 @@ const messages: Record<string, string> = {
     'Tämä pyyntö hyväksyttiin ja tili luotiin. Kirjaudu sisään avataksesi kirjan.',
   'share.join.inviteLapsed': 'Tämä kutsu on rauennut. Pyydä liittymistä uudelleen.',
   'share.recommendedBy': 'Suositteli: {name}',
+  // friends
+  'friends.bar.beadLive': '{name}, kohdassa {pct}, tässä kirjassa juuri nyt',
+  'friends.live.reading': 'Lukee nyt',
+  'friends.live.listening': 'Kuuntelee nyt',
+  'friends.live.here': '{name} on juuri nyt tässä kirjassa',
+
+  // share
+  'share.menu.whatsapp': 'Lähetä WhatsAppissa',
+  'share.menu.withdraw': 'Peruuta linkki',
+  'share.menu.withdrawn': 'Linkki peruutettu',
 };
 export default messages;

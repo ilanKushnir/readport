@@ -1740,6 +1740,16 @@ const messages: Record<string, string> = {
     'Cette demande a été approuvée et le compte créé. Connectez-vous pour ouvrir le livre.',
   'share.join.inviteLapsed': 'Cette invitation a expiré. Demandez à nouveau à rejoindre.',
   'share.recommendedBy': 'Recommandé par {name}',
+  // friends
+  'friends.bar.beadLive': '{name}, à {pct}, dans ce livre en ce moment',
+  'friends.live.reading': 'Lit maintenant',
+  'friends.live.listening': 'Écoute maintenant',
+  'friends.live.here': '{name} est dans ce livre en ce moment',
+
+  // share
+  'share.menu.whatsapp': 'Envoyer sur WhatsApp',
+  'share.menu.withdraw': 'Retirer le lien',
+  'share.menu.withdrawn': 'Lien retiré',
 };
 
 export default messages;

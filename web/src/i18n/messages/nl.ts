@@ -1739,5 +1739,15 @@ const messages: Record<string, string> = {
     'Dit verzoek is goedgekeurd en het account is aangemaakt. Meld je aan om het boek te openen.',
   'share.join.inviteLapsed': 'Deze uitnodiging is verlopen. Vraag opnieuw om lid te worden.',
   'share.recommendedBy': 'Aanbevolen door {name}',
+  // friends
+  'friends.bar.beadLive': '{name}, bij {pct}, nu in het boek',
+  'friends.live.reading': 'Leest nu',
+  'friends.live.listening': 'Luistert nu',
+  'friends.live.here': '{name} is nu in dit boek',
+
+  // share
+  'share.menu.whatsapp': 'Versturen via WhatsApp',
+  'share.menu.withdraw': 'Link intrekken',
+  'share.menu.withdrawn': 'Link ingetrokken',
 } as const;
 export default messages;

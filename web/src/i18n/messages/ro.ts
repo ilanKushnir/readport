@@ -1730,5 +1730,15 @@ const messages: Record<string, string> = {
     'Această cerere a fost aprobată și contul a fost creat. Conectează-te pentru a deschide cartea.',
   'share.join.inviteLapsed': 'Această invitație a expirat. Cere din nou să te alături.',
   'share.recommendedBy': 'Recomandată de {name}',
+  // friends
+  'friends.bar.beadLive': '{name}, la {pct}, chiar acum în această carte',
+  'friends.live.reading': 'Citește acum',
+  'friends.live.listening': 'Ascultă acum',
+  'friends.live.here': '{name} e în această carte chiar acum',
+
+  // share
+  'share.menu.whatsapp': 'Trimite pe WhatsApp',
+  'share.menu.withdraw': 'Revocă linkul',
+  'share.menu.withdrawn': 'Link revocat',
 };
 export default messages;

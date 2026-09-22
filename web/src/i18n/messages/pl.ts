@@ -1735,5 +1735,15 @@ const messages: Record<string, string> = {
     'Ta prośba została zatwierdzona, a konto utworzone. Zaloguj się, aby otworzyć książkę.',
   'share.join.inviteLapsed': 'To zaproszenie wygasło. Poproś o dołączenie ponownie.',
   'share.recommendedBy': 'Polecono przez {name}',
+  // friends
+  'friends.bar.beadLive': '{name}, na {pct}, w książce teraz',
+  'friends.live.reading': 'Czyta teraz',
+  'friends.live.listening': 'Słucha teraz',
+  'friends.live.here': '{name} jest w tej książce teraz',
+
+  // share
+  'share.menu.whatsapp': 'Wyślij przez WhatsApp',
+  'share.menu.withdraw': 'Unieważnij link',
+  'share.menu.withdrawn': 'Link unieważniony',
 };
 export default messages;

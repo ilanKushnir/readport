@@ -1730,6 +1730,16 @@ const messages: Record<string, string> = {
     'Цей запит схвалено, і обліковий запис створено. Увійдіть, щоб відкрити книгу.',
   'share.join.inviteLapsed': 'Термін дії цього запрошення минув. Попросіть приєднатися ще раз.',
   'share.recommendedBy': 'Рекомендує {name}',
+  // friends
+  'friends.bar.beadLive': '{name}, на {pct}, зараз у цій книзі',
+  'friends.live.reading': 'Читає зараз',
+  'friends.live.listening': 'Слухає зараз',
+  'friends.live.here': '{name} зараз у цій книзі',
+
+  // share
+  'share.menu.whatsapp': 'Надіслати через WhatsApp',
+  'share.menu.withdraw': 'Відкликати посилання',
+  'share.menu.withdrawn': 'Посилання відкликано',
 };
 
 export default messages;

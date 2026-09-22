@@ -1692,5 +1692,15 @@ const messages: Record<string, string> = {
     'Denne forespørselen ble godkjent, og kontoen ble opprettet. Logg inn for å åpne boken.',
   'share.join.inviteLapsed': 'Denne invitasjonen er bortfalt. Be om å bli med igjen.',
   'share.recommendedBy': 'Anbefalt av {name}',
+  // friends
+  'friends.bar.beadLive': '{name}, ved {pct}, i boken akkurat nå',
+  'friends.live.reading': 'Leser nå',
+  'friends.live.listening': 'Lytter nå',
+  'friends.live.here': '{name} er i denne boken akkurat nå',
+
+  // share
+  'share.menu.whatsapp': 'Send på WhatsApp',
+  'share.menu.withdraw': 'Trekk tilbake lenken',
+  'share.menu.withdrawn': 'Lenke trukket tilbake',
 };
 export default messages;

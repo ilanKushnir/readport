@@ -1710,6 +1710,16 @@ const messages: Record<string, string> = {
     'このリクエストは承認され、アカウントが作成されました。サインインして本を開いてください。',
   'share.join.inviteLapsed': '招待の有効期限が切れました。もう一度参加をリクエストしてください。',
   'share.recommendedBy': '{name}さんのおすすめ',
+  // friends
+  'friends.bar.beadLive': '{name}、{pct}の位置、今まさにこの本にいます',
+  'friends.live.reading': '読書中',
+  'friends.live.listening': '再生中',
+  'friends.live.here': '{name}さんは今まさにこの本を開いています',
+
+  // share
+  'share.menu.whatsapp': 'WhatsAppで送信',
+  'share.menu.withdraw': 'リンクを取り消す',
+  'share.menu.withdrawn': 'リンクを取り消しました',
 };
 
 export default messages;
