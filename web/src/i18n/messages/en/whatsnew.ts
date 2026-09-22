@@ -16,6 +16,14 @@ export const whatsnew = {
   'whatsnew.olderHeading': 'Version {version}',
   'whatsnew.done': 'Start reading',
 
+  // ---------------------------------------------------------------- 0.17.0
+  'whatsnew.release.liveFriends':
+    'A friend in the same book right now shows as a breathing bead on your bar, and as Reading now on the Friends page.',
+  'whatsnew.release.shareMenu':
+    'Share on the book page is one button with a small menu: copy the link, send it on WhatsApp, or hand it to the share tray.',
+  'whatsnew.release.settingsFoot':
+    'The foot of Settings shows which version this is and links to GitHub; tap the version to read these notes again.',
+
   // ---------------------------------------------------------------- 0.16.0
   'whatsnew.release.share':
     'Share a book by link: the cover shows in the chat, a friend here saves it as recommended by you, and anyone else can ask to join.',

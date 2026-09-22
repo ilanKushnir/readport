@@ -4,6 +4,33 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.17.0 - 2026-09-22
+
+### Added
+
+- **Friends who are here right now.** A friend whose position in a book
+  moved within the last few minutes (six for a reader, a minute and a half
+  for a listener, the cadences their devices report at) is in it now: their
+  bead on your progress bar breathes, the card names them Reading now or
+  Listening now, and so do the book page's friends line and the Friends
+  page, which all ask again once a minute while they are in front of you.
+  Presence is the same shared position, no more: a friend who does not
+  share progress shows nothing new.
+- **The foot of Settings** shows the version this is and a link to the
+  project on GitHub. Tapping the version reopens What's new, seen or not.
+
+### Changed
+
+- **Share is one button.** It opens a small menu: copy the link, send it
+  on WhatsApp, hand it to the phone's share tray, and, once a link exists,
+  withdraw it. Opening the menu makes no link; the first thing that needs
+  one does. The book page's actions are two rows now: the ways to open the
+  book, then a quieter row of tools (Add to, offline, Share, Save a copy),
+  which on a phone is four icons with short labels under them.
+- The API answers `GET /api/books/:id/share` with the caller's live link
+  for a book, or nulls, without making one; friends and their progress
+  carry a `live` flag.
+
 ## 0.16.0 - 2026-09-22
 
 ### Added
