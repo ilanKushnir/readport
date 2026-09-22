@@ -4,6 +4,43 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.15.0 - 2026-09-22
+
+### Added
+
+- **Export options for highlights.** Export as PDF opens a sheet first:
+  Paper or Night, an A4, Letter or Phone page (the phone page is narrow and
+  reads at full width on a phone screen), what to include (highlights,
+  notes, bookmarks, the cover, chapter headings, position and date lines,
+  notes under highlights), the order, and the text size. Choices are
+  remembered on the device and can be changed from the preview. The
+  document itself is redesigned: the ReadPort mark and wordmark on a title
+  page with the cover, the counts and a colour legend; running chapter
+  heads; colour bars printed as borders so printers keep them; and a Night
+  look with light type on dark pages that survives Save as PDF.
+
+### Changed
+
+- **The Pairing page is four tabs.** Suggested holds the matches waiting
+  for a yes or no, Linked every pair with where its alignment stands,
+  Unpaired the books with no other edition, Dismissed the noes in case of
+  a change of mind. Each pair is one compact row - the two covers, the
+  title, its state in a chip (aligned, aligning, queued, ready to align,
+  model needed, failed) and, once aligned, the coverage strip at a glance -
+  with only the one action that state calls for. Evidence, the narration
+  language, the full alignment report and unlinking open under the row.
+  The alignment work panel names what it counts: the rows marked Ready to
+  align sit directly beneath it, with a checkbox each, and the two
+  alignment options fold away behind one line. The processing panel folds
+  to one line when nothing is running.
+- **A synced pair wears the switch arrows between its two formats** on the
+  library tile, in ember, instead of a third pill saying SYNC. The badge
+  already said the title was owned twice; the join now says whether the
+  two editions meet.
+- **The shelves drawer leads to everything.** All books at the top of the
+  shelves, and on a phone a More group with Stats and Pairing, which the
+  five-tab bar has no room for.
+
 ## 0.14.2 - 2026-09-22
 
 ### Fixed
