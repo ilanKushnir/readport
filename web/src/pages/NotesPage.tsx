@@ -1,48 +1,55 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { type Annotation } from '@readport/shared';
+import { Link } from 'react-router-dom';
 import { api } from '../api/client';
-import { useToast } from '../components/ui';
-import { IconBookmark, IconSearch, IconTrash } from '../components/icons';
-import { HIGHLIGHT_COLORS, colorOf, isHighlightColor } from '../reader/marks';
+import { Cover, useToast } from '../components/ui';
+import { IconBookmark, IconSearch } from '../components/icons';
+import { HIGHLIGHT_COLORS, type HighlightColor } from '../reader/marks';
 import { useT } from '../i18n';
 import { useFormat } from '../i18n/useFormat';
 import { type MessageKey } from '../i18n/messages/en';
+import { MarkCard } from '../notes/MarkCard';
+import {
+  applyFilters,
+  booksOf,
+  countByKind,
+  KIND_FILTERS,
+  type BookRow,
+  type KindFilter,
+  type Marked,
+} from '../notes/organise';
+import { useMarkLabels } from '../notes/useMarkLabels';
+import '../styles/notes.css';
 
 /**
- * Everything you have marked, in one place.
+ * Everything you have marked, book by book.
  *
- * The reader already shows a book's own marks while you are in it. This is the
- * other half: the thing you wrote down six weeks ago in a book you have since
- * finished, which is unreachable if the only way to a note is to be reading
- * the page it sits on. So it is organised the way that search actually goes -
- * newest first, filterable by what kind of mark it is, and searchable across
- * the note, the quoted passage and the book's title at once - and every entry
- * opens the book at exactly the place it came from.
+ * The reader shows a book's own marks while you are in it. This is the
+ * other half: the thing you wrote down six weeks ago in a book you have
+ * since finished. Books are never mixed - the page opens on the books that
+ * carry marks, most recently marked first, and each one opens on its own
+ * marks. Typing in the search box is the exception, because "where was
+ * that line about the weir" is a question asked across books: it turns
+ * the page into a flat list of every matching mark, grouped by book, each
+ * of which opens the book at exactly the place it came from.
  */
 
-type Marked = Annotation & { bookTitle: string; bookAuthor: string | null };
-
-type KindFilter = 'all' | 'note' | 'highlight' | 'bookmark';
-
-const KINDS: [KindFilter, MessageKey][] = [
+const KIND_LABELS: Record<KindFilter, MessageKey> = {
   // "All", not "Everything": four labels have to share a phone's width, and
   // this is the word the library filter already uses for the same idea.
-  ['all', 'notes.filter.all'],
-  ['note', 'notes.filter.notes'],
-  ['highlight', 'notes.filter.highlights'],
-  ['bookmark', 'notes.filter.bookmarks'],
-];
+  all: 'notes.filter.all',
+  highlight: 'notes.filter.highlights',
+  note: 'notes.filter.notes',
+  bookmark: 'notes.filter.bookmarks',
+};
 
 export function NotesPage() {
   const t = useT();
   const f = useFormat();
+  const toast = useToast();
   const [all, setAll] = useState<Marked[] | null>(null);
   const [kind, setKind] = useState<KindFilter>('all');
+  const [colors, setColors] = useState<HighlightColor[]>([]);
   const [query, setQuery] = useState('');
-  const [color, setColor] = useState<string | null>(null);
-  const toast = useToast();
-  const navigate = useNavigate();
 
   const load = useCallback(async () => {
     try {
@@ -59,42 +66,13 @@ export function NotesPage() {
   // Filtering happens here rather than on the server: the whole set is at most
   // a few hundred rows, and typing that filters instantly is the entire point
   // of a page like this.
-  const shown = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return (all ?? []).filter((a) => {
-      if (kind !== 'all' && a.kind !== kind) return false;
-      if (color && (a.kind !== 'highlight' || colorOf(a) !== color)) return false;
-      if (!q) return true;
-      return (
-        (a.note ?? '').toLowerCase().includes(q) ||
-        (a.selectedText ?? '').toLowerCase().includes(q) ||
-        a.bookTitle.toLowerCase().includes(q) ||
-        (a.bookAuthor ?? '').toLowerCase().includes(q)
-      );
-    });
-  }, [all, kind, query, color]);
-
-  /** Grouped by book, because that is how a reader remembers where it was. */
-  const byBook = useMemo(() => {
-    const groups = new Map<string, { title: string; author: string | null; items: Marked[] }>();
-    for (const a of shown) {
-      const g = groups.get(a.bookId);
-      if (g) g.items.push(a);
-      else groups.set(a.bookId, { title: a.bookTitle, author: a.bookAuthor, items: [a] });
-    }
-    return [...groups.entries()];
-  }, [shown]);
-
-  const open = (a: Marked) => {
-    if (a.locator.medium !== 'ebook') {
-      navigate(`/listen/${a.bookId}?pos=${a.locator.bookMs ?? a.locator.positionMs}`);
-      return;
-    }
-    const params = new URLSearchParams({ spine: String(a.locator.spineIdx) });
-    if (a.locator.charOffset !== undefined) params.set('char', String(a.locator.charOffset));
-    if (a.locator.sentenceId) params.set('sentence', a.locator.sentenceId);
-    navigate(`/read/${a.bookId}?${params.toString()}`);
-  };
+  const shown = useMemo(
+    () => applyFilters(all ?? [], { kind, colors, query }),
+    [all, kind, colors, query],
+  );
+  const books = useMemo(() => booksOf(shown), [shown]);
+  const counts = useMemo(() => countByKind(all ?? []), [all]);
+  const searching = query.trim().length > 0;
 
   const remove = async (a: Marked) => {
     try {
@@ -105,14 +83,14 @@ export function NotesPage() {
     }
   };
 
-  const counts = useMemo(() => {
-    const c = { note: 0, highlight: 0, bookmark: 0 };
-    for (const a of all ?? []) if (a.kind in c) c[a.kind as keyof typeof c] += 1;
-    return c;
-  }, [all]);
+  const pickKind = (k: KindFilter) => {
+    setKind(k);
+    // A note has no colour: keeping a colour filter on would hide everything.
+    if (k === 'note' || k === 'bookmark') setColors([]);
+  };
 
   return (
-    <main className="app-main notes-page">
+    <main className="app-main notes-page" id="main-content" tabIndex={-1}>
       <header className="page-head">
         <h1>{t('notes.title')}</h1>
         <p>
@@ -137,10 +115,10 @@ export function NotesPage() {
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
-          <div className="segmented" role="group" aria-label={t('notes.kind')}>
-            {KINDS.map(([k, label]) => (
-              <button key={k} aria-pressed={kind === k} onClick={() => setKind(k)}>
-                {t(label)}
+          <div className="segmented notes-filters__kind" role="group" aria-label={t('notes.kind')}>
+            {KIND_FILTERS.map((k) => (
+              <button key={k} aria-pressed={kind === k} onClick={() => pickKind(k)}>
+                {t(KIND_LABELS[k])}
               </button>
             ))}
           </div>
@@ -150,9 +128,11 @@ export function NotesPage() {
                 <button
                   key={c}
                   className={`swatch swatch--${c}`}
-                  aria-pressed={color === c}
+                  aria-pressed={colors.includes(c)}
                   aria-label={t('notes.onlyColour', { color: c })}
-                  onClick={() => setColor((cur) => (cur === c ? null : c))}
+                  onClick={() =>
+                    setColors((cur) => (cur.includes(c) ? cur.filter((x) => x !== c) : [...cur, c]))
+                  }
                 />
               ))}
             </div>
@@ -175,49 +155,107 @@ export function NotesPage() {
         <p className="empty-state">{t('notes.noMatch')}</p>
       )}
 
-      {byBook.map(([bookId, group]) => (
-        <section className="notes-group" key={bookId} aria-label={group.title}>
-          <h2 className="notes-group__head">
-            <Link to={`/book/${bookId}`}>{group.title}</Link>
-            {group.author && <span className="notes-group__author">{group.author}</span>}
-          </h2>
-          <ul className="notes-list">
-            {group.items.map((a) => (
-              <li key={a.id} className={`note-card note-card--${a.kind}`}>
-                <button
-                  className="note-card__body"
-                  onClick={() => open(a)}
-                  aria-label={t('notes.openIn', { kind: a.kind, title: group.title })}
-                >
-                  {a.kind === 'highlight' && isHighlightColor(a.color) && (
-                    <span
-                      className={`note-card__swatch swatch--${colorOf(a)}`}
-                      aria-hidden="true"
-                    />
-                  )}
-                  {a.selectedText && (
-                    <blockquote className="note-card__quote">{a.selectedText}</blockquote>
-                  )}
-                  {a.note && <p className="note-card__note">{a.note}</p>}
-                  {!a.selectedText && !a.note && (
-                    <p className="note-card__note note-card__note--plain">
-                      {a.kind === 'bookmark' ? t('notes.bookmarkedPage') : t('notes.markedPassage')}
-                    </p>
-                  )}
-                  <span className="note-card__meta">{f.date(a.createdAt)}</span>
-                </button>
-                <button
-                  className="icon-btn note-card__delete"
-                  aria-label={t('common.delete')}
-                  onClick={() => void remove(a)}
-                >
-                  <IconTrash size={15} />
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
+      {!searching && books.length > 0 && (
+        <ul className="notes-books" aria-label={t('notes.books.label')}>
+          {books.map((row) => (
+            <BookCard key={row.bookId} row={row} />
+          ))}
+        </ul>
+      )}
+
+      {searching && shown.length > 0 && (
+        <p className="notes-results" role="status">
+          {t('notes.results.count', { n: shown.length })}
+        </p>
+      )}
+      {searching &&
+        books.map((row) => (
+          <section className="notes-group" key={row.bookId} aria-label={row.title}>
+            <h2 className="notes-group__head">
+              <Link to={`/notes/${row.bookId}`}>
+                <bdi>{row.title}</bdi>
+              </Link>
+              {row.author && (
+                <span className="notes-group__author">
+                  <bdi>{row.author}</bdi>
+                </span>
+              )}
+            </h2>
+            <ul className="marks-list">
+              {row.marks.map((a) => (
+                <MarkCard
+                  key={a.id}
+                  mark={a}
+                  where={f.percent(a.locator.pct)}
+                  date={f.date(a.createdAt)}
+                  bookTitle={row.title}
+                  onDelete={() => void remove(a)}
+                />
+              ))}
+            </ul>
+          </section>
+        ))}
     </main>
+  );
+}
+
+/**
+ * One book on the overview: its cover, what has been marked in it, which
+ * colours were used and when it was last touched. The whole card is the
+ * link, and its text is its name, so nothing here is hidden from a screen
+ * reader behind a label.
+ */
+function BookCard({ row }: { row: BookRow<Marked> }) {
+  const t = useT();
+  const f = useFormat();
+  const labels = useMarkLabels();
+  return (
+    <li>
+      <Link className="notes-bookcard" to={`/notes/${row.bookId}`}>
+        <span className="notes-bookcard__coverwrap">
+          <Cover
+            book={{
+              id: row.bookId,
+              title: row.title,
+              author: row.author,
+              hasCover: row.hasCover,
+              kind: row.kind,
+            }}
+            className="notes-bookcard__cover"
+          />
+        </span>
+        <span className="notes-bookcard__body">
+          {/* <bdi>, not dir="auto": a Hebrew title keeps its own order but the
+              card keeps the interface's alignment, so the grid stays a grid. */}
+          <span className="notes-bookcard__title">
+            <bdi>{row.title}</bdi>
+          </span>
+          {row.author && (
+            <span className="notes-bookcard__author">
+              <bdi>{row.author}</bdi>
+            </span>
+          )}
+          <span className="notes-bookcard__counts">
+            <bdi>{labels.counts(row.counts)}</bdi>
+          </span>
+          <span className="notes-bookcard__meta">
+            {row.colors.length > 0 && (
+              <span
+                className="notes-dots"
+                role="img"
+                aria-label={t('notes.book.colours', {
+                  list: f.list(row.colors.map(labels.colourName)),
+                })}
+              >
+                {row.colors.map((c) => (
+                  <i key={c} data-mark-color={c} />
+                ))}
+              </span>
+            )}
+            <span>{t('notes.book.lastMarked', { when: f.ago(row.lastMarkedAt) })}</span>
+          </span>
+        </span>
+      </Link>
+    </li>
   );
 }

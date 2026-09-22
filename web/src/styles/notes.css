@@ -1,0 +1,660 @@
+/* Notes: the highlights section.
+   The books that carry marks, one book's marks under their running heads,
+   and the printed page. On screen everything follows the shell's tokens;
+   the printed page paints its own paper, so it comes out as ink on white
+   whatever theme the screen is in. Imported by the three Notes pages. */
+
+/* One hue per colour, read by the bars and the dots below. An attribute
+   rather than a class so the same mapping serves the screen cards and the
+   printed page. The hues are the app-wide tokens, which no app theme
+   overrides - so print gets the paper palette even from a dark screen. */
+[data-mark-color='amber'] {
+  --mark-hue: var(--rd-mark-amber);
+}
+[data-mark-color='rose'] {
+  --mark-hue: var(--rd-mark-rose);
+}
+[data-mark-color='plum'] {
+  --mark-hue: var(--rd-mark-plum);
+}
+[data-mark-color='sky'] {
+  --mark-hue: var(--rd-mark-sky);
+}
+[data-mark-color='sand'] {
+  --mark-hue: var(--rd-mark-sand);
+}
+
+/* A pressed swatch rings itself in the reader's page colour, which is not in
+   scope here; ring it in the app's instead so dark mode does not get white. */
+.notes-filters .swatch[aria-pressed='true'],
+.notes-controls .swatch[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 2px var(--rp-bg);
+}
+.notes-filters__kind {
+  flex: 1 1 320px;
+  width: auto;
+}
+
+/* --- The books ------------------------------------------------------- */
+.notes-books {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--sp-3);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+}
+.notes-bookcard {
+  display: flex;
+  gap: var(--sp-4);
+  height: 100%;
+  padding: var(--sp-4);
+  background: var(--rp-surface-raised);
+  border: 1px solid var(--rp-border);
+  border-radius: var(--radius-card);
+  color: inherit;
+  text-decoration: none;
+  min-width: 0;
+  transition:
+    border-color var(--rp-duration-quick) var(--rp-ease),
+    background-color var(--rp-duration-quick) var(--rp-ease);
+}
+.notes-bookcard:hover {
+  border-color: var(--rp-border-strong);
+  background: color-mix(in srgb, var(--rp-primary) 4%, var(--rp-surface-raised));
+}
+.notes-bookcard__coverwrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 64px;
+  aspect-ratio: 2/3;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--rp-surface);
+  box-shadow: var(--rp-shadow-1);
+  container-type: inline-size;
+}
+.notes-bookcard__cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.notes-bookcard__body {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  gap: 3px;
+  align-content: start;
+}
+.notes-bookcard__title {
+  font-family: var(--rp-font-reading);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.notes-bookcard__author {
+  font-size: 13px;
+  color: var(--rp-text-soft);
+}
+.notes-bookcard__counts {
+  margin-block-start: 5px;
+  font-size: 13.5px;
+}
+.notes-bookcard__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px var(--sp-2);
+  margin-block-start: 2px;
+  font-size: 12.5px;
+  color: var(--rp-text-soft);
+}
+.notes-dots {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+.notes-dots > i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--mark-hue) var(--rd-mark-chip), transparent);
+}
+.notes-results {
+  margin: 0 0 var(--sp-4);
+  font-size: 13.5px;
+  color: var(--rp-text-soft);
+}
+
+/* --- One book ---------------------------------------------------------- */
+.notes-backlink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-block-end: var(--sp-4);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.notes-backlink:hover {
+  text-decoration: underline;
+}
+.notes-hero {
+  display: flex;
+  gap: var(--sp-5);
+  align-items: flex-start;
+  margin-block-end: var(--sp-5);
+}
+.notes-hero__coverwrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 96px;
+  aspect-ratio: 2/3;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--rp-surface);
+  box-shadow: var(--rp-shadow-2);
+  container-type: inline-size;
+}
+.notes-hero__cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.notes-hero__body {
+  min-width: 0;
+  flex: 1;
+}
+.notes-hero__body h1 {
+  font-size: clamp(22px, 3.2vw, 30px);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+.notes-hero__author {
+  margin: 4px 0 0;
+  color: var(--rp-text-soft);
+}
+.notes-hero__counts {
+  margin: 6px 0 0;
+  font-size: 14.5px;
+  color: var(--rp-text-soft);
+}
+.notes-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-block-start: var(--sp-3);
+}
+@media (max-width: 480px) {
+  .notes-hero {
+    gap: var(--sp-4);
+  }
+  .notes-hero__coverwrap {
+    width: 72px;
+  }
+}
+
+.notes-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-block-end: var(--sp-5);
+}
+.notes-controls__kind {
+  flex: 1 1 320px;
+  width: auto;
+}
+.notes-controls__sort {
+  margin-inline-start: auto;
+}
+
+/* Running heads: the chapter, the colour, or the kind. */
+.marks-section {
+  margin-block-end: var(--sp-6);
+}
+.marks-section__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  font-size: 15px;
+  font-weight: 650;
+  margin: 0 0 var(--sp-3);
+  padding-block-end: var(--sp-2);
+  border-block-end: 1px solid var(--rp-border);
+}
+.marks-section__count {
+  font-family: var(--rp-font-ui);
+  font-size: 13px;
+  font-weight: 450;
+  color: var(--rp-text-soft);
+  font-variant-numeric: tabular-nums;
+}
+.marks-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--sp-3);
+}
+
+/* One mark. The bar down the side is the highlight's colour; a note's is a
+   dotted rule and a bookmark's the ember, so the three kinds tell apart at
+   a glance without a word of label. */
+.notes-mark {
+  display: flex;
+  background: var(--rp-surface-raised);
+  border: 1px solid var(--rp-border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+.notes-mark__bar {
+  flex: none;
+  width: 4px;
+  background: var(--mark-hue, var(--rp-border-strong));
+}
+.notes-mark--note .notes-mark__bar {
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--rp-border-strong) 0 6px,
+    transparent 6px 10px
+  );
+}
+.notes-mark--bookmark .notes-mark__bar {
+  background: var(--rp-primary);
+}
+.notes-mark__body {
+  flex: 1;
+  min-width: 0;
+  padding: var(--sp-3) var(--sp-4);
+  display: grid;
+  gap: 6px;
+}
+.notes-mark__quote {
+  margin: 0;
+  font-family: var(--rp-font-reading);
+  font-size: 16px;
+  line-height: 1.55;
+  text-align: start;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  color: var(--rp-text);
+}
+.notes-mark__note {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: start;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.notes-mark__plain {
+  margin: 0;
+  font-size: 14px;
+  color: var(--rp-text-soft);
+}
+.notes-mark__foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-1) var(--sp-3);
+  margin-block-start: 2px;
+  font-size: 12.5px;
+  color: var(--rp-text-soft);
+}
+.notes-mark__where {
+  font-variant-numeric: tabular-nums;
+}
+.notes-mark__open {
+  margin-inline-start: auto;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.notes-mark__open:hover {
+  text-decoration: underline;
+}
+.notes-mark__delete {
+  opacity: 0;
+}
+.notes-mark:hover .notes-mark__delete,
+.notes-mark__delete:focus-visible {
+  opacity: 1;
+}
+@media (hover: none) {
+  .notes-mark__delete {
+    opacity: 1;
+  }
+}
+
+/* --- The printed page: on screen ---------------------------------------- */
+/* A preview: white sheets on the app's ground, the toolbar above them. The
+   sheets keep the paper palette on screen too, so what is previewed in dark
+   mode is still what will print. */
+.notes-export {
+  --rp-measure: 900px;
+}
+.notes-export__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-block-end: var(--sp-5);
+}
+.notes-export__hint {
+  flex: 1 1 260px;
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--rp-text-soft);
+}
+.print-sheet {
+  background: #fff;
+  color: #1c1917;
+  max-width: 760px;
+  margin: 0 auto var(--sp-5);
+  padding: 64px 72px;
+  border-radius: 4px;
+  box-shadow: var(--rp-shadow-2);
+}
+@media (max-width: 640px) {
+  .print-sheet {
+    padding: 36px 24px;
+  }
+}
+.print-doc {
+  --pd-ink: #1c1917;
+  --pd-soft: #6b6259;
+  --pd-rule: #e2d9cb;
+  color: var(--pd-ink);
+  font-family: var(--rp-font-ui);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.print-doc__title {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 8px;
+  text-align: center;
+}
+.print-doc__eyebrow {
+  margin: 0 0 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pd-soft);
+}
+.print-doc__coverwrap {
+  position: relative;
+  width: 200px;
+  aspect-ratio: 2/3;
+  margin: 4px 0 24px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #ede6da;
+  box-shadow: 0 14px 32px -14px rgb(28 25 23 / 0.5);
+  container-type: inline-size;
+}
+.print-doc__coverwrap--plain {
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  border: 1px solid var(--pd-rule);
+}
+.print-doc__nocover {
+  font-family: var(--rp-font-reading);
+  font-size: 15px;
+  line-height: 1.25;
+  color: var(--pd-soft);
+  overflow-wrap: anywhere;
+}
+.print-doc__cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.print-doc__book {
+  margin: 0;
+  max-width: 22ch;
+  font-family: var(--rp-font-reading);
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+.print-doc__author {
+  margin: 0;
+  font-family: var(--rp-font-reading);
+  font-size: 17px;
+  font-style: italic;
+  color: var(--pd-soft);
+}
+.print-doc__rule {
+  width: 40px;
+  height: 1px;
+  margin: 18px 0 10px;
+  background: var(--pd-rule);
+}
+.print-doc__counts {
+  margin: 0;
+  font-size: 14px;
+}
+.print-doc__scope {
+  margin: 0;
+  font-size: 13px;
+  color: var(--pd-soft);
+}
+.print-doc__stamp {
+  margin: 28px 0 0;
+  font-size: 11.5px;
+  color: var(--pd-soft);
+}
+.print-doc__section {
+  margin: 0 0 30px;
+}
+.print-doc__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0 0 14px;
+  padding-block-end: 6px;
+  border-block-end: 1px solid var(--pd-rule);
+  font-family: var(--rp-font-reading);
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+.print-doc__headcount {
+  font-family: var(--rp-font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--pd-soft);
+  font-variant-numeric: tabular-nums;
+}
+.print-doc__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 18px;
+}
+/* The bar is a border, not a background: printers drop backgrounds unless
+   asked for "background graphics", and a colour that vanishes on paper
+   would defeat the point of the export. */
+.print-mark {
+  display: grid;
+  gap: 5px;
+  padding-inline-start: 14px;
+  border-inline-start: 3px solid var(--mark-hue, var(--pd-rule));
+}
+.print-mark--note {
+  border-inline-start-style: dotted;
+  border-inline-start-color: var(--pd-soft);
+}
+.print-mark--bookmark {
+  border-inline-start-color: #b4532a;
+}
+.print-mark__quote {
+  margin: 0;
+  font-family: var(--rp-font-reading);
+  font-size: 13.5px;
+  line-height: 1.55;
+  text-align: start;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.print-mark__note {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  text-align: start;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.print-mark__plain {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--pd-soft);
+}
+.print-mark__where {
+  margin: 0;
+  font-size: 11px;
+  color: var(--pd-soft);
+  font-variant-numeric: tabular-nums;
+}
+.print-doc__empty {
+  margin: 0;
+  color: var(--pd-soft);
+}
+.print-doc__foot {
+  margin-block-start: 40px;
+  padding-block-start: 10px;
+  border-block-start: 1px solid var(--pd-rule);
+  font-size: 11px;
+  color: var(--pd-soft);
+  text-align: center;
+}
+
+/* --- The printed page: on paper ----------------------------------------- */
+/* `size: auto` prints on whatever the reader's printer or PDF writer is set
+   to; the column is narrow enough to sit inside A4 and Letter alike. */
+@page {
+  size: auto;
+  margin: 18mm 16mm;
+}
+@media print {
+  /* The shell owns the viewport with a fixed, overflow-hidden frame so the
+     library can scroll in panes. On paper that prints one page and stops;
+     while the export page is up, the frame is undone and the chrome hidden. */
+  html[data-print-view] {
+    color-scheme: light;
+  }
+  html[data-print-view],
+  html[data-print-view] body {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
+    color: #1c1917 !important;
+  }
+  html[data-print-view] #root {
+    display: block !important;
+    min-height: 0 !important;
+  }
+  html[data-print-view] .app-shell {
+    position: static !important;
+    inset: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+  html[data-print-view] .app-body {
+    display: block !important;
+    overflow: visible !important;
+  }
+  html[data-print-view] .app-body > .app-main {
+    position: static !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    scrollbar-gutter: auto !important;
+  }
+  html[data-print-view] .app-header,
+  html[data-print-view] .app-rail,
+  html[data-print-view] .tabbar,
+  html[data-print-view] .skip-link,
+  html[data-print-view] .toast,
+  html[data-print-view] .notes-export__toolbar {
+    display: none !important;
+  }
+
+  .print-sheet {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+  .print-doc {
+    font-size: 11.5pt;
+  }
+  .print-doc__title {
+    padding-block-start: 12vh;
+    break-after: page;
+    page-break-after: always;
+  }
+  .print-doc__coverwrap {
+    width: 62mm;
+    box-shadow: none;
+    border: 1px solid var(--pd-rule);
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .print-doc__book {
+    font-size: 24pt;
+  }
+  .print-doc__author {
+    font-size: 13pt;
+  }
+  .print-doc__section {
+    margin-block-end: 8mm;
+  }
+  .print-doc__head {
+    break-after: avoid;
+    page-break-after: avoid;
+    font-size: 11.5pt;
+  }
+  .print-doc__list {
+    gap: 5mm;
+  }
+  /* A highlight and its note stay on one page together. */
+  .print-mark {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .print-mark__quote {
+    font-size: 10.5pt;
+  }
+  .print-mark__note {
+    font-size: 9.5pt;
+  }
+  .print-mark__where,
+  .print-doc__foot,
+  .print-doc__stamp {
+    font-size: 8pt;
+  }
+  .print-doc__foot {
+    margin-block-start: 12mm;
+  }
+}

@@ -36,7 +36,8 @@ export function registerAnnotationRoutes(app: FastifyInstance, ctx: AppContext):
     const kind = ['highlight', 'note', 'bookmark'].includes(String(q.kind)) ? String(q.kind) : null;
     const rows = db
       .prepare(
-        `SELECT a.*, b.title AS book_title, b.author AS book_author, b.kind AS book_kind
+        `SELECT a.*, b.title AS book_title, b.author AS book_author, b.kind AS book_kind,
+                b.cover_path AS book_cover_path
            FROM annotations a JOIN books b ON b.id = a.book_id
           WHERE a.user_id = ? AND a.deleted_at IS NULL
             AND (? IS NULL OR a.kind = ?)
@@ -51,6 +52,8 @@ export function registerAnnotationRoutes(app: FastifyInstance, ctx: AppContext):
         ...rowToAnnotation(r),
         bookTitle: String(r.book_title ?? ''),
         bookAuthor: (r.book_author as string) ?? null,
+        bookKind: r.book_kind === 'audio' ? 'audio' : 'ebook',
+        bookHasCover: Boolean(r.book_cover_path),
       })),
     };
   });
