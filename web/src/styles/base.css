@@ -718,6 +718,7 @@ body:has(.app-body) {
   grid-auto-columns: minmax(240px, 300px);
   gap: var(--sp-4);
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   padding-block-end: var(--sp-2);
   scroll-snap-type: x proximity;
   margin-block-end: var(--sp-4);
@@ -3288,6 +3289,9 @@ body:has(.app-body) {
   min-height: 0;
   min-width: 0;
   overflow-y: auto;
+  /* Sideways there is nothing to see: a row that overflows scrolls inside
+     itself, and the column must not pan after it on a phone. */
+  overflow-x: hidden;
   overscroll-behavior: contain;
   /* Reserve the gutter on BOTH sides where the scrollbar takes up room
      (Windows, Linux): one-sided, it would shift the centred column half a
