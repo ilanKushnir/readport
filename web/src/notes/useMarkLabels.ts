@@ -1,16 +1,32 @@
 import { useMemo } from 'react';
 import { type Annotation } from '@readport/shared';
 import { useT } from '../i18n';
+import { type MessageKey } from '../i18n/messages/en';
 import { useFormat } from '../i18n/useFormat';
 import { COLOR_LABELS, type HighlightColor } from '../reader/marks';
+import { type ExportOptions, MARK_KINDS } from './exportOptions';
 import {
   chapterOf,
   type ChapterHead,
   type ChapterStart,
   type KindCounts,
+  type MarkKind,
   type MarksView,
   type SectionHead,
+  type SortOrder,
 } from './organise';
+
+const KIND_NAMES: Record<MarkKind, MessageKey> = {
+  highlight: 'notes.filter.highlights',
+  note: 'notes.filter.notes',
+  bookmark: 'notes.filter.bookmarks',
+};
+
+const SORT_NAMES: Record<SortOrder, MessageKey> = {
+  position: 'notes.sort.position',
+  newest: 'notes.sort.newest',
+  color: 'notes.sort.color',
+};
 
 /** The words the Notes pages put beside what `organise` works out. */
 export function useMarkLabels() {
@@ -54,6 +70,29 @@ export function useMarkLabels() {
         if (view.kind !== 'all') return t('notes.export.scope.kind', { kind: view.kind });
         return null;
       },
+      /**
+       * What an export was narrowed to, one line per narrowing: the kinds
+       * when not every kind went in, the colours when the highlights were
+       * filtered. Nothing for an export of everything.
+       */
+      exportScope(options: ExportOptions): string[] {
+        const lines: string[] = [];
+        const kinds = MARK_KINDS.filter((k) => options.kinds.includes(k));
+        if (kinds.length === 1) {
+          lines.push(t('notes.export.scope.kind', { kind: kinds[0] }));
+        } else if (kinds.length === 2) {
+          lines.push(t('notes.export.scope.kinds', { kinds: kinds.map((k) => k[0]).join('') }));
+        }
+        if (options.colors.length > 0) {
+          lines.push(
+            t('notes.export.scope.colours', { list: f.list(options.colors.map(colourName)) }),
+          );
+        }
+        return lines;
+      },
+      /** "Highlights", "Notes", "Bookmarks": a kind as a filter or a checkbox names it. */
+      kindName: (kind: MarkKind): string => t(KIND_NAMES[kind]),
+      sortName: (order: SortOrder): string => t(SORT_NAMES[order]),
       colourName,
     };
   }, [t, f]);

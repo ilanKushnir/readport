@@ -334,10 +334,182 @@
   }
 }
 
+/* --- Export options ------------------------------------------------------ */
+/* The sheet behind "Export as PDF…". The sheet itself, its header and its
+   action row are base.css furniture; only the option groups are new. */
+.export-sheet {
+  display: grid;
+  gap: 14px;
+}
+.export-sheet__group {
+  display: grid;
+  gap: var(--sp-2);
+}
+.export-sheet__label {
+  font-size: 12.5px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--rp-text-soft);
+}
+.export-sheet .hint {
+  margin: 0;
+}
+/* Paper or Night: a thumbnail of the page beside the word, so the choice
+   can be seen before it is made. The first line is an amber bar, the
+   thing the look changes least and the reader recognises first. */
+.export-look {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-2);
+}
+.export-look__opt {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 54px;
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--rp-border);
+  border-radius: var(--radius-control);
+  background: var(--rp-surface);
+  color: var(--rp-text-soft);
+  text-align: start;
+  cursor: pointer;
+  transition:
+    border-color var(--rp-duration-quick) var(--rp-ease),
+    background-color var(--rp-duration-quick) var(--rp-ease),
+    color var(--rp-duration-quick) var(--rp-ease);
+}
+.export-look__opt:hover {
+  color: var(--rp-text);
+}
+.export-look__opt[aria-pressed='true'] {
+  border-color: var(--rp-primary);
+  box-shadow: inset 0 0 0 1px var(--rp-primary);
+  background: var(--rp-surface-raised);
+  color: var(--rp-text);
+}
+.export-look__page {
+  flex: none;
+  width: 30px;
+  height: 40px;
+  padding: 7px 5px;
+  box-sizing: border-box;
+  border-radius: 3px;
+  border: 1px solid;
+  display: grid;
+  align-content: start;
+  gap: 4px;
+}
+.export-look__page > i {
+  display: block;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+}
+.export-look__page > i:nth-child(1) {
+  width: 55%;
+  height: 3px;
+  background: var(--rd-mark-amber);
+}
+.export-look__page > i:nth-child(3) {
+  width: 85%;
+}
+.export-look__page > i:nth-child(4) {
+  width: 40%;
+}
+.export-look__page--paper {
+  background: #fff;
+  border-color: #ded5c6;
+  color: #a89e90;
+}
+.export-look__page--night {
+  background: #121212;
+  border-color: #3a322b;
+  color: #7d7368;
+}
+.export-look__text {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+.export-look__text strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.export-look__text small {
+  font-size: 12px;
+  color: var(--rp-text-soft);
+}
+.export-checks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0 var(--sp-3);
+}
+.export-checks label {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 36px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.export-checks input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--rp-interactive);
+}
+.export-checks input:disabled + span {
+  color: var(--rp-text-soft);
+}
+.export-checks small {
+  font-size: 12.5px;
+  color: var(--rp-text-soft);
+  font-variant-numeric: tabular-nums;
+}
+.export-checks--with {
+  margin-block-start: var(--sp-1);
+  padding-block-start: var(--sp-1);
+  border-block-start: 1px solid var(--rp-border);
+}
+.export-sheet__swatches {
+  padding-inline-start: 26px;
+}
+.export-sheet .swatch[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 2px var(--rp-surface-raised);
+}
+/* The summary and the buttons stay in view while the options above them
+   scroll: what will come out, and the way to get it, are never off screen. */
+.export-sheet__foot {
+  position: sticky;
+  bottom: 0;
+  display: grid;
+  gap: var(--sp-3);
+  margin: 0 calc(-1 * var(--sp-4)) calc(-1 * var(--sp-4));
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+  background: var(--rp-surface-raised);
+  border-block-start: 1px solid var(--rp-border);
+}
+.export-sheet__summary {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.4;
+}
+.export-sheet__summary--empty {
+  color: var(--rp-text-soft);
+}
+
 /* --- The printed page: on screen ---------------------------------------- */
-/* A preview: white sheets on the app's ground, the toolbar above them. The
-   sheets keep the paper palette on screen too, so what is previewed in dark
-   mode is still what will print. */
+/* A preview: the sheets on the app's ground, the toolbar above them. The
+   sheets paint their own paper - white for Paper, warm near-black for Night -
+   whatever theme the screen is in, so what is previewed is what will print.
+   The look, the page and the text size are attributes on <html>, set by the
+   export page and read here on screen and on paper alike. */
 .notes-export {
   --rp-measure: 900px;
 }
@@ -354,64 +526,165 @@
   font-size: 13.5px;
   color: var(--rp-text-soft);
 }
+
+/* The document's palette and scale. Paper is ink on white; Night is the
+   same page with the lamp off - and the reader's night set of highlight
+   hues, which hold against the dark. Every text pairing is 4.5:1 or better.
+   The sizes are one scale, so Compact and Large move everything together. */
+.print-doc {
+  --pd-paper: #fff;
+  --pd-ink: #1c1917;
+  --pd-soft: #6b6259;
+  --pd-rule: #e2d9cb;
+  --pd-tint: #ede6da;
+  --pd-ember: #b4532a;
+  --pd-shadow: 0 14px 32px -14px rgb(28 25 23 / 0.5);
+  --pd-scale: 1;
+  --pd-f-body: calc(13.5px * var(--pd-scale));
+  --pd-f-quote: calc(15px * var(--pd-scale));
+  --pd-f-note: calc(13px * var(--pd-scale));
+  --pd-f-small: calc(11.5px * var(--pd-scale));
+  --pd-f-head: calc(15px * var(--pd-scale));
+  --pd-f-title: calc(30px * var(--pd-scale));
+  --pd-f-author: calc(16px * var(--pd-scale));
+  --pd-f-figure: calc(22px * var(--pd-scale));
+  --pd-cover-w: 190px;
+  color: var(--pd-ink);
+  font-family: var(--rp-font-ui);
+  font-size: var(--pd-f-body);
+  line-height: 1.5;
+}
+html[data-print-look='night'] .print-doc {
+  /* #121212, not the shell's warm #16120f: on paper the margins are painted
+     by the engine's own dark canvas (that exact grey), and a page in any
+     other dark showed as a faint rectangle inside it. */
+  --pd-paper: #121212;
+  --pd-ink: #efe7d9;
+  --pd-soft: #a99f91;
+  --pd-rule: #3a322b;
+  --pd-tint: #29231d;
+  --pd-ember: #e69c74;
+  --pd-shadow: 0 14px 32px -14px rgb(0 0 0 / 0.9);
+  --rd-mark-amber: #d6a034;
+  --rd-mark-rose: #c86a3e;
+  --rd-mark-plum: #826cb4;
+  --rd-mark-sky: #6491be;
+  --rd-mark-sand: #a08e74;
+  color-scheme: dark;
+}
+html[data-print-text='compact'] .print-doc {
+  --pd-scale: 0.88;
+}
+html[data-print-text='large'] .print-doc {
+  --pd-scale: 1.2;
+}
+
 .print-sheet {
-  background: #fff;
-  color: #1c1917;
+  box-sizing: border-box;
+  background: var(--pd-paper);
+  color: var(--pd-ink);
   max-width: 760px;
   margin: 0 auto var(--sp-5);
-  padding: 64px 72px;
+  padding: 56px 64px;
   border-radius: 4px;
   box-shadow: var(--rp-shadow-2);
 }
-@media (max-width: 640px) {
+/* On screen the sheets take the shape of the page they will be: a narrow
+   one for the phone page, and a title sheet in the page's proportions.
+   Under @media screen so these can never outrank the print rules below,
+   which are keyed on the same attributes. */
+@media screen {
+  /* A Night sheet on the dark app ground needs an edge the shadow cannot give it. */
+  html[data-print-look='night'] .print-sheet {
+    box-shadow:
+      0 0 0 1px rgb(255 255 255 / 0.08),
+      var(--rp-shadow-2);
+  }
+  html[data-print-page='phone'] .print-doc {
+    --pd-cover-w: 132px;
+  }
+  html[data-print-page='phone'] .print-sheet {
+    max-width: 420px;
+    padding: 32px 30px;
+  }
+  .print-doc__title {
+    aspect-ratio: 210 / 297;
+  }
+  html[data-print-page='letter'] .print-doc__title {
+    aspect-ratio: 8.5 / 11;
+  }
+  html[data-print-page='phone'] .print-doc__title {
+    aspect-ratio: 105 / 186;
+  }
+}
+@media screen and (max-width: 640px) {
   .print-sheet {
     padding: 36px 24px;
   }
 }
-.print-doc {
-  --pd-ink: #1c1917;
-  --pd-soft: #6b6259;
-  --pd-rule: #e2d9cb;
-  color: var(--pd-ink);
-  font-family: var(--rp-font-ui);
-  font-size: 13.5px;
-  line-height: 1.5;
-}
+
+/* The title page: the mark at the head, the book in the middle, the stamp
+   at the foot. */
 .print-doc__title {
   display: grid;
+  grid-template-rows: auto 1fr auto;
   justify-items: center;
-  align-content: start;
-  gap: 8px;
+  align-items: center;
+  gap: 20px;
   text-align: center;
 }
+.print-doc__masthead {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  align-self: start;
+}
+.print-doc__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  font-family: var(--rp-font-reading);
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--pd-ink);
+}
 .print-doc__eyebrow {
-  margin: 0 0 12px;
-  font-size: 11.5px;
+  margin: 0;
+  font-size: 10.5px;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--pd-soft);
 }
+.print-doc__titleblock {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  max-width: 100%;
+}
 .print-doc__coverwrap {
   position: relative;
-  width: 200px;
-  aspect-ratio: 2/3;
-  margin: 4px 0 24px;
-  border-radius: 6px;
+  width: var(--pd-cover-w);
+  aspect-ratio: 2 / 3;
+  margin: 0 0 22px;
+  border-radius: 4px;
   overflow: hidden;
-  background: #ede6da;
-  box-shadow: 0 14px 32px -14px rgb(28 25 23 / 0.5);
+  background: var(--pd-tint);
+  box-shadow: var(--pd-shadow);
   container-type: inline-size;
 }
 .print-doc__coverwrap--plain {
   display: grid;
   place-items: center;
-  padding: 24px;
+  box-sizing: border-box;
+  padding: 18px;
   border: 1px solid var(--pd-rule);
 }
 .print-doc__nocover {
   font-family: var(--rp-font-reading);
-  font-size: 15px;
+  font-size: calc(15px * var(--pd-scale));
   line-height: 1.25;
   color: var(--pd-soft);
   overflow-wrap: anywhere;
@@ -426,7 +699,7 @@
   margin: 0;
   max-width: 22ch;
   font-family: var(--rp-font-reading);
-  font-size: 32px;
+  font-size: var(--pd-f-title);
   font-weight: 600;
   line-height: 1.15;
   letter-spacing: -0.01em;
@@ -435,32 +708,79 @@
 .print-doc__author {
   margin: 0;
   font-family: var(--rp-font-reading);
-  font-size: 17px;
+  font-size: var(--pd-f-author);
   font-style: italic;
   color: var(--pd-soft);
 }
-.print-doc__rule {
-  width: 40px;
-  height: 1px;
-  margin: 18px 0 10px;
-  background: var(--pd-rule);
+.print-doc__figures {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 30px;
 }
-.print-doc__counts {
-  margin: 0;
-  font-size: 14px;
+.print-doc__figures li {
+  display: grid;
+  gap: 2px;
+  min-width: 60px;
+}
+.print-doc__figures b {
+  font-family: var(--rp-font-reading);
+  font-size: var(--pd-f-figure);
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.print-doc__figures span {
+  font-size: calc(10.5px * var(--pd-scale));
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pd-soft);
 }
 .print-doc__scope {
-  margin: 0;
-  font-size: 13px;
+  margin: 6px 0 0;
+  font-size: var(--pd-f-small);
   color: var(--pd-soft);
+}
+/* The legend's chips are borders, like the bars they explain: a background
+   would be dropped by a printer set to ink only. */
+.print-doc__legend {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 12px 0 0;
+  border-block-start: 1px solid var(--pd-rule);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 16px;
+  font-size: var(--pd-f-small);
+  color: var(--pd-soft);
+}
+.print-doc__legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.print-doc__legend i {
+  display: block;
+  width: 0;
+  height: 12px;
+  border-inline-start: 3px solid var(--mark-hue);
+  border-radius: 1px;
 }
 .print-doc__stamp {
-  margin: 28px 0 0;
-  font-size: 11.5px;
+  margin: 0;
+  align-self: end;
+  font-size: var(--pd-f-small);
   color: var(--pd-soft);
 }
+
+/* The pages after it. */
 .print-doc__section {
-  margin: 0 0 30px;
+  margin: 0 0 28px;
 }
 .print-doc__head {
   display: flex;
@@ -471,13 +791,13 @@
   padding-block-end: 6px;
   border-block-end: 1px solid var(--pd-rule);
   font-family: var(--rp-font-reading);
-  font-size: 15px;
+  font-size: var(--pd-f-head);
   font-weight: 650;
   letter-spacing: 0;
 }
 .print-doc__headcount {
   font-family: var(--rp-font-ui);
-  font-size: 11px;
+  font-size: var(--pd-f-small);
   font-weight: 500;
   color: var(--pd-soft);
   font-variant-numeric: tabular-nums;
@@ -503,12 +823,12 @@
   border-inline-start-color: var(--pd-soft);
 }
 .print-mark--bookmark {
-  border-inline-start-color: #b4532a;
+  border-inline-start-color: var(--pd-ember);
 }
 .print-mark__quote {
   margin: 0;
   font-family: var(--rp-font-reading);
-  font-size: 13.5px;
+  font-size: var(--pd-f-quote);
   line-height: 1.55;
   text-align: start;
   white-space: pre-line;
@@ -516,7 +836,7 @@
 }
 .print-mark__note {
   margin: 0;
-  font-size: 12.5px;
+  font-size: var(--pd-f-note);
   line-height: 1.5;
   text-align: start;
   white-space: pre-wrap;
@@ -524,12 +844,25 @@
 }
 .print-mark__plain {
   margin: 0;
-  font-size: 12.5px;
+  font-size: var(--pd-f-note);
   color: var(--pd-soft);
+}
+.print-mark__marker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--pd-f-note);
+  font-weight: 600;
+  color: var(--pd-ember);
+  font-variant-numeric: tabular-nums;
+}
+.print-mark__marker svg {
+  flex: none;
 }
 .print-mark__where {
   margin: 0;
-  font-size: 11px;
+  font-size: var(--pd-f-small);
   color: var(--pd-soft);
   font-variant-numeric: tabular-nums;
 }
@@ -541,17 +874,33 @@
   margin-block-start: 40px;
   padding-block-start: 10px;
   border-block-start: 1px solid var(--pd-rule);
-  font-size: 11px;
+  font-size: var(--pd-f-small);
   color: var(--pd-soft);
   text-align: center;
 }
 
 /* --- The printed page: on paper ----------------------------------------- */
-/* `size: auto` prints on whatever the reader's printer or PDF writer is set
-   to; the column is narrow enough to sit inside A4 and Letter alike. */
+/* One named page per size; `data-print-page` on <html> says which one the
+   document is laid on (the `page` rules under @media print below). The
+   sheet size then reaches the PDF writer from the page the content is on,
+   not from whatever the print dialog last had. The unnamed page stays
+   `auto` for an engine without named pages: it prints on the dialog's
+   own choice, with the column narrow enough to sit inside any of them. */
 @page {
   size: auto;
-  margin: 18mm 16mm;
+  margin: 18mm 20mm;
+}
+@page a4 {
+  size: A4;
+  margin: 18mm 20mm;
+}
+@page letter {
+  size: letter;
+  margin: 18mm 20mm;
+}
+@page phone {
+  size: 105mm 186mm;
+  margin: 10mm;
 }
 @media print {
   /* The shell owns the viewport with a fixed, overflow-hidden frame so the
@@ -565,8 +914,27 @@
     height: auto !important;
     min-height: 0 !important;
     overflow: visible !important;
-    background: #fff !important;
     color: #1c1917 !important;
+  }
+  /* The ground is painted once, by the root, which reaches the whole sheet,
+     margins included; a body painting the same colour again came out as a
+     second shade on the PDF. Night's `print-color-adjust: exact` keeps the
+     dark when the dialog is set to print without backgrounds - dark pages
+     without their dark would be cream type on white paper. */
+  html[data-print-view] {
+    background: #fff !important;
+  }
+  html[data-print-view] body {
+    background: transparent !important;
+  }
+  html[data-print-view][data-print-look='night'] {
+    color-scheme: dark;
+    background: #121212 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  html[data-print-view][data-print-look='night'] body {
+    color: #efe7d9 !important;
   }
   html[data-print-view] #root {
     display: block !important;
@@ -594,8 +962,29 @@
   html[data-print-view] .tabbar,
   html[data-print-view] .skip-link,
   html[data-print-view] .toast,
+  html[data-print-view] .sheet,
+  html[data-print-view] .sheet-backdrop,
   html[data-print-view] .notes-export__toolbar {
     display: none !important;
+  }
+
+  /* Which page the document is laid on, how tall the title page may be
+     (the page less its margins, with a little to spare so rounding never
+     spills the stamp onto a page of its own), and how wide the cover is. */
+  html[data-print-page='a4'] .print-doc {
+    page: a4;
+    --pd-page-h: 258mm;
+    --pd-cover-w: 58mm;
+  }
+  html[data-print-page='letter'] .print-doc {
+    page: letter;
+    --pd-page-h: 240mm;
+    --pd-cover-w: 58mm;
+  }
+  html[data-print-page='phone'] .print-doc {
+    page: phone;
+    --pd-page-h: 163mm;
+    --pd-cover-w: 38mm;
   }
 
   .print-sheet {
@@ -606,53 +995,66 @@
     box-shadow: none;
     background: transparent;
   }
+  /* Points, not pixels: what a printer calls 11pt is 11pt on every printer. */
   .print-doc {
-    font-size: 11.5pt;
+    --pd-f-body: calc(10pt * var(--pd-scale));
+    --pd-f-quote: calc(11pt * var(--pd-scale));
+    --pd-f-note: calc(9.5pt * var(--pd-scale));
+    --pd-f-small: calc(8pt * var(--pd-scale));
+    --pd-f-head: calc(11.5pt * var(--pd-scale));
+    --pd-f-title: calc(24pt * var(--pd-scale));
+    --pd-f-author: calc(13pt * var(--pd-scale));
+    --pd-f-figure: calc(18pt * var(--pd-scale));
+  }
+  /* The phone page is read scaled up to a screen a hand's width across:
+     larger type relative to the page, and a title that still fits its width. */
+  html[data-print-page='phone'] .print-doc {
+    --pd-f-body: calc(11pt * var(--pd-scale));
+    --pd-f-quote: calc(12pt * var(--pd-scale));
+    --pd-f-note: calc(10.5pt * var(--pd-scale));
+    --pd-f-small: calc(8.5pt * var(--pd-scale));
+    --pd-f-head: calc(12pt * var(--pd-scale));
+    --pd-f-title: calc(17pt * var(--pd-scale));
+    --pd-f-author: calc(11pt * var(--pd-scale));
+    --pd-f-figure: calc(15pt * var(--pd-scale));
   }
   .print-doc__title {
-    padding-block-start: 12vh;
+    aspect-ratio: auto;
+    height: var(--pd-page-h);
+    gap: 6mm;
     break-after: page;
     page-break-after: always;
   }
   .print-doc__coverwrap {
-    width: 62mm;
-    box-shadow: none;
-    border: 1px solid var(--pd-rule);
+    margin-block-end: 6mm;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
-  .print-doc__book {
-    font-size: 24pt;
-  }
-  .print-doc__author {
-    font-size: 13pt;
+  html[data-print-page='phone'] .print-doc__coverwrap {
+    margin-block-end: 4mm;
   }
   .print-doc__section {
     margin-block-end: 8mm;
   }
+  /* A running head stays with what runs under it. */
   .print-doc__head {
+    margin-block-end: 4mm;
     break-after: avoid;
     page-break-after: avoid;
-    font-size: 11.5pt;
   }
   .print-doc__list {
     gap: 5mm;
   }
-  /* A highlight and its note stay on one page together. */
+  html[data-print-page='phone'] .print-doc__list {
+    gap: 4mm;
+  }
+  /* A highlight and its note stay on one page together; a passage longer
+     than a page has to split, but never leaves a single line behind. */
   .print-mark {
     break-inside: avoid;
     page-break-inside: avoid;
-  }
-  .print-mark__quote {
-    font-size: 10.5pt;
-  }
-  .print-mark__note {
-    font-size: 9.5pt;
-  }
-  .print-mark__where,
-  .print-doc__foot,
-  .print-doc__stamp {
-    font-size: 8pt;
+    orphans: 2;
+    widows: 2;
   }
   .print-doc__foot {
     margin-block-start: 12mm;

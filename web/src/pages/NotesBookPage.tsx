@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { type Annotation } from '@readport/shared';
 import { api } from '../api/client';
@@ -8,6 +8,14 @@ import { HIGHLIGHT_COLORS } from '../reader/marks';
 import { useT } from '../i18n';
 import { useFormat } from '../i18n/useFormat';
 import { type MessageKey } from '../i18n/messages/en';
+import {
+  exportHref,
+  optionsForView,
+  preferencesOf,
+  readPreferences,
+  rememberPreferences,
+} from '../notes/exportOptions';
+import { ExportOptionsSheet } from '../notes/ExportOptionsSheet';
 import { MarkCard } from '../notes/MarkCard';
 import {
   applyFilters,
@@ -34,8 +42,9 @@ import '../styles/notes.css';
  * own margin. Newest-first is for finding what you wrote last night;
  * by-colour is for a reader whose colours mean something - one for
  * quotations, one for arguments to come back to. The filters and the sort
- * live in the URL, so Back returns to the same view and the printed page
- * is handed exactly what is on screen.
+ * live in the URL, so Back returns to the same view, and "Export as PDF…"
+ * opens a sheet prefilled from that view - what is on screen is what the
+ * pages start from, and the reader adjusts from there.
  */
 
 const KIND_LABELS: Record<KindFilter, MessageKey> = {
@@ -60,6 +69,7 @@ export function NotesBookPage() {
   const { bookId = '' } = useParams();
   const [params, setParams] = useSearchParams();
   const view = useMemo(() => viewFromParams(params), [params]);
+  const [exportOpen, setExportOpen] = useState(false);
   const { detail, marks, setMarks, state } = useBookMarks(bookId);
 
   const starts = useMemo(() => chapterStarts(detail?.chapters ?? []), [detail]);
@@ -88,12 +98,6 @@ export function NotesBookPage() {
       toast.show(t('notes.deleteFailed'));
     }
   };
-
-  const exportHref = (() => {
-    const p = viewToParams(view);
-    p.set('print', '1');
-    return `/notes/${bookId}/export?${p.toString()}`;
-  })();
 
   const back = (
     <Link className="notes-backlink" to="/notes">
@@ -154,8 +158,8 @@ export function NotesBookPage() {
             <button
               type="button"
               className="btn btn--secondary"
-              onClick={() => navigate(exportHref)}
-              disabled={shown.length === 0}
+              onClick={() => setExportOpen(true)}
+              disabled={marks.length === 0}
             >
               <IconDownload size={17} /> {t('notes.exportPdf')}
             </button>
@@ -249,6 +253,19 @@ export function NotesBookPage() {
             );
           })}
         </>
+      )}
+
+      {exportOpen && (
+        <ExportOptionsSheet
+          initial={optionsForView(view, readPreferences(navigator.language))}
+          marks={marks}
+          submitLabel={t('notes.export.go')}
+          onClose={() => setExportOpen(false)}
+          onSubmit={(options) => {
+            rememberPreferences(preferencesOf(options));
+            navigate(exportHref(bookId, options, true));
+          }}
+        />
       )}
     </main>
   );
