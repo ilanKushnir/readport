@@ -1723,6 +1723,10 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Ara',
   'reader.mark.removeHighlight': 'Vurgulamayı kaldır',
   'reader.settings.voiceMark': 'Ses nasıl izlenir',
+  // reader
+  'reader.search.clear': 'Aramayı temizle',
+  'reader.voiceMark.margin': 'Okunan satırın yanında, kenar boşluğunda bir işaret',
+  'reader.voiceMark.wash': 'Okunan cümle, vurgulanmış',
 };
 
 export default messages;

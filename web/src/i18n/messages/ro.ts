@@ -1741,5 +1741,9 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Caută',
   'reader.mark.removeHighlight': 'Elimină evidențierea',
   'reader.settings.voiceMark': 'Urmărirea narațiunii',
+  // reader
+  'reader.search.clear': 'Șterge căutarea',
+  'reader.voiceMark.margin': 'Un semn pe margine, lângă rândul citit de voce',
+  'reader.voiceMark.wash': 'Propoziția citită de voce, evidențiată',
 };
 export default messages;

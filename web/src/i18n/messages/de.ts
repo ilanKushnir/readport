@@ -1757,5 +1757,9 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Suchen',
   'reader.mark.removeHighlight': 'Markierung entfernen',
   'reader.settings.voiceMark': 'Stimmanzeige',
+  // reader
+  'reader.search.clear': 'Suche leeren',
+  'reader.voiceMark.margin': 'Ein Zeichen am Rand neben der aktuell gelesenen Zeile',
+  'reader.voiceMark.wash': 'Der aktuell gelesene Satz, markiert',
 } as const;
 export default messages;

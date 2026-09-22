@@ -1748,5 +1748,9 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Αναζήτηση',
   'reader.mark.removeHighlight': 'Αφαίρεση επισήμανσης',
   'reader.settings.voiceMark': 'Πώς ακολουθείται η φωνή',
+  // reader
+  'reader.search.clear': 'Απαλοιφή αναζήτησης',
+  'reader.voiceMark.margin': 'Ένδειξη στο περιθώριο δίπλα στη γραμμή που διαβάζεται',
+  'reader.voiceMark.wash': 'Η πρόταση που διαβάζεται, επισημασμένη',
 };
 export default messages;

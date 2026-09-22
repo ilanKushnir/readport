@@ -1750,5 +1750,9 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Zoeken',
   'reader.mark.removeHighlight': 'Markering verwijderen',
   'reader.settings.voiceMark': 'Stemweergave',
+  // reader
+  'reader.search.clear': 'Zoeken wissen',
+  'reader.voiceMark.margin': 'Een teken in de marge naast de regel die de stem voorleest',
+  'reader.voiceMark.wash': 'De zin die de stem voorleest, gemarkeerd',
 } as const;
 export default messages;

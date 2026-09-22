@@ -1739,6 +1739,10 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Buscar',
   'reader.mark.removeHighlight': 'Quitar subrayado',
   'reader.settings.voiceMark': 'Cómo se sigue la voz',
+  // reader
+  'reader.search.clear': 'Borrar la búsqueda',
+  'reader.voiceMark.margin': 'Una marca en el margen, junto a la línea leída por la voz',
+  'reader.voiceMark.wash': 'La frase leída por la voz, subrayada',
 };
 
 export default messages;

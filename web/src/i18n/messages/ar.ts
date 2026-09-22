@@ -1776,5 +1776,9 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'بحث',
   'reader.mark.removeHighlight': 'إزالة التظليل',
   'reader.settings.voiceMark': 'متابعة السرد',
+  // reader
+  'reader.search.clear': 'مسح البحث',
+  'reader.voiceMark.margin': 'علامة في الهامش بجانب السطر قيد القراءة',
+  'reader.voiceMark.wash': 'الجملة قيد القراءة، مظللة',
 };
 export default messages;

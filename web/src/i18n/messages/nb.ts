@@ -1703,5 +1703,9 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Søk',
   'reader.mark.removeHighlight': 'Fjern utheving',
   'reader.settings.voiceMark': 'Hvordan stemmen følges',
+  // reader
+  'reader.search.clear': 'Tøm søket',
+  'reader.voiceMark.margin': 'Et merke i margen ved siden av linjen som leses',
+  'reader.voiceMark.wash': 'Setningen som leses, uthevet',
 };
 export default messages;

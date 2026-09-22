@@ -1621,5 +1621,9 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': '搜索',
   'reader.mark.removeHighlight': '移除高亮',
   'reader.settings.voiceMark': '跟随朗读',
+  // reader
+  'reader.search.clear': '清除搜索',
+  'reader.voiceMark.margin': '正在朗读的那一行旁，页边距上的标记',
+  'reader.voiceMark.wash': '正在朗读的句子，高亮显示',
 };
 export default messages;

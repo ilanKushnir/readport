@@ -1721,6 +1721,10 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': '検索',
   'reader.mark.removeHighlight': 'ハイライトを削除',
   'reader.settings.voiceMark': '音声の表示方法',
+  // reader
+  'reader.search.clear': '検索をクリア',
+  'reader.voiceMark.margin': '読んでいる行の横の余白に印を付けます',
+  'reader.voiceMark.wash': '読んでいる文をハイライト表示します',
 };
 
 export default messages;

@@ -1681,5 +1681,9 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': '검색',
   'reader.mark.removeHighlight': '하이라이트 제거',
   'reader.settings.voiceMark': '낭독 따라가기',
+  // reader
+  'reader.search.clear': '검색어 지우기',
+  'reader.voiceMark.margin': '낭독 중인 줄 옆 여백의 표시',
+  'reader.voiceMark.wash': '낭독 중인 문장의 하이라이트',
 };
 export default messages;

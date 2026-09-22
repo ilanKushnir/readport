@@ -1737,6 +1737,10 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Поиск',
   'reader.mark.removeHighlight': 'Убрать выделение',
   'reader.settings.voiceMark': 'Отслеживание голоса',
+  // reader
+  'reader.search.clear': 'Очистить поиск',
+  'reader.voiceMark.margin': 'Метка на полях рядом со строкой, которая сейчас читается',
+  'reader.voiceMark.wash': 'Предложение, которое сейчас читается, выделенное цветом',
 };
 
 export default messages;

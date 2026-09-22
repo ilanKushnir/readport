@@ -1751,6 +1751,10 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Rechercher',
   'reader.mark.removeHighlight': 'Retirer le surlignage',
   'reader.settings.voiceMark': 'Suivi de la voix',
+  // reader
+  'reader.search.clear': 'Effacer la recherche',
+  'reader.voiceMark.margin': 'Un repère dans la marge à côté de la ligne en cours de lecture',
+  'reader.voiceMark.wash': 'La phrase en cours de lecture, surlignée',
 };
 
 export default messages;

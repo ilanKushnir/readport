@@ -1728,5 +1728,9 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Hledat',
   'reader.mark.removeHighlight': 'Odebrat zvýraznění',
   'reader.settings.voiceMark': 'Sledování vyprávění',
+  // reader
+  'reader.search.clear': 'Vymazat vyhledávání',
+  'reader.voiceMark.margin': 'Značka na okraji vedle právě čteného řádku',
+  'reader.voiceMark.wash': 'Zvýraznění právě čtené věty',
 };
 export default messages;

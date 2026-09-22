@@ -1740,5 +1740,9 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'חיפוש',
   'reader.mark.removeHighlight': 'הסרת ההדגשה',
   'reader.settings.voiceMark': 'מעקב אחרי הקריינות',
+  // reader
+  'reader.search.clear': 'ניקוי החיפוש',
+  'reader.voiceMark.margin': 'סימון בשוליים לצד השורה הנקראת',
+  'reader.voiceMark.wash': 'המשפט הנקרא, מודגש',
 };
 export default messages;

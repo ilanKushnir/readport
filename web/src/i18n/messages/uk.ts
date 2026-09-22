@@ -1741,6 +1741,10 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Пошук',
   'reader.mark.removeHighlight': 'Прибрати виділення',
   'reader.settings.voiceMark': 'Відстеження голосу',
+  // reader
+  'reader.search.clear': 'Очистити пошук',
+  'reader.voiceMark.margin': 'Відмітка на полях біля рядка, який читає голос',
+  'reader.voiceMark.wash': 'Речення, яке читає голос, виділене',
 };
 
 export default messages;

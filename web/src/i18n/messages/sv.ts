@@ -1701,5 +1701,9 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Sök',
   'reader.mark.removeHighlight': 'Ta bort markering',
   'reader.settings.voiceMark': 'Följer uppläsningen',
+  // reader
+  'reader.search.clear': 'Rensa sökningen',
+  'reader.voiceMark.margin': 'Ett tecken i marginalen bredvid den upplästa raden',
+  'reader.voiceMark.wash': 'Den upplästa meningen, markerad',
 };
 export default messages;

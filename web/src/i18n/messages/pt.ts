@@ -1740,6 +1740,10 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Pesquisar',
   'reader.mark.removeHighlight': 'Remover destaque',
   'reader.settings.voiceMark': 'Como se segue a voz',
+  // reader
+  'reader.search.clear': 'Limpar a pesquisa',
+  'reader.voiceMark.margin': 'Uma marca na margem, junto à linha lida pela voz',
+  'reader.voiceMark.wash': 'A frase lida pela voz, destacada',
 };
 
 export default messages;

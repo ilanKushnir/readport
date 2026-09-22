@@ -1716,5 +1716,9 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Hae',
   'reader.mark.removeHighlight': 'Poista korostus',
   'reader.settings.voiceMark': 'Miten ääntä seurataan',
+  // reader
+  'reader.search.clear': 'Tyhjennä haku',
+  'reader.voiceMark.margin': 'Merkki marginaalissa sen rivin vieressä, jota luetaan',
+  'reader.voiceMark.wash': 'Lause, jota luetaan, korostettuna',
 };
 export default messages;

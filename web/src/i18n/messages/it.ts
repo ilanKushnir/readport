@@ -1737,6 +1737,10 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Cerca',
   'reader.mark.removeHighlight': "Rimuovi l'evidenziazione",
   'reader.settings.voiceMark': 'Indicatore della voce',
+  // reader
+  'reader.search.clear': 'Cancella la ricerca',
+  'reader.voiceMark.margin': 'Un segno nel margine accanto alla riga in lettura',
+  'reader.voiceMark.wash': 'La frase in lettura, evidenziata',
 };
 
 export default messages;

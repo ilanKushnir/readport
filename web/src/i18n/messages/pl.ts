@@ -1746,5 +1746,9 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Szukaj',
   'reader.mark.removeHighlight': 'Usuń zaznaczenie',
   'reader.settings.voiceMark': 'Śledzenie narracji',
+  // reader
+  'reader.search.clear': 'Wyczyść wyszukiwanie',
+  'reader.voiceMark.margin': 'Znacznik na marginesie obok czytanej linii',
+  'reader.voiceMark.wash': 'Zaznaczenie czytanego zdania',
 };
 export default messages;

@@ -1706,5 +1706,9 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Søg',
   'reader.mark.removeHighlight': 'Fjern fremhævning',
   'reader.settings.voiceMark': 'Følger oplæsningen',
+  // reader
+  'reader.search.clear': 'Ryd søgningen',
+  'reader.voiceMark.margin': 'Et mærke i margenen ved siden af den oplæste linje',
+  'reader.voiceMark.wash': 'Den oplæste sætning, fremhævet',
 };
 export default messages;
