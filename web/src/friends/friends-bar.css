@@ -131,43 +131,46 @@
   outline-offset: 2px;
 }
 
-/* ------------------------------------------------------------ the stack */
-/* Up to three beads overlapping, then "+n": the friends in this book at a
-   glance, and the way to the card. Sized to the row it sits in. */
-.fstack {
+/* --------------------------------------------------------- the people */
+/* The way to the card: an icon, the count, and a dot when someone is in
+   the book right now. Drawn in the surface's own accent. */
+.fpeople {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  min-height: 28px;
-  padding: 2px 4px;
-  margin: -2px 0;
-  border: 0;
+  gap: 5px;
+  min-height: 36px;
+  padding: 0 10px 0 9px;
+  border: 1px solid color-mix(in srgb, var(--rd-link, var(--rp-interactive)) 35%, transparent);
   border-radius: var(--radius-pill);
   background: transparent;
-  color: inherit;
+  color: var(--rd-link, var(--rp-interactive));
+  font-family: var(--rp-font-ui);
   cursor: pointer;
   transition: background-color var(--rp-duration-quick) var(--rp-ease);
 }
-.fstack .fbead {
-  --fbead-size: 17px;
-  font-size: 9.5px;
-}
-.fstack .fbead + .fbead {
-  margin-inline-start: -5px;
-}
-.fstack__more {
-  margin-inline-start: 5px;
-  font-size: 11.5px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  opacity: 0.8;
-}
-.fstack:hover,
-.fstack:focus-visible {
+.fpeople:hover,
+.fpeople:focus-visible {
   background: color-mix(in srgb, currentColor 10%, transparent);
 }
-.fstack:focus-visible {
+.fpeople:focus-visible {
   outline: 2px solid var(--rp-interactive);
   outline-offset: 1px;
+}
+.fpeople__count {
+  font-size: 12.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.fpeople__live {
+  position: absolute;
+  top: 5px;
+  inset-inline-end: 5px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--rp-live);
+  box-shadow: 0 0 0 2px var(--rd-bg, var(--rp-bg));
 }
 
 /* The reader's full-width slider needs a box to lay the beads over; the

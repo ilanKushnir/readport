@@ -595,7 +595,6 @@ const messages: Record<string, string> = {
   'reader.chrome.search': 'Hae kirjasta',
   'reader.chrome.bookmarkPage': 'Lisää kirjanmerkki tälle sivulle',
   'reader.chrome.removeBookmark': 'Poista kirjanmerkki tältä sivulta',
-  'reader.chrome.marksWithCount': 'Kirjanmerkit ja muistiinpanot ({n})',
   'reader.chrome.settings': 'Lukuasetukset',
   'reader.chrome.previousPage': 'Edellinen sivu',
   'reader.chrome.nextPage': 'Seuraava sivu',

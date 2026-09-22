@@ -604,7 +604,6 @@ const messages: Record<string, string> = {
   'reader.chrome.search': '本文を検索',
   'reader.chrome.bookmarkPage': 'このページをブックマーク',
   'reader.chrome.removeBookmark': 'このページのブックマークを削除',
-  'reader.chrome.marksWithCount': 'ブックマークとノート({n})',
   'reader.chrome.settings': '読書設定',
   'reader.chrome.previousPage': '前のページ',
   'reader.chrome.nextPage': '次のページ',

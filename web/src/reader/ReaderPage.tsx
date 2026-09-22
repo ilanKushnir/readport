@@ -20,7 +20,6 @@ import { useProgressNotices } from '../progress/notices';
 import {
   IconBack,
   IconBookmark,
-  IconChevronDown,
   IconChevronLeft,
   IconCheck,
   IconClose,
@@ -3364,14 +3363,10 @@ export function ReaderPage() {
         >
           <IconBack />
         </button>
-        <span className="reader-title">{chapterTitle}</span>
         <button
           className="icon-btn"
           // The tab is said out loud, not left to whatever it was set to
-          // last. One sheet holds both lists, `contentsTab` outlives every
-          // close, and the button labelled Contents used to open on Marks
-          // because the reader had once opened a bookmark from the caret
-          // beside the ribbon - possibly days earlier.
+          // last: the button is Contents, and it opens on the chapters.
           onClick={() => {
             setContentsTab('toc');
             setSheet('toc');
@@ -3382,45 +3377,22 @@ export function ReaderPage() {
         </button>
         <button
           className="icon-btn"
-          onClick={() => setSheet('search')}
-          aria-label={t('reader.chrome.search')}
-        >
-          <IconSearch />
-        </button>
-        {/* Two jobs, one control: the ribbon marks this page, the caret opens
-            everything already marked. The caret only exists once there is
-            something behind it. */}
-        <div className="bm-split">
-          <button
-            className={`icon-btn ${currentBookmark ? 'is-marked' : ''}`}
-            onClick={() => void toggleBookmark()}
-            aria-pressed={!!currentBookmark}
-            aria-label={
-              currentBookmark ? t('reader.chrome.removeBookmark') : t('reader.chrome.bookmarkPage')
-            }
-          >
-            <IconBookmark filled={!!currentBookmark} />
-          </button>
-          {annotations.length > 0 && (
-            <button
-              className="icon-btn bm-split__more"
-              onClick={() => {
-                setContentsTab('marks');
-                setSheet('toc');
-              }}
-              aria-haspopup="dialog"
-              aria-label={t('reader.chrome.marksWithCount', { n: annotations.length })}
-            >
-              <IconChevronDown size={16} />
-            </button>
-          )}
-        </div>
-        <button
-          className="icon-btn"
           onClick={() => setSheet('settings')}
           aria-label={t('reader.chrome.settings')}
         >
           <IconType />
+        </button>
+        <span className="reader-title">{chapterTitle}</span>
+        {/* Search, drawn as the small field it opens: a glass and a word,
+            at the end of the bar where a search field is looked for. */}
+        <button
+          type="button"
+          className="reader-searchpill"
+          onClick={() => setSheet('search')}
+          aria-label={t('reader.chrome.search')}
+        >
+          <IconSearch size={16} />
+          <span>{t('reader.chrome.searchPill')}</span>
         </button>
       </div>
 
@@ -3903,135 +3875,141 @@ export function ReaderPage() {
             }}
           />
         )}
-        {prefs.progressBar === 'full' && (
-          <div className="reader-slider">
-            <input
-              className="slider"
-              style={{ color: 'var(--rd-link)' }}
-              type="range"
-              min={0}
-              max={1000}
-              value={Math.round((dragPct ?? bookPct) * 1000)}
-              aria-label={t('reader.progress.position')}
-              onChange={(e) => {
-                if (!manifest) return;
-                const pct = Number(e.target.value) / 1000;
-                setDragPct(pct);
-                if (dragCommitRef.current) clearTimeout(dragCommitRef.current);
-                dragCommitRef.current = setTimeout(() => {
-                  dragCommitRef.current = null;
-                  const targetChars = pct * manifest.totalChars;
-                  let s = 0;
-                  for (const c of manifest.chapters) {
-                    if (c.cumChars <= targetChars) s = c.idx;
-                    else break;
+        {/* One row: the friends, the bar with its beads, the percentage,
+            and the voice. What the bar's other figures used to scatter
+            across the row is in one order now, the same on every screen. */}
+        {(prefs.progressBar !== 'hidden' || pair || friendsHere.friends.length > 0) && (
+          <div className="reader-bar">
+            {friendsHere.friends.length > 0 && (
+              <FriendsButton
+                bookId={id}
+                myPct={bookPct}
+                friends={friendsHere.friends}
+                shownIds={friendsHere.shownIds}
+                setShown={friendsHere.setShown}
+                open={friendsHere.cardOpen}
+                setOpen={friendsHere.setCardOpen}
+              />
+            )}
+            {prefs.progressBar === 'full' && (
+              <div className="reader-slider">
+                <input
+                  className="slider"
+                  style={{ color: 'var(--rd-link)' }}
+                  type="range"
+                  min={0}
+                  max={1000}
+                  value={Math.round((dragPct ?? bookPct) * 1000)}
+                  aria-label={t('reader.progress.position')}
+                  onChange={(e) => {
+                    if (!manifest) return;
+                    const pct = Number(e.target.value) / 1000;
+                    setDragPct(pct);
+                    if (dragCommitRef.current) clearTimeout(dragCommitRef.current);
+                    dragCommitRef.current = setTimeout(() => {
+                      dragCommitRef.current = null;
+                      const targetChars = pct * manifest.totalChars;
+                      let s = 0;
+                      for (const c of manifest.chapters) {
+                        if (c.cumChars <= targetChars) s = c.idx;
+                        else break;
+                      }
+                      const within = Math.max(
+                        0,
+                        Math.floor(targetChars - manifest.chapters[s]!.cumChars),
+                      );
+                      gotoChapter(s, within, 'seek', undefined, 'slider');
+                      setDragPct(null);
+                    }, 160);
+                  }}
+                />
+                <FriendMarkers
+                  friends={friendsHere.friends}
+                  shownIds={friendsHere.shownIds}
+                  on="slider"
+                  onPick={() => friendsHere.setCardOpen(true)}
+                />
+              </div>
+            )}
+            {prefs.progressBar === 'compact' && (
+              <span
+                className="reader-minibar"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(bookPct * 100)}
+                aria-label={t('reader.progress.position')}
+                title={t('reader.progress.miniTitle', {
+                  chapter: chapterTitle,
+                  pct: f.percent(chapterPct),
+                })}
+              >
+                <span style={{ width: `${bookPct * 100}%` }} />
+                <i style={{ insetInlineStart: `${bookPct * 100}%` }} aria-hidden="true" />
+                <FriendMarkers
+                  friends={friendsHere.friends}
+                  shownIds={friendsHere.shownIds}
+                  onPick={() => friendsHere.setCardOpen(true)}
+                />
+              </span>
+            )}
+            {prefs.progressBar !== 'hidden' && (
+              <span className="reader-bar__pct">{f.percent(bookPct)}</span>
+            )}
+            {pair && (
+              <div className="reader-tandem">
+                {/* Read along adds the voice to the page; Listen leaves the
+                    page for the player. Two things, two round buttons, the
+                    one people came for first. */}
+                <button
+                  className="tandem-btn tandem-btn--lead"
+                  onClick={readAlong ? () => setReadAlong(false) : startReadAlong}
+                  disabled={!pair.switchable}
+                  aria-pressed={readAlong}
+                  aria-label={
+                    !pair.switchable
+                      ? t('reader.tandem.aligning')
+                      : readAlong
+                        ? t('reader.tandem.readingAlong')
+                        : t('reader.tandem.readAlong')
                   }
-                  const within = Math.max(
-                    0,
-                    Math.floor(targetChars - manifest.chapters[s]!.cumChars),
-                  );
-                  gotoChapter(s, within, 'seek', undefined, 'slider');
-                  setDragPct(null);
-                }, 160);
-              }}
-            />
-            <FriendMarkers
-              friends={friendsHere.friends}
-              shownIds={friendsHere.shownIds}
-              on="slider"
-              onPick={() => friendsHere.setCardOpen(true)}
-            />
+                  title={
+                    pair.switchable
+                      ? t('reader.tandem.readAlongHint')
+                      : t('reader.tandem.notReadyHint')
+                  }
+                >
+                  <IconReadAlong size={18} />
+                </button>
+                {pair.switchable && !readAlong && (
+                  <button
+                    className="tandem-btn"
+                    onClick={() => void switchToAudio()}
+                    aria-label={t('reader.tandem.listenInstead')}
+                    title={t('reader.tandem.listenHint')}
+                  >
+                    <IconHeadphones size={18} />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
-        <div className="reader-footer-row">
-          {prefs.progressBar === 'full' && (
+        {prefs.progressBar === 'full' && (
+          <div className="reader-footer-row">
             <span className="reader-footer-label">
               {prefs.mode !== 'paginated'
                 ? chapterTitle
                 : paginationFailed
-                  ? // This chapter would not divide into pages, so it is
-                    // scrolling instead - say so rather than claim one page.
-                    t('reader.progress.chapterScrolls')
+                  ? t('reader.progress.chapterScrolls')
                   : pagesLeft === 0
                     ? pageCount === 1
                       ? t('reader.progress.wholeChapter')
                       : t('reader.progress.lastPage')
                     : t('reader.progress.pagesLeft', { n: pagesLeft })}
             </span>
-          )}
-          {prefs.progressBar === 'compact' && (
-            <span
-              className="reader-minibar"
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={Math.round(bookPct * 100)}
-              aria-label={t('reader.progress.position')}
-              title={t('reader.progress.miniTitle', {
-                chapter: chapterTitle,
-                pct: f.percent(chapterPct),
-              })}
-            >
-              <span style={{ width: `${bookPct * 100}%` }} />
-              <i style={{ insetInlineStart: `${bookPct * 100}%` }} aria-hidden="true" />
-              <FriendMarkers
-                friends={friendsHere.friends}
-                shownIds={friendsHere.shownIds}
-                onPick={() => friendsHere.setCardOpen(true)}
-              />
-            </span>
-          )}
-          <span className="grow" />
-          {pair && (
-            <div className="reader-tandem">
-              {/* Read along adds the voice to the page; Listen instead leaves
-                  the page for the player. Two different things, so two
-                  buttons - the one people came for reads first. */}
-              <button
-                className="tandem-pill tandem-pill--lead"
-                onClick={readAlong ? () => setReadAlong(false) : startReadAlong}
-                disabled={!pair.switchable}
-                aria-pressed={readAlong}
-                title={
-                  pair.switchable
-                    ? t('reader.tandem.readAlongHint')
-                    : t('reader.tandem.notReadyHint')
-                }
-              >
-                <IconReadAlong size={17} />
-                <span>
-                  {!pair.switchable
-                    ? t('reader.tandem.aligning')
-                    : readAlong
-                      ? t('reader.tandem.readingAlong')
-                      : t('reader.tandem.readAlong')}
-                </span>
-              </button>
-              {pair.switchable && !readAlong && (
-                <button
-                  className="tandem-pill"
-                  onClick={() => void switchToAudio()}
-                  title={t('reader.tandem.listenHint')}
-                >
-                  <IconHeadphones size={17} />
-                  <span>{t('reader.tandem.listenInstead')}</span>
-                </button>
-              )}
-            </div>
-          )}
-          {prefs.progressBar !== 'hidden' && (
-            <FriendsButton
-              bookId={id}
-              myPct={bookPct}
-              friends={friendsHere.friends}
-              shownIds={friendsHere.shownIds}
-              setShown={friendsHere.setShown}
-              open={friendsHere.cardOpen}
-              setOpen={friendsHere.setCardOpen}
-            />
-          )}
-          {prefs.progressBar !== 'hidden' && <span>{f.percent(bookPct)}</span>}
-        </div>
+          </div>
+        )}
       </div>
 
       {sheet === 'toc' && manifest && (
@@ -4054,6 +4032,21 @@ export function ReaderPage() {
                 : t('reader.contents.marksTab')}
             </button>
           </div>
+          {contentsTab === 'marks' && (
+            // The page's own bookmark lives with the marks now, where the
+            // ribbon used to be a button in the bar.
+            <button
+              type="button"
+              className={`bm-page${currentBookmark ? ' is-marked' : ''}`}
+              aria-pressed={!!currentBookmark}
+              onClick={() => void toggleBookmark()}
+            >
+              <IconBookmark size={17} filled={!!currentBookmark} />
+              {currentBookmark
+                ? t('reader.chrome.removeBookmark')
+                : t('reader.chrome.bookmarkPage')}
+            </button>
+          )}
           {contentsTab === 'marks' &&
             (annotations.length === 0 ? (
               <p style={{ color: 'var(--rp-text-soft)' }}>{t('reader.contents.noMarks')}</p>

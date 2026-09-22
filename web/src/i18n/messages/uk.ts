@@ -600,7 +600,6 @@ const messages: Record<string, string> = {
   'reader.chrome.search': 'Пошук по книзі',
   'reader.chrome.bookmarkPage': 'Додати сторінку в закладки',
   'reader.chrome.removeBookmark': 'Прибрати закладку з цієї сторінки',
-  'reader.chrome.marksWithCount': 'Закладки і нотатки ({n})',
   'reader.chrome.settings': 'Налаштування читання',
   'reader.chrome.previousPage': 'Попередня сторінка',
   'reader.chrome.nextPage': 'Наступна сторінка',

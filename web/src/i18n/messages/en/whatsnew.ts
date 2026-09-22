@@ -16,6 +16,16 @@ export const whatsnew = {
   'whatsnew.olderHeading': 'Version {version}',
   'whatsnew.done': 'Start reading',
 
+  // ---------------------------------------------------------------- 0.18.0
+  'whatsnew.release.pagesOnPhone':
+    'Pages on a phone page again: the reader no longer falls back to scrolling a chapter it can paginate.',
+  'whatsnew.release.readerBars':
+    "The reader's bars are in order: contents, type and search above; friends, the bar and the voice below.",
+  'whatsnew.release.selectionIcons':
+    'A selection is framed as one, its menu is four icons with the colours behind the highlighter, and a shared passage goes out whole.',
+  'whatsnew.release.voiceMark':
+    'Reading along shows a mark in the margin or a wash on the sentence, your choice in Reading settings, and both keep up with the text.',
+
   // ---------------------------------------------------------------- 0.17.0
   'whatsnew.release.liveFriends':
     'A friend in the same book right now shows as a breathing bead on your bar, and as Reading now on the Friends page.',

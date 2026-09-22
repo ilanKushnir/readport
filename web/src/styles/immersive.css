@@ -250,34 +250,6 @@
 }
 /* Bookmark toggle + list opener, joined into one pill so they read as one
    control. Logical radii, so it flips with an RTL book. */
-.bm-split {
-  display: inline-flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-.bm-split > .icon-btn {
-  width: 36px;
-  border-radius: 6px;
-}
-.bm-split > .icon-btn:first-child {
-  border-start-start-radius: var(--radius-pill);
-  border-end-start-radius: var(--radius-pill);
-}
-.bm-split > .icon-btn:last-child {
-  border-start-end-radius: var(--radius-pill);
-  border-end-end-radius: var(--radius-pill);
-}
-.bm-split > .icon-btn:only-child {
-  width: 44px;
-  border-radius: var(--radius-pill);
-}
-.bm-split__more {
-  width: 26px;
-  color: var(--rd-soft);
-}
-.bm-split__more:hover {
-  color: inherit;
-}
 .bm-list {
   list-style: none;
   margin: 0;
@@ -449,6 +421,122 @@
 .reader-chapter-end .btn:hover {
   background: color-mix(in srgb, var(--rd-text) 8%, transparent);
 }
+/* Search, as the small field it opens: a glass and a word in a soft pill at
+   the end of the top bar. On a narrow screen the word goes and the glass
+   stays, in the same pill. */
+.reader-searchpill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 12px 0 10px;
+  border: 1px solid color-mix(in srgb, var(--rd-text) 18%, transparent);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--rd-text) 6%, transparent);
+  color: var(--rd-soft);
+  font-family: var(--rp-font-ui);
+  font-size: 13px;
+  cursor: pointer;
+  flex: none;
+  transition: background-color var(--rp-duration-quick) var(--rp-ease);
+}
+.reader-searchpill:hover,
+.reader-searchpill:focus-visible {
+  background: color-mix(in srgb, var(--rd-text) 11%, transparent);
+  color: var(--rd-text);
+}
+@media (max-width: 480px) {
+  .reader-searchpill {
+    padding: 0 9px;
+  }
+  .reader-searchpill > span {
+    display: none;
+  }
+}
+
+/* The bar row: the friends, the bar with its beads, the percentage, and
+   the voice, in that order on every screen. */
+.reader-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 40px;
+}
+.reader-bar .reader-slider {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.reader-bar .reader-minibar {
+  flex: 1 1 auto;
+}
+.reader-bar__pct {
+  flex: none;
+  min-width: 3.2ch;
+  text-align: end;
+  font-size: 12.5px;
+  color: var(--rd-soft);
+  font-variant-numeric: tabular-nums;
+}
+.reader-bar .reader-tandem {
+  flex: none;
+  gap: var(--sp-1);
+}
+/* Read along and Listen: two round buttons, the lead one filled while the
+   voice is on the page. */
+.tandem-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--rd-link) 40%, transparent);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--rd-bg) 70%, transparent);
+  color: var(--rd-link);
+  cursor: pointer;
+  transition:
+    background-color var(--rp-duration-quick) var(--rp-ease),
+    color var(--rp-duration-quick) var(--rp-ease);
+}
+.tandem-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--rd-link) 14%, var(--rd-bg));
+}
+.tandem-btn[aria-pressed='true'] {
+  background: var(--rd-link);
+  border-color: var(--rd-link);
+  color: var(--rd-bg);
+}
+.tandem-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.tandem-btn:focus-visible {
+  outline: 2px solid var(--rd-link);
+  outline-offset: 2px;
+}
+
+/* The page's own bookmark, at the top of the marks. */
+.bm-page {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 42px;
+  margin-block-end: var(--sp-3);
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--rp-border-strong);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--rp-interactive);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.bm-page.is-marked {
+  background: color-mix(in srgb, var(--rp-primary) 10%, transparent);
+  border-color: color-mix(in srgb, var(--rp-primary) 40%, transparent);
+}
+
 .reader-footer-row {
   display: flex;
   align-items: center;
@@ -1843,32 +1931,15 @@
   bottom: calc(152px + var(--rp-safe-bottom));
 }
 
-/* The two tandem controls. Read along adds the voice to the page; Listen
-   instead leaves for the player. */
+/* The two tandem controls sit in the bar row (see .reader-bar). */
 .reader-tandem {
   display: flex;
   align-items: center;
-  gap: var(--sp-2);
   min-width: 0;
 }
-.reader-page .tandem-pill--lead {
-  background: color-mix(in srgb, var(--rd-link) 14%, var(--rd-bg));
-  border-color: color-mix(in srgb, var(--rd-link) 45%, transparent);
-  font-weight: 700;
-}
-.reader-page .tandem-pill--lead[aria-pressed='true'] {
-  background: color-mix(in srgb, var(--rd-link) 24%, var(--rd-bg));
-}
 
-/* Narrow screens: the icons carry the meaning, and the titles stay for anyone
-   with a pointer. Read along keeps its label - it is the one being offered. */
+/* Narrow screens: Back to the voice keeps its icon and loses its words. */
 @media (max-width: 560px) {
-  .reader-page .tandem-pill:not(.tandem-pill--lead) > span {
-    display: none;
-  }
-  .reader-page .tandem-pill:not(.tandem-pill--lead) {
-    padding-inline: 10px;
-  }
   .readalong__resume span {
     display: none;
   }

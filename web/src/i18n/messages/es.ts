@@ -608,7 +608,6 @@ const messages: Record<string, string> = {
   'reader.chrome.search': 'Buscar en el libro',
   'reader.chrome.bookmarkPage': 'Marcar esta página',
   'reader.chrome.removeBookmark': 'Quitar el marcador de esta página',
-  'reader.chrome.marksWithCount': 'Marcadores y notas ({n})',
   'reader.chrome.settings': 'Ajustes de lectura',
   'reader.chrome.previousPage': 'Página anterior',
   'reader.chrome.nextPage': 'Página siguiente',

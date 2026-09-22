@@ -295,9 +295,12 @@ try {
           const sentenceStart = rangeForSpan(map, 0, 1).getBoundingClientRect();
           if (!(off > 0) || (sentenceStart.x >= rect.left && sentenceStart.y >= rect.top))
             throw new Error('fixture must span a preceding page/scroll boundary');
-          document.querySelector('button[aria-label="Bookmark this page"]').click();
           return off;
         }, mode);
+        // The page's bookmark lives with the marks now: through the contents.
+        await fixture.page.getByRole('button', { name: 'Table of contents' }).click();
+        await fixture.page.getByRole('tab', { name: /Bookmarks & notes/ }).click();
+        await fixture.page.locator('.bm-page').click();
         const body = (await request).postDataJSON();
         assert.equal(body.locator.charOffset, expected);
         assert.equal(body.locator.sentenceId, 'saved');

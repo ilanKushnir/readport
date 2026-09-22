@@ -593,7 +593,6 @@ const messages: Record<string, string> = {
   'reader.chrome.search': 'Søg i bogen',
   'reader.chrome.bookmarkPage': 'Sæt bogmærke på denne side',
   'reader.chrome.removeBookmark': 'Fjern bogmærke fra denne side',
-  'reader.chrome.marksWithCount': 'Bogmærker og noter ({n})',
   'reader.chrome.settings': 'Læseindstillinger',
   'reader.chrome.previousPage': 'Forrige side',
   'reader.chrome.nextPage': 'Næste side',

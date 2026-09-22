@@ -597,7 +597,6 @@ const messages: Record<string, string> = {
   'reader.chrome.search': 'Поиск по книге',
   'reader.chrome.bookmarkPage': 'Добавить страницу в закладки',
   'reader.chrome.removeBookmark': 'Убрать закладку с этой страницы',
-  'reader.chrome.marksWithCount': 'Закладки и заметки ({n})',
   'reader.chrome.settings': 'Настройки чтения',
   'reader.chrome.previousPage': 'Предыдущая страница',
   'reader.chrome.nextPage': 'Следующая страница',

@@ -621,7 +621,6 @@ const messages: Record<string, string> = {
   'reader.chrome.search': 'Im Buch suchen',
   'reader.chrome.bookmarkPage': 'Diese Seite als Lesezeichen markieren',
   'reader.chrome.removeBookmark': 'Lesezeichen dieser Seite entfernen',
-  'reader.chrome.marksWithCount': 'Lesezeichen und Notizen ({n})',
   'reader.chrome.settings': 'Leseeinstellungen',
   'reader.chrome.previousPage': 'Vorherige Seite',
   'reader.chrome.nextPage': 'Nächste Seite',

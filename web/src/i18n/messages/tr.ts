@@ -598,7 +598,6 @@ const messages: Record<string, string> = {
   'reader.chrome.search': 'Kitapta ara',
   'reader.chrome.bookmarkPage': 'Bu sayfayı yer imlerine ekle',
   'reader.chrome.removeBookmark': 'Bu sayfadaki yer imini kaldır',
-  'reader.chrome.marksWithCount': 'Yer imleri ve notlar ({n})',
   'reader.chrome.settings': 'Okuma ayarları',
   'reader.chrome.previousPage': 'Önceki sayfa',
   'reader.chrome.nextPage': 'Sonraki sayfa',

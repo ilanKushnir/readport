@@ -604,7 +604,6 @@ const messages: Record<string, string> = {
   'reader.chrome.search': 'Caută în carte',
   'reader.chrome.bookmarkPage': 'Adaugă semn de carte pe această pagină',
   'reader.chrome.removeBookmark': 'Elimină semnul de carte de pe această pagină',
-  'reader.chrome.marksWithCount': 'Semne de carte și notițe ({n})',
   'reader.chrome.settings': 'Setări de citire',
   'reader.chrome.previousPage': 'Pagina anterioară',
   'reader.chrome.nextPage': 'Pagina următoare',

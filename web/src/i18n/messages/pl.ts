@@ -602,7 +602,6 @@ const messages: Record<string, string> = {
   'reader.chrome.search': 'Szukaj w książce',
   'reader.chrome.bookmarkPage': 'Dodaj tę stronę do zakładek',
   'reader.chrome.removeBookmark': 'Usuń zakładkę z tej strony',
-  'reader.chrome.marksWithCount': 'Zakładki i notatki ({n})',
   'reader.chrome.settings': 'Ustawienia czytania',
   'reader.chrome.previousPage': 'Poprzednia strona',
   'reader.chrome.nextPage': 'Następna strona',

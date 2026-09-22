@@ -617,7 +617,6 @@ const messages: Record<string, string> = {
   'reader.chrome.search': 'البحث في الكتاب',
   'reader.chrome.bookmarkPage': 'إضافة إشارة مرجعية لهذه الصفحة',
   'reader.chrome.removeBookmark': 'إزالة الإشارة المرجعية من هذه الصفحة',
-  'reader.chrome.marksWithCount': 'الإشارات المرجعية والملاحظات ({n})',
   'reader.chrome.settings': 'إعدادات القراءة',
   'reader.chrome.previousPage': 'الصفحة السابقة',
   'reader.chrome.nextPage': 'الصفحة التالية',

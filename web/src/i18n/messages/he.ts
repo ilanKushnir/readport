@@ -603,7 +603,6 @@ const messages: Record<string, string> = {
   'reader.chrome.search': 'חיפוש בספר',
   'reader.chrome.bookmarkPage': 'סימון העמוד הזה',
   'reader.chrome.removeBookmark': 'הסרת הסימנייה מהעמוד הזה',
-  'reader.chrome.marksWithCount': 'סימניות והערות ({n})',
   'reader.chrome.settings': 'הגדרות קריאה',
   'reader.chrome.previousPage': 'העמוד הקודם',
   'reader.chrome.nextPage': 'העמוד הבא',

@@ -614,7 +614,6 @@ const messages: Record<string, string> = {
   'reader.chrome.search': 'Αναζήτηση στο βιβλίο',
   'reader.chrome.bookmarkPage': 'Προσθήκη σελιδοδείκτη σε αυτή τη σελίδα',
   'reader.chrome.removeBookmark': 'Αφαίρεση σελιδοδείκτη από αυτή τη σελίδα',
-  'reader.chrome.marksWithCount': 'Σελιδοδείκτες και σημειώσεις ({n})',
   'reader.chrome.settings': 'Ρυθμίσεις ανάγνωσης',
   'reader.chrome.previousPage': 'Προηγούμενη σελίδα',
   'reader.chrome.nextPage': 'Επόμενη σελίδα',

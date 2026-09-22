@@ -583,7 +583,6 @@ const messages: Record<string, string> = {
   'reader.chrome.search': '책에서 검색',
   'reader.chrome.bookmarkPage': '이 페이지 책갈피 추가',
   'reader.chrome.removeBookmark': '이 페이지의 책갈피 제거',
-  'reader.chrome.marksWithCount': '책갈피 및 노트 ({n})',
   'reader.chrome.settings': '읽기 설정',
   'reader.chrome.previousPage': '이전 페이지',
   'reader.chrome.nextPage': '다음 페이지',

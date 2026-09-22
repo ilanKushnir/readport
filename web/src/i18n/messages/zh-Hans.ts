@@ -555,7 +555,6 @@ const messages: Record<string, string> = {
   'reader.chrome.search': '在书中搜索',
   'reader.chrome.bookmarkPage': '为此页添加书签',
   'reader.chrome.removeBookmark': '移除此页的书签',
-  'reader.chrome.marksWithCount': '书签与笔记（{n}）',
   'reader.chrome.settings': '阅读设置',
   'reader.chrome.previousPage': '上一页',
   'reader.chrome.nextPage': '下一页',

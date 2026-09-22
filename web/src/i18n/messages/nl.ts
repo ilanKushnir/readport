@@ -616,7 +616,6 @@ const messages: Record<string, string> = {
   'reader.chrome.search': 'Zoeken in boek',
   'reader.chrome.bookmarkPage': 'Deze pagina als bladwijzer markeren',
   'reader.chrome.removeBookmark': 'Bladwijzer van deze pagina verwijderen',
-  'reader.chrome.marksWithCount': 'Bladwijzers en notities ({n})',
   'reader.chrome.settings': 'Leesinstellingen',
   'reader.chrome.previousPage': 'Vorige pagina',
   'reader.chrome.nextPage': 'Volgende pagina',

@@ -615,7 +615,6 @@ const messages: Record<string, string> = {
   'reader.chrome.search': 'Rechercher dans le livre',
   'reader.chrome.bookmarkPage': 'Mettre cette page en signet',
   'reader.chrome.removeBookmark': 'Retirer le signet de cette page',
-  'reader.chrome.marksWithCount': 'Signets et notes ({n})',
   'reader.chrome.settings': 'Réglages de lecture',
   'reader.chrome.previousPage': 'Page précédente',
   'reader.chrome.nextPage': 'Page suivante',

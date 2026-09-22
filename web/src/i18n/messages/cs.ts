@@ -593,7 +593,6 @@ const messages: Record<string, string> = {
   'reader.chrome.search': 'Hledat v knize',
   'reader.chrome.bookmarkPage': 'Přidat tuto stránku do záložek',
   'reader.chrome.removeBookmark': 'Odebrat záložku z této stránky',
-  'reader.chrome.marksWithCount': 'Záložky a poznámky ({n})',
   'reader.chrome.settings': 'Nastavení čtení',
   'reader.chrome.previousPage': 'Předchozí stránka',
   'reader.chrome.nextPage': 'Další stránka',

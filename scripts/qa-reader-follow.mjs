@@ -300,7 +300,8 @@ try {
       const { page, context } = await open(mode, rtl);
       for (const spine of [0, 1, 0]) {
         await check(`bookmark ${mode} ${rtl ? 'RTL' : 'LTR'} chapter ${spine}`, async () => {
-          await page.getByRole('button', { name: 'Bookmarks and notes (2)' }).click();
+          await page.getByRole('button', { name: 'Table of contents' }).click();
+          await page.getByRole('tab', { name: 'Bookmarks & notes · 2' }).click();
           await page.getByText(`Deep bookmark ${spine}`, { exact: true }).click();
           await page.waitForTimeout(350);
           const r = await rectAt(page, deep);
@@ -436,7 +437,8 @@ try {
   const paused = await open('scroll');
   await paused.page.getByRole('button', { name: 'Read along', exact: true }).click();
   await clock(paused.page, [cue(deep)], 500);
-  await paused.page.getByRole('button', { name: 'Bookmarks and notes (2)' }).click();
+  await paused.page.getByRole('button', { name: 'Table of contents' }).click();
+  await paused.page.getByRole('tab', { name: 'Bookmarks & notes · 2' }).click();
   await paused.page.getByText('Deep bookmark 1', { exact: true }).click();
   await paused.page.waitForFunction(
     () => document.querySelector('.reader-title')?.textContent === 'Chapter 1',

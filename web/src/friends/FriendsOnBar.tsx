@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { friendColourStyle, type Locator } from '@readport/shared';
 import { api } from '../api/client';
-import { IconClose } from '../components/icons';
+import { IconClose, IconPeople } from '../components/icons';
 import { useFocusTrap } from '../components/ui';
 import { useT } from '../i18n';
 import { useFormat } from '../i18n/useFormat';
@@ -269,35 +269,23 @@ export function FriendsButton({
   const t = useT();
 
   if (friends.length === 0) return null;
-  const drawn = friends.filter((x) => shownIds.has(x.userId));
-  const shown = (drawn.length ? drawn : friends).slice(0, 3);
-
   return (
     <>
-      {/* The friends in this book as a stack of beads - the same beads that
-          sit on the bar - and, past three, how many more. It lives beside
-          the percentage, where the bar's other figures are, on every
-          screen size. */}
+      {/* The way to the card: a people icon with how many are here, and a
+          green dot when one of them is in the book right now. The beads
+          on the bar already say who; this says where to ask. */}
       <button
         type="button"
-        className={`fstack ${className ?? ''}`}
+        className={`fpeople ${className ?? ''}`}
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label={t('friends.bar.button', { n: friends.length })}
         title={t('friends.bar.button', { n: friends.length })}
       >
-        {shown.map((x) => (
-          <span
-            key={x.userId}
-            className={`fbead fbead--static${x.live ? ' fbead--live' : ''}`}
-            style={friendColourStyle(x.colour) as React.CSSProperties}
-            aria-hidden="true"
-          >
-            <span>{initialOf(x.displayName)}</span>
-          </span>
-        ))}
-        {friends.length > 3 && <span className="fstack__more">+{friends.length - 3}</span>}
+        <IconPeople size={18} />
+        <span className="fpeople__count">{friends.length}</span>
+        {friends.some((x) => x.live) && <span className="fpeople__live" aria-hidden="true" />}
       </button>
       {open && (
         <FriendsCard
