@@ -160,6 +160,16 @@ export function registerSettingsRoutes(app: FastifyInstance, ctx: AppContext): v
     };
   };
 
+  /**
+   * The apps beside this library, for the launcher in the shelves. Split
+   * out of /api/settings because every reader needs these and nobody but an
+   * admin needs the folder paths and job counters that travel with the rest.
+   */
+  app.get('/api/apps', async () => {
+    const { values } = resolveSettings(db, config);
+    return { apps: values.apps };
+  });
+
   app.get('/api/settings', async () => {
     const { values, envPinned } = resolveSettings(db, config);
     return {

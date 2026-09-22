@@ -357,6 +357,28 @@ export const pathCheckSchema = z.object({
 });
 export type PathCheck = z.infer<typeof pathCheckSchema>;
 
+/**
+ * The apps that live beside this library - Calibre-Web Automated, an
+ * Audiobookshelf, a Shelfmark - so a reader can get to them from here. Only
+ * the address is kept for now: the "smart" integration that would use each
+ * app's own API is deliberately not here yet, and the settings page says so.
+ */
+export const APP_KINDS = ['cwa', 'abs', 'shelfmark', 'readmeabook', 'kavita', 'custom'] as const;
+export type AppKind = (typeof APP_KINDS)[number];
+
+export const appLinkSchema = z.object({
+  id: z.string().min(1).max(40),
+  kind: z.enum(APP_KINDS),
+  /** Shown on the tile; presets fill it in, custom apps need it typed. */
+  name: z.string().trim().min(1).max(40),
+  url: z
+    .string()
+    .trim()
+    .max(500)
+    .refine((u) => /^https?:\/\/[^\s]+$/i.test(u), 'must be an http(s) address'),
+});
+export type AppLink = z.infer<typeof appLinkSchema>;
+
 export const settingsSchema = z.object({
   /** Used when a book's own metadata does not say what language it is in. */
   defaultLanguage: z.string().min(2).max(16),
@@ -379,6 +401,8 @@ export const settingsSchema = z.object({
    * current origin, which is right for exactly that case.
    */
   publicUrl: z.string().trim().max(300).default(''),
+  /** The apps beside this library, in the order they are shown. */
+  apps: z.array(appLinkSchema).max(12).default([]),
   /**
    * How much of the narration is listened to.
    *  - `standard` samples it and interpolates between the matches: minutes per

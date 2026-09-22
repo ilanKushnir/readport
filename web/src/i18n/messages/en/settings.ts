@@ -205,4 +205,23 @@ export const settings = {
   'settings.keys.namePlaceholder': 'What is it for? e.g. Claude Code',
   'settings.keys.creating': 'Creating…',
   'settings.keys.newKey': 'New key',
+
+  // Connected apps
+  'settings.apps.title': 'Connected apps',
+  'settings.apps.lede':
+    'The other apps beside this library. Their addresses appear as tiles at the foot of the shelves, for everyone on this server.',
+  'settings.apps.empty': 'No apps yet. Add the ones this library sits beside.',
+  'settings.apps.add': 'Add an app',
+  'settings.apps.kind': 'App',
+  'settings.apps.name': 'Name',
+  'settings.apps.url': 'Address',
+  'settings.apps.urlPlaceholder': 'https://books.example.com',
+  'settings.apps.remove': 'Remove {name}',
+  'settings.apps.custom': 'Something else',
+  'settings.apps.smart': 'Smart integration',
+  'settings.apps.smartHint':
+    'Reading this app through its own API - shared progress, one-click sends, the lot. Not built yet; the address is a link for now.',
+  'settings.apps.soon': 'Coming soon',
+  'settings.apps.saved': 'Apps saved.',
+  'settings.apps.invalidUrl': 'That address needs to start with http:// or https://.',
 } as const;

@@ -256,6 +256,17 @@ it was read in as its `kind`. `totalChars` is the ebook's indexed text length
 whole diary regardless of `days`; `booksFinished` counts every edition the
 caller has finished, whether or not its file is still on disk.
 
+## Connected apps
+
+| Method | Path        | Notes                                                        |
+| ------ | ----------- | ------------------------------------------------------------ |
+| GET    | `/api/apps` | `{apps: [{id, kind, name, url}]}` for everyone on the server |
+
+The list is the `apps` field of the settings document (admin, `PUT
+/api/settings`): at most twelve entries, `kind` one of `cwa`, `abs`,
+`shelfmark`, `readmeabook`, `kavita` or `custom`, `url` http(s). They are links
+and nothing more; no request is ever made to them from the server.
+
 ## Browsing by the library's own metadata
 
 `GET /api/facets` answers what _this_ library can be browsed by, computed from

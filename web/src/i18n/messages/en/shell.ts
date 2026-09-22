@@ -168,4 +168,8 @@ export const shell = {
   'shell.pipeline.footSettingsLink': 'Settings → Models',
   'shell.pipeline.footDetail':
     'Step 2 is the expensive part, about a minute of computing per hour of audio - it samples the narration rather than listening to every second - which is why it runs one book at a time and reports live progress above. How many pins turn up is also the edition check: a narration that is not this text produces almost none, and {appName} refuses to publish timings rather than inventing them.',
+
+  // The launcher for the other apps in this household.
+  'shell.apps.heading': 'Apps',
+  'shell.apps.open': 'Open {name}',
 } as const;

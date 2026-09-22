@@ -1,0 +1,115 @@
+/* The other apps in this household, at the foot of the shelves. Tiles, not
+   a list: a monogram is what makes a launcher scannable, and there are
+   never more than a handful. */
+
+.apps {
+  margin-block-start: var(--sp-5);
+}
+
+.apps__row {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: var(--sp-2);
+}
+
+.apps__tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: var(--sp-2) 2px;
+  border-radius: var(--radius-control);
+  text-decoration: none;
+  color: var(--rp-text-soft);
+  min-height: 44px;
+}
+.apps__tile:hover,
+.apps__tile:focus-visible {
+  background: var(--rp-surface);
+  color: var(--rp-text);
+}
+
+.apps__mark {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  font-family: var(--rp-font-reading);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--rp-text);
+  /* The hue as a wash, never a fill: a solid tile would out-weigh the covers
+     the shelves exist for. */
+  background: color-mix(in srgb, var(--apps-hue) 26%, var(--rp-surface));
+  border: 1px solid color-mix(in srgb, var(--apps-hue) 45%, var(--rp-border));
+}
+
+.apps__name {
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* --- Settings: the editor -------------------------------------------- */
+
+.apps-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.apps-editor__row {
+  display: grid;
+  grid-template-columns: 40px minmax(140px, 180px) minmax(0, 1fr) auto;
+  gap: var(--sp-2);
+  align-items: center;
+}
+
+.apps-editor__row .apps__mark {
+  width: 36px;
+  height: 36px;
+  font-size: 13px;
+}
+
+.apps-editor__smart {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  grid-column: 2 / -1;
+  font-size: 12.5px;
+  color: var(--rp-text-soft);
+}
+
+.apps-editor__soon {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--rp-border-strong);
+  color: var(--rp-text-soft);
+}
+
+@media (max-width: 640px) {
+  .apps-editor__row {
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+  }
+  .apps-editor__row .input--url {
+    grid-column: 2 / -1;
+  }
+  .apps-editor__smart {
+    grid-column: 1 / -1;
+  }
+}

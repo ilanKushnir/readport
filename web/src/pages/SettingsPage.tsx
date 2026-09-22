@@ -10,6 +10,7 @@ import { type MessageKey } from '../i18n/messages/en';
 import { storageEstimate } from '../offline/downloads';
 import { alignerModel, type ModelInfo, type ModelsResponse } from '../lib/types';
 import { applyAppThemeColor } from '../lib/themeColor';
+import { ConnectedAppsSection } from './ConnectedApps';
 import { Link } from 'react-router-dom';
 import { folderApi, LibraryFolders } from '../components/LibraryFolders';
 
@@ -459,6 +460,7 @@ export function SettingsPage() {
       </section>
 
       {isAdmin && <PublicAddressSection settings={s} onDraft={set} />}
+      {isAdmin && <ConnectedAppsSection key={JSON.stringify(s.apps)} initial={s.apps} />}
 
       <ApiKeysSection />
     </main>

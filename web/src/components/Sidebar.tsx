@@ -21,6 +21,7 @@ import {
 } from './icons';
 import { useReorder } from './reorder';
 import { BrowseGroups } from './BrowseGroups';
+import { AppLinks } from './AppLinks';
 
 /**
  * One shelf list, rendered in three places: the persistent rail on a wide
@@ -447,6 +448,10 @@ export function Sidebar({
       {/* Last, because it is the library describing itself rather than
           anything the reader made: shelves they built come first. */}
       <BrowseGroups onNavigate={onNavigate} />
+
+      {/* After the library and before the way out: the other apps in this
+          household, when the admin has named any. */}
+      <AppLinks />
 
       {onCollapse && (
         <div className="sidebar__foot">

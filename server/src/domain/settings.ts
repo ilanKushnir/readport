@@ -15,6 +15,7 @@ const DEFAULTS: Settings = {
   audiobookDirs: [],
   alignmentDirs: [],
   publicUrl: '',
+  apps: [],
   alignPrecision: 'standard',
   autoAlign: true,
   importSavedAlignments: true,
