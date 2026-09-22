@@ -16,6 +16,14 @@ export const whatsnew = {
   'whatsnew.olderHeading': 'Version {version}',
   'whatsnew.done': 'Start reading',
 
+  // ---------------------------------------------------------------- 0.15.0
+  'whatsnew.release.pairingTabs':
+    'Pairing is four tabs - Suggested, Linked, Unpaired, Dismissed - with one line per pair, its state, and its alignment at a glance.',
+  'whatsnew.release.exportOptions':
+    'Exporting highlights asks how you want them: paper or night, a page for the desk or the phone, what to include, and the text size.',
+  'whatsnew.release.shelvesDrawer':
+    'The shelves drawer now leads to all your books, and on a phone to Stats and Pairing; a synced pair shows the switch arrows between its two formats.',
+
   // ---------------------------------------------------------------- 0.14.0
   'whatsnew.release.friends':
     'Friends: see where a friend is in a book, draw them on your progress bar, and put a book in front of them.',
