@@ -4,6 +4,15 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.19.2 - 2026-09-23
+
+### Changed
+
+- **The read-along transport grows out of its button.** The controls are
+  a card above the bar with a beak pointing at the Read along button,
+  which wears a halo in the card's tint while the voice is on the page,
+  so the two read as one thing. Listen steps aside while it is.
+
 ## 0.19.1 - 2026-09-23
 
 ### Fixed

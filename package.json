@@ -1,6 +1,6 @@
 {
   "name": "readport",
-  "version": "0.19.1",
+  "version": "0.19.2",
   "private": true,
   "license": "AGPL-3.0-or-later",
   "description": "Self-hosted tandem reading: a non-destructive reader/player overlay for existing ebook and audiobook libraries.",
