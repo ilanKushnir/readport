@@ -1479,26 +1479,6 @@ body:has(.app-body) {
 }
 
 /* ------------------------------------------------------------------- pairs */
-.pair-card {
-  background: var(--rp-surface-raised);
-  border: 1px solid var(--rp-border);
-  border-radius: var(--radius-card);
-  padding: var(--sp-4);
-  margin-block-end: var(--sp-4);
-  box-shadow: var(--rp-shadow-1);
-}
-.pair-card__titles {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  margin-block-end: var(--sp-3);
-  flex-wrap: wrap;
-}
-.pair-card__work {
-  font-weight: 650;
-  font-size: 16px;
-  font-family: var(--rp-font-reading);
-}
 .evidence-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
@@ -1750,36 +1730,7 @@ body:has(.app-body) {
   font-variant-numeric: tabular-nums;
 }
 
-/* ---------------------------------------------------------- pairing cards */
-.pair-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-3);
-}
-.pair-card--rejected {
-  opacity: 0.75;
-}
-.pair-card__editions {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: var(--sp-3);
-}
-.pair-card__link {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: var(--rp-primary);
-  color: var(--rp-on-primary);
-  flex-shrink: 0;
-}
-.pair-card--candidate .pair-card__link {
-  background: var(--rp-surface);
-  color: var(--rp-text-soft);
-  border: 1px dashed var(--rp-border-strong);
-}
+/* ---------------------------------------------------------- pairing details */
 .edition-tile {
   display: flex;
   gap: var(--sp-3);
@@ -1838,26 +1789,6 @@ body:has(.app-body) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-@media (max-width: 560px) {
-  .pair-card__editions {
-    grid-template-columns: 1fr;
-  }
-  .pair-card__link {
-    justify-self: center;
-    transform: rotate(90deg);
-  }
-}
-.pair-card__status {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  flex-wrap: wrap;
-}
-.pair-card__score {
-  font-size: 13px;
-  color: var(--rp-text-soft);
-  margin-inline-start: 4px;
 }
 .lang-pick {
   margin-inline-start: auto;
@@ -2959,29 +2890,6 @@ body:has(.app-body) {
   gap: var(--sp-2);
   flex-wrap: wrap;
 }
-.pair-card__pick {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-block-end: var(--sp-3);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--rp-text-soft);
-  cursor: pointer;
-}
-.pair-card__pick input {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--rp-interactive);
-}
-.pair-card.is-selected {
-  border-color: var(--rp-primary);
-  box-shadow: 0 0 0 1px var(--rp-primary);
-}
-.pair-card.is-selected .pair-card__pick {
-  color: var(--rp-interactive);
-}
-
 /* ---------------------------------------------------------------- settings dashboard */
 .dash {
   display: grid;

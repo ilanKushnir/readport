@@ -107,9 +107,16 @@ function etaMs(jobId: string, startedAt: string | null, progress: number): numbe
 export function ProcessingQueue({
   canManage,
   onChange,
+  quietWhenIdle = false,
 }: {
   canManage: boolean;
   onChange?: () => void;
+  /**
+   * With nothing running, fold to one line: the idle lede and the way to
+   * recent results. A page whose real content sits below should not open
+   * with a panel saying nothing is happening.
+   */
+  quietWhenIdle?: boolean;
 }) {
   const t = useT();
   const [jobs, setJobs] = useState<Job[] | null>(null);
@@ -173,6 +180,33 @@ export function ProcessingQueue({
     )
     .slice(0, 8);
   const idle = running.length === 0 && queued.length === 0;
+
+  if (idle && quietWhenIdle) {
+    return (
+      <section
+        className="queue queue--quiet"
+        aria-label={t('shell.queue.label')}
+        aria-live="polite"
+      >
+        <span className="queue__dot" aria-hidden="true" />
+        <span className="queue__lede">{t('shell.queue.idleLede')}</span>
+        {done.length > 0 && (
+          <button className="queue__toggle" onClick={() => setShowDone((v) => !v)}>
+            {showDone
+              ? t('shell.queue.hideRecent', { n: done.length })
+              : t('shell.queue.showRecent', { n: done.length })}
+          </button>
+        )}
+        {showDone && (
+          <div className="queue__list queue__list--done">
+            {done.map((j) => (
+              <JobRow key={j.id} job={j} canManage={canManage} onAct={act} />
+            ))}
+          </div>
+        )}
+      </section>
+    );
+  }
 
   return (
     <section className="queue" aria-label={t('shell.queue.label')} aria-live="polite">

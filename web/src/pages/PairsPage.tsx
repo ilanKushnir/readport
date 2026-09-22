@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { LANGUAGES, type Settings } from '@readport/shared';
 import { api, failureMessage } from '../api/client';
 import { type BookSummary, type PairDto, type ProcessingSummary } from '../lib/types';
@@ -9,10 +9,12 @@ import {
   IconAlert,
   IconBookOpen,
   IconCheck,
+  IconChevronDown,
   IconClose,
   IconDownload,
   IconHeadphones,
   IconLink,
+  IconSearch,
   IconSwitch,
 } from '../components/icons';
 import { formatDuration } from '../lib/format';
@@ -21,8 +23,42 @@ import { bucketCoverage } from '../lib/coverageBars';
 import { useT } from '../i18n';
 import { useFormat } from '../i18n/useFormat';
 import { type MessageKey } from '../i18n/messages/en';
+import './pairs.css';
+
+/**
+ * The Pairing page.
+ *
+ * Four tabs, because a pair is in one of four situations and each asks a
+ * different question of the reader: Suggested wants a yes or no, Linked
+ * shows where alignment stands and offers to start it, Unpaired lists the
+ * books still without a partner, Dismissed keeps the noes in case of a
+ * change of mind. Within a tab, one compact row per pair - covers, title,
+ * its state in a chip, the coverage strip once aligned, and only the one
+ * action that state calls for. Everything else - evidence, narration
+ * language, the full alignment report, unlinking - opens under the row.
+ */
 
 type PairAction = 'confirm' | 'reject' | 'unlink' | 'align';
+type Tab = 'suggested' | 'linked' | 'unpaired' | 'dismissed';
+type LinkedFilter = 'all' | 'attention' | 'ready' | 'aligned';
+
+/** Where a pair is, said once, in the order a reader has to care about. */
+type RowState =
+  'aligning' | 'queued' | 'model' | 'failed' | 'ready' | 'aligned' | 'suggested' | 'dismissed';
+
+const STATE_ORDER: Record<RowState, number> = {
+  aligning: 0,
+  queued: 1,
+  model: 2,
+  failed: 3,
+  ready: 4,
+  aligned: 5,
+  suggested: 6,
+  dismissed: 7,
+};
+
+const TABS: Tab[] = ['suggested', 'linked', 'unpaired', 'dismissed'];
+const FILTERS: LinkedFilter[] = ['all', 'attention', 'ready', 'aligned'];
 
 /**
  * Two outcomes, not two settings - the same pair of choices Settings offers,
@@ -33,19 +69,61 @@ const ACCURACY: [Settings['alignPrecision'], MessageKey, MessageKey][] = [
   ['exact', 'pairs.work.precision.exact', 'pairs.work.precision.exactBlurb'],
 ];
 
+function stateOf(p: PairDto): RowState {
+  if (p.status === 'candidate') return 'suggested';
+  if (p.status === 'rejected') return 'dismissed';
+  const job = p.lastAlignJob;
+  if (job?.state === 'running') return 'aligning';
+  if (job?.state === 'queued') return 'queued';
+  if (p.alignment) return 'aligned';
+  if (job?.state === 'failed' && job.modelMissing) return 'model';
+  if (job?.state === 'failed') return 'failed';
+  return 'ready';
+}
+
+function isLinked(p: PairDto): boolean {
+  return p.status === 'auto' || p.status === 'confirmed';
+}
+
+/** How many of the evidence signals point the same way, over how many exist. */
+function signals(p: PairDto): { good: number; total: number } {
+  const e = p.evidence;
+  const checks: (boolean | null | undefined)[] = [
+    e.titleScore === undefined ? undefined : e.titleScore > 0.85,
+    e.authorScore === undefined ? undefined : e.authorScore > 0.85,
+    e.identifierMatch ? true : undefined,
+    e.languageMatch ?? undefined,
+    e.durationPagesRatio == null
+      ? undefined
+      : e.durationPagesRatio > 0.55 && e.durationPagesRatio < 1.9,
+    e.contentScore == null ? undefined : e.contentScore > 0.6,
+  ];
+  const present = checks.filter((c) => c !== undefined && c !== null);
+  return { good: present.filter(Boolean).length, total: present.length };
+}
+
+function titleOf(p: PairDto, unknown: string): string {
+  return p.ebook?.title ?? p.audio?.title ?? unknown;
+}
+
 export function PairsPage() {
   const t = useT();
   const f = useFormat();
   const { user } = useSession();
+  const [params, setParams] = useSearchParams();
   const [pairs, setPairs] = useState<PairDto[] | null>(null);
   const [summary, setSummary] = useState<ProcessingSummary | null>(null);
+  const [unpaired, setUnpaired] = useState<BookSummary[] | null>(null);
   /** Multi-select for bulk "align these". */
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [open, setOpen] = useState<Set<string>>(new Set());
+  const [filter, setFilter] = useState<LinkedFilter>('all');
   const [error, setError] = useState<MessageKey | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [confirmingAll, setConfirmingAll] = useState(false);
-  const [linkOpen, setLinkOpen] = useState(false);
+  const [link, setLink] = useState<{ ebookId?: string; audioId?: string } | null>(null);
   const [howOpen, setHowOpen] = useState(false);
+  const [optionsOpen, setOptionsOpen] = useState(false);
   /**
    * The two alignment choices, editable here rather than only in Settings.
    * This is the page where someone is looking at the queue and deciding how
@@ -67,6 +145,12 @@ export function PairsPage() {
       setError(null);
     } catch {
       setError('pairs.loadFailed');
+    }
+    try {
+      const r = await api<{ books: BookSummary[] }>('/api/library?filter=unpaired');
+      setUnpaired(Array.isArray(r?.books) ? r.books : []);
+    } catch {
+      setUnpaired([]);
     }
     try {
       const s = await api<{ settings: Settings }>('/api/settings');
@@ -179,29 +263,15 @@ export function PairsPage() {
     }
   };
 
-  if (error) {
-    return (
-      <main className="app-main" id="main-content" tabIndex={-1}>
-        <div className="banner banner--error" role="alert">
-          <IconAlert size={18} /> {t(error)}
-        </div>
-      </main>
-    );
-  }
-
-  const candidates = (pairs ?? []).filter((p) => p.status === 'candidate');
-  const linked = (pairs ?? []).filter((p) => p.status === 'auto' || p.status === 'confirmed');
-  const rejected = (pairs ?? []).filter((p) => p.status === 'rejected');
-
-  /** Linked, not aligned yet, and not already queued: what Start acts on. */
-  const startable = (pairs ?? []).filter(
-    (p) =>
-      (p.status === 'auto' || p.status === 'confirmed') &&
-      !p.alignment &&
-      !(p.lastAlignJob && ['queued', 'running'].includes(p.lastAlignJob.state)),
-  );
   const toggleSelected = (id: string) =>
     setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const toggleOpen = (id: string) =>
+    setOpen((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -226,6 +296,98 @@ export function PairsPage() {
     }
   };
 
+  // ---------------------------------------------------------------- derived
+  const all = useMemo(() => pairs ?? [], [pairs]);
+  const candidates = useMemo(() => all.filter((p) => p.status === 'candidate'), [all]);
+  const linked = useMemo(
+    () =>
+      all
+        .filter(isLinked)
+        .map((p) => ({ pair: p, state: stateOf(p) }))
+        .sort(
+          (a, b) =>
+            STATE_ORDER[a.state] - STATE_ORDER[b.state] ||
+            titleOf(a.pair, '').localeCompare(titleOf(b.pair, '')),
+        ),
+    [all],
+  );
+  const rejected = useMemo(() => all.filter((p) => p.status === 'rejected'), [all]);
+  /** Linked, not aligned yet, and not already queued: what Start acts on. */
+  const startable = useMemo(
+    () => linked.filter((r) => r.state === 'ready').map((r) => r.pair),
+    [linked],
+  );
+  /** Books in a suggestion are spoken for under Suggested; the rest are unpaired. */
+  const unpairedBooks = useMemo(() => {
+    const spoken = new Set<string>();
+    for (const p of candidates) {
+      if (p.ebook) spoken.add(p.ebook.id);
+      if (p.audio) spoken.add(p.audio.id);
+    }
+    return (unpaired ?? []).filter((b) => !spoken.has(b.id));
+  }, [unpaired, candidates]);
+
+  const counts: Record<Tab, number> = {
+    suggested: candidates.length,
+    linked: linked.length,
+    unpaired: unpairedBooks.length,
+    dismissed: rejected.length,
+  };
+  const filterCounts: Record<LinkedFilter, number> = {
+    all: linked.length,
+    attention: linked.filter((r) => r.state === 'model' || r.state === 'failed').length,
+    ready: startable.length,
+    aligned: linked.filter((r) => r.state === 'aligned').length,
+  };
+  const shownLinked = linked.filter((r) => {
+    if (filter === 'attention') return r.state === 'model' || r.state === 'failed';
+    if (filter === 'ready') return r.state === 'ready';
+    if (filter === 'aligned') return r.state === 'aligned';
+    return true;
+  });
+
+  // The tab is in the URL so Back and a reload land where you were. With
+  // no choice made, open on what needs an answer, else on the pairs.
+  const requested = params.get('tab');
+  const tab: Tab = (TABS as string[]).includes(requested ?? '')
+    ? (requested as Tab)
+    : candidates.length > 0
+      ? 'suggested'
+      : 'linked';
+  const selectTab = (next: Tab) => {
+    const p = new URLSearchParams(params);
+    p.set('tab', next);
+    setParams(p, { replace: true });
+  };
+  const onTabKey = (e: KeyboardEvent<HTMLElement>) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    e.preventDefault();
+    const i = TABS.indexOf(tab);
+    const next = TABS[(i + (e.key === 'ArrowRight' ? 1 : TABS.length - 1)) % TABS.length]!;
+    selectTab(next);
+    (e.currentTarget.querySelector(`#ptab-${next}`) as HTMLElement | null)?.focus();
+  };
+
+  if (error) {
+    return (
+      <main className="app-main" id="main-content" tabIndex={-1}>
+        <div className="banner banner--error" role="alert">
+          <IconAlert size={18} /> {t(error)}
+        </div>
+      </main>
+    );
+  }
+
+  const rowProps = {
+    isAdmin,
+    speedRatio: summary?.speedRatio ?? 0,
+    busyId,
+    onAction: act,
+    onLanguage: setLanguage,
+    onDownloadModel: downloadModel,
+    onToggleOpen: toggleOpen,
+  };
+
   return (
     <main className="app-main" id="main-content" tabIndex={-1}>
       <header className="page-head page-head--row">
@@ -241,9 +403,11 @@ export function PairsPage() {
           >
             {t('pairs.howItWorks')}
           </button>
-          <button className="btn btn--secondary" onClick={() => setLinkOpen(true)}>
-            <IconLink size={16} /> {t('pairs.linkManually')}
-          </button>
+          {isAdmin && (
+            <button className="btn btn--secondary" onClick={() => setLink({})}>
+              <IconLink size={16} /> {t('pairs.linkManually')}
+            </button>
+          )}
         </div>
       </header>
       {howOpen && (
@@ -251,280 +415,509 @@ export function PairsPage() {
           <PipelineDiagram />
         </section>
       )}
-      <ProcessingQueue canManage={isAdmin} onChange={() => void load()} />
+      <ProcessingQueue canManage={isAdmin} onChange={() => void load()} quietWhenIdle />
 
-      {isAdmin && summary && startable.length > 0 && (
-        <section className="worksum" aria-label={t('pairs.work.label')}>
-          <div className="worksum__body">
-            <h2 className="worksum__title">{t('pairs.work.ready', { n: startable.length })}</h2>
-            <p className="worksum__lede">
-              {summary.estimatedMs != null
-                ? t('pairs.work.estimate', {
-                    computing: f.span(summary.estimatedMs),
-                    audio: formatDuration(summary.pendingAudioMs),
-                  })
-                : t('pairs.work.noEstimate', {
-                    audio: formatDuration(summary.pendingAudioMs),
-                  })}
-            </p>
+      <div className="ptabs" role="tablist" aria-label={t('pairs.tabsLabel')} onKeyDown={onTabKey}>
+        {TABS.map((k) => (
+          <button
+            key={k}
+            id={`ptab-${k}`}
+            role="tab"
+            type="button"
+            aria-selected={tab === k}
+            aria-controls={`ppanel-${k}`}
+            tabIndex={tab === k ? 0 : -1}
+            className={`ptabs__tab ${tab === k ? 'is-on' : ''} ${counts[k] === 0 ? 'is-empty' : ''}`}
+            onClick={() => selectTab(k)}
+          >
+            {t(`pairs.tab.${k}` as MessageKey)}
+            <span className="ptabs__count">{pairs ? f.number(counts[k]) : '·'}</span>
+          </button>
+        ))}
+      </div>
+
+      <section
+        id={`ppanel-${tab}`}
+        role="tabpanel"
+        aria-labelledby={`ptab-${tab}`}
+        className="ppanel"
+      >
+        <p className="ppanel__lede">{t('pairs.tab.lede', { tab })}</p>
+
+        {!pairs ? (
+          <div aria-busy="true">
+            <div className="skeleton" style={{ height: 64, marginBlockEnd: 10 }} />
+            <div className="skeleton" style={{ height: 64, marginBlockEnd: 10 }} />
+            <div className="skeleton" style={{ height: 64 }} />
           </div>
-          <div className="worksum__actions">
-            {selected.size > 0 && (
-              <button className="btn btn--ghost" onClick={() => setSelected(new Set())}>
-                {t('pairs.work.clearSelection', { n: selected.size })}
-              </button>
-            )}
-            <button
-              className="btn"
-              onClick={() =>
-                void startMany(selected.size > 0 ? [...selected] : startable.map((p) => p.id))
-              }
-            >
-              {selected.size > 0
-                ? t('pairs.work.startSelected', { n: selected.size })
-                : t('pairs.work.startAll', { n: startable.length })}
-            </button>
-          </div>
-          {settings && (
-            <div className="worksum__choices">
-              <label className="rs-toggle rs-toggle--tight">
-                <span>
-                  {t('pairs.work.autoAlign')}
-                  <span className="hint" style={{ display: 'block' }}>
-                    {settings.autoAlign
-                      ? t('pairs.work.autoAlignOn')
-                      : t('pairs.work.autoAlignOff')}
-                  </span>
-                </span>
-                <input
-                  type="checkbox"
-                  role="switch"
-                  checked={settings.autoAlign}
-                  onChange={(e) => void saveSetting({ autoAlign: e.target.checked })}
-                />
-              </label>
-              <div
-                className="seg"
-                role="radiogroup"
-                aria-label={t('pairs.work.precisionLabel')}
-                title={t('pairs.work.precisionTitle')}
-              >
-                {ACCURACY.map(([value, label, blurb]) => (
+        ) : tab === 'suggested' ? (
+          candidates.length === 0 ? (
+            <EmptyState icon={<IconLink size={42} />} title={t('pairs.empty.suggested')}>
+              {t('pairs.empty.suggestedBody')}
+            </EmptyState>
+          ) : (
+            <>
+              {isAdmin && candidates.length > 1 && (
+                <div className="ppanel__bar">
                   <button
-                    key={value}
-                    type="button"
-                    role="radio"
-                    aria-checked={settings.alignPrecision === value}
-                    className={`seg__opt ${settings.alignPrecision === value ? 'is-on' : ''}`}
-                    onClick={() => void saveSetting({ alignPrecision: value })}
+                    className="btn btn--secondary"
+                    disabled={confirmingAll}
+                    onClick={() => void confirmAll(candidates.map((p) => p.id))}
                   >
-                    <strong>{t(label)}</strong>
-                    <span>{t(blurb)}</span>
+                    <IconCheck size={16} />{' '}
+                    {confirmingAll
+                      ? t('pairs.section.linking')
+                      : t('pairs.section.linkAll', { n: candidates.length })}
                   </button>
+                </div>
+              )}
+              <ul className="prs">
+                {candidates.map((p) => (
+                  <PairRow
+                    key={p.id}
+                    pair={p}
+                    state="suggested"
+                    open={open.has(p.id)}
+                    {...rowProps}
+                  />
                 ))}
-              </div>
-            </div>
-          )}
-        </section>
-      )}
-      {linkOpen && (
+              </ul>
+            </>
+          )
+        ) : tab === 'linked' ? (
+          linked.length === 0 ? (
+            <EmptyState icon={<IconLink size={42} />} title={t('pairs.empty.linked')}>
+              {t('pairs.empty.linkedBody')}
+            </EmptyState>
+          ) : (
+            <>
+              {isAdmin && summary && startable.length > 0 && (
+                <section className="worksum" aria-label={t('pairs.work.label')}>
+                  <div className="worksum__body">
+                    <h2 className="worksum__title">
+                      {t('pairs.work.ready', { n: startable.length })}
+                    </h2>
+                    <p className="worksum__lede">
+                      {summary.estimatedMs != null
+                        ? t('pairs.work.estimate', {
+                            computing: f.span(summary.estimatedMs),
+                            audio: formatDuration(summary.pendingAudioMs),
+                          })
+                        : t('pairs.work.noEstimate', {
+                            audio: formatDuration(summary.pendingAudioMs),
+                          })}{' '}
+                      {t('pairs.work.marked')}
+                    </p>
+                  </div>
+                  <div className="worksum__actions">
+                    {selected.size > 0 && (
+                      <button className="btn btn--ghost" onClick={() => setSelected(new Set())}>
+                        {t('pairs.work.clearSelection', { n: selected.size })}
+                      </button>
+                    )}
+                    <button
+                      className="btn"
+                      onClick={() =>
+                        void startMany(
+                          selected.size > 0 ? [...selected] : startable.map((p) => p.id),
+                        )
+                      }
+                    >
+                      {selected.size > 0
+                        ? t('pairs.work.startSelected', { n: selected.size })
+                        : t('pairs.work.startAll', { n: startable.length })}
+                    </button>
+                  </div>
+                  {settings && (
+                    <>
+                      <button
+                        type="button"
+                        className="worksum__more"
+                        aria-expanded={optionsOpen}
+                        onClick={() => setOptionsOpen((v) => !v)}
+                      >
+                        <IconChevronDown size={15} />
+                        {optionsOpen ? t('pairs.work.optionsHide') : t('pairs.work.options')}
+                      </button>
+                      {optionsOpen && (
+                        <div className="worksum__choices">
+                          <label className="rs-toggle rs-toggle--tight">
+                            <span>
+                              {t('pairs.work.autoAlign')}
+                              <span className="hint" style={{ display: 'block' }}>
+                                {settings.autoAlign
+                                  ? t('pairs.work.autoAlignOn')
+                                  : t('pairs.work.autoAlignOff')}
+                              </span>
+                            </span>
+                            <input
+                              type="checkbox"
+                              role="switch"
+                              checked={settings.autoAlign}
+                              onChange={(e) => void saveSetting({ autoAlign: e.target.checked })}
+                            />
+                          </label>
+                          <div
+                            className="seg"
+                            role="radiogroup"
+                            aria-label={t('pairs.work.precisionLabel')}
+                            title={t('pairs.work.precisionTitle')}
+                          >
+                            {ACCURACY.map(([value, label, blurb]) => (
+                              <button
+                                key={value}
+                                type="button"
+                                role="radio"
+                                aria-checked={settings.alignPrecision === value}
+                                className={`seg__opt ${settings.alignPrecision === value ? 'is-on' : ''}`}
+                                onClick={() => void saveSetting({ alignPrecision: value })}
+                              >
+                                <strong>{t(label)}</strong>
+                                <span>{t(blurb)}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </section>
+              )}
+              {linked.length > 1 && (
+                <div className="chip-row pfilters" role="group" aria-label={t('pairs.filterLabel')}>
+                  {FILTERS.map((k) => (
+                    <button
+                      key={k}
+                      type="button"
+                      className="chip chip--small"
+                      aria-pressed={filter === k}
+                      disabled={k !== 'all' && filterCounts[k] === 0}
+                      onClick={() => setFilter(k)}
+                    >
+                      {t(`pairs.filter.${k}` as MessageKey)}
+                      <span className="pfilters__n">{f.number(filterCounts[k])}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              <ul className="prs">
+                {shownLinked.map(({ pair, state }) => (
+                  <PairRow
+                    key={pair.id}
+                    pair={pair}
+                    state={state}
+                    open={open.has(pair.id)}
+                    selectable={isAdmin && state === 'ready'}
+                    selected={selected.has(pair.id)}
+                    onSelect={toggleSelected}
+                    {...rowProps}
+                  />
+                ))}
+              </ul>
+            </>
+          )
+        ) : tab === 'unpaired' ? (
+          <UnpairedList
+            books={unpaired === null ? null : unpairedBooks}
+            canLink={isAdmin}
+            onLink={(b) => setLink(b.kind === 'ebook' ? { ebookId: b.id } : { audioId: b.id })}
+          />
+        ) : rejected.length === 0 ? (
+          <EmptyState icon={<IconLink size={42} />} title={t('pairs.empty.dismissed')}>
+            {t('pairs.empty.dismissedBody')}
+          </EmptyState>
+        ) : (
+          <ul className="prs">
+            {rejected.map((p) => (
+              <PairRow key={p.id} pair={p} state="dismissed" open={open.has(p.id)} {...rowProps} />
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {link && (
         <ManualLinkSheet
-          onClose={() => setLinkOpen(false)}
+          preset={link}
+          onClose={() => setLink(null)}
           onLinked={() => {
-            setLinkOpen(false);
+            setLink(null);
             toast.show(t('pairs.toast.manualLinked'));
             void load();
           }}
         />
       )}
-
-      {!pairs ? (
-        <div aria-busy="true">
-          <div className="skeleton" style={{ height: 180, marginBlockEnd: 16 }} />
-          <div className="skeleton" style={{ height: 180 }} />
-        </div>
-      ) : pairs.length === 0 ? (
-        <EmptyState icon={<IconLink size={42} />} title={t('pairs.emptyTitle')}>
-          {t('pairs.emptyBody')}
-        </EmptyState>
-      ) : (
-        <>
-          {candidates.length > 0 && (
-            <section aria-label={t('pairs.section.needsReview')}>
-              <h2 className="section-title">
-                {t('pairs.section.needsReview')}{' '}
-                <span className="section-title__count">{f.number(candidates.length)}</span>
-                {isAdmin && candidates.length > 1 && (
-                  <button
-                    className="btn btn--ghost section-title__action"
-                    disabled={confirmingAll}
-                    onClick={() => void confirmAll(candidates.map((p) => p.id))}
-                  >
-                    {confirmingAll
-                      ? t('pairs.section.linking')
-                      : t('pairs.section.linkAll', { n: candidates.length })}
-                  </button>
-                )}
-              </h2>
-              {candidates.map((p) => (
-                <PairCard
-                  speedRatio={summary?.speedRatio ?? 0}
-                  key={p.id}
-                  pair={p}
-                  busy={busyId === p.id}
-                  isAdmin={isAdmin}
-                  onAction={act}
-                  onLanguage={setLanguage}
-                  onDownloadModel={downloadModel}
-                  selectable={startable.some((s) => s.id === p.id)}
-                  selected={selected.has(p.id)}
-                  onSelect={toggleSelected}
-                />
-              ))}
-            </section>
-          )}
-          {linked.length > 0 && (
-            <section aria-label={t('pairs.section.linkedLabel')}>
-              <h2 className="section-title">
-                {t('pairs.section.linked')}{' '}
-                <span className="section-title__count">{f.number(linked.length)}</span>
-              </h2>
-              {linked.map((p) => (
-                <PairCard
-                  speedRatio={summary?.speedRatio ?? 0}
-                  key={p.id}
-                  pair={p}
-                  busy={busyId === p.id}
-                  isAdmin={isAdmin}
-                  onAction={act}
-                  onLanguage={setLanguage}
-                  onDownloadModel={downloadModel}
-                  selectable={startable.some((s) => s.id === p.id)}
-                  selected={selected.has(p.id)}
-                  onSelect={toggleSelected}
-                />
-              ))}
-            </section>
-          )}
-          {rejected.length > 0 && (
-            <section aria-label={t('pairs.section.dismissedLabel')}>
-              <h2 className="section-title">
-                {t('pairs.section.dismissed')}{' '}
-                <span className="section-title__count">{f.number(rejected.length)}</span>
-              </h2>
-              {rejected.map((p) => (
-                <PairCard
-                  speedRatio={summary?.speedRatio ?? 0}
-                  key={p.id}
-                  pair={p}
-                  busy={busyId === p.id}
-                  isAdmin={isAdmin}
-                  onAction={act}
-                  onLanguage={setLanguage}
-                  onDownloadModel={downloadModel}
-                  selectable={startable.some((s) => s.id === p.id)}
-                  selected={selected.has(p.id)}
-                  onSelect={toggleSelected}
-                />
-              ))}
-            </section>
-          )}
-        </>
-      )}
     </main>
   );
 }
 
-function ScoreCell({
-  label,
-  value,
-  good,
-}: {
-  label: string;
-  value: string;
-  good?: boolean | null;
-}) {
-  const t = useT();
-  return (
-    <div className={`evidence-cell ${good === true ? 'is-good' : good === false ? 'is-bad' : ''}`}>
-      {label}
-      {/* A shape as well as a hue. The good and bad colours are both in the
-          rust family and only a shade apart, so the verdict was carried by a
-          difference many people cannot see and no screen reader announces. */}
-      <b>
-        {good === true && <IconCheck size={13} aria-hidden="true" />}
-        {good === false && <IconAlert size={13} aria-hidden="true" />}
-        {value}
-        {good !== null && good !== undefined && (
-          <span className="visually-hidden">
-            {' '}
-            {t(good ? 'pairs.evidence.good' : 'pairs.evidence.poor')}
-          </span>
-        )}
-      </b>
-    </div>
-  );
-}
+// ------------------------------------------------------------------ rows
 
-function EditionTile({
-  book,
-  kind,
-  extra,
-}: {
-  book: { id: string; title: string; author: string | null } | null;
-  kind: 'ebook' | 'audio';
-  extra?: string;
-}) {
-  const t = useT();
-  return (
-    <Link to={book ? `/book/${book.id}` : '/pairs'} className="edition-tile">
-      <span className="edition-tile__cover">
-        {book && (
-          <Cover
-            book={{ id: book.id, title: book.title, author: book.author, hasCover: true, kind }}
-            className="edition-tile__img"
-          />
-        )}
-      </span>
-      <span className="edition-tile__body">
-        <span className="edition-tile__kind">
-          {kind === 'ebook' ? <IconBookOpen size={12} /> : <IconHeadphones size={12} />}
-          {kind === 'ebook' ? t('common.ebook') : t('common.audiobook')}
-        </span>
-        <span className="edition-tile__title">{book?.title ?? t('common.unknown')}</span>
-        <span className="edition-tile__meta">
-          {book?.author ?? '-'}
-          {extra ? ` · ${extra}` : ''}
-        </span>
-      </span>
-    </Link>
-  );
-}
-
-function PairCard({
-  pair,
-  busy,
-  isAdmin,
-  onAction,
-  onLanguage,
-  onDownloadModel,
-  selectable,
-  selected,
-  onSelect,
-  speedRatio,
-}: {
-  pair: PairDto;
-  busy: boolean;
+interface RowHandlers {
   isAdmin: boolean;
   /** Seconds of audio aligned per second of wall clock; 0 = not yet measured. */
   speedRatio: number;
+  busyId: string | null;
   onAction: (id: string, a: PairAction) => void;
   onLanguage: (id: string, language: string | null) => void;
   onDownloadModel: (modelId: string) => void;
-  /** Verified, not aligned yet: offer it for bulk starting. */
+  onToggleOpen: (id: string) => void;
+}
+
+function PairRow({
+  pair,
+  state,
+  open,
+  selectable,
+  selected,
+  onSelect,
+  isAdmin,
+  speedRatio,
+  busyId,
+  onAction,
+  onLanguage,
+  onDownloadModel,
+  onToggleOpen,
+}: RowHandlers & {
+  pair: PairDto;
+  state: RowState;
+  open: boolean;
+  /** Ready to align: offer it for bulk starting. */
   selectable?: boolean;
   selected?: boolean;
   onSelect?: (id: string) => void;
+}) {
+  const t = useT();
+  const f = useFormat();
+  const title = titleOf(pair, t('common.unknown'));
+  const author = pair.ebook?.author ?? pair.audio?.author ?? null;
+  const busy = busyId === pair.id;
+  const job = pair.lastAlignJob;
+  const detailsId = `pair-details-${pair.id}`;
+
+  // One line under the chip: the number that matters in this state.
+  let caption: string | null = null;
+  if (state === 'suggested') {
+    const s = signals(pair);
+    caption =
+      `${t('pairs.card.match', { pct: f.percent(pair.score) })}` +
+      (s.total > 0 ? ` · ${t('pairs.row.signals', { good: s.good, total: s.total })}` : '');
+  } else if (state === 'aligned' && pair.alignment) {
+    caption = pair.handoff?.available
+      ? `${t('pairs.row.exact', { pct: f.percent(pair.alignment.exactSentenceCoverage) })} · ${t('pairs.row.switchReady')}`
+      : t('pairs.row.coverage', { pct: f.percent(pair.alignment.coverage) });
+  } else if (state === 'aligning' && job) {
+    caption = job.detail ?? t('pairs.row.progress', { pct: f.percent(job.progress) });
+  } else if (state === 'queued') {
+    caption = t('pairs.row.queuedHint');
+  } else if (state === 'ready') {
+    caption =
+      speedRatio > 0 && pair.audio?.durationMs
+        ? t('pairs.card.timeToAlign', { span: f.span(pair.audio.durationMs / speedRatio) })
+        : null;
+  } else if (state === 'model') {
+    caption = t('pairs.row.modelHint');
+  } else if (state === 'failed') {
+    caption = t('pairs.row.failedHint');
+  } else if (state === 'dismissed') {
+    caption = t('pairs.row.dismissedHint');
+  }
+
+  return (
+    <li
+      id={`pair-${pair.id}`}
+      className={`pr pr--${state} ${open ? 'is-open' : ''} ${selected ? 'is-selected' : ''}`}
+    >
+      <div className="pr__main">
+        {selectable && onSelect ? (
+          <input
+            type="checkbox"
+            className="pr__pick"
+            checked={!!selected}
+            onChange={() => onSelect(pair.id)}
+            aria-label={t('pairs.card.selectForAlignment', { title })}
+          />
+        ) : (
+          <span className="pr__pick pr__pick--none" aria-hidden="true" />
+        )}
+        <button
+          type="button"
+          className="pr__summary"
+          aria-expanded={open}
+          aria-controls={detailsId}
+          onClick={() => onToggleOpen(pair.id)}
+        >
+          <span className="pr__covers" aria-hidden="true">
+            {pair.audio && (
+              <span className="pr__slot pr__slot--audio">
+                <Cover
+                  book={{
+                    id: pair.audio.id,
+                    title: pair.audio.title,
+                    author: pair.audio.author,
+                    hasCover: true,
+                    kind: 'audio',
+                  }}
+                  className="pr__cover"
+                />
+              </span>
+            )}
+            {pair.ebook && (
+              <span className="pr__slot pr__slot--ebook">
+                <Cover
+                  book={{
+                    id: pair.ebook.id,
+                    title: pair.ebook.title,
+                    author: pair.ebook.author,
+                    hasCover: true,
+                    kind: 'ebook',
+                  }}
+                  className="pr__cover"
+                />
+              </span>
+            )}
+          </span>
+          <span className="pr__text">
+            <span className="pr__title">
+              <bdi>{title}</bdi>
+            </span>
+            <span className="pr__meta">
+              {author && <bdi>{author}</bdi>}
+              {author && pair.audio?.durationMs ? ' · ' : ''}
+              {pair.audio?.durationMs ? formatDuration(pair.audio.durationMs) : ''}
+            </span>
+          </span>
+        </button>
+
+        <div className="pr__state">
+          <span className={`pr__chip pr__chip--${state}`}>
+            {state === 'aligning' && <span className="spinner pr__spin" aria-hidden="true" />}
+            {t(`pairs.state.${state}` as MessageKey)}
+          </span>
+          {caption && (
+            <span className="pr__caption">
+              <bdi>{caption}</bdi>
+            </span>
+          )}
+          {state === 'aligning' && job && (
+            <span className="progressbar pr__progress" aria-hidden="true">
+              <span style={{ width: `${Math.round(job.progress * 100)}%` }} />
+            </span>
+          )}
+        </div>
+
+        {state === 'aligned' && (
+          <div className="pr__strip">
+            <CoverageStrip pair={pair} compact />
+          </div>
+        )}
+
+        {isAdmin && (
+          <div className="pr__actions">
+            {state === 'suggested' && (
+              <>
+                <button
+                  className="btn btn--sm"
+                  disabled={busy}
+                  onClick={() => onAction(pair.id, 'confirm')}
+                >
+                  <IconCheck size={15} /> {t('pairs.actions.link')}
+                </button>
+                <button
+                  className="btn btn--sm btn--ghost"
+                  disabled={busy}
+                  onClick={() => onAction(pair.id, 'reject')}
+                >
+                  <IconClose size={15} /> {t('pairs.actions.notAMatch')}
+                </button>
+              </>
+            )}
+            {state === 'ready' && (
+              <button
+                className="btn btn--sm btn--secondary"
+                disabled={busy}
+                onClick={() => onAction(pair.id, 'align')}
+              >
+                {t('pairs.actions.start')}
+              </button>
+            )}
+            {state === 'model' && job?.modelMissing && (
+              <button
+                className="btn btn--sm"
+                disabled={busy}
+                onClick={() => onDownloadModel(job.modelMissing!.modelId)}
+              >
+                <IconDownload size={15} /> {t('pairs.job.download')}
+              </button>
+            )}
+            {state === 'failed' && (
+              <button
+                className="btn btn--sm btn--secondary"
+                disabled={busy}
+                onClick={() => onAction(pair.id, 'align')}
+              >
+                {t('common.retry')}
+              </button>
+            )}
+            {state === 'dismissed' && (
+              <button
+                className="btn btn--sm btn--secondary"
+                disabled={busy}
+                onClick={() => onAction(pair.id, 'confirm')}
+              >
+                {t('pairs.actions.linkAnyway')}
+              </button>
+            )}
+          </div>
+        )}
+
+        <button
+          type="button"
+          className="pr__chev"
+          aria-expanded={open}
+          aria-controls={detailsId}
+          aria-label={
+            open ? t('pairs.row.hideDetails', { title }) : t('pairs.row.showDetails', { title })
+          }
+          onClick={() => onToggleOpen(pair.id)}
+        >
+          <IconChevronDown size={18} />
+        </button>
+      </div>
+
+      {open && (
+        <div className="pr__details" id={detailsId}>
+          <PairDetails
+            pair={pair}
+            state={state}
+            isAdmin={isAdmin}
+            busy={busy}
+            onAction={onAction}
+            onLanguage={onLanguage}
+            onDownloadModel={onDownloadModel}
+          />
+        </div>
+      )}
+    </li>
+  );
+}
+
+/** Everything about a pair that does not belong on one line. */
+function PairDetails({
+  pair,
+  state,
+  isAdmin,
+  busy,
+  onAction,
+  onLanguage,
+  onDownloadModel,
+}: {
+  pair: PairDto;
+  state: RowState;
+  isAdmin: boolean;
+  busy: boolean;
+  onAction: (id: string, a: PairAction) => void;
+  onLanguage: (id: string, language: string | null) => void;
+  onDownloadModel: (modelId: string) => void;
 }) {
   const t = useT();
   const f = useFormat();
@@ -539,31 +932,17 @@ function PairCard({
     return [];
   });
   const job = pair.lastAlignJob;
-  const running = job && (job.state === 'queued' || job.state === 'running');
   const lang = pair.language;
 
   return (
-    <article
-      id={`pair-${pair.id}`}
-      className={`pair-card pair-card--${pair.status} ${selected ? 'is-selected' : ''}`}
-    >
-      {selectable && onSelect && (
-        <label className="pair-card__pick">
-          <input
-            type="checkbox"
-            checked={!!selected}
-            onChange={() => onSelect(pair.id)}
-            aria-label={t('pairs.card.selectForAlignment', {
-              title: pair.ebook?.title ?? t('pairs.card.thisPair'),
-            })}
-          />
-          <span>{t('pairs.card.select')}</span>
-        </label>
-      )}
-      <div className="pair-card__editions">
+    <>
+      <div className="pr__editions">
         <EditionTile book={pair.ebook} kind="ebook" />
-        <span className="pair-card__link" aria-hidden="true">
-          <IconSwitch size={18} />
+        <span
+          className={`pr__join ${state === 'suggested' ? 'pr__join--maybe' : ''}`}
+          aria-hidden="true"
+        >
+          <IconSwitch size={16} />
         </span>
         <EditionTile
           book={pair.audio}
@@ -572,30 +951,22 @@ function PairCard({
         />
       </div>
 
-      <div className="pair-card__status">
-        <span
-          className={`badge ${pair.status === 'auto' || pair.status === 'confirmed' ? 'badge--paired' : pair.status === 'rejected' ? 'badge--muted' : ''}`}
-        >
-          {t('pairs.card.status', { status: pair.status })}
+      <div className="pr__facts">
+        <span className="pr__fact">
+          {isLinked(pair)
+            ? t('pairs.row.linkedWhen', {
+                status: pair.status,
+                when: f.ago(pair.decidedAt ?? pair.createdAt),
+              })
+            : t('pairs.card.status', { status: pair.status })}
         </span>
+        <span className="pr__fact">{t('pairs.card.match', { pct: f.percent(pair.score) })}</span>
         {pair.handoff?.available && (
           <span className="badge badge--sync">
             <IconSwitch size={11} />{' '}
             {t('pairs.card.switchReady', { pct: f.percent(pair.handoff.exactSentenceCoverage) })}
           </span>
         )}
-        {/* What THIS book will cost, beside the button that starts it. The
-            queue-wide total answers a different question, and a reader
-            comparing one number against one book is how "it took longer than
-            you said" happens. */}
-        {!pair.alignment && speedRatio > 0 && pair.audio?.durationMs ? (
-          <span className="badge badge--muted">
-            {t('pairs.card.timeToAlign', { span: f.span(pair.audio.durationMs / speedRatio) })}
-          </span>
-        ) : null}
-        <span className="pair-card__score">
-          {t('pairs.card.match', { pct: f.percent(pair.score) })}
-        </span>
         <label className="lang-pick">
           <span className="lang-pick__label">{t('pairs.language.label')}</span>
           <select
@@ -669,7 +1040,7 @@ function PairCard({
       </div>
 
       {notes.map((n, i) => (
-        <div className="banner" key={i} style={{ marginBlockEnd: 8 }}>
+        <div className="banner" key={i}>
           {n.done ? <IconCheck size={15} /> : <IconAlert size={15} />} <bdi>{n.text}</bdi>
         </div>
       ))}
@@ -679,34 +1050,12 @@ function PairCard({
         </div>
       )}
 
-      {running && job && (
-        <div className="align-progress" role="status">
-          <span className="spinner" style={{ width: 16, height: 16 }} />
-          <span className="grow">
-            <span style={{ fontWeight: 600 }}>
-              {job.state === 'queued' ? t('pairs.job.queued') : t('pairs.job.aligning')}
-            </span>
-            {job.detail ? (
-              <>
-                {' - '}
-                <bdi>{job.detail}</bdi>
-              </>
-            ) : null}
-            <span className="progressbar" aria-hidden="true">
-              <span style={{ width: `${Math.round(job.progress * 100)}%` }} />
-            </span>
-          </span>
-        </div>
-      )}
-      {job?.state === 'failed' && job.modelMissing && pair.status !== 'rejected' && (
+      {state === 'model' && job?.modelMissing && (
         <div className="banner banner--action" role="alert">
           <IconDownload size={16} />
           <span className="grow">
             {/* One model covers every language, so there is only ever one
-                thing missing and naming a language would misdescribe it. The
-                old branch here compared against a model id that has not
-                existed since forced alignment landed, so it always fell
-                through to a model name nobody could act on. */}
+                thing missing and naming a language would misdescribe it. */}
             <strong>{t('pairs.job.modelNeeded')}</strong>{' '}
             <bdi>
               {job.modelMissing.message.replace(/[ --]*(download|get) it in Settings.*$/i, '')}
@@ -738,15 +1087,6 @@ function PairCard({
               </small>
             )}
           </span>
-          {isAdmin && (
-            <button
-              className="btn btn--ghost"
-              style={{ minHeight: 36 }}
-              onClick={() => onAction(pair.id, 'align')}
-            >
-              {t('common.retry')}
-            </button>
-          )}
         </div>
       )}
 
@@ -781,90 +1121,242 @@ function PairCard({
           <CoverageStrip pair={pair} />
         </div>
       ) : (
-        pair.status !== 'rejected' &&
-        !running &&
-        !job?.modelMissing && (
-          <div style={{ fontSize: 13.5, color: 'var(--rp-text-soft)' }}>
-            {t('pairs.card.unalignedNote')}
-          </div>
-        )
+        state === 'ready' && <p className="pr__note">{t('pairs.card.unalignedNote')}</p>
       )}
 
-      <div className="pair-actions">
-        {pair.status === 'candidate' && (
-          <>
-            <button
-              className="btn"
-              disabled={busy || !isAdmin}
-              onClick={() => onAction(pair.id, 'confirm')}
-            >
-              <IconCheck size={16} /> {t('pairs.actions.linkEditions')}
-            </button>
-            <button
-              className="btn btn--secondary"
-              disabled={busy || !isAdmin}
-              onClick={() => onAction(pair.id, 'reject')}
-            >
-              <IconClose size={16} /> {t('pairs.actions.notAMatch')}
-            </button>
-          </>
-        )}
-        {(pair.status === 'auto' || pair.status === 'confirmed') && (
-          <>
-            {!running && (
+      {isAdmin && (
+        <div className="pair-actions">
+          {state === 'suggested' && (
+            <>
+              <button className="btn" disabled={busy} onClick={() => onAction(pair.id, 'confirm')}>
+                <IconCheck size={16} /> {t('pairs.actions.linkEditions')}
+              </button>
               <button
                 className="btn btn--secondary"
-                disabled={busy || !isAdmin}
-                onClick={() => onAction(pair.id, 'align')}
+                disabled={busy}
+                onClick={() => onAction(pair.id, 'reject')}
               >
-                {pair.alignment
-                  ? t('pairs.actions.rerunAlignment')
-                  : t('pairs.actions.runAlignment')}
+                <IconClose size={16} /> {t('pairs.actions.notAMatch')}
               </button>
-            )}
+            </>
+          )}
+          {isLinked(pair) && (
+            <>
+              {state !== 'aligning' && state !== 'queued' && (
+                <button
+                  className="btn btn--secondary"
+                  disabled={busy}
+                  onClick={() => onAction(pair.id, 'align')}
+                >
+                  {pair.alignment
+                    ? t('pairs.actions.rerunAlignment')
+                    : t('pairs.actions.runAlignment')}
+                </button>
+              )}
+              <button
+                className="btn btn--ghost btn--danger"
+                disabled={busy}
+                onClick={() => onAction(pair.id, 'unlink')}
+              >
+                {t('pairs.actions.unlink')}
+              </button>
+            </>
+          )}
+          {state === 'dismissed' && (
             <button
-              className="btn btn--danger"
-              disabled={busy || !isAdmin}
-              onClick={() => onAction(pair.id, 'unlink')}
+              className="btn btn--secondary"
+              disabled={busy}
+              onClick={() => onAction(pair.id, 'confirm')}
             >
-              {t('pairs.actions.unlink')}
+              {t('pairs.actions.linkAnyway')}
             </button>
-          </>
-        )}
-        {pair.status === 'rejected' && (
-          <button
-            className="btn btn--secondary"
-            disabled={busy || !isAdmin}
-            onClick={() => onAction(pair.id, 'confirm')}
-          >
-            {t('pairs.actions.linkAnyway')}
-          </button>
-        )}
-      </div>
-    </article>
+          )}
+        </div>
+      )}
+    </>
   );
 }
+
+function ScoreCell({
+  label,
+  value,
+  good,
+}: {
+  label: string;
+  value: string;
+  good?: boolean | null;
+}) {
+  const t = useT();
+  return (
+    <div className={`evidence-cell ${good === true ? 'is-good' : good === false ? 'is-bad' : ''}`}>
+      {label}
+      {/* A shape as well as a hue. The good and bad colours are both in the
+          rust family and only a shade apart, so the verdict was carried by a
+          difference many people cannot see and no screen reader announces. */}
+      <b>
+        {good === true && <IconCheck size={13} aria-hidden="true" />}
+        {good === false && <IconAlert size={13} aria-hidden="true" />}
+        {value}
+        {good !== null && good !== undefined && (
+          <span className="visually-hidden">
+            {' '}
+            {t(good ? 'pairs.evidence.good' : 'pairs.evidence.poor')}
+          </span>
+        )}
+      </b>
+    </div>
+  );
+}
+
+function EditionTile({
+  book,
+  kind,
+  extra,
+}: {
+  book: { id: string; title: string; author: string | null } | null;
+  kind: 'ebook' | 'audio';
+  extra?: string;
+}) {
+  const t = useT();
+  return (
+    <Link to={book ? `/book/${book.id}` : '/pairs'} className="edition-tile">
+      <span className="edition-tile__cover">
+        {book && (
+          <Cover
+            book={{ id: book.id, title: book.title, author: book.author, hasCover: true, kind }}
+            className="edition-tile__img"
+          />
+        )}
+      </span>
+      <span className="edition-tile__body">
+        <span className="edition-tile__kind">
+          {kind === 'ebook' ? <IconBookOpen size={12} /> : <IconHeadphones size={12} />}
+          {kind === 'ebook' ? t('common.ebook') : t('common.audiobook')}
+        </span>
+        <span className="edition-tile__title">{book?.title ?? t('common.unknown')}</span>
+        <span className="edition-tile__meta">
+          {book?.author ?? '-'}
+          {extra ? ` · ${extra}` : ''}
+        </span>
+      </span>
+    </Link>
+  );
+}
+
+// -------------------------------------------------------------- unpaired
+
+function UnpairedList({
+  books,
+  canLink,
+  onLink,
+}: {
+  books: BookSummary[] | null;
+  canLink: boolean;
+  onLink: (book: BookSummary) => void;
+}) {
+  const t = useT();
+  const [query, setQuery] = useState('');
+  if (!books) {
+    return (
+      <div aria-busy="true">
+        <div className="skeleton" style={{ height: 52, marginBlockEnd: 8 }} />
+        <div className="skeleton" style={{ height: 52 }} />
+      </div>
+    );
+  }
+  if (books.length === 0) {
+    return (
+      <EmptyState icon={<IconCheck size={42} />} title={t('pairs.empty.unpaired')}>
+        {t('pairs.empty.unpairedBody')}
+      </EmptyState>
+    );
+  }
+  const q = query.trim().toLowerCase();
+  const shown = q
+    ? books.filter(
+        (b) => b.title.toLowerCase().includes(q) || (b.author ?? '').toLowerCase().includes(q),
+      )
+    : books;
+  return (
+    <>
+      {books.length > 6 && (
+        <label className="search-field pun__search">
+          <IconSearch size={16} />
+          <input
+            type="search"
+            value={query}
+            placeholder={t('pairs.unpaired.search')}
+            aria-label={t('pairs.unpaired.search')}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </label>
+      )}
+      {shown.length === 0 ? (
+        <p className="pr__note">{t('pairs.unpaired.noMatch', { query: query.trim() })}</p>
+      ) : (
+        <ul className="pun">
+          {shown.map((b) => (
+            <li key={b.id} className="pun__row">
+              <Link to={`/book/${b.id}`} className="pun__book">
+                <span className="pun__slot">
+                  <Cover book={b} className="pun__cover" />
+                </span>
+                <span className="pun__text">
+                  <span className="pun__title">
+                    <bdi>{b.title}</bdi>
+                  </span>
+                  <span className="pun__meta">
+                    {b.kind === 'ebook' ? <IconBookOpen size={12} /> : <IconHeadphones size={12} />}
+                    {b.kind === 'ebook' ? t('common.ebook') : t('common.audiobook')}
+                    {b.author ? (
+                      <>
+                        {' · '}
+                        <bdi>{b.author}</bdi>
+                      </>
+                    ) : null}
+                  </span>
+                </span>
+              </Link>
+              {canLink && (
+                <button className="btn btn--sm btn--secondary" onClick={() => onLink(b)}>
+                  <IconLink size={14} /> {t('pairs.unpaired.link')}
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
+  );
+}
+
+// ----------------------------------------------------------- manual link
 
 /**
  * Manual arbitrary pairing: pick any UNLINKED ebook and any unlinked
  * audiobook and link them. Complements automatic suggestions for titles whose
  * metadata never matches.
  *
- * The pickers used to offer the whole library, so a book that was already
- * linked sat in the list looking available - and choosing it either re-made
- * the link it already had or proposed a second one. `filter=unpaired` asks
- * the server for what is actually linkable, in SQL, because a library where
- * most titles are owned twice would otherwise send most of itself here to be
- * discarded in the browser.
- *
- * A `candidate` still appears: it is a suggestion nobody has answered, and
- * this sheet is where a reader goes when the suggestion is wrong.
+ * `filter=unpaired` asks the server for what is actually linkable, in SQL,
+ * because a library where most titles are owned twice would otherwise send
+ * most of itself here to be discarded in the browser. A `candidate` still
+ * appears: it is a suggestion nobody has answered, and this sheet is where a
+ * reader goes when the suggestion is wrong. A `preset` fills one side in,
+ * for the Unpaired tab's per-book "Link…".
  */
-function ManualLinkSheet({ onClose, onLinked }: { onClose: () => void; onLinked: () => void }) {
+function ManualLinkSheet({
+  preset,
+  onClose,
+  onLinked,
+}: {
+  preset: { ebookId?: string; audioId?: string };
+  onClose: () => void;
+  onLinked: () => void;
+}) {
   const t = useT();
   const [books, setBooks] = useState<BookSummary[] | null>(null);
-  const [ebookId, setEbookId] = useState('');
-  const [audioId, setAudioId] = useState('');
+  const [ebookId, setEbookId] = useState(preset.ebookId ?? '');
+  const [audioId, setAudioId] = useState(preset.audioId ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<MessageKey | null>(null);
 
@@ -949,33 +1441,51 @@ function ManualLinkSheet({ onClose, onLinked }: { onClose: () => void; onLinked:
   );
 }
 
-function CoverageStrip({ pair }: { pair: PairDto }) {
+// -------------------------------------------------------------- coverage
+
+/** Bars fetched once per pair, shared by the row's strip and the details'. */
+const stripCache = new Map<string, { minute: number; confidence: number }[]>();
+
+function CoverageStrip({ pair, compact }: { pair: PairDto; compact?: boolean }) {
   const t = useT();
   const f = useFormat();
-  const [bars, setBars] = useState<{ minute: number; confidence: number }[] | null>(null);
+  const [bars, setBars] = useState<{ minute: number; confidence: number }[] | null>(
+    () => stripCache.get(pair.id) ?? null,
+  );
+  const version = pair.alignment?.version;
   useEffect(() => {
     let alive = true;
+    const cached = stripCache.get(pair.id);
+    if (cached) {
+      setBars(cached);
+      return;
+    }
     api<{ confidenceByMinute: { minute: number; confidence: number }[] }>(
       `/api/pairs/${pair.id}/alignment`,
     )
       .then((r) => {
-        if (alive) setBars(r.confidenceByMinute);
+        const list = Array.isArray(r?.confidenceByMinute) ? r.confidenceByMinute : [];
+        stripCache.set(pair.id, list);
+        if (alive) setBars(list);
       })
       .catch(() => {});
     return () => {
       alive = false;
     };
-  }, [pair.id]);
+    // A re-run replaces the alignment: fetch again for the new version.
+  }, [pair.id, version]);
   if (!bars || bars.length === 0) return null;
   const avg = bars.reduce((a, b) => a + b.confidence, 0) / bars.length;
   // One bar per audio minute makes a ten-hour book 600 bars wide. Average
-  // them down to a fixed count so the strip fits its card on a phone.
-  const shown = bucketCoverage(bars);
+  // them down to a fixed count so the strip fits its card on a phone - and
+  // to far fewer on the row, where it is a glance and not a report.
+  const shown = bucketCoverage(bars, compact ? 36 : undefined);
   return (
     <div
-      className="coverage-strip"
+      className={`coverage-strip ${compact ? 'coverage-strip--mini' : ''}`}
       role="img"
       aria-label={t('pairs.coverage.label', { n: bars.length, pct: f.percent(avg) })}
+      title={compact ? t('pairs.row.strip') : undefined}
     >
       {shown.map((b) => (
         <span
@@ -985,13 +1495,15 @@ function CoverageStrip({ pair }: { pair: PairDto }) {
             opacity: 0.35 + b.confidence * 0.65,
           }}
           title={
-            b.minutes === 1
-              ? t('pairs.coverage.minute', { minute: b.minute, pct: f.percent(b.confidence) })
-              : t('pairs.coverage.minutes', {
-                  from: b.minute,
-                  to: b.minute + b.minutes - 1,
-                  pct: f.percent(b.confidence),
-                })
+            compact
+              ? undefined
+              : b.minutes === 1
+                ? t('pairs.coverage.minute', { minute: b.minute, pct: f.percent(b.confidence) })
+                : t('pairs.coverage.minutes', {
+                    from: b.minute,
+                    to: b.minute + b.minutes - 1,
+                    pct: f.percent(b.confidence),
+                  })
           }
         />
       ))}

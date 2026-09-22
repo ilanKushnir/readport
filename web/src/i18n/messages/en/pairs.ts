@@ -30,21 +30,68 @@ export const pairs = {
   'pairs.work.precision.standardBlurb': 'Minutes per book · lands on the paragraph',
   'pairs.work.precision.exact': 'Sentence-perfect',
   'pairs.work.precision.exactBlurb': 'Hours per book · lands on the sentence',
-  // Empty state and the three sections
-  'pairs.emptyTitle': 'No pair suggestions yet',
-  'pairs.emptyBody':
-    'Pair candidates appear after a library scan finds ebook and audiobook editions with matching metadata. Nothing is ever linked without strong evidence.',
-  'pairs.section.needsReview': 'Needs review',
+  'pairs.work.marked': 'They are marked below. Tick some to start only those.',
+  'pairs.work.options': 'Alignment options',
+  'pairs.work.optionsHide': 'Hide alignment options',
+  // The four tabs
+  'pairs.tabsLabel': 'Pairing',
+  'pairs.tab.suggested': 'Suggested',
+  'pairs.tab.linked': 'Linked',
+  'pairs.tab.unpaired': 'Unpaired',
+  'pairs.tab.dismissed': 'Dismissed',
+  'pairs.tab.lede':
+    '{tab, select, suggested {Ebook and audiobook editions that look like the same work. Say yes and they are linked and aligned; say no and they wait under Dismissed.} linked {Every pair in the library, with where its alignment stands. Aligned pairs switch between editions at the same place.} unpaired {Books with no other edition in the library. If a match was missed, link one by hand.} other {Suggestions you turned down. They wait here in case you change your mind.}}',
   'pairs.section.linkAll': 'Link all {n}',
   'pairs.section.linking': 'Linking…',
-  'pairs.section.linked': 'Linked',
-  'pairs.section.linkedLabel': 'Linked pairs',
-  'pairs.section.dismissed': 'Dismissed',
-  'pairs.section.dismissedLabel': 'Dismissed pairs',
+  // Filters inside Linked
+  'pairs.filterLabel': 'Show',
+  'pairs.filter.all': 'All',
+  'pairs.filter.attention': 'Needs attention',
+  'pairs.filter.ready': 'Ready to align',
+  'pairs.filter.aligned': 'Aligned',
+  // What a row says about itself
+  'pairs.state.suggested': 'Suggested',
+  'pairs.state.aligned': 'Aligned',
+  'pairs.state.aligning': 'Aligning',
+  'pairs.state.queued': 'Queued',
+  'pairs.state.ready': 'Ready to align',
+  'pairs.state.model': 'Model needed',
+  'pairs.state.failed': 'Failed',
+  'pairs.state.dismissed': 'Dismissed',
+  'pairs.row.signals': '{good} of {total} signals agree',
+  'pairs.row.switchReady': 'switch ready',
+  'pairs.row.exact': '{pct} sentence-exact',
+  'pairs.row.coverage': '{pct} covered',
+  'pairs.row.progress': '{pct} done',
+  'pairs.row.queuedHint': 'waiting its turn',
+  'pairs.row.modelHint': 'one download covers every language',
+  'pairs.row.failedHint': 'try again, or check the server log',
+  'pairs.row.dismissedHint': 'not the same work',
+  'pairs.row.linkedWhen':
+    '{status, select, auto {Linked automatically} confirmed {Confirmed by you} other {Linked}} · {when}',
+  'pairs.row.showDetails': 'Show details for {title}',
+  'pairs.row.hideDetails': 'Hide details for {title}',
+  'pairs.row.strip': 'Alignment confidence across the book',
+  // Unpaired
+  'pairs.unpaired.search': 'Search these books',
+  'pairs.unpaired.link': 'Link…',
+  'pairs.unpaired.noMatch': 'No book here matches {query}.',
+  // Empty states, one per tab
+  'pairs.empty.suggested': 'No suggestions waiting',
+  'pairs.empty.suggestedBody':
+    'A suggestion appears when a library scan finds an ebook and an audiobook that look like the same work. Nothing is linked without strong evidence or your say-so.',
+  'pairs.empty.linked': 'Nothing linked yet',
+  'pairs.empty.linkedBody':
+    'Accept a suggestion, or link two books by hand, and the pair appears here with its alignment.',
+  'pairs.empty.unpaired': 'Every book has its other edition',
+  'pairs.empty.unpairedBody': 'Nothing in the library is missing a partner.',
+  'pairs.empty.dismissed': 'Nothing dismissed',
+  'pairs.empty.dismissedBody': 'Suggestions you turn down wait here in case you change your mind.',
+  // Short row actions
+  'pairs.actions.link': 'Link',
+  'pairs.actions.start': 'Start',
   // Pair card
-  'pairs.card.select': 'Select',
   'pairs.card.selectForAlignment': 'Select {title} for alignment',
-  'pairs.card.thisPair': 'this pair',
   'pairs.card.status':
     '{status, select, auto {Linked automatically} confirmed {Confirmed by you} candidate {Suggested} other {Dismissed}}',
   'pairs.card.switchReady': 'Switch ready · {pct} exact',
@@ -75,8 +122,6 @@ export const pairs = {
   'pairs.evidence.good': '- good',
   'pairs.evidence.poor': '- poor',
   // Alignment job state
-  'pairs.job.queued': 'Alignment queued',
-  'pairs.job.aligning': 'Aligning',
   'pairs.job.modelNeeded': 'Alignment model needed.',
   'pairs.job.modelDownloadHint': 'Download it and this alignment runs by itself when it lands.',
   'pairs.job.download': 'Download',
