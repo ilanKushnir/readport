@@ -775,7 +775,6 @@ const messages: Record<string, string> = {
   'reader.search.title': 'חיפוש בספר',
   'reader.search.placeholder': 'חיפוש בספר הזה',
   'reader.search.input': 'טקסט לחיפוש',
-  'reader.search.go': 'חיפוש',
   'reader.search.firstMatches': '{n} התוצאות הראשונות',
   'reader.search.matches': '{n, plural, one {# תוצאה} two {# תוצאות} other {# תוצאות}}',
   'reader.search.failed': 'לא ניתן היה לחפש - אולי אין לך חיבור?',
@@ -1634,7 +1633,6 @@ const messages: Record<string, string> = {
 
   // reader
   'reader.select.share': 'שיתוף',
-  'reader.select.clear': 'ניקוי הבחירה',
   'reader.select.continue': 'המשך הבחירה',
   'reader.select.continueArmed': 'יש להקיש היכן שזה נגמר',
   'reader.share.text': 'הנה מה שקראתי ב-{title}:\n\n„{quote}”\n\n{url}',
@@ -1742,7 +1740,5 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'חיפוש',
   'reader.mark.removeHighlight': 'הסרת ההדגשה',
   'reader.settings.voiceMark': 'מעקב אחרי הקריינות',
-  'reader.voiceMark.margin': 'סימון בשוליים',
-  'reader.voiceMark.wash': 'גוון על המשפט',
 };
 export default messages;

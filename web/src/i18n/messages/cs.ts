@@ -755,7 +755,6 @@ const messages: Record<string, string> = {
   'reader.search.title': 'Hledat v knize',
   'reader.search.placeholder': 'Najít v této knize',
   'reader.search.input': 'Hledaný text',
-  'reader.search.go': 'Hledat',
   'reader.search.firstMatches': 'Prvních {n} výsledků',
   'reader.search.matches':
     '{n, plural, one {# výsledek} few {# výsledky} many {# výsledku} other {# výsledků}}',
@@ -1619,7 +1618,6 @@ const messages: Record<string, string> = {
 
   // reader
   'reader.select.share': 'Sdílet',
-  'reader.select.clear': 'Zrušit výběr',
   'reader.select.continue': 'Pokračovat ve výběru',
   'reader.select.continueArmed': 'Klepněte tam, kde končí',
   'reader.share.text': 'Podívej se, co čtu v {title}:\n\n„{quote}“\n\n{url}',
@@ -1730,7 +1728,5 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Hledat',
   'reader.mark.removeHighlight': 'Odebrat zvýraznění',
   'reader.settings.voiceMark': 'Sledování vyprávění',
-  'reader.voiceMark.margin': 'Značka na okraji',
-  'reader.voiceMark.wash': 'Zabarvení na větě',
 };
 export default messages;

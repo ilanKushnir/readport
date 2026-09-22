@@ -767,7 +767,6 @@ const messages: Record<string, string> = {
   'reader.search.title': 'Caută în carte',
   'reader.search.placeholder': 'Găsește în această carte',
   'reader.search.input': 'Text de căutare',
-  'reader.search.go': 'Caută',
   'reader.search.firstMatches': 'Primele {n} rezultate',
   'reader.search.matches': '{n, plural, one {# rezultat} few {# rezultate} other {# de rezultate}}',
   'reader.search.failed': 'Căutarea nu a putut fi efectuată - ești offline?',
@@ -1631,7 +1630,6 @@ const messages: Record<string, string> = {
 
   // reader
   'reader.select.share': 'Distribuie',
-  'reader.select.clear': 'Deselectează',
   'reader.select.continue': 'Continuă selecția',
   'reader.select.continueArmed': 'Atinge unde se termină',
   'reader.share.text': 'Uite ce am citit în {title}:\n\n„{quote}”\n\n{url}',
@@ -1743,7 +1741,5 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Caută',
   'reader.mark.removeHighlight': 'Elimină evidențierea',
   'reader.settings.voiceMark': 'Urmărirea narațiunii',
-  'reader.voiceMark.margin': 'Semn în margine',
-  'reader.voiceMark.wash': 'Nuanță pe propoziție',
 };
 export default messages;

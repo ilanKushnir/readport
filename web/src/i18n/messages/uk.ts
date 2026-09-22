@@ -763,7 +763,6 @@ const messages: Record<string, string> = {
   'reader.search.title': 'Пошук по книзі',
   'reader.search.placeholder': 'Знайти в цій книзі',
   'reader.search.input': 'Текст для пошуку',
-  'reader.search.go': 'Шукати',
   'reader.search.firstMatches': 'Перші {n} збігів',
   'reader.search.matches':
     '{n, plural, one {# збіг} few {# збіги} many {# збігів} other {# збігу}}',
@@ -1630,7 +1629,6 @@ const messages: Record<string, string> = {
 
   // reader
   'reader.select.share': 'Поділитися',
-  'reader.select.clear': 'Очистити виділення',
   'reader.select.continue': 'Продовжити виділення',
   'reader.select.continueArmed': 'Торкніться, де закінчується',
   'reader.share.text': 'Дивіться, що я читаю в {title}:\n\n«{quote}»\n\n{url}',
@@ -1743,8 +1741,6 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Пошук',
   'reader.mark.removeHighlight': 'Прибрати виділення',
   'reader.settings.voiceMark': 'Відстеження голосу',
-  'reader.voiceMark.margin': 'Позначка на полях',
-  'reader.voiceMark.wash': 'Тонування речення',
 };
 
 export default messages;

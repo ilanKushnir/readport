@@ -639,7 +639,6 @@ try {
         paths: [...document.querySelectorAll('.selframe path')].map((p) =>
           p.getBoundingClientRect().toJSON(),
         ),
-        x: document.querySelector('.selframe__x')?.getBoundingClientRect().toJSON() ?? null,
         lines,
       };
     });
@@ -675,16 +674,6 @@ try {
         `outline off its lines: ${JSON.stringify({ p, left, right, top, bottom })}`,
       );
     }
-    // The dismiss sits on the end corner of the selection's last line.
-    const endTop = f.lines.at(-1).top;
-    const lastLine = f.lines.filter((l) => Math.abs(l.top - endTop) <= 1);
-    const right = Math.max(...lastLine.map((l) => l.right));
-    assert(
-      f.x &&
-        Math.abs(f.x.x + f.x.width / 2 - right) <= 2.5 &&
-        Math.abs(f.x.y + f.x.height / 2 - endTop) <= 2.5,
-      `dismiss must sit on the end corner: ${JSON.stringify({ x: f.x, right, endTop })}`,
-    );
   }
 
   for (const viewport of [
@@ -862,10 +851,10 @@ try {
       console.log('PASS share composes and copies, with and without a link', viewport.width);
       passed++;
 
-      // The frame's dismiss lets the selection go.
-      await page.locator('.selframe__x').click();
+      // Escape lets the selection go: the frame has no dismiss of its own.
+      await page.keyboard.press('Escape');
       await page.waitForTimeout(260);
-      assert(await page.evaluate(() => getSelection().isCollapsed), 'dismiss must clear the range');
+      assert(await page.evaluate(() => getSelection().isCollapsed), 'Escape must clear the range');
       assert.equal(await page.locator('.selection-menu').count(), 0);
       assert.equal(await page.locator('.selframe').count(), 0);
       // Escape drops a carried selection rather than leaving the book. The

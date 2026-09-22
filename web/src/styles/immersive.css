@@ -275,8 +275,10 @@
   font: inherit;
   cursor: pointer;
 }
-.bm-row:hover {
-  background: var(--rp-surface);
+@media (hover: hover) {
+  .bm-row:hover {
+    background: var(--rp-surface);
+  }
 }
 .bm-row__delete {
   margin-block: var(--sp-1);
@@ -316,6 +318,10 @@
   border-block-end: 1px solid var(--rp-border);
 }
 .sheet-tabs button {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   border: 0;
   background: none;
   padding: 10px 4px;
@@ -325,6 +331,17 @@
   color: var(--rp-text-soft);
   border-bottom: 2px solid transparent;
   cursor: pointer;
+}
+/* In the head of a sheet the tabs are its title: they stay while the body
+   scrolls, and their underline sits on the head's own rule. */
+.sheet__header--tabs .sheet-tabs {
+  flex: 1;
+  min-width: 0;
+  padding-inline: 0;
+  border-block-end: 0;
+}
+.sheet__header--tabs .sheet-tabs button {
+  padding: 14px 4px 12px;
 }
 .sheet-tabs button[aria-selected='true'] {
   color: var(--rp-text);
@@ -438,6 +455,10 @@
   font-size: 13px;
   cursor: pointer;
   flex: none;
+  /* At the end of the bar on every screen: on a phone the title between
+     the buttons and the pill is gone, and without this the pill followed
+     the buttons to the left. */
+  margin-inline-start: auto;
   transition: background-color var(--rp-duration-quick) var(--rp-ease);
 }
 .reader-searchpill:hover,
@@ -451,6 +472,152 @@
   }
   .reader-searchpill > span {
     display: none;
+  }
+}
+
+/* Search, the way a launcher does it: one field near the top of the
+   screen, the matches filling in under it as the words are typed, the page
+   dimmed behind. Held high so a phone's keyboard cannot cover it. */
+.spot {
+  position: fixed;
+  z-index: 41;
+  top: calc(var(--app-viewport-top, 0px) + max(var(--rp-safe-top), 12px) + min(8vh, 64px));
+  inset-inline: 0;
+  width: min(640px, calc(100% - 24px));
+  margin-inline: auto;
+  max-height: calc(
+    var(--app-viewport-height, 100dvh) - min(8vh, 64px) - max(var(--rp-safe-top), 12px) - 16px
+  );
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--rp-border);
+  border-radius: 18px;
+  /* Solid. A translucent panel over a dark page let the page's light
+     words through as streaks in WebKit, blur or no blur, and the matches
+     have to be read; the launcher feel is in the shape and the place. */
+  background: var(--rp-surface-raised);
+  box-shadow: var(--rp-shadow-2);
+  color: var(--rp-text);
+  font-family: var(--rp-font-ui);
+  animation: spot-in var(--rp-duration-base) var(--rp-ease);
+}
+@keyframes spot-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.spot__field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 6px 14px 6px 18px;
+  margin: 0;
+  color: var(--rp-text-soft);
+}
+.spot__input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  color: var(--rp-text);
+  font-family: inherit;
+  /* Large, as a launcher's is - and never under 16px, which is where a
+     phone zooms the page to read what is typed. */
+  font-size: 19px;
+  line-height: 1.3;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.spot__input::-webkit-search-cancel-button,
+.spot__input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  display: none;
+}
+.spot__input::placeholder {
+  color: var(--rp-text-soft);
+  opacity: 0.8;
+}
+/* The field is the panel: focus is shown on the panel's edge, not as a
+   ring drawn inside it around the words. */
+.spot__input:focus-visible {
+  outline: none;
+}
+.spot:focus-within {
+  border-color: color-mix(in srgb, var(--rp-primary) 55%, var(--rp-border));
+}
+.spot__clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--rp-text) 10%, transparent);
+  color: var(--rp-text-soft);
+  cursor: pointer;
+}
+.spot__clear:hover,
+.spot__clear:focus-visible {
+  background: color-mix(in srgb, var(--rp-text) 16%, transparent);
+  color: var(--rp-text);
+}
+.spot__busy {
+  width: 16px;
+  height: 16px;
+  margin: 7px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, currentColor 25%, transparent);
+  border-top-color: var(--rp-primary);
+  animation: spot-spin 0.8s linear infinite;
+}
+@keyframes spot-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spot__results {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-block-start: 1px solid var(--rp-border);
+  padding: var(--sp-2);
+}
+.spot__results .search-count {
+  padding: 6px 10px 4px;
+}
+.spot__results .list-row {
+  border-block-end: 0;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.spot__results .list-row:focus-visible {
+  outline: 2px solid var(--rp-primary);
+  outline-offset: -2px;
+}
+.spot__none {
+  margin: 0;
+  padding: 12px 10px 14px;
+  color: var(--rp-text-soft);
+  font-size: 14px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .spot {
+    animation: none;
+  }
+  .spot__busy {
+    animation: none;
+    border-color: var(--rp-primary);
   }
 }
 
@@ -800,18 +967,9 @@
   margin: 0 0 var(--sp-3);
   white-space: pre-wrap;
 }
+/* Sized and captioned with the selection toolbar's buttons, above. */
 .mark-pop__icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
   color: var(--rp-interactive);
-  cursor: pointer;
 }
 .mark-pop__icon:hover,
 .mark-pop__icon:focus-visible {
@@ -861,27 +1019,6 @@
   stroke-width: 1.5;
   stroke-linejoin: round;
   stroke-linecap: round;
-}
-/* Its dismiss, centred on the corner where the selection ends. Top corner,
-   because the platform's end handle hangs from the bottom one. */
-.selframe__x {
-  position: absolute;
-  z-index: 4;
-  width: 22px;
-  height: 22px;
-  margin: -11px 0 0 -11px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: 1px solid var(--rd-link);
-  border-radius: 50%;
-  background: var(--rd-bg);
-  color: var(--rd-link);
-  cursor: pointer;
-}
-.selframe__x:hover {
-  background: color-mix(in srgb, var(--rd-link) 12%, var(--rd-bg));
 }
 
 /* The sentence being spoken: a soft rounded wash in the accent, firmer at
@@ -1076,6 +1213,61 @@
 
 .rs-group:last-child {
   border-block-end: 0;
+}
+/* Following the voice, drawn rather than described: two small pages, one
+   with a mark beside the line being read, one with the sentence washed. */
+.vm-tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-2);
+}
+.vm-tile {
+  display: block;
+  padding: 10px 12px 8px;
+  border: 1.5px solid var(--rp-border);
+  border-radius: var(--radius-control);
+  background: var(--rp-surface);
+  color: var(--rp-text-soft);
+  cursor: pointer;
+  transition:
+    border-color var(--rp-duration-quick) var(--rp-ease),
+    background-color var(--rp-duration-quick) var(--rp-ease),
+    color var(--rp-duration-quick) var(--rp-ease);
+}
+@media (hover: hover) {
+  .vm-tile:hover {
+    color: var(--rp-text);
+    border-color: var(--rp-border-strong);
+  }
+}
+.vm-tile[aria-pressed='true'] {
+  color: var(--rp-text);
+  border-color: var(--rp-primary);
+  background: color-mix(in srgb, var(--rp-primary) 9%, var(--rp-surface));
+  box-shadow: inset 0 0 0 1px var(--rp-primary);
+}
+.vm-tile:focus-visible {
+  outline: 2px solid var(--rp-primary);
+  outline-offset: 2px;
+}
+.vm-glyph {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 64px;
+}
+.vm-glyph__line {
+  fill: color-mix(in srgb, currentColor 40%, transparent);
+}
+.vm-glyph__mark {
+  fill: var(--rp-primary);
+}
+.vm-glyph__wash {
+  fill: color-mix(in srgb, var(--rp-primary) 32%, transparent);
+}
+/* The margin is at the start of the line, whichever side that is. */
+[dir='rtl'] .vm-glyph {
+  transform: scaleX(-1);
 }
 .rs-label {
   font-size: 12px;
@@ -1312,31 +1504,54 @@
   /* The placement adapter also constrains this to the visual viewport. */
   max-width: calc(100vw - 16px);
   gap: 2px;
-  padding: 2px 4px;
+  /* 48px tall in all, captions included: the height the placement has
+     always had to fit between the last line's handles and the bottom bar,
+     so a selection that ends near the foot still gets its menu. */
+  padding: 2px 8px;
   background: var(--rp-text);
   color: var(--rp-bg);
-  border-radius: var(--radius-control);
+  border-radius: var(--radius-pill);
   box-shadow: var(--rp-shadow-2);
 }
 /* `:not(.swatch)` matters. This reset is (0,1,1) and `.swatch--amber` is
    (0,1,0), so a bare `.selection-menu button` rule won on specificity and
    painted every colour swatch transparent - the row of colours was there,
    sized and clickable, and completely invisible. */
-/* Icons, each the size of a fingertip, with the name on each for anyone
-   who cannot see it. Icons, so the toolbar fits a phone beside the words
-   and never has to wrap or scroll. */
-.selection-menu button:not(.swatch) {
+/* An icon with its name in small type under it, each the size of a
+   fingertip and a little more: the toolbar still fits a phone beside the
+   words, and nobody has to guess what a glyph does. */
+.selection-menu button:not(.swatch),
+.mark-pop__icon {
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 40px;
-  padding: 0;
+  gap: 2px;
+  /* Wide enough for its name, within reason: "Highlight" fits, and a
+     longer name in another language is cut with an ellipsis rather than
+     pushing the toolbar off the screen. */
+  min-width: 56px;
+  max-width: 78px;
+  height: 44px;
+  padding: 0 5px;
   border: 0;
-  border-radius: 8px;
+  border-radius: 14px;
   background: transparent;
   color: inherit;
+  font-family: var(--rp-font-ui);
   cursor: pointer;
+}
+.selection-menu button:not(.swatch) > span,
+.mark-pop__icon > span {
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-inline: 2px;
+  opacity: 0.85;
 }
 .selection-menu button:not(.swatch):hover,
 .selection-menu button:not(.swatch):focus-visible {
@@ -1347,8 +1562,9 @@
 }
 @media (any-pointer: coarse) {
   /* A fingertip's worth each, wherever a finger might be used. */
-  .selection-menu button:not(.swatch) {
-    width: 44px;
+  .selection-menu button:not(.swatch),
+  .mark-pop__icon {
+    min-width: 58px;
     height: 44px;
   }
 }
@@ -2015,8 +2231,9 @@
   .selection-menu {
     gap: 4px;
   }
-  .selection-menu button:not(.swatch) {
-    width: 44px;
+  .selection-menu button:not(.swatch),
+  .mark-pop__icon {
+    min-width: 58px;
     height: 44px;
   }
   /* Colour swatches: a 22px disc is a mouse target. The disc grows a
@@ -2043,11 +2260,6 @@
   }
   .continue-pill__x {
     width: 40px;
-  }
-  .selframe__x {
-    width: 28px;
-    height: 28px;
-    margin: -14px 0 0 -14px;
   }
   /* A missed grab on a scrubber seeks instead of dragging, which loses your
      place - so the bar itself is the target, not just the thumb. */

@@ -770,7 +770,6 @@ const messages: Record<string, string> = {
   'reader.search.title': 'Cerca nel libro',
   'reader.search.placeholder': 'Trova in questo libro',
   'reader.search.input': 'Testo da cercare',
-  'reader.search.go': 'Cerca',
   'reader.search.firstMatches': 'Primi {n} risultati',
   'reader.search.matches': '{n, plural, one {# risultato} other {# risultati}}',
   'reader.search.failed': 'Impossibile cercare - sei offline?',
@@ -1625,7 +1624,6 @@ const messages: Record<string, string> = {
 
   // reader
   'reader.select.share': 'Condividi',
-  'reader.select.clear': 'Cancella la selezione',
   'reader.select.continue': 'Continua la selezione',
   'reader.select.continueArmed': 'Tocca dove finisce',
   'reader.share.text': 'Guarda cosa ho letto in {title}:\n\n«{quote}»\n\n{url}',
@@ -1739,8 +1737,6 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Cerca',
   'reader.mark.removeHighlight': "Rimuovi l'evidenziazione",
   'reader.settings.voiceMark': 'Indicatore della voce',
-  'reader.voiceMark.margin': 'Segno nel margine',
-  'reader.voiceMark.wash': 'Tinta sulla frase',
 };
 
 export default messages;

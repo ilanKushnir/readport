@@ -757,7 +757,6 @@ const messages: Record<string, string> = {
   'reader.search.title': 'Kitapta ara',
   'reader.search.placeholder': 'Bu kitapta bul',
   'reader.search.input': 'Metin ara',
-  'reader.search.go': 'Ara',
   'reader.search.firstMatches': 'İlk {n} eşleşme',
   'reader.search.matches': '{n, plural, one {# eşleşme} other {# eşleşme}}',
   'reader.search.failed': 'Aranamadı - çevrimdışı mısınız?',
@@ -1611,7 +1610,6 @@ const messages: Record<string, string> = {
 
   // reader
   'reader.select.share': 'Paylaş',
-  'reader.select.clear': 'Seçimi temizle',
   'reader.select.continue': 'Seçime devam et',
   'reader.select.continueArmed': 'Bittiği yere dokunun',
   'reader.share.text': '{title} kitabında ne okuduğuma bakın:\n\n“{quote}”\n\n{url}',
@@ -1725,8 +1723,6 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Ara',
   'reader.mark.removeHighlight': 'Vurgulamayı kaldır',
   'reader.settings.voiceMark': 'Ses nasıl izlenir',
-  'reader.voiceMark.margin': 'Kenarda işaret',
-  'reader.voiceMark.wash': 'Cümlede ton',
 };
 
 export default messages;

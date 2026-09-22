@@ -709,7 +709,6 @@ const messages: Record<string, string> = {
   'reader.search.title': '在书中搜索',
   'reader.search.placeholder': '在此书中查找',
   'reader.search.input': '搜索文本',
-  'reader.search.go': '搜索',
   'reader.search.firstMatches': '前 {n} 个匹配结果',
   'reader.search.matches': '{n, plural, other {#个匹配}}',
   'reader.search.failed': '无法搜索——你是否处于离线状态？',
@@ -1518,7 +1517,6 @@ const messages: Record<string, string> = {
 
   // reader
   'reader.select.share': '分享',
-  'reader.select.clear': '取消选择',
   'reader.select.continue': '继续选择',
   'reader.select.continueArmed': '点按文本结束的位置',
   'reader.share.text': '看看我在{title}里读到了什么：\n\n“{quote}”\n\n{url}',
@@ -1623,7 +1621,5 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': '搜索',
   'reader.mark.removeHighlight': '移除高亮',
   'reader.settings.voiceMark': '跟随朗读',
-  'reader.voiceMark.margin': '页边标记',
-  'reader.voiceMark.wash': '句子晕染',
 };
 export default messages;

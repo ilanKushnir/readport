@@ -777,7 +777,6 @@ const messages: Record<string, string> = {
   'reader.search.title': 'Zoeken in boek',
   'reader.search.placeholder': 'Zoeken in dit boek',
   'reader.search.input': 'Zoektekst',
-  'reader.search.go': 'Zoeken',
   'reader.search.firstMatches': 'Eerste {n} resultaten',
   'reader.search.matches': '{n, plural, one {# resultaat} other {# resultaten}}',
   'reader.search.failed': 'Zoeken mislukt – ben je offline?',
@@ -1638,7 +1637,6 @@ const messages: Record<string, string> = {
 
   // reader
   'reader.select.share': 'Delen',
-  'reader.select.clear': 'Selectie wissen',
   'reader.select.continue': 'Selectie voortzetten',
   'reader.select.continueArmed': 'Tik waar de selectie eindigt',
   'reader.share.text': 'Kijk wat ik las in {title}:\n\n„{quote}”\n\n{url}',
@@ -1752,7 +1750,5 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Zoeken',
   'reader.mark.removeHighlight': 'Markering verwijderen',
   'reader.settings.voiceMark': 'Stemweergave',
-  'reader.voiceMark.margin': 'Streepje in marge',
-  'reader.voiceMark.wash': 'Waas over zin',
 } as const;
 export default messages;

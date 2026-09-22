@@ -128,10 +128,13 @@ export function Sheet({
   title,
   onClose,
   children,
+  head,
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  /** What stands in the head instead of the title: a row of tabs, say, that must stay put while the body scrolls. */
+  head?: ReactNode;
 }) {
   const t = useT();
   const ref = useRef<HTMLDivElement>(null);
@@ -149,8 +152,8 @@ export function Sheet({
         ref={ref}
       >
         <div className="sheet__grab" aria-hidden="true" />
-        <div className="sheet__header">
-          <span className="sheet__title">{title}</span>
+        <div className={`sheet__header${head ? ' sheet__header--tabs' : ''}`}>
+          {head ?? <span className="sheet__title">{title}</span>}
           <button className="icon-btn" onClick={onClose} aria-label={t('common.close')}>
             <IconClose />
           </button>

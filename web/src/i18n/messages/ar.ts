@@ -791,7 +791,6 @@ const messages: Record<string, string> = {
   'reader.search.title': 'البحث في الكتاب',
   'reader.search.placeholder': 'البحث في هذا الكتاب',
   'reader.search.input': 'نص البحث',
-  'reader.search.go': 'بحث',
   'reader.search.firstMatches': 'أول {n} نتيجة',
   'reader.search.matches':
     '{n, plural, zero {لا نتائج} one {نتيجة واحدة} two {نتيجتان} few {# نتائج} many {# نتيجة} other {# نتيجة}}',
@@ -1669,7 +1668,6 @@ const messages: Record<string, string> = {
 
   // reader
   'reader.select.share': 'مشاركة',
-  'reader.select.clear': 'مسح التحديد',
   'reader.select.continue': 'متابعة التحديد',
   'reader.select.continueArmed': 'اضغط حيث ينتهي',
   'reader.share.text': 'انظر ماذا قرأت في {title}:\n\n«{quote}»\n\n{url}',
@@ -1778,7 +1776,5 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'بحث',
   'reader.mark.removeHighlight': 'إزالة التظليل',
   'reader.settings.voiceMark': 'متابعة السرد',
-  'reader.voiceMark.margin': 'علامة في الهامش',
-  'reader.voiceMark.wash': 'صبغة على الجملة',
 };
 export default messages;

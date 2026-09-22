@@ -11,7 +11,8 @@ import {
   type SentenceIndexEntry,
 } from '../lib/types';
 import { recordCheckpoint, resumeLocator, setActiveLocatorProvider } from '../progress/engine';
-import { Sheet, useToast } from '../components/ui';
+import { Sheet, useToast, useFocusTrap, useScrollLock } from '../components/ui';
+import { createPortal } from 'react-dom';
 import { useT } from '../i18n';
 import { useFormat } from '../i18n/useFormat';
 import { FriendMarkers, FriendsButton, useFriendsOnBook } from '../friends/FriendsOnBar';
@@ -82,6 +83,7 @@ import {
   type ReturnPoint,
 } from './continuity';
 import { ResumeMarker } from './ResumeMarker';
+import { VoiceMarkGlyph } from './VoiceMarkGlyph';
 import {
   clipRects,
   placeSelectionToolbar,
@@ -273,11 +275,8 @@ export function ReaderPage() {
   const recentSelRef = useRef<{ start: number; end: number; collapsedAt: number | null } | null>(
     null,
   );
-  /** The frame drawn over a settled selection, in viewport pixels, and where it ends. */
-  const [selFrame, setSelFrame] = useState<{
-    boxes: LineBox[];
-    end: { x: number; y: number };
-  } | null>(null);
+  /** The frame drawn over a settled selection, in the host's own pixels. */
+  const [selFrame, setSelFrame] = useState<{ boxes: LineBox[] } | null>(null);
   /**
    * A selection carried across a page turn.
    *
@@ -1884,6 +1883,31 @@ export function ReaderPage() {
   ]);
 
   /**
+   * The voice moving on is the reader moving on.
+   *
+   * The mark where they last stopped fades as the sentence being spoken
+   * leaves it behind, the way it fades when they scroll or turn past it.
+   * It used to stay: a bar in the margin at the resumed line while the
+   * voice was a page away, which read as a second marker that had lost
+   * the voice - and, with the sentence washed instead of marked, as a
+   * marker that would not go.
+   */
+  useEffect(() => {
+    if (!readAlong || !narration.playing) return;
+    const cue = narration.cue;
+    if (!cue) return;
+    readingMoved({ spineIdx, charOffset: spokenOffset(narration.cues, cue, narration.bookMs) });
+  }, [
+    readAlong,
+    narration.playing,
+    narration.cue,
+    narration.cues,
+    narration.bookMs,
+    spineIdx,
+    readingMoved,
+  ]);
+
+  /**
    * Land on a search hit, verifiably, and mark it.
    *
    * The jump itself measured the target page against the layout as it was at
@@ -2790,17 +2814,10 @@ export function ReaderPage() {
               hostOrigin(host),
             )
           : [];
-      const last = boxes[boxes.length - 1];
       setSelFrame((prev) => {
-        if (!last) return null;
+        if (boxes.length === 0) return null;
         if (prev && sameBoxes(prev.boxes, boxes)) return prev;
-        return {
-          boxes,
-          end: {
-            x: geometry.direction === 'rtl' ? last.left : last.left + last.width,
-            y: last.top,
-          },
-        };
+        return { boxes };
       });
     };
     const schedule = () => {
@@ -3321,20 +3338,6 @@ export function ReaderPage() {
           ))}
         </svg>
       )}
-      {selFrame && (
-        <button
-          type="button"
-          className="selframe__x"
-          style={{ left: selFrame.end.x, top: selFrame.end.y }}
-          aria-label={t('reader.select.clear')}
-          // Like the toolbar: a press must not collapse the selection
-          // before the click that is meant to.
-          onPointerDown={(e) => e.preventDefault()}
-          onClick={clearSelection}
-        >
-          <IconClose size={12} />
-        </button>
-      )}
     </>
   );
 
@@ -3671,6 +3674,7 @@ export function ReaderPage() {
                 onClick={() => setPalette(false)}
               >
                 <IconChevronLeft size={18} />
+                <span>{t('common.back')}</span>
               </button>
               <span className="swatches" role="group" aria-label={t('reader.select.highlight')}>
                 {HIGHLIGHT_COLORS.map((c) => (
@@ -3687,8 +3691,8 @@ export function ReaderPage() {
               </span>
             </>
           ) : (
-            // Icons, so the toolbar fits a phone beside the words; the name
-            // is on each for anyone who cannot see the icon.
+            // Icons, so the toolbar fits a phone beside the words, each with
+            // its name in small type underneath.
             <>
               <button
                 type="button"
@@ -3696,7 +3700,8 @@ export function ReaderPage() {
                 title={t('reader.select.highlight')}
                 onClick={() => setPalette(true)}
               >
-                <IconHighlighter size={19} />
+                <IconHighlighter size={18} />
+                <span>{t('reader.select.highlight')}</span>
               </button>
               <button
                 type="button"
@@ -3707,7 +3712,8 @@ export function ReaderPage() {
                   setSheet('note');
                 }}
               >
-                <IconNotes size={19} />
+                <IconNotes size={18} />
+                <span>{t('reader.select.note')}</span>
               </button>
               <button
                 type="button"
@@ -3715,7 +3721,8 @@ export function ReaderPage() {
                 title={t('reader.select.bookmark')}
                 onClick={() => void addAnnotation('bookmark')}
               >
-                <IconBookmark size={19} />
+                <IconBookmark size={18} />
+                <span>{t('reader.select.bookmark')}</span>
               </button>
               <button
                 type="button"
@@ -3723,7 +3730,8 @@ export function ReaderPage() {
                 title={t('reader.select.share')}
                 onClick={() => void shareSelection()}
               >
-                <IconShare size={19} />
+                <IconShare size={18} />
+                <span>{t('reader.select.share')}</span>
               </button>
             </>
           )}
@@ -3761,6 +3769,7 @@ export function ReaderPage() {
                   onClick={() => setMarkPalette(false)}
                 >
                   <IconChevronLeft size={18} />
+                  <span>{t('common.back')}</span>
                 </button>
                 <span className="swatches" role="group" aria-label={t('reader.mark.colour')}>
                   {HIGHLIGHT_COLORS.map((c) => (
@@ -3788,6 +3797,7 @@ export function ReaderPage() {
                     onClick={() => setMarkPalette(true)}
                   >
                     <IconHighlighter size={18} />
+                    <span>{t('reader.mark.colour')}</span>
                   </button>
                 )}
                 {markPop.a.kind === 'note' && (
@@ -3804,6 +3814,7 @@ export function ReaderPage() {
                     }}
                   >
                     <IconNotes size={18} />
+                    <span>{t('common.edit')}</span>
                   </button>
                 )}
                 {markPop.a.selectedText && (
@@ -3815,6 +3826,7 @@ export function ReaderPage() {
                     onClick={() => void shareSelection(markPop.a.selectedText ?? undefined)}
                   >
                     <IconShare size={18} />
+                    <span>{t('reader.select.share')}</span>
                   </button>
                 )}
                 <button
@@ -3841,6 +3853,7 @@ export function ReaderPage() {
                   ) : (
                     <IconTrash size={17} />
                   )}
+                  <span>{t('common.remove')}</span>
                 </button>
               </>
             )}
@@ -4018,25 +4031,33 @@ export function ReaderPage() {
       </div>
 
       {sheet === 'toc' && manifest && (
-        <Sheet title={t('reader.contents.title')} onClose={() => setSheet('none')}>
-          <div className="sheet-tabs" role="tablist" style={{ margin: '-16px -16px 8px' }}>
-            <button
-              role="tab"
-              aria-selected={contentsTab === 'toc'}
-              onClick={() => setContentsTab('toc')}
-            >
-              {t('reader.contents.chaptersTab')}
-            </button>
-            <button
-              role="tab"
-              aria-selected={contentsTab === 'marks'}
-              onClick={() => setContentsTab('marks')}
-            >
-              {annotations.length > 0
-                ? t('reader.contents.marksTabCount', { n: annotations.length })
-                : t('reader.contents.marksTab')}
-            </button>
-          </div>
+        <Sheet
+          title={t('reader.contents.title')}
+          onClose={() => setSheet('none')}
+          // The tabs are the head of the sheet, not the first thing in its
+          // body: there they scrolled away with the list, and a long book's
+          // bookmarks could only be reached from the top of its chapters.
+          head={
+            <div className="sheet-tabs" role="tablist" aria-label={t('reader.contents.title')}>
+              <button
+                role="tab"
+                aria-selected={contentsTab === 'toc'}
+                onClick={() => setContentsTab('toc')}
+              >
+                {t('reader.contents.chaptersTab')}
+              </button>
+              <button
+                role="tab"
+                aria-selected={contentsTab === 'marks'}
+                onClick={() => setContentsTab('marks')}
+              >
+                {annotations.length > 0
+                  ? t('reader.contents.marksTabCount', { n: annotations.length })
+                  : t('reader.contents.marksTab')}
+              </button>
+            </div>
+          }
+        >
           {contentsTab === 'marks' && (
             // The page's own bookmark lives with the marks now, where the
             // ribbon used to be a button in the bar.
@@ -4161,7 +4182,7 @@ export function ReaderPage() {
       )}
 
       {sheet === 'search' && (
-        <SearchSheet
+        <SearchSpotlight
           bookId={id}
           onClose={() => setSheet('none')}
           onJump={(s, off, text) => {
@@ -4586,14 +4607,21 @@ function ReaderSettingsSheet({
 
       <div className="rs-group">
         <div className="rs-label">{t('reader.settings.voiceMark')}</div>
-        <div className="segmented" role="group" aria-label={t('reader.settings.voiceMark')}>
+        {/* Drawn rather than described: a page with a mark beside the line
+            being read, or with the sentence itself washed. The words are
+            on each for anyone who cannot see the drawing. */}
+        <div className="vm-tiles" role="group" aria-label={t('reader.settings.voiceMark')}>
           {(['margin', 'wash'] as const).map((v) => (
             <button
               key={v}
+              type="button"
+              className="vm-tile"
               aria-pressed={prefs.voiceMark === v}
+              aria-label={t(`reader.voiceMark.${v}` as const)}
+              title={t(`reader.voiceMark.${v}` as const)}
               onClick={() => set('voiceMark', v)}
             >
-              {t(`reader.voiceMark.${v}` as const)}
+              <VoiceMarkGlyph kind={v} />
             </button>
           ))}
         </div>
@@ -4682,7 +4710,12 @@ interface SearchMatch {
  * re-finding them in the excerpt - re-finding would mark the wrong occurrence
  * whenever a word appears twice inside sixty characters.
  */
-function SearchSheet({
+/**
+ * Search, the way a launcher does it: one field near the top of the screen,
+ * the matches filling in under it as the words are typed, the page dimmed
+ * behind. Enter opens the first match; Escape or a tap outside puts it away.
+ */
+function SearchSpotlight({
   bookId,
   onClose,
   onJump,
@@ -4696,84 +4729,147 @@ function SearchSheet({
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   const t = useT();
+  const ref = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  useFocusTrap(ref, onClose);
+  useScrollLock();
+  // After the trap has moved focus into the dialog: the field is the
+  // dialog, and the words are typed into it straight away.
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+  const term = q.trim();
 
-  const run = async () => {
-    if (q.trim().length < 2) return;
-    setBusy(true);
-    setFailed(false);
-    try {
-      const res = await api<{ matches: SearchMatch[] }>(
-        `/api/books/${bookId}/search?q=${encodeURIComponent(q.trim())}`,
-      );
-      setResults(res.matches);
-    } catch {
-      // "No matches" and "the search did not run" are different answers, and
-      // telling them apart is the difference between trusting the book and
-      // trusting the network.
-      setResults([]);
-      setFailed(true);
-    } finally {
+  // Searched as it is typed, a beat after the last key: there is no button
+  // to press, and a search run on every keystroke would race itself.
+  useEffect(() => {
+    if (term.length < 2) {
+      setResults(null);
+      setFailed(false);
       setBusy(false);
+      return;
     }
-  };
+    let alive = true;
+    const timer = window.setTimeout(async () => {
+      setBusy(true);
+      try {
+        const res = await api<{ matches: SearchMatch[] }>(
+          `/api/books/${bookId}/search?q=${encodeURIComponent(term)}`,
+        );
+        if (!alive) return;
+        setResults(res.matches);
+        setFailed(false);
+      } catch {
+        // "No matches" and "the search did not run" are different answers,
+        // and telling them apart is the difference between trusting the
+        // book and trusting the network.
+        if (!alive) return;
+        setResults([]);
+        setFailed(true);
+      } finally {
+        if (alive) setBusy(false);
+      }
+    }, 240);
+    return () => {
+      alive = false;
+      window.clearTimeout(timer);
+    };
+  }, [term, bookId]);
 
-  return (
-    <Sheet title={t('reader.search.title')} onClose={onClose}>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          void run();
-        }}
-        style={{ display: 'flex', gap: 8, marginBlockEnd: 12 }}
+  return createPortal(
+    <>
+      <div className="sheet-backdrop" onClick={onClose} aria-hidden="true" />
+      <div
+        className="spot"
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('reader.search.title')}
+        tabIndex={-1}
+        ref={ref}
       >
-        <input
-          className="input"
-          type="search"
-          placeholder={t('reader.search.placeholder')}
-          aria-label={t('reader.search.input')}
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          autoFocus
-        />
-        <button className="btn" type="submit" disabled={busy || q.trim().length < 2}>
-          {busy ? '…' : t('reader.search.go')}
-        </button>
-      </form>
-      {results !== null && (
-        <>
-          {results.length > 0 && (
-            <p className="search-count" role="status">
-              {results.length === 100
-                ? t('reader.search.firstMatches', { n: 100 })
-                : t('reader.search.matches', { n: results.length })}
-            </p>
-          )}
-          {results.length === 0 ? (
-            <p style={{ color: 'var(--rp-text-soft)' }}>
-              {failed ? t('reader.search.failed') : t('reader.search.none')}
-            </p>
+        <form
+          className="spot__field"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const first = results?.[0];
+            if (first) onJump(first.spineIdx, first.charOffset, first.match);
+          }}
+        >
+          <IconSearch size={20} />
+          <input
+            className="spot__input"
+            type="search"
+            placeholder={t('reader.search.placeholder')}
+            aria-label={t('reader.search.input')}
+            ref={inputRef}
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            // Enter opens the first match. Said here as well as on the
+            // form: a form with no submit button does not submit itself
+            // from every keyboard.
+            onKeyDown={(e) => {
+              if (e.key !== 'Enter' || e.nativeEvent.isComposing) return;
+              e.preventDefault();
+              const first = results?.[0];
+              if (first) onJump(first.spineIdx, first.charOffset, first.match);
+            }}
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+            enterKeyHint="search"
+          />
+          {busy ? (
+            <span className="spot__busy" aria-hidden="true" />
           ) : (
-            results.map((r, i) => (
+            q.length > 0 && (
               <button
-                key={`${r.spineIdx}-${r.charOffset}-${i}`}
-                className="list-row search-hit"
-                onClick={() => onJump(r.spineIdx, r.charOffset, r.match)}
+                type="button"
+                className="spot__clear"
+                onClick={() => setQ('')}
+                aria-label={t('reader.search.clear')}
               >
-                <span className="grow" style={{ whiteSpace: 'normal' }}>
-                  <span className="search-hit__chapter">
-                    {r.chapterTitle ?? t('common.chapterN', { n: r.spineIdx + 1 })}
-                  </span>
-                  <span className="search-hit__text">
-                    {r.before}
-                    <mark className="search-hit__mark">{r.match}</mark>
-                    {r.after}
-                  </span>
-                </span>
+                <IconClose size={12} />
               </button>
-            ))
+            )
           )}
-        </>
-      )}
-    </Sheet>
+        </form>
+        {results !== null && (
+          <div className="spot__results">
+            {results.length > 0 && (
+              <p className="search-count" role="status">
+                {results.length === 100
+                  ? t('reader.search.firstMatches', { n: 100 })
+                  : t('reader.search.matches', { n: results.length })}
+              </p>
+            )}
+            {results.length === 0 ? (
+              <p className="spot__none">
+                {failed ? t('reader.search.failed') : t('reader.search.none')}
+              </p>
+            ) : (
+              results.map((r, i) => (
+                <button
+                  key={`${r.spineIdx}-${r.charOffset}-${i}`}
+                  className="list-row search-hit"
+                  onClick={() => onJump(r.spineIdx, r.charOffset, r.match)}
+                >
+                  <span className="grow" style={{ whiteSpace: 'normal' }}>
+                    <span className="search-hit__chapter">
+                      {r.chapterTitle ?? t('common.chapterN', { n: r.spineIdx + 1 })}
+                    </span>
+                    <span className="search-hit__text">
+                      {r.before}
+                      <mark className="search-hit__mark">{r.match}</mark>
+                      {r.after}
+                    </span>
+                  </span>
+                </button>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+    </>,
+    document.body,
   );
 }

@@ -780,7 +780,6 @@ const messages: Record<string, string> = {
   'reader.search.title': 'Αναζήτηση στο βιβλίο',
   'reader.search.placeholder': 'Εύρεση σε αυτό το βιβλίο',
   'reader.search.input': 'Κείμενο αναζήτησης',
-  'reader.search.go': 'Αναζήτηση',
   'reader.search.firstMatches': 'Πρώτα {n} αποτελέσματα',
   'reader.search.matches': '{n, plural, one {# αποτέλεσμα} other {# αποτελέσματα}}',
   'reader.search.failed': 'Δεν ήταν δυνατή η αναζήτηση - μήπως είσαι εκτός σύνδεσης;',
@@ -1638,7 +1637,6 @@ const messages: Record<string, string> = {
 
   // reader
   'reader.select.share': 'Κοινή χρήση',
-  'reader.select.clear': 'Απαλοιφή επιλογής',
   'reader.select.continue': 'Συνέχεια επιλογής',
   'reader.select.continueArmed': 'Πάτησε εκεί που τελειώνει',
   'reader.share.text': 'Δες τι διάβασα στο {title}:\n\n“{quote}”\n\n{url}',
@@ -1750,7 +1748,5 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Αναζήτηση',
   'reader.mark.removeHighlight': 'Αφαίρεση επισήμανσης',
   'reader.settings.voiceMark': 'Πώς ακολουθείται η φωνή',
-  'reader.voiceMark.margin': 'Σημάδι στο περιθώριο',
-  'reader.voiceMark.wash': 'Απόχρωση στην πρόταση',
 };
 export default messages;

@@ -750,7 +750,6 @@ const messages: Record<string, string> = {
   'reader.search.title': 'Sök i boken',
   'reader.search.placeholder': 'Sök i den här boken',
   'reader.search.input': 'Söktext',
-  'reader.search.go': 'Sök',
   'reader.search.firstMatches': 'Första {n} träffarna',
   'reader.search.matches': '{n, plural, one {# träff} other {# träffar}}',
   'reader.search.failed': 'Kunde inte söka – är du offline?',
@@ -1591,7 +1590,6 @@ const messages: Record<string, string> = {
 
   // reader
   'reader.select.share': 'Dela',
-  'reader.select.clear': 'Rensa markering',
   'reader.select.continue': 'Fortsätt markering',
   'reader.select.continueArmed': 'Tryck där den slutar',
   'reader.share.text': 'Kolla vad jag läste i {title}:\n\n”{quote}”\n\n{url}',
@@ -1703,7 +1701,5 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Sök',
   'reader.mark.removeHighlight': 'Ta bort markering',
   'reader.settings.voiceMark': 'Följer uppläsningen',
-  'reader.voiceMark.margin': 'Prick i marginalen',
-  'reader.voiceMark.wash': 'Nyans på meningen',
 };
 export default messages;

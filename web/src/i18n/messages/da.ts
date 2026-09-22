@@ -754,7 +754,6 @@ const messages: Record<string, string> = {
   'reader.search.title': 'Søg i bogen',
   'reader.search.placeholder': 'Find i denne bog',
   'reader.search.input': 'Søgetekst',
-  'reader.search.go': 'Søg',
   'reader.search.firstMatches': 'Første {n} resultater',
   'reader.search.matches': '{n, plural, one {# resultat} other {# resultater}}',
   'reader.search.failed': 'Kunne ikke søge – er du offline?',
@@ -1595,7 +1594,6 @@ const messages: Record<string, string> = {
 
   // reader
   'reader.select.share': 'Del',
-  'reader.select.clear': 'Ryd markering',
   'reader.select.continue': 'Fortsæt markering',
   'reader.select.continueArmed': 'Tryk hvor den ender',
   'reader.share.text': 'Se lige hvad jeg læste i {title}:\n\n»{quote}«\n\n{url}',
@@ -1708,7 +1706,5 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Søg',
   'reader.mark.removeHighlight': 'Fjern fremhævning',
   'reader.settings.voiceMark': 'Følger oplæsningen',
-  'reader.voiceMark.margin': 'Markering i margenen',
-  'reader.voiceMark.wash': 'Nuance på sætningen',
 };
 export default messages;

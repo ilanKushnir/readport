@@ -762,7 +762,6 @@ const messages: Record<string, string> = {
   'reader.search.title': '本文を検索',
   'reader.search.placeholder': 'この本の中を検索',
   'reader.search.input': '検索テキスト',
-  'reader.search.go': '検索',
   'reader.search.firstMatches': '最初の{n}件の一致',
   'reader.search.matches': '{n, plural, other {#件の一致}}',
   'reader.search.failed': '検索できませんでした。オフラインですか?',
@@ -1611,7 +1610,6 @@ const messages: Record<string, string> = {
 
   // reader
   'reader.select.share': '共有',
-  'reader.select.clear': '選択を解除',
   'reader.select.continue': '選択を続ける',
   'reader.select.continueArmed': '終わる位置をタップ',
   'reader.share.text': '『{title}』で読んだ一節:\n\n「{quote}」\n\n{url}',
@@ -1723,8 +1721,6 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': '検索',
   'reader.mark.removeHighlight': 'ハイライトを削除',
   'reader.settings.voiceMark': '音声の表示方法',
-  'reader.voiceMark.margin': '余白の印',
-  'reader.voiceMark.wash': '文の色付け',
 };
 
 export default messages;

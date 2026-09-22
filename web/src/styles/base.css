@@ -1129,6 +1129,15 @@ body:has(.app-body) {
   font-size: 16px;
   font-weight: 650;
 }
+/* A head that is a row of tabs rather than a title: no padding of its own,
+   so the tabs' underline sits on its rule, and the close button centred
+   beside them. */
+.sheet__header--tabs {
+  padding-block: 0;
+}
+.sheet__header--tabs .icon-btn {
+  align-self: center;
+}
 .sheet__body {
   /* min-height lets this flex child shrink below its content, so the sheet's
      max-height turns into a real internal scroll area instead of clipping. */
@@ -1702,8 +1711,12 @@ body:has(.app-body) {
     width: 4px;
   }
 }
-.list-row:hover {
-  background: var(--rp-surface);
+/* Only a pointer that can hover gets a hover: on a phone the row under a
+   finger lit up for the whole of a scroll. */
+@media (hover: hover) {
+  .list-row:hover {
+    background: var(--rp-surface);
+  }
 }
 .list-row .grow {
   flex: 1;

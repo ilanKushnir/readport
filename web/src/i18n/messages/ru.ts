@@ -760,7 +760,6 @@ const messages: Record<string, string> = {
   'reader.search.title': 'Поиск по книге',
   'reader.search.placeholder': 'Найти в этой книге',
   'reader.search.input': 'Текст для поиска',
-  'reader.search.go': 'Искать',
   'reader.search.firstMatches': 'Первые {n} совпадений',
   'reader.search.matches':
     '{n, plural, one {# совпадение} few {# совпадения} many {# совпадений} other {# совпадения}}',
@@ -1628,7 +1627,6 @@ const messages: Record<string, string> = {
 
   // reader
   'reader.select.share': 'Поделиться',
-  'reader.select.clear': 'Снять выделение',
   'reader.select.continue': 'Продолжить выделение',
   'reader.select.continueArmed': 'Нажмите, где закончить выделение',
   'reader.share.text': 'Смотрите, что я читаю в «{title}»:\n\n«{quote}»\n\n{url}',
@@ -1739,8 +1737,6 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Поиск',
   'reader.mark.removeHighlight': 'Убрать выделение',
   'reader.settings.voiceMark': 'Отслеживание голоса',
-  'reader.voiceMark.margin': 'Отметка на полях',
-  'reader.voiceMark.wash': 'Тонирование предложения',
 };
 
 export default messages;

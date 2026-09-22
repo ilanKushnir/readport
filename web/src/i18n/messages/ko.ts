@@ -741,7 +741,6 @@ const messages: Record<string, string> = {
   'reader.search.title': '책에서 검색',
   'reader.search.placeholder': '이 책에서 찾기',
   'reader.search.input': '검색어',
-  'reader.search.go': '검색',
   'reader.search.firstMatches': '처음 {n}개 결과',
   'reader.search.matches': '{n, plural, other {#개 일치}}',
   'reader.search.failed': '검색할 수 없습니다 - 오프라인 상태인가요?',
@@ -1573,7 +1572,6 @@ const messages: Record<string, string> = {
 
   // reader
   'reader.select.share': '공유',
-  'reader.select.clear': '선택 해제',
   'reader.select.continue': '선택 계속',
   'reader.select.continueArmed': '끝나는 위치를 탭하세요',
   'reader.share.text': '{title}에서 읽은 구절:\n\n“{quote}”\n\n{url}',
@@ -1683,7 +1681,5 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': '검색',
   'reader.mark.removeHighlight': '하이라이트 제거',
   'reader.settings.voiceMark': '낭독 따라가기',
-  'reader.voiceMark.margin': '여백 표시',
-  'reader.voiceMark.wash': '문장 음영',
 };
 export default messages;

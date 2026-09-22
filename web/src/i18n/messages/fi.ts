@@ -757,7 +757,6 @@ const messages: Record<string, string> = {
   'reader.search.title': 'Hae kirjasta',
   'reader.search.placeholder': 'Etsi tästä kirjasta',
   'reader.search.input': 'Hakuteksti',
-  'reader.search.go': 'Hae',
   'reader.search.firstMatches': 'Ensimmäiset {n} osumaa',
   'reader.search.matches': '{n, plural, one {# osuma} other {# osumaa}}',
   'reader.search.failed': 'Haku epäonnistui - oletko offline?',
@@ -1607,7 +1606,6 @@ const messages: Record<string, string> = {
 
   // reader
   'reader.select.share': 'Jaa',
-  'reader.select.clear': 'Tyhjennä valinta',
   'reader.select.continue': 'Jatka valintaa',
   'reader.select.continueArmed': 'Napauta kohtaa, johon se päättyy',
   'reader.share.text': 'Katso, mitä luin kirjasta {title}:\n\n”{quote}”\n\n{url}',
@@ -1718,7 +1716,5 @@ const messages: Record<string, string> = {
   'reader.chrome.searchPill': 'Hae',
   'reader.mark.removeHighlight': 'Poista korostus',
   'reader.settings.voiceMark': 'Miten ääntä seurataan',
-  'reader.voiceMark.margin': 'Merkki marginaalissa',
-  'reader.voiceMark.wash': 'Sävy lauseella',
 };
 export default messages;
