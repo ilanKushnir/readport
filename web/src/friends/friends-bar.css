@@ -1,102 +1,155 @@
-/* Friends on the progress bar: a button beside it, markers on it, and the
-   card the button opens. A friend's colour is the ONLY colour any of this
-   adds; everything else is the reader's own chrome.
+/* Friends on the progress bar: beads on the track, a stack beside the
+   percentage, and the card either opens. A friend's colour is the ONLY
+   colour any of this adds; everything else is the surface's own chrome.
 
    `--friend-colour` and `--friend-colour-dark` arrive inline from the shared
    palette (friendColourStyle); which of the two shows is decided here, by
-   the theme the mark sits on: the reader's own night and contrast themes,
+   the theme the bead sits on: the reader's own night and contrast themes,
    or the app's dark theme on the player and the card. */
-.fbtn__dots span,
-.fbar__mark,
+.fbead,
 .fcard__dot {
   --friend: var(--friend-colour, var(--rp-border-strong));
 }
-[data-reader-theme='night'] .fbtn__dots span,
-[data-reader-theme='night'] .fbar__mark,
-[data-reader-theme='contrast'] .fbtn__dots span,
-[data-reader-theme='contrast'] .fbar__mark,
-[data-app-theme='dark'] .fbtn__dots span,
-[data-app-theme='dark'] .fbar__mark,
+[data-reader-theme='night'] .fbead,
+[data-reader-theme='contrast'] .fbead,
+[data-app-theme='dark'] .fbead,
 [data-app-theme='dark'] .fcard__dot {
   --friend: var(--friend-colour-dark, var(--friend-colour));
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-app-theme='light']) .fcard__dot,
-  :root:not([data-app-theme='light']) .player-page .fbtn__dots span,
-  :root:not([data-app-theme='light']) .player-page .fbar__mark {
+  :root:not([data-app-theme='light']) .player-page .fbead {
     --friend: var(--friend-colour-dark, var(--friend-colour));
   }
 }
 
-.fbtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  min-height: 26px;
-  padding: 0 7px;
-  border: 1px solid var(--rp-border);
-  border-radius: var(--radius-pill);
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-}
-.fbtn:hover,
-.fbtn:focus-visible {
-  border-color: var(--rp-border-strong);
-}
-.fbtn__dots {
-  display: inline-flex;
-}
-.fbtn__dots span {
-  width: 10px;
-  height: 10px;
+/* ------------------------------------------------------------ the bead */
+/* A friend as a bead: their colour, their initial, and a ring in the
+   ground colour so it reads as a separate thing from the track under it
+   and from a neighbour a page away. The same bead is a button on the bar
+   and a plain mark in the stack. */
+.fbead {
+  --fbead-size: 15px;
+  display: inline-grid;
+  place-items: center;
+  width: var(--fbead-size);
+  height: var(--fbead-size);
+  padding: 0;
+  border: 0;
   border-radius: 50%;
   background: var(--friend);
-  border: 1.5px solid var(--rd-bg, var(--rp-bg));
-  margin-inline-start: -4px;
+  color: #fff;
+  box-shadow: 0 0 0 2px var(--rd-bg, var(--rp-bg));
+  font-family: var(--rp-font-ui);
+  font-size: 8.5px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
 }
-.fbtn__dots span:first-child {
-  margin-inline-start: 0;
+.fbead > span {
+  transform: translateY(0.5px);
 }
-.fbtn__n {
-  opacity: 0.8;
+.fbead--static {
+  cursor: inherit;
 }
 
-/* The bar it sits on is `position: relative`; markers are laid over it.
-   Each host draws its track at its own height, so the variant says where
-   the marks go: the reader's 3px line, its 28px slider (track at 12-16px),
-   and the player's 32px scrubber (track at 13-19px). */
+/* ------------------------------------------------------- beads on a bar */
+/* The bar it sits on is `position: relative`; the beads are laid over it,
+   centred on its track line. Each host draws its track at its own height,
+   so the variant says where the centre is: the reader's 3px line, its 28px
+   slider (track 12-16px), and the player's 32px scrubber (track 13-19px).
+   Two beads closer than a bead step aside by `--fbead-shift` bead widths. */
 .fbar {
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
-.fbar__mark {
+.fbar .fbead {
   position: absolute;
-  top: -3px;
-  bottom: -3px;
-  width: 3px;
-  margin-inline-start: -1.5px;
-  border-radius: 2px;
-  background: var(--friend);
-  box-shadow: 0 0 0 1.5px var(--rd-bg, var(--rp-bg));
+  pointer-events: auto;
+  top: 50%;
+  margin-inline-start: calc(
+    var(--fbead-size) / -2 + var(--fbead-shift, 0) * (var(--fbead-size) + 2px)
+  );
+  transform: translateY(-50%);
+  transition:
+    transform var(--rp-duration-quick) var(--rp-ease),
+    box-shadow var(--rp-duration-quick) var(--rp-ease);
 }
-.fbar--slider .fbar__mark {
-  top: 9px;
-  bottom: 9px;
+.fbar--slider .fbead {
+  top: 14px;
 }
-.fbar--player .fbar__mark {
-  top: 9px;
-  bottom: auto;
-  height: 14px;
+.fbar--player .fbead {
+  top: 16px;
 }
-/* The reader's full-width slider needs a box to lay the marks over. */
+.fbar .fbead:hover,
+.fbar .fbead:focus-visible {
+  transform: translateY(-50%) scale(1.25);
+  box-shadow:
+    0 0 0 2px var(--rd-bg, var(--rp-bg)),
+    0 2px 8px rgb(0 0 0 / 0.25);
+  z-index: 1;
+}
+.fbar .fbead:focus-visible {
+  outline: 2px solid var(--rp-interactive);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------ the stack */
+/* Up to three beads overlapping, then "+n": the friends in this book at a
+   glance, and the way to the card. Sized to the row it sits in. */
+.fstack {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 2px 4px;
+  margin: -2px 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background-color var(--rp-duration-quick) var(--rp-ease);
+}
+.fstack .fbead {
+  --fbead-size: 17px;
+  font-size: 9.5px;
+}
+.fstack .fbead + .fbead {
+  margin-inline-start: -5px;
+}
+.fstack__more {
+  margin-inline-start: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+.fstack:hover,
+.fstack:focus-visible {
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+.fstack:focus-visible {
+  outline: 2px solid var(--rp-interactive);
+  outline-offset: 1px;
+}
+
+/* The reader's full-width slider needs a box to lay the beads over; the
+   player's track has one already. */
 .reader-slider {
   position: relative;
 }
+/* The end of the player's times row: the stack, then the time left. */
+.player-times__end {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
 
+/* ------------------------------------------------------------- the card */
 .fcard-backdrop {
   position: fixed;
   inset: 0;
@@ -158,7 +211,7 @@
 }
 .fcard__row {
   display: grid;
-  grid-template-columns: 14px 1fr auto;
+  grid-template-columns: 18px 1fr auto;
   gap: var(--sp-3);
   align-items: center;
   padding: var(--sp-3) 0;
@@ -167,11 +220,19 @@
 .fcard__row:first-child {
   border-block-start: 0;
 }
+/* The same bead as on the bar, so the card and the bar name a friend the
+   same way. */
 .fcard__dot {
-  width: 12px;
-  height: 12px;
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: var(--friend);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
 }
 .fcard__body {
   min-width: 0;

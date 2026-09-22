@@ -869,6 +869,7 @@ export function PlayerPage() {
               friends={friendsHere.friends}
               shownIds={friendsHere.shownIds}
               on="player"
+              onPick={() => friendsHere.setCardOpen(true)}
             />
           </div>
           <input
@@ -900,19 +901,23 @@ export function PlayerPage() {
           />
           <div className="player-times">
             <span>{formatDuration(bookMs)}</span>
-            <FriendsButton
-              bookId={id}
-              myPct={totalMs > 0 ? bookMs / totalMs : 0}
-              friends={friendsHere.friends}
-              shownIds={friendsHere.shownIds}
-              setShown={friendsHere.setShown}
-            />
             <span className="player-times__chapter">
               {currentChapter
                 ? t('player.transport.leftInChapter', { time: formatDuration(chapterLeftMs) })
                 : ''}
             </span>
-            <span dir="ltr">-{formatDuration(remainingMs)}</span>
+            <span className="player-times__end">
+              <FriendsButton
+                bookId={id}
+                myPct={totalMs > 0 ? bookMs / totalMs : 0}
+                friends={friendsHere.friends}
+                shownIds={friendsHere.shownIds}
+                setShown={friendsHere.setShown}
+                open={friendsHere.cardOpen}
+                setOpen={friendsHere.setCardOpen}
+              />
+              <span dir="ltr">-{formatDuration(remainingMs)}</span>
+            </span>
           </div>
           {currentChapter && (
             <div className="player-chapterbar" aria-hidden="true">

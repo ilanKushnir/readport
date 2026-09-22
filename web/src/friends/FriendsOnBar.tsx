@@ -48,6 +48,8 @@ export function useFriendsOnBook(bookId: string | null) {
   const [friends, setFriends] = useState<FriendProgress[]>([]);
   const [prefs, setPrefs] = useState<FriendsPrefs>(EMPTY_PREFS);
   const [ready, setReady] = useState(false);
+  /** The card is one per book, opened from the stack beside the bar or any bead on it. */
+  const [cardOpen, setCardOpen] = useState(false);
 
   const load = useCallback(async () => {
     if (!bookId) return;
@@ -128,37 +130,86 @@ export function useFriendsOnBook(bookId: string | null) {
     [bookId, prefs, friends],
   );
 
-  return { friends, shownIds, setShown, ready, reload: load };
+  return { friends, shownIds, setShown, ready, reload: load, cardOpen, setCardOpen };
 }
 
-/** Thin markers over the bar, one per drawn friend. Purely decorative;
- *  the card is where the same information is readable. */
+/** A bead's diameter on the bar, as friends-bar.css draws it. */
+const BEAD_PX = 15;
+
+/** The first letter of a name, as a bead can carry it. */
+function initialOf(name: string): string {
+  const first = [...name.trim()][0];
+  return first ? first.toUpperCase() : '·';
+}
+
+/**
+ * Beads on the bar, one per drawn friend, sitting on the track at their
+ * place like beads on a string: the friend's colour, their initial, and a
+ * ring in the ground colour so two beads a page apart stay two beads. Two
+ * friends at the same place step aside from each other by a bead's width
+ * rather than stacking into one. Each bead is a button that opens the card,
+ * because the natural question on seeing one is "who is that?".
+ */
 export function FriendMarkers({
   friends,
   shownIds,
   on = 'mini',
+  onPick,
 }: {
   friends: FriendProgress[];
   shownIds: Set<string>;
-  /** Which bar the marks sit on; each draws its track at a different height. */
+  /** Which bar the beads sit on; each draws its track at a different height. */
   on?: 'mini' | 'slider' | 'player';
+  onPick?: () => void;
 }) {
-  const drawn = friends.filter((f) => shownIds.has(f.userId));
+  const t = useT();
+  const f = useFormat();
+  // The bar's width in pixels, so "too close" is measured where the beads
+  // are drawn: two friends a page apart overlap on a phone's short track
+  // and sit well apart on a desktop's, and only the first should step aside.
+  // Measured through a callback ref, because the bar mounts only once the
+  // friends have loaded - an effect run on the component's own mount would
+  // find nothing to measure and never look again.
+  const [width, setWidth] = useState(0);
+  const observer = useRef<ResizeObserver | null>(null);
+  const measure = useCallback((el: HTMLSpanElement | null) => {
+    observer.current?.disconnect();
+    observer.current = null;
+    if (!el) return;
+    setWidth(el.clientWidth);
+    observer.current = new ResizeObserver(() => setWidth(el.clientWidth));
+    observer.current.observe(el);
+  }, []);
+  const drawn = friends.filter((x) => shownIds.has(x.userId)).sort((x, y) => x.pct - y.pct);
   if (drawn.length === 0) return null;
+  const tooClose = width > 0 ? (BEAD_PX + 2) / width : 0;
+  const shifts: number[] = [];
+  drawn.forEach((x, i) => {
+    shifts.push(i > 0 && x.pct - drawn[i - 1]!.pct < tooClose ? shifts[i - 1]! + 1 : 0);
+  });
   return (
-    <span className={`fbar fbar--${on}`} aria-hidden="true">
-      {drawn.map((f) => (
-        <span
-          key={f.userId}
-          className="fbar__mark"
-          title={f.displayName}
+    <span className={`fbar fbar--${on}`} ref={measure}>
+      {drawn.map((x, i) => (
+        <button
+          key={x.userId}
+          type="button"
+          className="fbead"
           style={
             {
-              insetInlineStart: `${Math.min(100, Math.max(0, f.pct * 100))}%`,
-              ...friendColourStyle(f.colour),
+              insetInlineStart: `${Math.min(100, Math.max(0, x.pct * 100))}%`,
+              '--fbead-shift': shifts[i],
+              ...friendColourStyle(x.colour),
             } as React.CSSProperties
           }
-        />
+          aria-label={t('friends.bar.bead', { name: x.displayName, pct: f.percent(x.pct) })}
+          title={`${x.displayName} · ${f.percent(x.pct)}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onPick?.();
+          }}
+        >
+          <span aria-hidden="true">{initialOf(x.displayName)}</span>
+        </button>
       ))}
     </span>
   );
@@ -173,6 +224,8 @@ export function FriendsButton({
   setShown,
   chapterOf,
   className,
+  open,
+  setOpen,
 }: {
   bookId: string;
   myPct: number;
@@ -182,30 +235,41 @@ export function FriendsButton({
   /** Name the chapter a friend is in, if the surface can. */
   chapterOf?: (locator: Locator) => string | null;
   className?: string;
+  open: boolean;
+  setOpen: (open: boolean) => void;
 }) {
   const t = useT();
-  const [open, setOpen] = useState(false);
 
   if (friends.length === 0) return null;
   const drawn = friends.filter((x) => shownIds.has(x.userId));
+  const shown = (drawn.length ? drawn : friends).slice(0, 3);
 
   return (
     <>
+      {/* The friends in this book as a stack of beads - the same beads that
+          sit on the bar - and, past three, how many more. It lives beside
+          the percentage, where the bar's other figures are, on every
+          screen size. */}
       <button
         type="button"
-        className={`fbtn ${className ?? ''}`}
+        className={`fstack ${className ?? ''}`}
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label={t('friends.bar.button', { n: friends.length })}
         title={t('friends.bar.button', { n: friends.length })}
       >
-        <span className="fbtn__dots" aria-hidden="true">
-          {(drawn.length ? drawn : friends).slice(0, 3).map((x) => (
-            <span key={x.userId} style={friendColourStyle(x.colour) as React.CSSProperties} />
-          ))}
-        </span>
-        <span className="fbtn__n">{friends.length}</span>
+        {shown.map((x) => (
+          <span
+            key={x.userId}
+            className="fbead fbead--static"
+            style={friendColourStyle(x.colour) as React.CSSProperties}
+            aria-hidden="true"
+          >
+            <span>{initialOf(x.displayName)}</span>
+          </span>
+        ))}
+        {friends.length > 3 && <span className="fstack__more">+{friends.length - 3}</span>}
       </button>
       {open && (
         <FriendsCard
@@ -294,7 +358,9 @@ function FriendsCard({
                   className="fcard__dot"
                   style={friendColourStyle(x.colour) as React.CSSProperties}
                   aria-hidden="true"
-                />
+                >
+                  {initialOf(x.displayName)}
+                </span>
                 <div className="fcard__body">
                   <div className="fcard__name">{x.displayName}</div>
                   <div className="fcard__where">

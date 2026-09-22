@@ -200,6 +200,14 @@ export const IconTarget = (p: P) => (
     <path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6" />
   </I>
 );
+/** Share: a box with an arrow leaving it, the way every phone draws it. */
+export const IconShare = (p: P) => (
+  <I {...p}>
+    <path d="M12 3.5v11" />
+    <path d="m8.2 7.2 3.8-3.7 3.8 3.7" />
+    <path d="M6.5 11.5H5.4v8.3h13.2v-8.3h-1.1" />
+  </I>
+);
 /** Back to the beginning: a turn of the arrow, not a bin. */
 export const IconReset = (p: P) => (
   <I {...p}>

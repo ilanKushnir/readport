@@ -3287,6 +3287,7 @@ export function ReaderPage() {
               friends={friendsHere.friends}
               shownIds={friendsHere.shownIds}
               on="slider"
+              onPick={() => friendsHere.setCardOpen(true)}
             />
           </div>
         )}
@@ -3321,17 +3322,12 @@ export function ReaderPage() {
             >
               <span style={{ width: `${bookPct * 100}%` }} />
               <i style={{ insetInlineStart: `${bookPct * 100}%` }} aria-hidden="true" />
-              <FriendMarkers friends={friendsHere.friends} shownIds={friendsHere.shownIds} />
+              <FriendMarkers
+                friends={friendsHere.friends}
+                shownIds={friendsHere.shownIds}
+                onPick={() => friendsHere.setCardOpen(true)}
+              />
             </span>
-          )}
-          {prefs.progressBar !== 'hidden' && (
-            <FriendsButton
-              bookId={id}
-              myPct={bookPct}
-              friends={friendsHere.friends}
-              shownIds={friendsHere.shownIds}
-              setShown={friendsHere.setShown}
-            />
           )}
           <span className="grow" />
           {pair && (
@@ -3370,6 +3366,17 @@ export function ReaderPage() {
                 </button>
               )}
             </div>
+          )}
+          {prefs.progressBar !== 'hidden' && (
+            <FriendsButton
+              bookId={id}
+              myPct={bookPct}
+              friends={friendsHere.friends}
+              shownIds={friendsHere.shownIds}
+              setShown={friendsHere.setShown}
+              open={friendsHere.cardOpen}
+              setOpen={friendsHere.setCardOpen}
+            />
           )}
           {prefs.progressBar !== 'hidden' && <span>{f.percent(bookPct)}</span>}
         </div>

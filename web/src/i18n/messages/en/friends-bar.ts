@@ -3,6 +3,7 @@
  * from the Friends page's own strings because it ships with the reader.
  */
 export const friendsBar = {
+  'friends.bar.bead': '{name}, at {pct}',
   'friends.bar.button':
     '{n, plural, one {# friend is reading this} other {# friends are reading this}}',
   'friends.bar.title': 'Friends in this book',
