@@ -4,6 +4,16 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.14.1 - 2026-09-22
+
+### Changed
+
+- **The three actions on a Reading Now row carry icons** - the open book or
+  the play triangle to resume, the headphones or the book for the other
+  edition, a turn of the arrow for the reset - and the reset stands apart at
+  the end of the row in soft ink, so it no longer reads as loudly as the two
+  ways into the book.
+
 ## 0.14.0 - 2026-09-22
 
 ### Added
