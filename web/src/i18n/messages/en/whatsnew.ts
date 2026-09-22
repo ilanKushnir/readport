@@ -16,6 +16,20 @@ export const whatsnew = {
   'whatsnew.olderHeading': 'Version {version}',
   'whatsnew.done': 'Start reading',
 
+  // ---------------------------------------------------------------- 0.16.0
+  'whatsnew.release.share':
+    'Share a book by link: the cover shows in the chat, a friend here saves it as recommended by you, and anyone else can ask to join.',
+  'whatsnew.release.quote':
+    "A selection can run on past the page, and the selection menu shares a passage with the book's link.",
+  'whatsnew.release.focus':
+    'Stats count the times you go back for the thread, and say which hours you hold it best.',
+  'whatsnew.release.bookLanguages':
+    "Every book's language is read from its own text, and the library filters by language with a row of flags.",
+  'whatsnew.release.friendsBeads':
+    'Friends on the progress bar are beads with their initials, and a stack beside the percentage opens the list.',
+  'whatsnew.release.readAlongLine':
+    'Read-along sits on the line being spoken, scrolls with an ease, and shows where the voice picks up when you jump back.',
+
   // ---------------------------------------------------------------- 0.15.0
   'whatsnew.release.pairingTabs':
     'Pairing is four tabs - Suggested, Linked, Unpaired, Dismissed - with one line per pair, its state, and its alignment at a glance.',

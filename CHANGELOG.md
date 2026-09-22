@@ -4,6 +4,87 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.16.0 - 2026-09-22
+
+### Added
+
+- **A link to a book.** Share on the book page makes a link that previews
+  in WhatsApp, Telegram or iMessage with a picture composed from the cover,
+  the title and "Shared with you on ReadPort"; the plain app address keeps a
+  card of its own. Someone with an account sees who shared the book and can
+  put it on their reading list, where it says "Recommended by" in the
+  friend's colour (a recommendation accepted from the Friends inbox says the
+  same). Someone without one can sign in on the spot or ask to join with an
+  email address; admins see the requests at the top of People, with a dot on
+  Settings, and approving one lets the same link, with the same address,
+  create the account and open the book. Nobody is let in without an admin
+  saying so; the routes under `/s/` are the one public page about a book,
+  rate limited and bounded to that book's title, author and cover.
+- **Share a passage.** The selection menu in the reader has a Share button:
+  "Look what I read in {title}", the quotation and the book's link, through
+  the phone's share tray or to the clipboard.
+- **A selection can run past the page.** Turn the page with a selection
+  held and a Continue selection pill waits at the top of the next one;
+  tapping it makes the reader's next tap the end of the selection, across
+  as many pages as it takes. The selection is framed line by line in the
+  theme's accent, with a small cross to drop it.
+- **Holding the thread.** A step back of a page or two inside a sitting is
+  a re-read, and the diary counts them (further back is navigation and is
+  not). The stats page reads them as steadiness: how often you went back
+  this week against your usual, the hours of the day by how well the
+  thread held, drawn under the heatmap in its own cells, and the steadiest
+  run of hours once there is evidence for it. The best-time recommendation
+  weighs it lightly, under minutes and pace.
+- **Every book's language is read from its text.** Twelve windows spread
+  through the book, classified by script first and by character trigrams
+  after, with an answer only when they agree by a clear margin; for an ebook
+  that reading outranks the file's tag (so often a tool's default) and
+  yields only to a curator's override. The library toolbar gains a row of
+  language chips with flags and counts, kept in the address, and the
+  sidebar's Languages group shows the same flags.
+
+### Changed
+
+- **Friends on the progress bar are beads.** A friend is a bead in their
+  colour with their initial, on the reader's bar, its full slider and the
+  player's scrubber alike; two friends too close step aside by a bead. The
+  way to the card is a stack of the same beads beside the percentage, "+n"
+  past three, and any bead opens it too.
+- **Read-along sits on the line.** The spoken mark is drawn on the exact
+  line boxes of the words in every theme, size and mode; auto-scroll eases
+  in and out instead of jumping; and tapping an earlier passage to move the
+  narration back shows where the voice picks up, a gradient over the
+  sentence that is full at its first word and gone by its last, pulsing
+  gently twice. A sentence the page ends in the middle of now turns the
+  page the moment the voice crosses onto the next one, judged by where the
+  voice is within the sentence rather than where the sentence starts; on a
+  two-page spread it used to read the rest from a page you could not see.
+- **The other-device offer stays.** "Another device is at 69%, jump
+  there" left after eight seconds; it is an offer, not a report, so it now
+  waits until it is taken or closed with its cross, and leaves with the
+  book.
+
+### Fixed
+
+- **The compact progress bar** was caught by the footer's chapter-label
+  rule, which clipped its position dot (and now the friends' beads) to the
+  line's three pixels and let the line shrink to nothing beside the
+  read-along pill on a phone. It keeps a minimum width, and a friend's bead
+  that steps aside from a neighbour no longer lands on the next one.
+
+### Upgrading
+
+- Two migrations: one adds the share and join-request tables and the
+  reading list's provenance; the other adds two counters to the reading
+  diary and clears the sittings of the last 29 days, which the first start
+  derives again from the progress history. After the upgrade a job reads
+  every ebook's language again from the chapter text already on disk, a
+  hundred books at a time, behind every scan.
+- The container carries two fonts under `server/fonts` for the preview
+  picture. Nothing in the configuration changes; set `publicUrl` in Settings
+  if share links should carry an address other than the one the sharer's
+  browser used.
+
 ## 0.15.2 - 2026-09-22
 
 ### Fixed
