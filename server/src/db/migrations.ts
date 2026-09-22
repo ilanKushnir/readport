@@ -537,4 +537,80 @@ UPDATE books SET language_metadata = language, language_source = 'metadata'
  WHERE language IS NOT NULL AND TRIM(language) != '';
 `,
   },
+  {
+    version: 17,
+    sql: `
+-- Reading sessions: the durable record behind the stats page.
+--
+-- progress_events cannot be that record. Applied heartbeats are compacted
+-- away after thirty days (see compactProgressHistory), and rightly so - they
+-- exist to carry a position, not to be a diary. So every ACCEPTED event also
+-- folds into a session row here at ingest: an event within a short gap of
+-- the last one for the same book and medium extends that session, anything
+-- later starts a new one. A session is one sitting with one book on one
+-- device.
+--
+-- Time is wall-clock inside the sitting; distance is the sum of FORWARD
+-- movement in pct, so re-reading a page counts as time spent and not as
+-- ground covered. Timestamps are the client's occurred_at, in UTC; the hour
+-- of the day a reader actually reads at is worked out where the timezone is
+-- known, in their browser. No foreign key on book_id on purpose: a book that
+-- leaves the library takes nothing from the history of having read it.
+CREATE TABLE reading_sessions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  book_id TEXT NOT NULL,
+  medium TEXT NOT NULL CHECK (medium IN ('ebook','audio')),
+  device_id TEXT NOT NULL,
+  started_at TEXT NOT NULL,
+  ended_at TEXT NOT NULL,
+  pct_start REAL NOT NULL,
+  pct_end REAL NOT NULL,
+  pct_advanced REAL NOT NULL DEFAULT 0,
+  events INTEGER NOT NULL DEFAULT 1
+);
+CREATE INDEX idx_reading_sessions_user_time ON reading_sessions(user_id, started_at);
+CREATE INDEX idx_reading_sessions_user_book ON reading_sessions(user_id, book_id);
+`,
+  },
+  {
+    version: 18,
+    sql: `
+-- Friends. Everyone on a ReadPort server already shares one library, so a
+-- friendship here is not about access to books - it is consent to see each
+-- other's place in them. A request is a row with status 'pending' from the
+-- person who asked; accepting flips it, declining deletes it, so a declined
+-- request can simply be asked again. Removing a friend deletes the row.
+-- Which colour a friend wears, and whether one shows on your progress bar,
+-- is the VIEWER's business and lives in user_prefs, not here.
+CREATE TABLE friendships (
+  id TEXT PRIMARY KEY,
+  requester_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  addressee_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  status TEXT NOT NULL CHECK (status IN ('pending','accepted')),
+  created_at TEXT NOT NULL,
+  responded_at TEXT,
+  CHECK (requester_id != addressee_id),
+  UNIQUE (requester_id, addressee_id)
+);
+CREATE INDEX idx_friendships_addressee ON friendships(addressee_id, status);
+CREATE INDEX idx_friendships_requester ON friendships(requester_id, status);
+
+-- A recommendation is one friend putting one book in front of another, with
+-- a line of their own if they like. It is read, or dismissed; it is never
+-- edited. No foreign key on book_id, as everywhere else that remembers a
+-- book: the note "you'd love this" survives the file being moved.
+CREATE TABLE recommendations (
+  id TEXT PRIMARY KEY,
+  from_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  to_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  book_id TEXT NOT NULL,
+  note TEXT,
+  created_at TEXT NOT NULL,
+  seen_at TEXT,
+  dismissed_at TEXT
+);
+CREATE INDEX idx_recommendations_to ON recommendations(to_user_id, dismissed_at, created_at);
+`,
+  },
 ];
