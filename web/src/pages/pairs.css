@@ -431,6 +431,7 @@
 /* ------------------------------------------------------------ unpaired */
 .pun__search {
   margin-block-end: var(--sp-3);
+  max-width: 420px;
 }
 .pun {
   list-style: none;

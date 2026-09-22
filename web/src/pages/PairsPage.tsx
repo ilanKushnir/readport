@@ -1280,16 +1280,17 @@ function UnpairedList({
   return (
     <>
       {books.length > 6 && (
-        <label className="search-field pun__search">
-          <IconSearch size={16} />
+        <div className="searchbox pun__search">
+          <IconSearch size={17} />
           <input
+            className="input"
             type="search"
             value={query}
             placeholder={t('pairs.unpaired.search')}
             aria-label={t('pairs.unpaired.search')}
             onChange={(e) => setQuery(e.target.value)}
           />
-        </label>
+        </div>
       )}
       {shown.length === 0 ? (
         <p className="pr__note">{t('pairs.unpaired.noMatch', { query: query.trim() })}</p>
