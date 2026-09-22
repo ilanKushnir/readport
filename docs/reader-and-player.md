@@ -199,9 +199,9 @@ left; it stays until used or dismissed.
 
 Switching moves you between two surfaces; **read-along** puts both on one.
 Press **Read along** in the reader of an aligned pair and the narration starts
-at the sentence in front of you, the spoken sentence is washed as it is read,
-and the page turns itself to keep up. The player is untouched by this - this is
-the reader, with a voice.
+at the sentence in front of you, a mark in the margin (or a wash, your
+choice) keeps to the sentence being read, and the page turns itself to keep
+up. The player is untouched by this - this is the reader, with a voice.
 
 How the voice is shown is a choice (Reading settings → Following the
 voice, two small drawings of a page): a **mark in the margin**, the
@@ -227,9 +227,9 @@ second and a half.
 The transport is deliberately four controls: play/pause, back (the same skip
 length the player uses), speed, and stop. Everything else a listener wants -
 sleep timer, chapter list, bookmarks - already lives in the player, one tap
-away. It sits inside the reader's bottom chrome and that chrome refuses to
-hide while it is there: you should never need two taps to stop a book that is
-talking.
+away. It is a card above the bar, grown out of the Read along button with a
+beak pointing back at it, and the bottom chrome refuses to hide while it is
+there: you should never need two taps to stop a book that is talking.
 
 **Tap any line to move the voice to it.** A tap on a timed sentence seeks the
 narration; a tap on the margin, or on text the aligner never timed, falls
