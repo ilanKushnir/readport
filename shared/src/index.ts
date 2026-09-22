@@ -12,3 +12,4 @@ export * from './invites.js';
 export * from './locales.js';
 export * from './stats.js';
 export * from './friends.js';
+export * from './share.js';

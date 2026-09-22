@@ -255,7 +255,9 @@ export function FriendsPage() {
     try {
       const res = await api<{ added: boolean }>(`/api/reading-list/${rec.book.id}`, {
         method: 'PUT',
-        body: {},
+        // Credited to the friend who put it in front of them: the list
+        // says "Recommended by" under the title, in their colour.
+        body: { recommendedBy: rec.from.userId },
       });
       toast.show(res.added ? t('friends.inbox.added') : t('friends.inbox.onList'));
       void refreshShelves();

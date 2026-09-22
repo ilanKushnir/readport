@@ -16,6 +16,7 @@ import { mayExport } from '../../auth/roles.js';
 import { setupHelperAllowed, setupIsLocked, setupTokenAccepted } from '../../auth/setupGate.js';
 import { hasUsablePassword } from '../../auth/proxyAuth.js';
 import { pendingIncomingCount, unseenRecommendationCount } from '../../friends/service.js';
+import { pendingJoinRequestCount } from '../../share/service.js';
 
 const ATTEMPT_LIMIT = 10;
 const IP_ATTEMPT_LIMIT = 30;
@@ -289,6 +290,9 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
       // two more round-trips before the nav can show a dot.
       friendRequests: pendingIncomingCount(db, req.user.id),
       recommendations: unseenRecommendationCount(db, req.user.id),
+      // People who asked to join through a share link and are waiting on an
+      // admin. Only an admin can act on them, so only an admin is told.
+      ...(req.user.role === 'admin' ? { joinRequests: pendingJoinRequestCount(db) } : {}),
     };
   });
 }

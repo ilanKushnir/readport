@@ -1,0 +1,184 @@
+/* Sharing: the page a share link lands on, and the "recommended by" line on
+   the reading list. The visitor's card borrows the sign-in card's frame
+   (.auth-card) so a link opened without an account looks like the front
+   door it is; signed in, the same teaser sits in the app as a plain card. */
+
+.share-page {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+.share-card {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: var(--sp-5);
+  background: var(--rp-surface-raised);
+  border: 1px solid var(--rp-border);
+  border-radius: 18px;
+  box-shadow: var(--rp-shadow-1);
+}
+.share-card.auth-card {
+  max-width: 520px;
+}
+.share-card h1:not(.share-teaser__title) {
+  font-size: 22px;
+  text-align: center;
+  margin-block-end: var(--sp-2);
+}
+.share-card > .lede,
+.share-form > .lede {
+  color: var(--rp-text-soft);
+  font-size: 14.5px;
+  text-align: center;
+  margin: 0 0 var(--sp-4);
+}
+.share-card > .btn {
+  width: 100%;
+  justify-content: center;
+}
+
+/* The book */
+.share-teaser {
+  display: flex;
+  gap: var(--sp-4);
+  align-items: flex-start;
+}
+.share-cover {
+  flex: none;
+  width: 124px;
+  aspect-ratio: 2 / 3;
+  border-radius: 10px;
+  object-fit: cover;
+  box-shadow: var(--rp-shadow-2);
+}
+.share-cover--fallback {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  overflow: hidden;
+  color: #f8f2e8;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.25;
+}
+.share-teaser__body {
+  flex: 1;
+  min-width: 0;
+  padding-block-start: 4px;
+}
+.share-teaser__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rp-text-soft);
+}
+.share-card .share-teaser__title {
+  font-family: var(--rp-font-reading);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: start;
+  margin: 4px 0 2px;
+  overflow-wrap: anywhere;
+}
+.share-teaser__author {
+  margin: 0;
+  color: var(--rp-text-soft);
+  font-size: 15px;
+}
+.share-teaser__line {
+  margin: var(--sp-3) 0 0;
+  font-size: 14.5px;
+  line-height: 1.45;
+}
+
+/* What to do about it */
+.share-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-block-start: var(--sp-4);
+}
+.share-card__actions .btn {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+.share-card__actions .btn--ghost {
+  flex: 0 0 auto;
+}
+.share-card__actions .is-static {
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+/* Where a request stands */
+.share-status {
+  margin-block-start: var(--sp-4);
+  padding: var(--sp-4);
+  border-radius: var(--radius-card);
+  background: var(--rp-surface);
+}
+.share-status h2 {
+  margin: 0 0 4px;
+  font-size: 17px;
+}
+.share-status p {
+  margin: 0;
+  color: var(--rp-text-soft);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.share-status__as {
+  display: block;
+  margin-block-start: var(--sp-2);
+  font-size: 13px;
+  color: var(--rp-text-soft);
+}
+.share-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--rp-interactive);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.share-form {
+  margin-block-start: var(--sp-4);
+}
+.share-form textarea.input {
+  min-height: 64px;
+  resize: vertical;
+}
+
+/* The reading list: who put it there */
+.queue-row__recommended {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--rp-text-soft);
+}
+
+@media (max-width: 480px) {
+  .share-teaser {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .share-cover {
+    width: 132px;
+  }
+  .share-card .share-teaser__title {
+    text-align: center;
+  }
+  .share-teaser__eyebrow {
+    justify-content: center;
+  }
+}

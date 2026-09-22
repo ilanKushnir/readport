@@ -107,4 +107,16 @@ export const people = {
   'people.error.selfLockout': 'You cannot remove your own admin access.',
   'people.error.proxyManaged':
     'This account signs in through the reverse proxy; there is no local password.',
+  // Join requests: people who followed a share link and asked to be let in
+  'people.joinRequests.title': 'Join requests',
+  'people.joinRequests.lede':
+    'People who followed a share link and asked to be let in. Approving creates a reader invitation, which the same link hands to them.',
+  'people.joinRequests.askedFor': 'asked for {title}, shared by {name}',
+  'people.joinRequests.askedForUnknown': 'asked through a link that has since been withdrawn',
+  'people.joinRequests.when': 'Asked {when}',
+  'people.joinRequests.approve': 'Approve',
+  'people.joinRequests.decline': 'Decline',
+  'people.joinRequests.approved': 'Approved - they can create their account from the share link',
+  'people.joinRequests.declined': 'Request declined',
+  'people.joinRequests.failed': 'That did not go through - check the connection.',
 } as const;

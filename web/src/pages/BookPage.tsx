@@ -11,6 +11,7 @@ import { type Annotation, type BookDetail, type ResolveResponse } from '../lib/t
 import { Cover, EmptyState, Sheet, useToast } from '../components/ui';
 import { AddToSheet } from '../components/AddToSheet';
 import { BookFriendsRow } from './FriendsPage';
+import { ShareSheet } from '../share/ShareSheet';
 import { useShelves } from '../state/shelves';
 import { useSession } from '../state/session';
 import {
@@ -26,6 +27,7 @@ import {
   IconShelf,
   IconSwitch,
   IconTrash,
+  IconShare,
 } from '../components/icons';
 import { useT } from '../i18n';
 import { useFormat } from '../i18n/useFormat';
@@ -72,6 +74,7 @@ export function BookPage() {
   const [switching, setSwitching] = useState(false);
   const [offlineSheet, setOfflineSheet] = useState(false);
   const [addTo, setAddTo] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   /** Multi-file audiobook: which file to save. */
   const [saveOpen, setSaveOpen] = useState(false);
   const { user } = useSession();
@@ -452,6 +455,9 @@ export function BookPage() {
             <button className="btn btn--secondary" onClick={() => setAddTo(true)}>
               <IconShelf size={17} /> {t('library.card.addTo')}
             </button>
+            <button className="btn btn--secondary" onClick={() => setShareOpen(true)}>
+              <IconShare size={17} /> {t('share.button')}
+            </button>
             <OfflineButton dl={dl} onClick={() => void openOfflineSheet()} />
             {user?.canExport && !notReadyYet && (
               // A real link, not a button: the browser has to perform the
@@ -643,6 +649,9 @@ export function BookPage() {
           onClose={() => setAddTo(false)}
           onChanged={() => void loadMembership()}
         />
+      )}
+      {shareOpen && (
+        <ShareSheet bookId={id} title={book.title} onClose={() => setShareOpen(false)} />
       )}
       {saveOpen && (
         // An audiobook is many files and the server does not build archives,

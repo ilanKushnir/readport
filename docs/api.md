@@ -639,3 +639,72 @@ politeness: `settingsSchema.partial()` still fills in every `.default()`, so a
 request that changes one checkbox arrives at the handler carrying a full
 settings object, and writing all of it would silently reset the library
 folders. Send a patch, and expect `{settings, envPinned}` back.
+
+## Sharing
+
+A share link is one person handing one book to someone, inside the house or
+outside it. `/s/<token>` is the one place ReadPort answers a stranger with
+something about a book - the teaser a link preview shows, and the page the
+person lands on - and the way in for whoever follows it: sign in, or ask to
+join and wait for an admin.
+
+| Method | Path                             | Notes                                                                                        |
+| ------ | -------------------------------- | -------------------------------------------------------------------------------------------- |
+| POST   | `/api/books/:id/share`           | the caller's live share for this book, made on first ask → exactly `{url, token}`            |
+| DELETE | `/api/share/:token`              | revoke; the creator or an admin. A miss is 404, never 403                                    |
+| POST   | `/api/share/:token/add`          | the shared book onto the caller's reading list, credited to the sharer → `{added, bookId}`   |
+| GET    | `/api/share/:token`              | public, rate limited; `{valid: true, book, sharedBy: {displayName}}` or `{valid: false}`     |
+| POST   | `/api/share/:token/join`         | public, rate limited; `{email, name?, message?}` → 201 `{status: 'pending'}` (200 if it was) |
+| GET    | `/api/share/:token/join?email=`  | public, rate limited; `{status: none \| pending \| approved \| declined, inviteToken?}`      |
+| GET    | `/s/:token`                      | public; the app shell with the book's Open Graph tags in the head                            |
+| GET    | `/s/:token/image.png`            | public; the 1200×630 link preview, cached an hour                                            |
+| GET    | `/s/:token/cover`                | public; the cover on its own, for the share page's teaser                                    |
+| GET    | `/api/join-requests`             | admin; pending requests first, then what was decided in the last 30 days                     |
+| POST   | `/api/join-requests/:id/approve` | admin; mints a reader invitation (7 days, named after the request) → `{request}`             |
+| POST   | `/api/join-requests/:id/decline` | admin → `{request}`; a decided request answers 409 `already-decided`                         |
+
+The token is 24 random bytes as base64url and the whole credential; the
+routes accept 22 to 64 URL-safe characters. `url` is built from the
+`publicUrl` setting, or from the origin the request arrived on when that is
+empty. Sharing a book twice gives the same link back until it is revoked;
+revoking keeps the row, so the token stays dead rather than free for reuse.
+A link stops answering when the book goes `missing` or the sharer's account
+is disabled. `book` is `{id, title, author, kind, hasCover}` and `sharedBy`
+carries a display name and nothing else - never the sharer's id or address.
+
+`/s/:token` exists for the crawlers. WhatsApp, Telegram, Slack and iMessage
+fetch a link with no cookies and no JavaScript, so the preview has to be in
+the HTML: the built shell is served with `og:type` book, `og:title`,
+`og:description` (`<author> · Shared with you on ReadPort`), `og:url`,
+`og:image` (the absolute address of `image.png`, 1200×630) and a
+`summary_large_image` Twitter card spliced in before `</head>`, every value
+escaped, and the app's own static tags taken out. A dead token gets the shell
+unchanged and the app says the link is no longer valid. The image is
+composed as SVG and rasterised on the server with bundled fonts (Literata
+for the title, Inter for the rest); a title in a script those cannot shape -
+Hebrew, Arabic, CJK - is left off the picture rather than drawn as boxes,
+since the cover and `og:title` carry it. The HTML answers `public,
+max-age=300`, the image and the cover `public, max-age=3600` - the two
+deliberate exceptions to the API's `private, no-store`.
+
+Asking to join leaves an address, a name and a line to the admin. One open
+request per address: asking again while one waits is the same `pending`
+answer, and the address is normalised (trimmed, lower-cased) so a differently
+cased second ask is the same ask. The status route answers only for a
+request left through the link it is asked on, and `inviteToken` is present
+only while the request is approved and its invitation still open - the code
+the same link then accepts through `POST /api/invites/:token/accept`. The
+invitation's code is derived from the request id under the session secret
+and never stored in the clear; the admin routes never return it. A declined
+request answers `declined`; asking again after that is allowed. Ask-to-join
+is limited to 10 per address and 5 per email address in ten minutes, status
+checks to 60 per address, and the page, picture and cover to 120 per address
+a minute.
+
+`/api/auth/me` for an admin carries `joinRequests`, the pending count, so
+the shell can mark Settings → People. A book that lands on a reading list
+through a share link or a friend's recommendation carries `recommendedBy:
+{userId, displayName, at}` on `GET /api/reading-list`; `PUT
+/api/reading-list/:bookId` takes an optional `recommendedBy` user id, which
+must be another existing account, and a book already on the list keeps
+whatever provenance it had.

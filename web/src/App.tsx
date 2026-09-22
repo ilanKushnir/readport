@@ -31,6 +31,7 @@ import { startProgressLifecycle } from './progress/engine';
 import { LoginPage } from './pages/AuthPages';
 import { SetupWizard } from './pages/SetupWizard';
 import { JoinPage } from './pages/JoinPage';
+import { SharePage } from './pages/SharePage';
 import { PeoplePage } from './pages/PeoplePage';
 import { LibraryPage } from './pages/LibraryPage';
 import { ReadingListPage } from './pages/ReadingListPage';
@@ -163,7 +164,7 @@ function ShelfHeaderButton({
 
 function Shell() {
   const t = useT();
-  const { phase, needsLibraries, friendsAttention } = useSession();
+  const { phase, needsLibraries, friendsAttention, joinRequests } = useSession();
   const location = useLocation();
   const [setupSkipped, setSetupSkipped] = useState(
     () => localStorage.getItem('rp-setup-libraries-skipped') === '1',
@@ -239,7 +240,14 @@ function Shell() {
   }
   if (phase === 'setup') return <SetupWizard onDone={() => setSetupSkipped(true)} />;
   const join = /^\/join\/([A-Za-z0-9_-]+)$/.exec(location.pathname);
-  if (phase === 'login') return join ? <JoinPage token={join[1]!} /> : <LoginPage />;
+  // A share link opened without an account is the one page a stranger may
+  // see: the book and the ways in, rather than the sign-in form.
+  const share = /^\/s\/([A-Za-z0-9_-]+)$/.exec(location.pathname);
+  if (phase === 'login') {
+    if (join) return <JoinPage token={join[1]!} />;
+    if (share) return <SharePage token={share[1]!} />;
+    return <LoginPage />;
+  }
   // Signed in as an admin with no libraries configured - finish setup. Behind
   // reverse-proxy SSO this is the first thing the first user ever sees.
   if (phase === 'ready' && needsLibraries && !setupSkipped) {
@@ -275,7 +283,13 @@ function Shell() {
         <IconLink size={18} /> {t('nav.pairing')}
       </NavLink>
       <NavLink to="/settings">
-        <IconSettings size={18} /> {t('nav.settings')}
+        <span className="nav-mark">
+          <IconSettings size={18} />
+          {joinRequests > 0 && (
+            <span className="nav-mark__dot" aria-label={t('nav.joinRequests')} />
+          )}
+        </span>{' '}
+        {t('nav.settings')}
       </NavLink>
     </>
   );
@@ -363,6 +377,7 @@ const router = createBrowserRouter([
       { path: '/pairs', element: <PairsPage /> },
       { path: '/settings', element: <SettingsPage /> },
       { path: '/settings/people', element: <PeoplePage /> },
+      { path: '/s/:token', element: <SharePage /> },
       { path: '*', element: <LibraryPage /> },
     ],
   },

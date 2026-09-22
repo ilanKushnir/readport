@@ -13,6 +13,8 @@ import {
   SHELVES_PER_USER_MAX,
   type ReadingListItem,
   type ShelfSummary,
+  recommendedByIdSchema,
+  type RecommendedBy,
 } from '@readport/shared';
 import { type AppContext } from '../../context.js';
 import {
@@ -49,6 +51,51 @@ interface ShelfRow {
   created_at: string;
   updated_at: string;
 }
+
+/**
+ * Queue a book at the end of someone's reading list, remembering who put it
+ * there when it was not the reader: a friend's recommendation or a share
+ * link. Idempotent - a book already queued keeps its place and its
+ * provenance, because the reader's own choice is not overwritten by a
+ * later nudge. Shared with the share routes, which know the sharer's id
+ * when the client does not.
+ */
+export function queueBook(
+  db: DB,
+  userId: string,
+  bookId: string,
+  recommendedBy: string | null,
+): { added: boolean } {
+  const already = db
+    .prepare('SELECT 1 FROM reading_list WHERE user_id = ? AND book_id = ?')
+    .get(userId, bookId);
+  if (already) return { added: false };
+  const last = db
+    .prepare('SELECT sort_key FROM reading_list WHERE user_id = ? ORDER BY sort_key DESC LIMIT 1')
+    .get(userId) as { sort_key: string } | undefined;
+  const now = nowIso();
+  db.prepare(
+    `INSERT INTO reading_list (user_id, book_id, sort_key, note, added_at, recommended_by, recommended_at)
+     VALUES (?, ?, ?, NULL, ?, ?, ?)`,
+  ).run(
+    userId,
+    bookId,
+    between(last?.sort_key ?? null, null),
+    now,
+    recommendedBy,
+    recommendedBy ? now : null,
+  );
+  return { added: true };
+}
+
+/**
+ * The reading-list body, plus who recommended the book when somebody did.
+ * Only the id travels; the name is looked up when the list is read, so a
+ * renamed friend is shown under their current name.
+ */
+const queueBookSchema = addToReadingListSchema.extend({
+  recommendedBy: recommendedByIdSchema.optional(),
+});
 
 function shelfRowToSummary(db: DB, row: ShelfRow): ShelfSummary {
   const c = db.prepare('SELECT COUNT(*) AS c FROM shelf_items WHERE shelf_id = ?').get(row.id) as {
@@ -476,18 +523,33 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
     const userId = req.user!.id;
     const rows = db
       .prepare(
-        `SELECT b.*, r.note AS rl_note, r.added_at AS rl_added_at, r.sort_key AS rl_sort_key
+        `SELECT b.*, r.note AS rl_note, r.added_at AS rl_added_at, r.sort_key AS rl_sort_key,
+                r.recommended_by AS rl_recommended_by, r.recommended_at AS rl_recommended_at,
+                ru.display_name AS rl_rec_display_name, ru.username AS rl_rec_username
          FROM reading_list r JOIN books b ON b.id = r.book_id
+         LEFT JOIN users ru ON ru.id = r.recommended_by
          WHERE r.user_id = ? ORDER BY r.sort_key`,
       )
       .all(userId) as Record<string, unknown>[];
     const present = rows.filter((r) => String(r.scan_state) !== 'missing');
-    const items: ReadingListItem[] = present.map((r) => ({
-      book: bookRowToSummary(ctx, userId, r),
-      note: (r.rl_note as string) ?? null,
-      addedAt: String(r.rl_added_at),
-      sortKey: String(r.rl_sort_key),
-    }));
+    const items: (ReadingListItem & { recommendedBy: RecommendedBy | null })[] = present.map(
+      (r) => ({
+        book: bookRowToSummary(ctx, userId, r),
+        note: (r.rl_note as string) ?? null,
+        addedAt: String(r.rl_added_at),
+        sortKey: String(r.rl_sort_key),
+        // Who put it here, while their account exists: the column is set
+        // null when the recommender is deleted, and the join then finds nobody.
+        recommendedBy:
+          r.rl_recommended_by && r.rl_rec_username
+            ? {
+                userId: String(r.rl_recommended_by),
+                displayName: String(r.rl_rec_display_name ?? r.rl_rec_username),
+                at: String(r.rl_recommended_at ?? r.rl_added_at),
+              }
+            : null,
+      }),
+    );
     return { items, missingCount: rows.length - present.length };
   });
 
@@ -495,9 +557,19 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
     const { bookId } = req.params as { bookId: string };
     const userId = req.user!.id;
     if (!bookExists(bookId)) return reply.code(404).send({ error: 'not-found' });
-    const parsed = addToReadingListSchema.safeParse(req.body ?? {});
+    const parsed = queueBookSchema.safeParse(req.body ?? {});
     if (!parsed.success) {
       return reply.code(400).send({ error: 'invalid', detail: parsed.error.issues[0]?.message });
+    }
+    // A recommender is another account that exists; anything else is a
+    // malformed request, not a mystery to store.
+    const recommendedBy = parsed.data.recommendedBy ?? null;
+    if (
+      recommendedBy !== null &&
+      (recommendedBy === userId ||
+        db.prepare('SELECT 1 FROM users WHERE id = ?').get(recommendedBy) === undefined)
+    ) {
+      return reply.code(400).send({ error: 'invalid', detail: 'Unknown recommender' });
     }
     const rows = readingListRows(userId);
     const existing = rows.findIndex((r) => r.id === bookId);
@@ -552,9 +624,19 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
         );
       }
     } else {
+      const now = nowIso();
       db.prepare(
-        'INSERT INTO reading_list (user_id, book_id, sort_key, note, added_at) VALUES (?, ?, ?, ?, ?)',
-      ).run(userId, bookId, key, parsed.data.note ?? null, nowIso());
+        `INSERT INTO reading_list (user_id, book_id, sort_key, note, added_at, recommended_by, recommended_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        userId,
+        bookId,
+        key,
+        parsed.data.note ?? null,
+        now,
+        recommendedBy,
+        recommendedBy ? now : null,
+      );
     }
     return {
       added: existing < 0,

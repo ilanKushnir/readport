@@ -55,6 +55,9 @@ COPY --from=build /app/shared/dist shared/dist
 COPY --from=build /app/shared/package.json shared/package.json
 COPY --from=build /app/server/dist server/dist
 COPY --from=build /app/server/package.json server/package.json
+# The fonts the share-link preview image is drawn with (server/src/share):
+# the runtime image has none of its own, and resvg takes the files it is given.
+COPY --from=build /app/server/fonts server/fonts
 COPY --from=build /app/web/dist web/dist
 COPY package.json LICENSE ./
 COPY docker/entrypoint.sh /entrypoint.sh

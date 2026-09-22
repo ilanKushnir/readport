@@ -42,6 +42,8 @@ interface SessionCtx {
   whatsNewSeen: string | null | undefined;
   /** Friend requests waiting on you plus recommendations you have not seen. */
   friendsAttention: number;
+  /** People who asked to join through a share link and await an admin; 0 unless one. */
+  joinRequests: number;
   refresh: () => Promise<void>;
   setUser: (u: User | null) => void;
   logout: () => Promise<void>;
@@ -56,6 +58,7 @@ const Ctx = createContext<SessionCtx>({
   locale: null,
   whatsNewSeen: undefined,
   friendsAttention: 0,
+  joinRequests: 0,
   refresh: async () => {},
   setUser: () => {},
   logout: async () => {},
@@ -85,6 +88,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [locale, setLocale] = useState<string | null>(null);
   const [whatsNewSeen, setWhatsNewSeen] = useState<string | null | undefined>(undefined);
   const [friendsAttention, setFriendsAttention] = useState(0);
+  const [joinRequests, setJoinRequests] = useState(0);
 
   const refresh = useCallback(async () => {
     try {
@@ -97,6 +101,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         whatsNewSeen?: string | null;
         friendRequests?: number;
         recommendations?: number;
+        joinRequests?: number;
       }>('/api/auth/me', { signal: sessionCheckSignal() });
       // Before anything can be delivered: queued checkpoints belong to the
       // account that recorded them. The same person keeps a backlog written
@@ -111,6 +116,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setLocale(me.locale ?? null);
       setWhatsNewSeen(me.whatsNewSeen ?? null);
       setFriendsAttention((me.friendRequests ?? 0) + (me.recommendations ?? 0));
+      setJoinRequests(me.joinRequests ?? 0);
       setPhase('ready');
       return;
     } catch (err) {
@@ -230,6 +236,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         locale,
         whatsNewSeen,
         friendsAttention,
+        joinRequests,
         refresh,
         logout,
         setUser: (u) => {

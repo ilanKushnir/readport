@@ -19,6 +19,8 @@ import { useT } from '../i18n';
 import { useFormat } from '../i18n/useFormat';
 import { type MessageKey } from '../i18n/messages/en';
 import { useReorder } from '../components/reorder';
+import { RecommendedBy } from '../share/RecommendedBy';
+import { type RecommendedBy as Recommender } from '../share/api';
 
 /**
  * The queue. Not a grid: the order is the content, so this is an ordered list
@@ -26,8 +28,11 @@ import { useReorder } from '../components/reorder';
  * or from a menu - whichever the reader has to hand.
  */
 
+/** A queue row, plus who put it there when it was not the reader. */
+type QueueItem = ReadingListItem & { recommendedBy?: Recommender | null };
+
 interface QueueResponse {
-  items: ReadingListItem[];
+  items: QueueItem[];
   missingCount: number;
 }
 
@@ -54,7 +59,13 @@ export function ReadingListPage() {
   /** The list never arrived, so an empty screen means nothing about the queue. */
   const [stale, setStale] = useState(false);
   const readOnly = phase === 'offline';
-  const lastGood = useRef<ReadingListItem[]>([]);
+  const lastGood = useRef<QueueItem[]>([]);
+  /**
+   * Friends' colours, for the dot beside "Recommended by": the viewer's own
+   * palette, fetched only when a row needs it. Somebody who is not a friend
+   * gets the neutral dot.
+   */
+  const [colours, setColours] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     try {
@@ -112,6 +123,20 @@ export function ReadingListPage() {
   const items = data?.items ?? [];
   const ids = useMemo(() => items.map((i) => i.book.id), [items]);
   const byId = useMemo(() => new Map(items.map((i) => [i.book.id, i])), [items]);
+  const wantColours = useMemo(() => items.some((i) => i.recommendedBy), [items]);
+
+  useEffect(() => {
+    if (!wantColours) return;
+    let alive = true;
+    void api<{ friends: { userId: string; colour: string }[] }>('/api/friends')
+      .then((res) => {
+        if (alive) setColours(Object.fromEntries(res.friends.map((fr) => [fr.userId, fr.colour])));
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [wantColours]);
 
   const commit = useCallback(
     (id: string, afterBookId: string | null, nextIds: string[]) => {
@@ -261,6 +286,12 @@ export function ReadingListPage() {
                   <Link className="queue-row__title" to={`/book/${book.id}`}>
                     {book.title}
                   </Link>
+                  {item.recommendedBy && (
+                    <RecommendedBy
+                      who={item.recommendedBy}
+                      colour={colours[item.recommendedBy.userId] ?? null}
+                    />
+                  )}
                   <span className="queue-row__meta">
                     {book.kind === 'ebook' ? (
                       <IconBookOpen size={12} />

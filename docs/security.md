@@ -78,6 +78,25 @@
   7), are consumed atomically on acceptance, and can be revoked. Reading an
   invite reveals only its role and display name; the endpoints are rate
   limited per IP.
+- **Share links are the one public page about a book.** `/s/<token>` and
+  the routes under it (the teaser, the preview image, the cover, ask-to-join
+  and its status check) answer without a session on purpose: a link preview
+  is fetched by a crawler with no cookies, and the person it was sent to may
+  have no account yet. The token is 192 bits of randomness, minted on the
+  server and revocable by its creator or an admin; a revoked or unknown token
+  gets the plain app shell, `{valid: false}`, or a 404, never a reason. What
+  they give away is bounded to that one book - title, author, cover - and the
+  sharer's display name; never the sharer's id or address, never the rest of
+  the library. Every value spliced into the crawler HTML is escaped for an
+  attribute. The HTML and the image are cacheable (`public`, five minutes and
+  an hour) - the deliberate exceptions to the API's `private, no-store`,
+  since they are the same bytes for everyone. Ask-to-join is rate limited per
+  address and per email address, and keeps one open request per address. An
+  admin's approval mints an ordinary reader invitation; its code is derived
+  from the request id under the session secret rather than stored, and is
+  handed out only to the approved request's own address, only on the link the
+  request came through, only while the invitation is open. Nobody is let in
+  without an admin saying so.
 - **Disabling** an account deletes its sessions immediately and refuses
   login (`403 account-disabled`); role changes and admin password resets
   also sign the user out everywhere. The last active admin can be neither

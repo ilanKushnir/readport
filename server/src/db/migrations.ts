@@ -630,6 +630,48 @@ DELETE FROM reading_sessions
 `,
   },
   {
+    version: 20,
+    sql: `
+-- Sharing. A share link is one person handing one book to someone, inside
+-- the house or outside it: an unguessable token that resolves to the book's
+-- public preview and, for whoever follows it, the way in. Revoking keeps
+-- the row so the token stays dead rather than free for reuse.
+CREATE TABLE book_shares (
+  token TEXT PRIMARY KEY,
+  book_id TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+  created_by TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL,
+  revoked_at TEXT,
+  opens INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX idx_book_shares_book ON book_shares(book_id, created_by);
+
+-- Asking to join. Someone who followed a share link and has no account
+-- leaves an address; an admin approves or declines; approval mints an
+-- invite bound to that address, which the same link then honours. One
+-- open request per address, however many links it arrived through.
+CREATE TABLE join_requests (
+  id TEXT PRIMARY KEY,
+  email TEXT NOT NULL,
+  name TEXT,
+  message TEXT,
+  share_token TEXT REFERENCES book_shares(token) ON DELETE SET NULL,
+  status TEXT NOT NULL CHECK (status IN ('pending','approved','declined')),
+  invite_id TEXT,
+  created_at TEXT NOT NULL,
+  decided_at TEXT,
+  decided_by TEXT REFERENCES users(id) ON DELETE SET NULL
+);
+CREATE UNIQUE INDEX idx_join_requests_open ON join_requests(email) WHERE status = 'pending';
+CREATE INDEX idx_join_requests_status ON join_requests(status, created_at);
+
+-- Where a reading-list entry came from, when somebody else put it there:
+-- a friend's recommendation or a share link. Null for one's own.
+ALTER TABLE reading_list ADD COLUMN recommended_by TEXT REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE reading_list ADD COLUMN recommended_at TEXT;
+`,
+  },
+  {
     version: 21,
     sql: `
 -- Focus. A step back inside a sitting - a page or two, not a chapter - is

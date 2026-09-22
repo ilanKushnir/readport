@@ -7,6 +7,7 @@ import { Sheet, useToast } from '../components/ui';
 import { IconAlert, IconCheck, IconClose, IconLink } from '../components/icons';
 import { useT, type TranslateFn } from '../i18n';
 import { useFormat } from '../i18n/useFormat';
+import { type JoinRequestDto } from '../share/api';
 
 const ROLES: Role[] = ['admin', 'curator', 'reader'];
 
@@ -36,10 +37,11 @@ function errorText(err: unknown, fallback: string, t: TranslateFn): string {
 export function PeoplePage() {
   const t = useT();
   const f = useFormat();
-  const { user: me } = useSession();
+  const { user: me, refresh: refreshSession } = useSession();
   const toast = useToast();
   const [users, setUsers] = useState<UserDto[] | null>(null);
   const [invites, setInvites] = useState<InviteDto[]>([]);
+  const [requests, setRequests] = useState<JoinRequestDto[]>([]);
   const [sheet, setSheet] = useState<'none' | 'add' | 'invite'>('none');
   const [editing, setEditing] = useState<UserDto | null>(null);
   const [link, setLink] = useState<{
@@ -56,6 +58,14 @@ export function PeoplePage() {
       setInvites(res.invites);
     } catch {
       setUsers([]);
+    }
+    // People waiting at the door. Its own request, so a failure here does
+    // not take the accounts list down with it.
+    try {
+      const res = await api<{ requests: JoinRequestDto[] }>('/api/join-requests');
+      setRequests(res.requests);
+    } catch {
+      setRequests([]);
     }
   }, []);
   useEffect(() => {
@@ -74,6 +84,23 @@ export function PeoplePage() {
       </main>
     );
   }
+
+  const pending = requests.filter((r) => r.status === 'pending');
+  const decide = async (r: JoinRequestDto, decision: 'approve' | 'decline') => {
+    try {
+      await api(`/api/join-requests/${r.id}/${decision}`, { method: 'POST' });
+      toast.show(
+        decision === 'approve'
+          ? t('people.joinRequests.approved')
+          : t('people.joinRequests.declined'),
+      );
+      await load();
+      // The count the shell shows comes with the session.
+      void refreshSession();
+    } catch {
+      toast.show(t('people.joinRequests.failed'));
+    }
+  };
 
   const revokeInvite = async (id: string) => {
     try {
@@ -109,6 +136,63 @@ export function PeoplePage() {
           </button>
         </div>
       </header>
+
+      {pending.length > 0 && (
+        <section className="settings-section" aria-label={t('people.joinRequests.title')}>
+          <h2>
+            {t('people.joinRequests.title')}{' '}
+            <span className="section-title__count">{f.number(pending.length)}</span>
+          </h2>
+          <p className="settings-section__lede">{t('people.joinRequests.lede')}</p>
+          <ul className="people">
+            {pending.map((r) => (
+              <li key={r.id} className="person">
+                <span className="person__avatar person__avatar--invite" aria-hidden="true">
+                  {(r.name ?? r.email).slice(0, 1).toUpperCase()}
+                </span>
+                <span className="person__body">
+                  <span className="person__name">
+                    {r.name ?? r.email}
+                    {r.name && (
+                      <span className="person__user">
+                        {' '}
+                        <bdi>{r.email}</bdi>
+                      </span>
+                    )}
+                  </span>
+                  <span className="person__meta">
+                    <span>
+                      {r.book && r.sharedBy
+                        ? t('people.joinRequests.askedFor', {
+                            title: r.book.title,
+                            name: r.sharedBy.displayName,
+                          })
+                        : t('people.joinRequests.askedForUnknown')}
+                    </span>
+                    <span>· {t('people.joinRequests.when', { when: f.ago(r.createdAt) })}</span>
+                  </span>
+                  {r.message && (
+                    <span className="hint">
+                      <bdi>{r.message}</bdi>
+                    </span>
+                  )}
+                  <span className="manage-row">
+                    <button className="btn btn--sm" onClick={() => void decide(r, 'approve')}>
+                      <IconCheck size={14} /> {t('people.joinRequests.approve')}
+                    </button>
+                    <button
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => void decide(r, 'decline')}
+                    >
+                      {t('people.joinRequests.decline')}
+                    </button>
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="roles-legend" aria-label={t('people.roles.label')}>
         {ROLES.map((r) => (

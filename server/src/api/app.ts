@@ -24,6 +24,9 @@ import { registerModelRoutes } from './routes/models.js';
 import { registerPreflightRoutes } from './routes/preflight.js';
 import { registerUserRoutes } from './routes/users.js';
 import { registerKeyRoutes } from './routes/keys.js';
+import { registerShareRoutes } from './routes/share.js';
+import { publicBase } from '../share/service.js';
+import { escapeHtml } from '../share/html.js';
 import {
   registerAgentRoutes,
   agentRetryAfterSeconds,
@@ -307,13 +310,16 @@ export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyIn
   registerModelRoutes(app, ctx);
   registerPreflightRoutes(app, ctx);
   registerUserRoutes(app, ctx);
+  // Share links: the one public page about a book, and the way in through it.
+  registerShareRoutes(app, ctx, { webDist: opts.webDist });
 
   // Static web app + SPA fallback (everything not under /api).
   if (opts.webDist && fs.existsSync(path.join(opts.webDist, 'index.html'))) {
     app.register(fastifyStatic, {
       root: opts.webDist,
       wildcard: false,
-      index: ['index.html'],
+      // The index goes through the fallback below, which completes its tags.
+      index: false,
       setHeaders: (reply, filePath) => {
         if (/\.(js|css|woff2|png|svg)$/.test(filePath) && /-[A-Za-z0-9_-]{8}\./.test(filePath)) {
           reply.header('cache-control', 'public, max-age=31536000, immutable');
@@ -328,7 +334,17 @@ export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyIn
       }
       reply.header('content-security-policy', CSP);
       reply.header('cache-control', 'no-cache');
-      return reply.type('text/html').send(fs.readFileSync(path.join(opts.webDist!, 'index.html')));
+      // The shell's link-preview image needs an absolute address, which the
+      // build cannot know: it is completed here from the configured public
+      // URL, else this request's origin, so a link to the app previews the
+      // way a link to a book does.
+      const html = fs
+        .readFileSync(path.join(opts.webDist!, 'index.html'), 'utf8')
+        .replace(
+          'content="/share.png"',
+          `content="${escapeHtml(publicBase(ctx.db, ctx.config, req))}/share.png"`,
+        );
+      return reply.type('text/html').send(html);
     });
   } else {
     app.setNotFoundHandler((req, reply) => {

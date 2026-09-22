@@ -23,6 +23,12 @@ import { stampWhatsNewSeen } from './prefs.js';
 import { nowIso } from '../../db/index.js';
 import { SESSION_COOKIE } from '../guards.js';
 import { sessionCookieOpts } from '../../auth/cookie.js';
+import {
+  decideJoinRequest,
+  deriveInviteToken,
+  getJoinRequest,
+  listJoinRequests,
+} from '../../share/service.js';
 
 interface UserRow {
   id: string;
@@ -255,6 +261,40 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
   });
 
   /* ------------------------------------------------------------ invites */
+
+  /**
+   * One invitation row, however it came to be asked for: by an admin from
+   * the People page, or by an admin approving someone who asked through a
+   * share link. Only the hash of the code is kept.
+   */
+  const mintInvite = (opts: {
+    token: string;
+    role: Role;
+    canExport: boolean;
+    displayName: string | null;
+    username: string | null;
+    createdBy: string;
+    expiresInDays: number;
+  }): { id: string; expiresAt: string } => {
+    const id = newId('inv');
+    const expiresAt = new Date(Date.now() + opts.expiresInDays * 86_400_000).toISOString();
+    db.prepare(
+      `INSERT INTO invites (id, token_hash, role, can_export, display_name, username, created_by, created_at, expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      id,
+      hashInvite(opts.token),
+      opts.role,
+      opts.canExport ? 1 : 0,
+      opts.displayName,
+      opts.username,
+      opts.createdBy,
+      nowIso(),
+      expiresAt,
+    );
+    return { id, expiresAt };
+  };
+
   app.post('/api/invites', async (req, reply) => {
     if (!requireRole(req, reply, 'admin')) return reply;
     const parsed = createInviteSchema.safeParse(req.body);
@@ -269,22 +309,15 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
     }
     // A code, not a blob: someone will read this down the phone.
     const token = makeInviteCode((n) => new Uint8Array(randomBytes(n)));
-    const id = newId('inv');
-    const expiresAt = new Date(Date.now() + parsed.data.expiresInDays * 86_400_000).toISOString();
-    db.prepare(
-      `INSERT INTO invites (id, token_hash, role, can_export, display_name, username, created_by, created_at, expires_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    ).run(
-      id,
-      hashInvite(token),
-      parsed.data.role,
-      parsed.data.canExport ? 1 : 0,
-      parsed.data.displayName ?? null,
-      parsed.data.username ?? null,
-      req.user!.id,
-      nowIso(),
-      expiresAt,
-    );
+    const { id, expiresAt } = mintInvite({
+      token,
+      role: parsed.data.role,
+      canExport: parsed.data.canExport,
+      displayName: parsed.data.displayName ?? null,
+      username: parsed.data.username ?? null,
+      createdBy: req.user!.id,
+      expiresInDays: parsed.data.expiresInDays,
+    });
     // Returned exactly once. The URL is built here rather than in the
     // browser, because the browser only knows the address the ADMIN is on -
     // often a LAN name the recipient cannot resolve. `publicUrl` is what the
@@ -400,6 +433,65 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
     return reply.code(201).send({
       user: { id, username: u.username, role: u.role, displayName: u.display_name },
     });
+  });
+
+  /* ------------------------------------------------------- join requests */
+
+  /**
+   * People who followed a share link and asked to be let in. Approving one
+   * mints an ordinary reader invitation, valid for a week, that the same
+   * share link then hands to that address - the code is derived, not
+   * stored, and never returned here (see share/service.ts).
+   */
+  app.get('/api/join-requests', async (req, reply) => {
+    if (!requireRole(req, reply, 'admin')) return reply;
+    return { requests: listJoinRequests(db) };
+  });
+
+  const decided = (id: string) => listJoinRequests(db).find((r) => r.id === id) ?? null;
+
+  app.post('/api/join-requests/:id/approve', async (req, reply) => {
+    if (!requireRole(req, reply, 'admin')) return reply;
+    const { id } = req.params as { id: string };
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      const row = getJoinRequest(db, id);
+      if (!row) {
+        db.exec('ROLLBACK');
+        return reply.code(404).send({ error: 'not-found' });
+      }
+      if (row.status !== 'pending') {
+        db.exec('ROLLBACK');
+        return reply.code(409).send({ error: 'already-decided' });
+      }
+      const invite = mintInvite({
+        token: deriveInviteToken(config.sessionSecret, row.id),
+        role: 'reader',
+        canExport: false,
+        displayName: row.name,
+        username: null,
+        createdBy: req.user!.id,
+        expiresInDays: 7,
+      });
+      decideJoinRequest(db, id, { status: 'approved', by: req.user!.id, inviteId: invite.id });
+      db.exec('COMMIT');
+    } catch (err) {
+      db.exec('ROLLBACK');
+      throw err;
+    }
+    ctx.log.info(`Admin ${req.user!.username} approved a join request`);
+    return { request: decided(id) };
+  });
+
+  app.post('/api/join-requests/:id/decline', async (req, reply) => {
+    if (!requireRole(req, reply, 'admin')) return reply;
+    const { id } = req.params as { id: string };
+    const row = getJoinRequest(db, id);
+    if (!row) return reply.code(404).send({ error: 'not-found' });
+    if (!decideJoinRequest(db, id, { status: 'declined', by: req.user!.id })) {
+      return reply.code(409).send({ error: 'already-decided' });
+    }
+    return { request: decided(id) };
   });
 
   /* ------------------------------------------------------------ self service */

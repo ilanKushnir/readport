@@ -38,6 +38,7 @@ export const common = {
   'nav.friends': 'Friends',
   'nav.more': 'More',
   'nav.friendsAttention': 'Friend requests or recommendations waiting',
+  'nav.joinRequests': 'Someone asked to join',
   'nav.shelves': 'Shelves',
   'nav.showShelves': 'Show shelves',
   'nav.hideShelves': 'Hide shelves',
