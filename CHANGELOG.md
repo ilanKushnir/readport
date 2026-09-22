@@ -4,6 +4,13 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.15.1 - 2026-09-22
+
+### Fixed
+
+- **The search on the Pairing page's Unpaired tab looked unfinished:** a bare
+  field with the icon beside it. It is now the library's own search box.
+
 ## 0.15.0 - 2026-09-22
 
 ### Added
