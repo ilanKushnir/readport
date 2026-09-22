@@ -518,6 +518,78 @@ try {
       }
     }
   }
+
+  /* ------------------------------ room for the platform's own menu, kept */
+
+  {
+    const { context, page, errors } = await open({ width: 1180, height: 820 }, 'ltr', true);
+    try {
+      // Highlighting over and over, with a trackpad selection in the middle -
+      // an iPad with a keyboard case, which has both pointers. The device's
+      // own Look Up / Translate menu is drawn for the FINGER selections, so
+      // every one of them must still have room reserved for it. What used to
+      // happen: the trackpad selection recorded "mouse" in a ref nothing ever
+      // cleared, every later selection inherited it, the placer stopped
+      // reserving that room, and ReadPort's toolbar sat exactly where the
+      // platform wanted to draw its menu - so the menu stopped appearing.
+      for (let cycle = 0; cycle < 4; cycle++) {
+        await select(page, 30 + cycle * 10, false, cycle % 2 === 1);
+        assertSafe(await geometry(page), true);
+        await page.getByRole('button', { name: 'Highlight in amber' }).click();
+        await page.waitForTimeout(220);
+        // A trackpad click in the text between two finger selections: a whole
+        // press and release that selects nothing, and therefore describes
+        // nothing about the selection that comes after it.
+        if (cycle === 1)
+          await page.evaluate(() => {
+            const el = document.querySelector('#p1');
+            for (const type of ['pointerdown', 'pointerup'])
+              el.dispatchEvent(
+                new PointerEvent(type, { bubbles: true, pointerType: 'mouse', pointerId: 1 }),
+              );
+          });
+      }
+      await select(page, 40);
+      assertSafe(await geometry(page), true);
+      assert.deepEqual(errors, []);
+      console.log('PASS repeated highlighting keeps the native menu room reserved');
+      passed++;
+
+      // A transition that starts and never ends - a node leaving the document
+      // mid-animation, a property that stops being animated - used to turn the
+      // placer into a per-frame forced-layout loop for the rest of the
+      // selection's life, which is also how you get iOS to give up on drawing
+      // its own edit menu.
+      await page.evaluate(() => {
+        window.__rafs = 0;
+        const raf = window.requestAnimationFrame.bind(window);
+        window.requestAnimationFrame = (cb) => {
+          window.__rafs++;
+          return raf(cb);
+        };
+      });
+      await select(page, 30);
+      await page.evaluate(() =>
+        document
+          .querySelector('.reader-content')
+          .dispatchEvent(new Event('transitionrun', { bubbles: true })),
+      );
+      await page.waitForTimeout(1000);
+      const settled = await page.evaluate(() => window.__rafs);
+      await page.waitForTimeout(700);
+      const after = await page.evaluate(() => window.__rafs);
+      assert(
+        after - settled <= 5,
+        `an unmatched transitionrun left a per-frame measure loop running (${after - settled} frames in 700ms)`,
+      );
+      assertSafe(await geometry(page), true);
+      assert.deepEqual(errors, []);
+      console.log('PASS unmatched transitionrun does not leave a measure loop running');
+      passed++;
+    } finally {
+      await context.close();
+    }
+  }
 } finally {
   await browser.close();
 }

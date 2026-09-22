@@ -72,15 +72,19 @@ async function open(
   reducedMotion = 'no-preference',
   narrated = false,
   entry = 'exact',
+  // Both turns are worth running, because they are not the same measurement:
+  // a slide is still showing the page being left when the new one is
+  // measured, and an instant turn is already showing the new one.
+  pageTurn = 'instant',
 ) {
   const context = await browser.newContext({ viewport, reducedMotion });
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.addInitScript(
-    ({ mode }) =>
-      localStorage.setItem('rp-reader-prefs', JSON.stringify({ mode, pageTurn: 'instant' })),
-    { mode },
+    ({ mode, pageTurn }) =>
+      localStorage.setItem('rp-reader-prefs', JSON.stringify({ mode, pageTurn })),
+    { mode, pageTurn },
   );
   const posted = [];
   if (narrated)
@@ -494,6 +498,232 @@ try {
     },
   );
   await voice.context.close();
+
+  /* ------------------------------------------------- rotation and return */
+
+  /**
+   * Where the reader is, measured without asking the reader.
+   *
+   * Deliberately NOT `firstVisibleOffset`: this is the oracle that function
+   * is checked against, so it uses a different method - every text node that
+   * shows on the page, lowest in document order, then refined character by
+   * character. Slow, and exactly right.
+   */
+  const trueFirstVisible = (page) =>
+    page.evaluate(async () => {
+      const { buildTextMap } = await import('/src/reader/textmap.ts');
+      const map = buildTextMap(document.querySelector('.reader-content'));
+      const box = document.querySelector('.reader-pages').getBoundingClientRect();
+      const probe = document.createRange();
+      const on = (r) =>
+        r.right > box.left + 1 &&
+        r.left < box.right - 1 &&
+        r.bottom > box.top &&
+        r.top < box.bottom;
+      for (const { node, start } of map.nodes) {
+        if (!node.data.trim()) continue;
+        probe.selectNodeContents(node);
+        if (![...probe.getClientRects()].some(on)) continue;
+        for (let i = 0; i < node.data.length; i++) {
+          probe.setStart(node, i);
+          probe.setEnd(node, i + 1);
+          if (on(probe.getBoundingClientRect())) return start + i;
+        }
+        return start;
+      }
+      return null;
+    });
+  const columnsNow = (page) =>
+    page
+      .locator('.reader-content')
+      .evaluate((el) => getComputedStyle(el).getPropertyValue('column-count'));
+  const onScreen = (page, offset) =>
+    page.evaluate(async (offset) => {
+      const { buildTextMap, rangeForSpan } = await import('/src/reader/textmap.ts');
+      const map = buildTextMap(document.querySelector('.reader-content'));
+      const range = rangeForSpan(map, offset, offset + 1);
+      if (!range) return false;
+      const r = range.getBoundingClientRect();
+      const box = document.querySelector('.reader-pages').getBoundingClientRect();
+      return r.bottom > box.top && r.top < box.bottom && r.right > box.left && r.left < box.right;
+    }, offset);
+  const nextPage = (page) =>
+    page.getByRole('button', { name: 'Next page', exact: true }).first().click({ force: true });
+  /**
+   * Wait until the chapter's own settle passes are over.
+   *
+   * They run at 250ms, 1.2s and 3s after a chapter arrives and each one
+   * re-lays the page out. A rotation tested inside that window is not being
+   * tested at all - whatever the rotation did or failed to do, the settle
+   * corrects it a moment later and the check passes either way.
+   */
+  const settle = (page) => page.waitForTimeout(3400);
+
+  const latestEvent = (page) =>
+    page.evaluate(async () => {
+      const { idbAll, STORES } = await import('/src/progress/idb.ts');
+      return (await idbAll(STORES.pendingEvents))
+        .map((e) => e.value)
+        .sort((a, b) => b.seq - a.seq)[0];
+    });
+
+  for (const pageTurn of ['instant', 'slide']) {
+    // A tablet standing up is one column; on its side it is two. Nothing
+    // measured the viewport again after a rotation, so the reader turned the
+    // tablet and got the portrait pagination stretched across the landscape.
+    const tablet = await open(
+      { width: 834, height: 1194 },
+      'paginated',
+      'no-preference',
+      false,
+      'exact',
+      pageTurn,
+    );
+    await check(`${pageTurn}: a page turn records the page it landed on`, async () => {
+      assert.equal(await columnsNow(tablet.page), '1', 'portrait tablet must be a single page');
+      for (let i = 0; i < 4; i++) await nextPage(tablet.page);
+      await tablet.page.waitForTimeout(400);
+      const here = await trueFirstVisible(tablet.page);
+      assert(here > 0, 'the fixture must have moved off the first page');
+      assert.equal(
+        (await latestEvent(tablet.page)).locator.charOffset,
+        here,
+        'the recorded offset is not the page on screen',
+      );
+    });
+
+    await check(`${pageTurn}: rotation re-paginates and keeps the same sentence`, async () => {
+      await settle(tablet.page);
+      const before = await trueFirstVisible(tablet.page);
+      await tablet.page.setViewportSize({ width: 1194, height: 834 });
+      await tablet.page.evaluate(() => window.dispatchEvent(new Event('orientationchange')));
+      await tablet.page.waitForTimeout(800);
+      assert.equal(
+        await columnsNow(tablet.page),
+        '2',
+        'landscape tablet must be a two-page spread',
+      );
+      assert(await onScreen(tablet.page, before), 'the line the reader was on left the screen');
+      // ...and back again: the same reasoning in the other direction.
+      await tablet.page.setViewportSize({ width: 834, height: 1194 });
+      await tablet.page.evaluate(() => window.dispatchEvent(new Event('orientationchange')));
+      await tablet.page.waitForTimeout(800);
+      assert.equal(await columnsNow(tablet.page), '1');
+      assert(await onScreen(tablet.page, before), 'rotating back lost the place');
+    });
+
+    // A backward page turn is the case where the scan starts BEYOND everything
+    // on the page it is measuring, and it used to answer with the last line of
+    // that page instead of the first - a whole page of error, recorded.
+    await check(
+      `${pageTurn}: a backward turn records the top of the page it lands on`,
+      async () => {
+        await nextPage(tablet.page);
+        await nextPage(tablet.page);
+        await tablet.page.waitForTimeout(400);
+        const forward = await trueFirstVisible(tablet.page);
+        await tablet.page
+          .getByRole('button', { name: 'Previous page', exact: true })
+          .first()
+          .click({ force: true });
+        await tablet.page.waitForTimeout(500);
+        const expected = await trueFirstVisible(tablet.page);
+        assert(expected < forward, 'the fixture must actually have moved back a page');
+        assert.equal(
+          (await latestEvent(tablet.page)).locator.charOffset,
+          expected,
+          'a backward turn recorded a line that is not the top of the page',
+        );
+      },
+    );
+    assert.deepEqual(tablet.errors, []);
+    await tablet.context.close();
+  }
+
+  // The iPadOS case, which desktop Chromium does not reproduce on its own:
+  // the resize event arrives before the viewport has actually changed size,
+  // so reading `clientWidth` when it fires answers with the orientation the
+  // reader has just left. Simulated by making the window events useless and
+  // requiring the layout to come back anyway - which only the observer on
+  // the viewport element itself can do.
+  const deaf = await open({ width: 834, height: 1194 }, 'paginated');
+  await deaf.page.addInitScript(() => {
+    window.__deaf = new Set();
+    const wrappers = new WeakMap();
+    const { addEventListener: add, removeEventListener: remove } = EventTarget.prototype;
+    const deafened = (target) => target === window || target === window.visualViewport;
+    EventTarget.prototype.addEventListener = function (type, fn, opts) {
+      if (!deafened(this) || typeof fn !== 'function') return add.call(this, type, fn, opts);
+      let byType = wrappers.get(fn);
+      if (!byType) wrappers.set(fn, (byType = {}));
+      byType[type] = (e) => {
+        if (!window.__deaf.has(e.type)) fn(e);
+      };
+      return add.call(this, type, byType[type], opts);
+    };
+    EventTarget.prototype.removeEventListener = function (type, fn, opts) {
+      const byType = typeof fn === 'function' ? wrappers.get(fn) : null;
+      return remove.call(this, type, byType?.[type] ?? fn, opts);
+    };
+  });
+  await deaf.page.reload();
+  await deaf.page.waitForSelector('#p69', { state: 'attached' });
+  await deaf.page.waitForTimeout(600);
+  await check('rotation re-paginates when the window resize event is useless', async () => {
+    assert.equal(await columnsNow(deaf.page), '1');
+    for (let i = 0; i < 3; i++) await nextPage(deaf.page);
+    // Past the chapter's own settle passes, so what is being tested is the
+    // rotation and not a 3s timer that happens to land on top of it.
+    await settle(deaf.page);
+    const before = await trueFirstVisible(deaf.page);
+    assert(before > 0);
+    await deaf.page.evaluate(() => {
+      window.__deaf.add('resize');
+      window.__deaf.add('orientationchange');
+    });
+    await deaf.page.setViewportSize({ width: 1194, height: 834 });
+    await deaf.page.waitForTimeout(900);
+    assert.equal(await columnsNow(deaf.page), '2', 'nothing re-measured the viewport itself');
+    assert(await onScreen(deaf.page, before), 'the line the reader was on left the screen');
+    assert.deepEqual(deaf.errors, []);
+  });
+  await deaf.context.close();
+
+  // Switching to another app and back, in two-page view. The page is not
+  // rendering while it is away, so a rotation performed there is seen by
+  // nothing: no usable resize, and every settle timer measuring a viewport
+  // that answers with the size it had when it left.
+  const away = await open({ width: 834, height: 1194 }, 'paginated', 'reduce');
+  await check('returning from another app after a rotation lands back on the page', async () => {
+    for (let i = 0; i < 3; i++) await nextPage(away.page);
+    await away.page.waitForTimeout(300);
+    await settle(away.page);
+    const before = await trueFirstVisible(away.page);
+    assert(before > 0);
+    // `document.hidden` is what the reader consults, and Playwright cannot
+    // background a tab, so it is answered the way a backgrounded tab answers.
+    await away.page.evaluate(() => {
+      window.__hidden = false;
+      for (const prop of ['hidden', 'visibilityState'])
+        Object.defineProperty(document, prop, {
+          configurable: true,
+          get: () => (prop === 'hidden' ? window.__hidden : window.__hidden ? 'hidden' : 'visible'),
+        });
+      window.__hidden = true;
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await away.page.setViewportSize({ width: 1194, height: 834 });
+    await away.page.waitForTimeout(500);
+    await away.page.evaluate(() => {
+      window.__hidden = false;
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await away.page.waitForTimeout(800);
+    assert.equal(await columnsNow(away.page), '2', 'the rotation made while away was never seen');
+    assert(await onScreen(away.page, before), 'coming back lost the place');
+    assert.deepEqual(away.errors, []);
+  });
+  await away.context.close();
 } finally {
   await browser.close();
 }

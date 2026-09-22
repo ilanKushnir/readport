@@ -185,8 +185,6 @@ export function ReaderPage() {
   const [sheet, setSheet] = useState<SheetKind>('none');
   const [page, setPage] = useState(0);
   const [pageCount, setPageCount] = useState(1);
-  /** Last count actually applied, for the post-load re-measure to compare. */
-  const lastCountRef = useRef(1);
   /** Timer clearing the last confident flash, so flashes never stack up. */
   const flashTimerRef = useRef<number | null>(null);
   /** The active column's margin and narrated line, in viewport pixels. */
@@ -303,6 +301,13 @@ export function ReaderPage() {
   const textMapRef = useRef<TextMap | null>(null);
   const layoutRef = useRef<PageLayout | null>(null);
   const currentOffsetRef = useRef(0);
+  /** The viewport size the current pagination was measured against. */
+  const measuredSizeRef = useRef<{ w: number; h: number } | null>(null);
+  /** Trailing re-measures, replaced rather than stacked as events arrive. */
+  const relayoutRafRef = useRef(0);
+  const relayoutTimersRef = useRef<number[]>([]);
+  /** A resize that arrived while the page was hidden, owed on return. */
+  const relayoutPendingRef = useRef(false);
   const pendingTargetRef = useRef<{
     charOffset?: number;
     sentenceId?: string;
@@ -513,16 +518,22 @@ export function ReaderPage() {
    * Page index containing a char offset. Measures against the content's
    * ACTUAL rendered transform, so it is correct even while a page-turn
    * transition is running (rects mid-animation would otherwise lie).
+   *
+   * Null when there is nothing to measure against - no map yet, no layout, an
+   * offset the map cannot place. It used to answer zero, which is also a real
+   * page, so a failed measurement was indistinguishable from "page one" and
+   * every caller obediently sent the reader to the top of the chapter. Each
+   * caller now says what it wants to do about a measurement it cannot make.
    */
   const pageForOffset = useCallback(
-    (charOffset: number): number => {
+    (charOffset: number): number | null => {
       const pages = pagesRef.current;
       const content = contentRef.current;
       const map = textMapRef.current;
       const layout = layoutRef.current;
-      if (!pages || !content || !map || !layout) return 0;
+      if (!pages || !content || !map || !layout) return null;
       const range = rangeForSpan(map, charOffset, charOffset + 1);
-      if (!range) return 0;
+      if (!range) return null;
       const tx = currentTx(content);
       const r = range.getBoundingClientRect();
       const base = pages.getBoundingClientRect();
@@ -538,19 +549,35 @@ export function ReaderPage() {
       const content = contentRef.current;
       const layout = layoutRef.current;
       if (!pages || !content || !manifest || !layout) return;
-      const clamped = Math.max(0, Math.min(n, pageCount - 1));
+      // Clamped against the chapter as it is NOW, not against the count the
+      // last render happened to see. `pageCount` is state: a lander that has
+      // just re-measured is holding a fresher number than this closure can
+      // see, and a target past the stale end was silently truncated to it -
+      // which is a jump to a mark near the end of a chapter landing on the
+      // page before it, exactly as reported.
+      const count = pageCountFor(content.scrollWidth, layout);
+      if (count !== pageCount) setPageCount(count);
+      const clamped = Math.max(0, Math.min(n, count - 1));
       const targetTx = dirFactor * clamped * layout.stride;
-      // Measure the target page's first visible offset in a way that is
-      // independent of the in-flight transition: shift the page box by
-      // the difference between the current rendered transform and the target.
-      const tx = currentTx(content);
       content.style.transform = `translateX(${targetTx}px)`;
       setPage(clamped);
       if (!record) return;
       const map = textMapRef.current;
       if (map) {
         const rect = pages.getBoundingClientRect();
-        const shift = tx - targetTx;
+        // Measure the target page's first visible offset against whatever is
+        // ACTUALLY rendered, by shifting the page box by the difference
+        // between that and the target.
+        //
+        // Read after the transform is assigned, not before. Before is the
+        // page being left, which is right only while a slide is starting and
+        // the rendered transform has not moved yet - and wrong by exactly one
+        // page when the turn is instant, which it is whenever the reader has
+        // chosen instant turns OR asked the system for reduced motion. Those
+        // readers had every page turn record the page AFTER the one they were
+        // looking at, and every later relayout - an image, a rotation, coming
+        // back to the tab - dutifully moved them there.
+        const shift = currentTx(content) - targetTx;
         const off = firstVisibleOffset(
           map,
           {
@@ -669,7 +696,10 @@ export function ReaderPage() {
 
     if (prefs.mode === 'paginated' && layoutRef.current) {
       // Find the page containing charOffset (transition-safe measurement).
-      const clamped = Math.min(pageForOffset(charOffset), count - 1);
+      // A chapter arriving is the one moment where an unmeasurable offset
+      // does mean the beginning: the transform still holds the PREVIOUS
+      // chapter's page, and leaving it there shows this one from the middle.
+      const clamped = Math.min(pageForOffset(charOffset) ?? 0, count - 1);
       content.style.transform = `translateX(${dirFactor * clamped * layoutRef.current.stride}px)`;
       setPage(clamped);
     } else if (map && scrollerRef.current) {
@@ -783,7 +813,11 @@ export function ReaderPage() {
         const count = applyPagination();
         const layout = layoutRef.current;
         if (!layout) return;
-        const clamped = Math.min(pageForOffset(charOffset), count - 1);
+        const target = pageForOffset(charOffset);
+        // Nothing to measure against: leave the reader where they are rather
+        // than announcing page one at them.
+        if (target === null) return;
+        const clamped = Math.min(target, count - 1);
         content.style.transform = `translateX(${dirFactor * clamped * layout.stride}px)`;
         setPage(clamped);
       } else {
@@ -800,6 +834,66 @@ export function ReaderPage() {
       scrollBox,
       scrollLineTo,
     ],
+  );
+  const restoreOffsetRef = useRef(restoreOffset);
+  restoreOffsetRef.current = restoreOffset;
+
+  /**
+   * Re-measure the page for the size the viewport is NOW.
+   *
+   * A no-op unless the reader viewport has actually changed size, so it can
+   * be called from anything that might have resized it without any of them
+   * having to know whether the others already did.
+   */
+  const relayout = useCallback((force = false) => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    // Nothing can be measured off a page that is not being rendered: a
+    // backgrounded tab reports the geometry it had when it went away, or
+    // zero. Remember that a measurement is owed and take it on return.
+    if (document.hidden) {
+      relayoutPendingRef.current = true;
+      return;
+    }
+    const size = { w: viewport.clientWidth, h: viewport.clientHeight };
+    const last = measuredSizeRef.current;
+    measuredSizeRef.current = size;
+    // The first observation only records: the chapter's own landing has
+    // just run, and re-landing on top of it would be work for nothing.
+    if (last === null && !force) return;
+    if (!force && last && last.w === size.w && last.h === size.h) return;
+    restoreOffsetRef.current(currentOffsetRef.current);
+  }, []);
+
+  /**
+   * Measure now, and again once the rotation has actually finished.
+   *
+   * iPadOS reports the old `clientWidth` for a frame or more after it fires
+   * the resize, so a single synchronous read at the event re-paginates the
+   * chapter for the orientation the reader has just left - which is how a
+   * tablet turned on its side kept one column when two would fit. The extra
+   * passes cost a comparison each when nothing moved.
+   */
+  const scheduleRelayout = useCallback(
+    (force = false) => {
+      relayout(force);
+      if (relayoutRafRef.current) cancelAnimationFrame(relayoutRafRef.current);
+      relayoutRafRef.current = requestAnimationFrame(() => {
+        relayoutRafRef.current = 0;
+        relayout();
+      });
+      for (const timer of relayoutTimersRef.current) window.clearTimeout(timer);
+      relayoutTimersRef.current = [120, 400].map((ms) => window.setTimeout(() => relayout(), ms));
+    },
+    [relayout],
+  );
+
+  useEffect(
+    () => () => {
+      if (relayoutRafRef.current) cancelAnimationFrame(relayoutRafRef.current);
+      for (const timer of relayoutTimersRef.current) window.clearTimeout(timer);
+    },
+    [],
   );
 
   useEffect(() => {
@@ -833,6 +927,15 @@ export function ReaderPage() {
    * formed - a monolithic element too tall to fragment, a publisher
    * stylesheet doing something strange. Whatever the cause, the honest answer
    * is to let that chapter scroll rather than hide the end of it.
+   *
+   * Every pass re-lands. It used to re-land only when the page COUNT had
+   * changed, which is a proxy for "the chapter moved under the reader" and a
+   * bad one: a font swapping to Literata, an image arriving mid-chapter or a
+   * publisher stylesheet re-breaking the lines all change where a sentence
+   * is without changing how many pages there are, and the reader was left on
+   * a page number that now holds different words. Re-landing is idempotent -
+   * it puts the page holding the offset they are already on back on screen -
+   * so doing it every pass costs a measurement and settles nothing wrongly.
    */
   useEffect(() => {
     const content = contentRef.current;
@@ -842,12 +945,12 @@ export function ReaderPage() {
     const pass = () => {
       const el = contentRef.current;
       if (!alive || !el || prefs.mode !== 'paginated') return;
-      const after = applyPagination();
-      if (after !== lastCountRef.current) {
-        lastCountRef.current = after;
-        // Reflow is not the reader moving, so this restores rather than records.
-        restoreOffset(currentOffsetRef.current);
-      }
+      // A hidden page has no geometry worth reading; the return handler
+      // re-measures, so skipping here loses nothing.
+      if (document.hidden) return;
+      applyPagination();
+      // Reflow is not the reader moving, so this restores rather than records.
+      restoreOffset(currentOffsetRef.current);
       // A few pixels of rounding is normal; a trapped paragraph is not.
       if (el.scrollHeight > el.clientHeight + 8) setPaginationFailed(true);
     };
@@ -861,10 +964,14 @@ export function ReaderPage() {
     // Spaced passes for everything the events do not cover: a slow decode, a
     // late stylesheet, a publisher script. Cheap, and bounded.
     const timers = [250, 1200, 3000].map((ms) => window.setTimeout(pass, ms));
+    // Whatever the timers could not measure while the page was in the
+    // background, measure the moment it is on screen again.
+    document.addEventListener('visibilitychange', pass);
 
     return () => {
       alive = false;
       for (const t of timers) window.clearTimeout(t);
+      document.removeEventListener('visibilitychange', pass);
       for (const img of pending) {
         img.removeEventListener('load', pass);
         img.removeEventListener('error', pass);
@@ -908,13 +1015,60 @@ export function ReaderPage() {
     restoreOffset(currentOffsetRef.current);
   }, [chromeInset.top, chromeInset.bottom, prefs.mode, restoreOffset]);
 
-  // Resize/orientation re-pagination: keep the reader on the sentence they
-  // were on. Never page-zero, never a progress write.
+  /**
+   * Resize and rotation re-pagination: keep the reader on the sentence they
+   * were on. Never page-zero, never a progress write.
+   *
+   * Watched on the ELEMENT, not only on the window. `resize` is a statement
+   * about the window, and the one thing that has to be true before the page
+   * can be re-measured is that the page box has the new size - which on
+   * iPadOS it does not yet when the event arrives. A ResizeObserver on the
+   * viewport fires when that box actually changes, which is the fact the
+   * measurement depends on; the window events are kept because they arrive
+   * first and start the settle, and because a box that ends up the same size
+   * makes every pass a no-op anyway.
+   */
   useEffect(() => {
-    const onResize = () => restoreOffset(currentOffsetRef.current);
+    const viewport = viewportRef.current;
+    const onResize = () => scheduleRelayout();
     window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, [restoreOffset]);
+    window.addEventListener('orientationchange', onResize);
+    window.visualViewport?.addEventListener('resize', onResize);
+    const ro = viewport ? new ResizeObserver(onResize) : null;
+    if (viewport) ro?.observe(viewport);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
+      window.visualViewport?.removeEventListener('resize', onResize);
+      ro?.disconnect();
+    };
+  }, [scheduleRelayout]);
+
+  /**
+   * Coming back to the page, from another app or out of the back/forward
+   * cache: measure before anything is read from geometry.
+   *
+   * A tablet rotated while ReadPort was in the background comes back to a
+   * viewport it has never measured and no resize event to say so - the
+   * resize fired against a page that was not rendering, and `clientWidth`
+   * answered with whatever it had. Paginated mode is re-landed on return
+   * whether or not the size changed, because the transform that decides
+   * which page is showing is the one thing a restore cannot infer.
+   */
+  useEffect(() => {
+    const onReturn = () => {
+      if (document.hidden) return;
+      const owed = relayoutPendingRef.current;
+      relayoutPendingRef.current = false;
+      scheduleRelayout(owed || (prefs.mode === 'paginated' && !paginationFailed));
+    };
+    document.addEventListener('visibilitychange', onReturn);
+    window.addEventListener('pageshow', onReturn);
+    return () => {
+      document.removeEventListener('visibilitychange', onReturn);
+      window.removeEventListener('pageshow', onReturn);
+    };
+  }, [scheduleRelayout, prefs.mode, paginationFailed]);
 
   // Follow the system appearance for the 'auto' theme.
   useEffect(() => {
@@ -1096,12 +1250,32 @@ export function ReaderPage() {
           }
           currentOffsetRef.current = charOffset;
           if (prefs.mode === 'paginated' && !paginationFailed) {
-            goToPage(pageForOffset(charOffset), 'seek', false);
+            // Measure before landing. This was the one lander that asked
+            // which page an offset is on without first re-laying the chapter
+            // out for the size the screen is now - so a mark opened after a
+            // rotation, or after a settle changed the page count, was placed
+            // against the layout the reader had left, and the jump arrived a
+            // page short of the highlight.
+            restoreOffset(charOffset);
           } else {
             const box = scrollBox();
             if (box) scrollLineTo(box, map, charOffset);
           }
           if (extra.mark) setResumeMark({ spineIdx, charOffset, opacity: 1 });
+          // And check it arrived. The search path has verified its landing on
+          // the next frame for as long as it has existed - the layout can
+          // still be settling when a sheet closes and hands the viewport
+          // back - and a jump to a mark is the same act with the same risk.
+          const landed = charOffset;
+          requestAnimationFrame(() => {
+            const here = textMapRef.current;
+            const box = (
+              prefs.mode === 'paginated' && !paginationFailed
+                ? pagesRef.current
+                : scrollerRef.current
+            )?.getBoundingClientRect();
+            if (here && !spanOnScreen(here, landed, box)) restoreOffsetRef.current(landed);
+          });
         }
       } else {
         chapterLoadingRef.current = true;
@@ -1119,8 +1293,7 @@ export function ReaderPage() {
       spineIdx,
       prefs.mode,
       paginationFailed,
-      goToPage,
-      pageForOffset,
+      restoreOffset,
       sentences,
       id,
       scrollBox,
@@ -1316,7 +1489,9 @@ export function ReaderPage() {
       if (paged) {
         if (!layoutRef.current) return false;
         const target = pageForOffset(cue.charStart);
-        if (target >= pageCount) return false;
+        // No page to name is no relocation: the caller tells the reader that
+        // the voice could not be found rather than moving them anywhere.
+        if (target === null || target >= pageCount) return false;
         // Explicit relocation is atomic, not an attachment to a page mid-slide.
         const transition = content.style.transition;
         content.style.transition = 'none';
@@ -1429,7 +1604,13 @@ export function ReaderPage() {
     if (onScreen) return;
     if (paged) {
       const target = pageForOffset(cue.charStart);
-      if (target !== page) goToPage(target, 'heartbeat', false);
+      if (target !== null && target !== page) goToPage(target, 'heartbeat', false);
+      // The page is no longer where the chapter landed, and the tracked
+      // offset has to say so - the same thing the scroll branch below has
+      // always done. Without it the next relayout (an image arriving, a
+      // rotation, coming back to the tab) reads a position the voice left
+      // long ago and yanks the reader back to it mid-sentence.
+      if (target !== null) currentOffsetRef.current = cue.charStart;
     } else {
       const range = rangeForSpan(map, cue.charStart, cue.charStart + 1);
       if (range && box) {
@@ -1868,8 +2049,13 @@ export function ReaderPage() {
   // Selection handling.
   useEffect(() => {
     const onUp = () => {
-      if (sheetRef.current === 'note') return;
+      // Cleared before the note sheet can send this home. While the sheet is
+      // open `measure` hides the toolbar anyway (it checks the sheet), so the
+      // flag has no work to do there - but leaving it set outlived the sheet,
+      // and a flag that says "the selection is still moving" hides the
+      // toolbar unconditionally for as long as it is set.
       selMenuSettlingRef.current = false;
+      if (sheetRef.current === 'note') return;
       const sel = document.getSelection();
       const content = contentRef.current;
       const map = textMapRef.current;
@@ -1902,7 +2088,24 @@ export function ReaderPage() {
       // A different span is a different selection: a long-press on other
       // text while a docked toolbar is up must not inherit the dock.
       const span = `${start}:${end}`;
-      if (selSpanRef.current !== span) selMenuModeRef.current = null;
+      if (selSpanRef.current !== span) {
+        selMenuModeRef.current = null;
+        // Decided once per selection, from the gesture that made it, and the
+        // gesture is CONSUMED so it can never describe a later one. A
+        // selection that no pointer made - the keyboard, Select All from the
+        // platform's own menu, a handle dragged by the OS - gets the device's
+        // answer instead, which is the safe way round: room reserved and not
+        // needed only moves ReadPort's toolbar down a little, while room
+        // needed and not reserved puts it exactly where the platform wanted
+        // to draw Look Up and Translate, and the reader stops being offered
+        // them at all.
+        const pointer = lastPointerTypeRef.current;
+        lastPointerTypeRef.current = null;
+        selCoarseRef.current =
+          pointer === null
+            ? (window.matchMedia?.('(any-pointer: coarse)').matches ?? false)
+            : pointer !== 'mouse';
+      }
       selSpanRef.current = span;
       setSelection({
         start,
@@ -1930,6 +2133,12 @@ export function ReaderPage() {
       selMenuSettlingRef.current = true;
       const sel = document.getSelection();
       if (!sel || sel.isCollapsed) {
+        // A pointer that has come and gone leaving nothing selected has
+        // selected nothing, so it says nothing about whatever is selected
+        // next. Only at pointerup: the press that BEGINS a drag-selection
+        // collapses the selection first, and forgetting the pointer there
+        // would throw away the one fact worth keeping about a trackpad drag.
+        if (event.type === 'pointerup') lastPointerTypeRef.current = null;
         if (settle) clearTimeout(settle);
         setSelection(null);
         return;
@@ -2017,11 +2226,20 @@ export function ReaderPage() {
   /** The span the toolbar was placed for; a new span forgets a dock. */
   const selSpanRef = useRef<string | null>(null);
   /**
-   * What made the last selection. The media query says whether this device
+   * What made the CURRENT selection. The media query says whether this device
    * HAS a coarse pointer; an iPad with a trackpad has both, and a selection
    * dragged with the trackpad gets no native edit menu to keep clear of.
+   *
+   * Cleared with the selection it describes. It used to be written once and
+   * never reset, so a single trackpad selection made every later one on that
+   * device look like a mouse selection: the placer stopped reserving room for
+   * the platform's own Look Up / Translate menu, and ReadPort's toolbar was
+   * placed exactly where iOS wanted to put it. The reader sees their own
+   * menu stop appearing, and nothing on the page says why.
    */
   const lastPointerTypeRef = useRef<string | null>(null);
+  /** Whether the CURRENT selection needs room kept for the platform's menu. */
+  const selCoarseRef = useRef(false);
   /** Whether the toolbar is actually on screen, which the return pill yields to. */
   const [toolbarShown, setToolbarShown] = useState(false);
 
@@ -2071,13 +2289,28 @@ export function ReaderPage() {
       selMenuModeRef.current = null;
       selSpanRef.current = null;
       selMenuSettlingRef.current = false;
+      lastPointerTypeRef.current = null;
       setToolbarShown(false);
       return;
     }
     const el = selMenuRef.current;
     if (!el) return;
     let raf = 0;
-    let moving = false;
+    /**
+     * Transitions in flight on the content, and the latest moment one of
+     * them can still be running.
+     *
+     * A `transitionrun` with no matching end - a transition cancelled by a
+     * node leaving the document, one whose property stops being animated -
+     * used to leave this on forever, and "on" means measure and reposition
+     * the toolbar on EVERY frame for the rest of the selection's life. Each
+     * of those frames forces layout and writes to the toolbar's style, which
+     * on iOS is also how you get the platform to give up on drawing its own
+     * edit menu. Bounded: the longest thing that moves here is a 200ms page
+     * turn.
+     */
+    let moving = 0;
+    let movingUntil = 0;
     const mq = window.matchMedia('(any-pointer: coarse)');
     const measure = () => {
       const sel = document.getSelection();
@@ -2121,9 +2354,10 @@ export function ReaderPage() {
         topBoundary: topChromeRef.current?.getBoundingClientRect().bottom ?? viewport.top,
         bottomBoundary: bottomChromeRef.current?.getBoundingClientRect().top ?? viewport.bottom,
         // A mouse or trackpad selection gets no native menu, on any device;
-        // a finger or a pencil does. Unknown, the device's word stands.
-        coarse:
-          lastPointerTypeRef.current === null ? mq.matches : lastPointerTypeRef.current !== 'mouse',
+        // a finger or a pencil does. Latched when this selection was made
+        // (see `onUp`), so it describes THIS selection and not the last
+        // pointer to touch the chapter.
+        coarse: selCoarseRef.current,
         previous: selMenuModeRef.current,
       };
       let placement = placeSelectionToolbar(input);
@@ -2154,15 +2388,16 @@ export function ReaderPage() {
       raf = requestAnimationFrame(() => {
         raf = 0;
         measure();
-        if (moving) schedule();
+        if (moving > 0 && performance.now() < movingUntil) schedule();
       });
     };
     const start = () => {
-      moving = true;
+      moving++;
+      movingUntil = performance.now() + 600;
       schedule();
     };
     const end = () => {
-      moving = false;
+      moving = Math.max(0, moving - 1);
       schedule();
     };
     measure();
@@ -2246,6 +2481,10 @@ export function ReaderPage() {
     let alive = true;
     const settle = () => {
       if (!alive || scrollBox() !== scroller) return;
+      // A backgrounded page reports the geometry it had when it went away,
+      // and landing against that puts the reader somewhere they never were.
+      // Deferred to the visibility listener below rather than dropped.
+      if (document.hidden) return;
       if (manualScrollEpoch.current !== epoch) return;
       if (Math.abs(currentOffsetRef.current - landing) > 40) return;
       const map = textMapRef.current;
@@ -2260,9 +2499,11 @@ export function ReaderPage() {
       img.addEventListener('error', settle);
     }
     const timers = [120, 600, 1600].map((ms) => window.setTimeout(settle, ms));
+    document.addEventListener('visibilitychange', settle);
     return () => {
       alive = false;
       for (const t of timers) window.clearTimeout(t);
+      document.removeEventListener('visibilitychange', settle);
       for (const img of pending) {
         img.removeEventListener('load', settle);
         img.removeEventListener('error', settle);
@@ -2293,6 +2534,43 @@ export function ReaderPage() {
   // A mark's popover belongs to the mark, not to the page: turning the page or
   // changing chapter must not leave it hanging over unrelated text.
   useEffect(() => setMarkPop(null), [spineIdx, page]);
+
+  /**
+   * Which contents row the reader is actually on.
+   *
+   * Not "every row pointing at this spine item". A chapter is often several
+   * rows - the chapter itself and its sections, which differ only by their
+   * fragment - and marking all of them says nothing about where in the
+   * chapter the reader is. Each row's fragment is resolved to a character
+   * offset in the chapter as it is rendered, and the row marked is the last
+   * one at or before where they are. Computed when the sheet opens, because
+   * resolving a fragment means looking in the document.
+   */
+  const [currentTocRow, setCurrentTocRow] = useState<number | null>(null);
+  useEffect(() => {
+    if (sheet !== 'toc' || !manifest) return;
+    const content = contentRef.current;
+    const map = textMapRef.current;
+    const here = currentOffsetRef.current;
+    let row: number | null = null;
+    let best = -1;
+    let firstInChapter: number | null = null;
+    manifest.toc.forEach((entry, i) => {
+      if (entry.spineIdx !== spineIdx) return;
+      if (firstInChapter === null) firstInChapter = i;
+      const at =
+        entry.fragment && content && map
+          ? (offsetForFragment(content, map, entry.fragment) ?? 0)
+          : 0;
+      if (at <= here && at > best) {
+        best = at;
+        row = i;
+      }
+    });
+    // A chapter whose only rows are sections deeper in it is still the
+    // chapter the reader is in, so say so rather than marking nothing.
+    setCurrentTocRow(row ?? firstInChapter);
+  }, [sheet, manifest, spineIdx, liveOffset]);
 
   const patchAnnotation = useCallback(
     async (annId: string, body: { color?: HighlightColor; note?: string }): Promise<boolean> => {
@@ -2557,7 +2835,15 @@ export function ReaderPage() {
         <span className="reader-title">{chapterTitle}</span>
         <button
           className="icon-btn"
-          onClick={() => setSheet('toc')}
+          // The tab is said out loud, not left to whatever it was set to
+          // last. One sheet holds both lists, `contentsTab` outlives every
+          // close, and the button labelled Contents used to open on Marks
+          // because the reader had once opened a bookmark from the caret
+          // beside the ribbon - possibly days earlier.
+          onClick={() => {
+            setContentsTab('toc');
+            setSheet('toc');
+          }}
           aria-label={t('reader.chrome.contents')}
         >
           <IconToc />
@@ -3167,18 +3453,20 @@ export function ReaderPage() {
             <p>{t('reader.contents.noToc')}</p>
           )}
           {contentsTab === 'toc' &&
-            manifest.toc.map((t, i) => (
+            // Named `entry`, not `t`: the parameter used to shadow the
+            // translation function for the whole of this row.
+            manifest.toc.map((entry, i) => (
               <button
                 key={i}
                 className="list-row"
-                style={{ paddingInlineStart: 16 + t.depth * 16 }}
-                aria-current={t.spineIdx === spineIdx ? 'true' : undefined}
+                style={{ paddingInlineStart: 16 + entry.depth * 16 }}
+                aria-current={i === currentTocRow ? 'true' : undefined}
                 onClick={() => {
                   setSheet('none');
-                  gotoChapter(t.spineIdx, 0, 'seek', t.fragment ?? undefined, 'toc');
+                  gotoChapter(entry.spineIdx, 0, 'seek', entry.fragment ?? undefined, 'toc');
                 }}
               >
-                <span className="grow">{t.title}</span>
+                <span className="grow">{entry.title}</span>
               </button>
             ))}
         </Sheet>

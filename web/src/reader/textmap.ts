@@ -136,18 +136,21 @@ export function hintForOffset(map: TextMap, offset: number): number {
 }
 
 /**
- * Node indices to try, nearest the hint first: forward from it, then backward.
- * Forward first because a page turn is far more often onward than back.
- */
-function* visitOrder(count: number, hint: number): Generator<number> {
-  const start = Math.max(0, Math.min(hint, count - 1));
-  for (let i = start; i < count; i++) yield i;
-  for (let i = start - 1; i >= 0; i--) yield i;
-}
-
-/**
  * First visible text offset inside a viewport box (paginated page or scroll
- * viewport). Walks text nodes and returns the first whose rect intersects.
+ * viewport).
+ *
+ * The answer is the first offset in DOCUMENT order that is on the page, which
+ * is not the same as the first one the scan happens to reach. The scan starts
+ * at the hint and walks outward - forward first, because a page turn is far
+ * more often onward than back - and it used to return whatever it found
+ * first. Going backward that is the LAST intersecting node, not the first: a
+ * backward page turn, or a scroll upward, reported an offset a whole page or
+ * spread beyond where the reader actually was, and that wrong offset was then
+ * stored and sent to the server as their place in the book.
+ *
+ * So both directions are searched and the earlier one wins. The cost of the
+ * common case is unchanged: forward finds the answer in a handful of nodes,
+ * and the backward walk stops at the first node above the page.
  */
 export function firstVisibleOffset(
   map: TextMap,
@@ -163,43 +166,63 @@ export function firstVisibleOffset(
    */
   hint = 0,
 ): number | null {
+  const count = map.nodes.length;
+  if (count === 0) return null;
   const probe = document.createRange();
-  const order = visitOrder(map.nodes.length, hint);
-  for (const i of order) {
+  const inside = (r: { left: number; right: number; top: number; bottom: number }) =>
+    r.right > box.left + 1 && r.left < box.right - 1 && r.bottom > box.top && r.top < box.bottom;
+  /** Whitespace between blocks is on no page in particular. */
+  const blank = (i: number) => !map.nodes[i]!.node.data.trim();
+  /** The first character of node `i` inside the box, or null if none is. */
+  const offsetIn = (i: number): number | null => {
     const entry = map.nodes[i]!;
-    if (!entry.node.data.trim()) continue;
     probe.selectNodeContents(entry.node);
-    const rects = probe.getClientRects();
-    for (const r of rects) {
+    let hit = false;
+    for (const r of probe.getClientRects()) {
       if (r.width === 0 && r.height === 0) continue;
-      const cx = Math.max(box.left, Math.min(r.left + 1, box.right));
-      if (
-        r.right > box.left + 1 &&
-        r.left < box.right - 1 &&
-        r.bottom > box.top &&
-        r.top < box.bottom
-      ) {
-        // Refine to the first character within the box on this rect's line.
-        const len = entry.node.data.length;
-        for (let i = 0; i < len; i += 8) {
-          probe.setStart(entry.node, i);
-          probe.setEnd(entry.node, Math.min(len, i + 1));
-          const cr = probe.getBoundingClientRect();
-          if (
-            cr.right > box.left + 1 &&
-            cr.left < box.right - 1 &&
-            cr.bottom > box.top &&
-            cr.top < box.bottom
-          ) {
-            return entry.start + i;
-          }
-        }
-        void cx;
-        return entry.start;
+      if (inside(r)) {
+        hit = true;
+        break;
       }
     }
+    if (!hit) return null;
+    // Refine to the first character within the box: a paragraph that begins
+    // on the previous page starts here at whichever character wrapped onto
+    // this one.
+    const len = entry.node.data.length;
+    for (let c = 0; c < len; c += 8) {
+      probe.setStart(entry.node, c);
+      probe.setEnd(entry.node, Math.min(len, c + 1));
+      if (inside(probe.getBoundingClientRect())) return entry.start + c;
+    }
+    return entry.start;
+  };
+
+  const start = Math.max(0, Math.min(hint, count - 1));
+  let ahead: number | null = null;
+  for (let i = start; i < count; i++) {
+    if (blank(i)) continue;
+    const off = offsetIn(i);
+    if (off !== null) {
+      ahead = off;
+      break;
+    }
   }
-  return null;
+  let earlier: number | null = null;
+  for (let i = start - 1; i >= 0; i--) {
+    if (blank(i)) continue;
+    const off = offsetIn(i);
+    if (off !== null) {
+      earlier = off;
+      continue;
+    }
+    // What is on a page is contiguous in document order, so the first node
+    // above the run ends the search - once anything at all has been found.
+    // Until then the walk keeps going: after a backward turn the hint names
+    // a node beyond the whole page, and nothing ahead of it is on screen.
+    if (earlier !== null || ahead !== null) break;
+  }
+  return earlier ?? ahead;
 }
 
 /**

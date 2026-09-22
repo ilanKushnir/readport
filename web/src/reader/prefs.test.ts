@@ -6,6 +6,7 @@ import {
   loadPrefs,
   pageCountFor,
   savePrefs,
+  TWO_COLUMN_MIN_WIDTH,
 } from './prefs';
 
 const store = new Map<string, string>();
@@ -66,6 +67,54 @@ describe('page layout', () => {
   it('respects an explicit column preference', () => {
     expect(computePageLayout(1440, 24, 'one').columns).toBe(1);
     expect(computePageLayout(700, 24, 'two').columns).toBe(2);
+  });
+
+  it("'auto' crosses the two-column threshold when a tablet is rotated", () => {
+    // The sizes a rotation actually moves between. Portrait is one column and
+    // landscape is two on every tablet ReadPort ships to; the layout has
+    // always known this, and what was missing was anyone asking it again
+    // after the rotation. Both are asserted so a change to the threshold has
+    // to be a deliberate one.
+    for (const [portrait, landscape] of [
+      [744, 1133], // iPad mini
+      [820, 1180], // iPad
+      [834, 1194], // iPad Pro 11"
+      [768, 1024], // the classic 4:3 tablet
+    ]) {
+      expect(computePageLayout(portrait!, 24, 'auto').columns).toBe(1);
+      expect(computePageLayout(landscape!, 24, 'auto').columns).toBe(2);
+    }
+    // The 13" iPad is 1024pt wide standing up, so it is a spread in both
+    // orientations and a rotation changes the page width but not the count.
+    expect(computePageLayout(1024, 24, 'auto').columns).toBe(2);
+    expect(computePageLayout(1366, 24, 'auto').columns).toBe(2);
+    // A phone stays one column in both orientations: landscape is far short
+    // of the threshold, and two columns of 20 characters is not a spread.
+    expect(computePageLayout(390, 24, 'auto').columns).toBe(1);
+    expect(computePageLayout(844, 24, 'auto').columns).toBe(1);
+    // Exactly at the threshold, and one pixel under it.
+    expect(computePageLayout(TWO_COLUMN_MIN_WIDTH, 24, 'auto').columns).toBe(2);
+    expect(computePageLayout(TWO_COLUMN_MIN_WIDTH - 1, 24, 'auto').columns).toBe(1);
+  });
+
+  it('a page index is only meaningful against the layout it was measured in', () => {
+    // Which page a character is on is `x / stride`, and the stride is the
+    // page box's width - so measuring against the layout the reader has
+    // ROTATED AWAY FROM names a different page. Not a factor of two: the
+    // single-page gap already carries the travel between pages, so one and
+    // two columns at the same width have almost the same stride. What moves
+    // the answer is the width, which is exactly what a rotation changes.
+    const portrait = computePageLayout(834, 24, 'auto');
+    const landscape = computePageLayout(1194, 24, 'auto');
+    expect(portrait.columns).toBe(1);
+    expect(landscape.columns).toBe(2);
+    const x = 5 * landscape.stride + 10;
+    expect(Math.floor(x / landscape.stride)).toBe(5);
+    expect(Math.floor(x / portrait.stride)).not.toBe(5);
+    // And the page COUNT moves with it, which is what a stale clamp truncates
+    // against: the same chapter is fewer, wider pages once it is landscape.
+    const scrollWidth = 20 * portrait.stride;
+    expect(pageCountFor(scrollWidth, landscape)).toBeLessThan(pageCountFor(scrollWidth, portrait));
   });
 
   it('derives the page count from the content scrollWidth', () => {

@@ -1408,9 +1408,39 @@ body:has(.app-body) {
   cursor: pointer;
   font-size: 14.5px;
   color: var(--rp-text);
+  /* Anchors the marker on the row the reader is on (below). */
+  position: relative;
 }
 .list-row:last-child {
   border-block-end: 0;
+}
+/* Where you are, in a list of places you could go.
+   The reader's contents list has emitted aria-current for the current
+   chapter for a long time and nothing was ever drawn for it, so the list
+   answered "which chapters exist" and not "which one am I reading". Marked
+   with an edge rule rather than a fill: the row is still a button, the list
+   is still scanned by title, and one row in it is where you already are. */
+.list-row[aria-current='true'] {
+  color: var(--rp-accent);
+  font-weight: 650;
+}
+.list-row[aria-current='true']::before {
+  content: '';
+  position: absolute;
+  inset-block: 4px;
+  inset-inline-start: 0;
+  width: 3px;
+  border-start-end-radius: 3px;
+  border-end-end-radius: 3px;
+  background: var(--rp-accent);
+}
+/* Colour is never the only signal: in a forced-colours theme the accent is
+   overridden away, and the rule has to stay visible on its own. */
+@media (forced-colors: active) {
+  .list-row[aria-current='true']::before {
+    background: Highlight;
+    width: 4px;
+  }
 }
 .list-row:hover {
   background: var(--rp-surface);

@@ -372,14 +372,14 @@ async function run() {
         note('a11y', 'Shift+Tab from the dialog container did not wrap to the last control');
       } else console.log('  focus trap: container Shift+Tab wraps to last control');
     }
-    await page.click('.sheet button.chip:has-text("Night")');
+    await page.click('.sheet button[aria-label="Night theme"]');
     await page.waitForTimeout(250);
     await page.click('.sheet button[aria-label=Close]');
     await page.waitForTimeout(300);
     await shot(page, `${vp.name}-07-reader-night`);
     // back to paper for later shots
     await page.click('button[aria-label="Reading settings"]');
-    await page.click('.sheet button.chip:has-text("Paper")');
+    await page.click('.sheet button[aria-label="Paper theme"]');
     await page.click('.sheet button[aria-label=Close]');
 
     // TOC
@@ -418,7 +418,7 @@ async function run() {
         }, readerBookId);
       await page.click('button[aria-label="Reading settings"]');
       await page.waitForSelector('.sheet');
-      await page.click('.sheet button.chip:has-text("Continuous scroll")');
+      await page.click('.sheet .segmented button:has-text("Scroll")');
       await page.click('.sheet button[aria-label=Close]');
       // Short demo chapters: shrink the viewport so the chapter genuinely
       // scrolls, making the stale-vs-live distinction measurable.
@@ -457,7 +457,7 @@ async function run() {
       // the sweep.
       await page.click('button[aria-label="Reading settings"]');
       await page.waitForSelector('.sheet');
-      await page.click('.sheet button.chip:has-text("Pages")');
+      await page.click('.sheet .segmented button:has-text("Pages")');
       await page.click('.sheet button[aria-label=Close]');
       await page.waitForTimeout(400);
       await page.click('button[aria-label="Table of contents"]');
