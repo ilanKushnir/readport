@@ -1288,5 +1288,248 @@ const messages: Record<string, string> = {
   'whatsnew.done': 'Începe să citești',
   'library.readingNow.resetEdition':
     '{kind, select, ebook {Resetează progresul cărții electronice…} other {Resetează progresul cărții audio…}}',
+  // notes
+  'notes.openInBook': 'Deschide în carte',
+  'notes.where': '{chapter} · {pct}',
+  'notes.books.label': 'Cărți cu marcaje',
+  'notes.book.highlights':
+    '{n, plural, one {# evidențiere} few {# evidențieri} other {# de evidențieri}}',
+  'notes.book.notes': '{n, plural, one {# notiță} few {# notițe} other {# de notițe}}',
+  'notes.book.bookmarks':
+    '{n, plural, one {# semn de carte} few {# semne de carte} other {# de semne de carte}}',
+  'notes.book.lastMarked': 'Marcat ultima dată {when}',
+  'notes.book.colours': 'Culori folosite: {list}',
+  'notes.results.count':
+    '{n, plural, one {# marcaj corespunde} few {# marcaje corespund} other {# de marcaje corespund}}',
+  'notes.colour.amber': 'chihlimbariu',
+  'notes.colour.rose': 'roz',
+  'notes.colour.plum': 'prun',
+  'notes.colour.sky': 'azuriu',
+  'notes.colour.sand': 'nisipiu',
+  'notes.allBooks': 'Toate cărțile',
+  'notes.bookPage': 'Pagina cărții',
+  'notes.bookLoadFailed': 'Nu s-a putut încărca această carte.',
+  'notes.bookEmptyTitle': 'Nimic marcat încă în această carte',
+  'notes.bookEmptyBody':
+    'Selectează un pasaj în timp ce citești pentru a-l evidenția sau a scrie o notiță, și atinge panglica pentru a marca o pagină.',
+  'notes.readBook': '{kind, select, audio {Deschide cartea audio} other {Deschide cartea}}',
+  'notes.sort': 'Sortare',
+  'notes.sort.position': 'Poziție',
+  'notes.sort.newest': 'Recente',
+  'notes.sort.color': 'Culoare',
+  'notes.marksLabel': 'Marcaje',
+  'notes.exportPdf': 'Exportă ca PDF…',
+  'notes.export.documentTitle': '{title} – Evidențieri și notițe',
+  'notes.export.heading': 'Evidențieri și notițe',
+  'notes.export.from': 'Exportat din {app}',
+  'notes.export.scope.kind':
+    '{kind, select, highlight {Doar evidențieri} note {Doar notițe} bookmark {Doar semne de carte} other {Tot ce e marcat}}',
+  'notes.export.scope.colours': 'Doar evidențieri în {list}',
+  'notes.export.print': 'Printează / Salvează ca PDF',
+  'notes.export.back': 'Înapoi la marcaje',
+  'notes.export.hint':
+    'O previzualizare a paginilor așa cum vor fi printate. Printează / Salvează ca PDF deschide fereastra de printare; alege „Salvează ca PDF” ca destinație pentru a păstra un fișier.',
+  'notes.export.empty': 'Nimic de exportat cu aceste filtre.',
+  // stats
+  'stats.figure.streakNone': 'cinci minute pe zi sunt de ajuns pentru a începe una',
+  // nav
+  'nav.friends': 'Prieteni',
+  'nav.friendsAttention': 'Cereri de prietenie sau recomandări în așteptare',
+
+  // shell
+  'shell.apps.heading': 'Aplicații',
+  'shell.apps.open': 'Deschide {name}',
+
+  // settings
+  'settings.apps.title': 'Aplicații conectate',
+  'settings.apps.lede':
+    'Celelalte aplicații de lângă această bibliotecă. Adresele lor apar ca dale în josul rafturilor, pentru toată lumea de pe acest server.',
+  'settings.apps.empty':
+    'Nicio aplicație încă. Adaugă-le pe cele lângă care stă această bibliotecă.',
+  'settings.apps.add': 'Adaugă o aplicație',
+  'settings.apps.kind': 'Aplicație',
+  'settings.apps.name': 'Nume',
+  'settings.apps.url': 'Adresă',
+  'settings.apps.urlPlaceholder': 'https://books.example.com',
+  'settings.apps.remove': 'Elimină {name}',
+  'settings.apps.custom': 'Altceva',
+  'settings.apps.smart': 'Integrare inteligentă',
+  'settings.apps.smartHint':
+    'Citirea din această aplicație prin propriul ei API - progres comun, trimiteri dintr-un clic, tot pachetul. Nu e construită încă; adresa e doar un link deocamdată.',
+  'settings.apps.soon': 'În curând',
+  'settings.apps.saved': 'Aplicații salvate.',
+  'settings.apps.invalidUrl': 'Adresa trebuie să înceapă cu http:// sau https://.',
+
+  // stats
+  'stats.title': 'Lectura ta',
+
+  // nav
+  'nav.stats': 'Statistici',
+
+  // stats
+  'stats.lead.week':
+    '{seconds, select, zero {Nimic încă săptămâna aceasta.} other {Săptămâna aceasta: {time} în {sittings, plural, one {# ședință} few {# ședințe} other {# de ședințe}}, în {days, plural, one {# zi} few {# zile} other {# de zile}} din șapte.}}',
+  'stats.lead.empty': 'Nimic de arătat încă.',
+  'stats.lead.emptyBody':
+    'Citește sau ascultă o vreme și revino. Fiecare ședință e numărată din clipa în care deschizi o carte, pe orice dispozitiv.',
+  'stats.lead.openLibrary': 'Deschide biblioteca',
+  'stats.error': 'Statisticile nu au putut fi încărcate. Verifică conexiunea la server.',
+  'stats.olderServer':
+    'Acest server e cu o versiune în urmă și nu ține încă evidența statisticilor de citire.',
+  'stats.figure.thisWeek': 'Săptămâna aceasta',
+  'stats.figure.sittings': 'Ședințe',
+  'stats.figure.streak': 'Serie',
+  'stats.figure.streakDays': '{n, plural, one {# zi} few {# zile} other {# de zile}}',
+  'stats.figure.streakToday': 'citit azi',
+  'stats.figure.streakKeep': 'citește azi ca s-o păstrezi',
+  'stats.figure.longest':
+    'Cea mai lungă serie: {n, plural, one {# zi} few {# zile} other {# de zile}}',
+  'stats.when.title': 'Când citești',
+  'stats.when.lede': 'Fiecare ședință din ultimele {days} zile, pe zi a săptămânii și oră.',
+  'stats.when.less': 'mai puțin',
+  'stats.when.more': 'mai mult',
+  'stats.when.cell': '{day}, {hour}: {time}',
+  'stats.when.weekdays': 'Zile lucrătoare',
+  'stats.when.weekends': 'Weekend',
+  'stats.when.split':
+    '{weekdayPct}% din lectura ta e în zilele lucrătoare, {weekendPct}% în weekend.',
+  'stats.best.title': 'Cel mai bun moment al tău pentru citit',
+  'stats.best.collecting':
+    'Încă se adună date. După încă {days, plural, one {# zi} few {# zile} other {# de zile}} cu o carte deschisă, această pagină îți va spune când citești cel mai bine.',
+  'stats.best.collectingSittings':
+    'Încă se adună date. Încă vreo câteva ședințe și această pagină îți va spune când citești cel mai bine.',
+  'stats.best.window': 'Citești cel mai bine între {from} și {to}.',
+  'stats.best.sittingLonger':
+    'Ședințele de atunci durează circa {minutes} minute, cu {pct}% mai mult decât media ta.',
+  'stats.best.sittingUsual':
+    'Ședințele de atunci durează circa {minutes} minute, cam cât media ta.',
+  'stats.best.sittingShorter':
+    'Ședințele de atunci durează circa {minutes} minute, puțin mai puțin decât media ta - dar sunt mai multe.',
+  'stats.best.paceFaster': 'Tot atunci treci printr-o carte cu {pct}% mai repede.',
+  'stats.best.paceUsual': 'Ritmul tău de atunci e cam cel obișnuit.',
+  'stats.best.paceSlower':
+    'Citești puțin mai încet atunci, ceea ce e adesea semn că citești mai atent.',
+  'stats.best.advice':
+    'Dacă vrei să citești mai mult, aceea e ora de apărat. Tot restul de pe această pagină e descriere; asta e singura sugestie.',
+  'stats.best.share': '{pct}% din toată lectura ta se întâmplă atunci.',
+  'stats.split.title': 'Citit și ascultat',
+  'stats.split.reading': 'Citit',
+  'stats.split.listening': 'Ascultat',
+  'stats.split.words':
+    '{n, plural, one {# cuvânt citit} few {# cuvinte citite} other {# de cuvinte citite}}',
+  'stats.split.wordsUnknown':
+    'Cuvintele sunt numărate pentru cărțile a căror lungime o știe serverul; niciuna dintre cele din săptămâna asta nu a fost.',
+  'stats.split.pace': 'circa {n} cuvinte pe minut',
+  'stats.split.sitting': 'O ședință obișnuită durează {time}; cea mai lungă a fost {longest}.',
+  'stats.books.title': 'În curs',
+  'stats.books.lede': 'Fiecare carte pe care ai deschis-o în ultimele {days} zile.',
+  'stats.books.timeIn': '{time} până acum',
+  'stats.books.left': 'circa {time} rămase în ritmul tău',
+  'stats.books.finished': 'Terminată',
+  'stats.books.finishedOn': 'Terminată {date}',
+  'stats.books.unknownTitle': 'O carte care nu mai e în bibliotecă',
+  'stats.books.lastRead': 'ultima dată {when}',
+  'stats.weeks.title': 'Ultimele opt săptămâni',
+  'stats.weeks.bar': 'Săptămâna din {date}: {time}',
+  'stats.weeks.average': 'În medie {time} pe săptămână',
+  'stats.alltime.title': 'Tot timpul',
+  'stats.alltime.since': 'Din {date}',
+  'stats.alltime.hours': 'Ore',
+  'stats.alltime.sittings': 'Ședințe',
+  'stats.alltime.finished': 'Cărți terminate',
+  'stats.alltime.truncated':
+    'Sunt afișate cele mai recente ședințe; cele mai vechi contează în continuare în totaluri.',
+  'stats.strip.title': 'Săptămâna ta',
+  'stats.strip.empty': 'Statisticile tale de citit vor apărea aici.',
+  'stats.strip.open': 'Vezi-ți statisticile',
+
+  // friends
+  'friends.bar.button':
+    '{n, plural, one {# prieten citește asta} few {# prieteni citesc asta} other {# de prieteni citesc asta}}',
+  'friends.bar.title': 'Prieteni în această carte',
+  'friends.bar.lede': 'Unde e fiecare dintre ei și dacă să-i arăți pe bara ta.',
+  'friends.bar.finished': 'A terminat-o',
+  'friends.bar.atChapter': '{chapter} · {pct}',
+  'friends.bar.together': 'Exact acolo unde ești',
+  'friends.bar.ahead': '{pct}% înaintea ta',
+  'friends.bar.behind': '{pct}% în urma ta',
+  'friends.bar.show': 'Arată {name} pe bara mea de progres',
+  'friends.title': 'Prieteni',
+  'friends.lede':
+    'Toată lumea de aici împarte deja biblioteca. Un prieten poate vedea și unde ești într-o carte și îți poate pune una în față.',
+  'friends.loadFailed': 'Prietenii tăi nu au putut fi încărcați - verifică conexiunea.',
+  'friends.empty.title': 'Nu mai e nimeni altcineva aici încă',
+  'friends.empty.body':
+    'Prietenii sunt alte conturi de pe acest server. Un administrator poate adăuga persoane din Setări → Persoane.',
+  'friends.empty.openPeople': 'Deschide Persoane',
+  'friends.inbox.title': 'Recomandări pentru tine',
+  'friends.inbox.empty': 'Nimic încă. Când un prieten îți pune o carte în față, ajunge aici.',
+  'friends.inbox.new': 'Nouă',
+  'friends.inbox.from': 'de la {name}',
+  'friends.inbox.openBook': 'Deschide cartea',
+  'friends.inbox.addToList': 'Adaugă pe lista de lectură',
+  'friends.inbox.onList': 'Pe lista ta de lectură',
+  'friends.inbox.added': 'Adăugată pe lista ta de lectură',
+  'friends.inbox.addFailed': 'Nu a putut fi adăugată chiar acum.',
+  'friends.inbox.dismiss': 'Respinge {title}',
+  'friends.inbox.dismissed': 'Recomandare respinsă',
+  'friends.inbox.dismissFailed': 'Nu a putut fi respinsă chiar acum.',
+  'friends.list.title': 'Prieteni',
+  'friends.list.empty':
+    'Niciun prieten încă. Toți ceilalți de pe acest server sunt listați mai jos.',
+  'friends.list.reading': '{kind, select, ebook {Citește} other {Ascultă}} {title} · {pct}',
+  'friends.list.notSharing': 'Nu împarte progresul',
+  'friends.list.nothingOnTheGo': 'Nimic în curs',
+  'friends.list.recommend': 'Recomandă o carte…',
+  'friends.list.remove': 'Elimină',
+  'friends.list.removeYes': 'Da, elimină {name}',
+  'friends.list.keep': 'Păstrează',
+  'friends.list.removed': '{name} nu mai e în lista ta de prieteni',
+  'friends.list.removeFailed': 'Nu a putut fi eliminat.',
+  'friends.list.colourFor': 'Culoare pentru {name}',
+  'friends.list.colourName':
+    '{colour, select, plum {Prun} sky {Azuriu} moss {Mușchi} rose {Roz} amber {Chihlimbariu} sand {Nisipiu} other {{colour}}}',
+  'friends.list.colourFailed': 'Culoarea nu a putut fi salvată.',
+  'friends.requests.title': 'Cereri',
+  'friends.requests.asked': 'Cerere de prietenie {when}',
+  'friends.requests.youAsked': 'Ai cerut {when}',
+  'friends.requests.accept': 'Acceptă',
+  'friends.requests.decline': 'Refuză',
+  'friends.requests.cancel': 'Anulează cererea',
+  'friends.requests.nowFriends': 'Tu și {name} sunteți acum prieteni',
+  'friends.requests.declined': 'Cerere refuzată',
+  'friends.requests.cancelled': 'Cerere anulată',
+  'friends.requests.failed': 'Asta nu a trecut - verifică conexiunea.',
+  'friends.people.title': 'Persoane de pe acest server',
+  'friends.people.add': 'Adaugă prieten',
+  'friends.people.sent': 'Cerere trimisă către {name}',
+  'friends.people.addFailed': 'Cererea nu a putut fi trimisă.',
+  'friends.settings.title': 'Partajare',
+  'friends.settings.share': 'Împarte progresul meu de citit cu prietenii',
+  'friends.settings.shareHint':
+    'Prietenii văd în ce carte ești și cât de departe ai ajuns - niciodată notițele, evidențierile sau semnele tale de carte.',
+  'friends.settings.saveFailed': 'Nu a putut fi salvat.',
+  'friends.recommend.title': 'Recomandare pentru {name}',
+  'friends.recommend.search': 'Caută în bibliotecă',
+  'friends.recommend.searchLabel': 'Găsește o carte de recomandat',
+  'friends.recommend.noMatch': 'Nimic nu corespunde.',
+  'friends.recommend.moreHint': 'Sunt afișate primele {n} - scrie pentru a restrânge căutarea.',
+  'friends.recommend.change': 'Schimbă cartea',
+  'friends.recommend.noteLabel': 'Un mesaj însoțitor',
+  'friends.recommend.notePlaceholder': 'Opțional - de ce i-ar plăcea',
+  'friends.recommend.send': 'Recomandă',
+  'friends.recommend.sending': 'Se trimite…',
+  'friends.recommend.sent': 'Ai recomandat {title} către {name}.',
+  'friends.recommend.already': 'Ai recomandat deja asta către {name}.',
+  'friends.recommend.failed': 'Recomandarea nu a putut fi trimisă.',
+  'friends.book.label': 'Prieteni',
+  'friends.book.entry': '{name} · {pct}',
+  'friends.book.entryChapter': '{name} · {pct} · {chapter}',
+  'friends.book.entryFinished': '{name} · terminată',
+  'friends.book.recommend': 'Recomandă unui prieten',
+  'friends.book.sheetTitle': 'Recomandă {title}',
+  'friends.book.to': 'Către',
+  'friends.book.noFriends': 'Nu ai încă niciun prieten căruia să-i recomanzi o carte.',
+  'friends.book.openFriends': 'Deschide Prieteni',
 };
 export default messages;
