@@ -42,11 +42,8 @@ function writeSeen(version: string): void {
  * `shouldAnnounce` for the comparison.
  */
 export function WhatsNew() {
-  const t = useT();
   const { phase, whatsNewSeen } = useSession();
   const [open, setOpen] = useState(false);
-  const [showOlder, setShowOlder] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (phase !== 'ready') return;
@@ -59,7 +56,6 @@ export function WhatsNew() {
 
   const dismiss = () => {
     setOpen(false);
-    setShowOlder(false);
     writeSeen(LATEST_RELEASE_VERSION);
     // Fire and forget: the worst case is being told once more on another
     // device, which is a great deal better than blocking the way in.
@@ -69,10 +65,19 @@ export function WhatsNew() {
     }).catch(() => {});
   };
 
-  useFocusTrap(ref, dismiss);
-  useScrollLock(open);
+  // The dialog is its own component so its focus trap and scroll lock exist
+  // only while it is on screen. Mounted alongside the shell, a trap that
+  // listens for Escape all the time would take a keypress meant for some
+  // other dialog as a dismissal, and mark the release seen unread.
+  return open ? <WhatsNewDialog onDismiss={dismiss} /> : null;
+}
 
-  if (!open) return null;
+function WhatsNewDialog({ onDismiss: dismiss }: { onDismiss: () => void }) {
+  const t = useT();
+  const [showOlder, setShowOlder] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useFocusTrap(ref, dismiss);
+  useScrollLock(true);
 
   const [current, ...older] = CHANGELOG;
   if (!current) return null;

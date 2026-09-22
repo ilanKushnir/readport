@@ -16,6 +16,20 @@ export const whatsnew = {
   'whatsnew.olderHeading': 'Version {version}',
   'whatsnew.done': 'Start reading',
 
+  // ---------------------------------------------------------------- 0.14.0
+  'whatsnew.release.friends':
+    'Friends: see where a friend is in a book, draw them on your progress bar, and put a book in front of them.',
+  'whatsnew.release.stats':
+    'Your reading: when you read, how much, how long a sitting runs, and after two weeks the hour you read best.',
+  'whatsnew.release.highlights':
+    'Highlights and notes have a home of their own, book by book, sorted by place or colour, and export to a PDF.',
+  'whatsnew.release.connectedApps':
+    'The other apps beside this library - Calibre-Web Automated, Audiobookshelf and the rest - are one tap away under the shelves.',
+  'whatsnew.release.keepsPlace':
+    'Turning an iPad, switching apps, or jumping to a highlight no longer loses your page.',
+  'whatsnew.release.oneRowPerBook':
+    'A book you own in both formats appears once on every shelf, and manual linking only offers what is still unlinked.',
+
   // ---------------------------------------------------------------- 0.13.0
   'whatsnew.release.languages':
     'The interface speaks 23 languages, picked per account in Settings. Hebrew and Arabic read right to left, and every book keeps its own direction.',

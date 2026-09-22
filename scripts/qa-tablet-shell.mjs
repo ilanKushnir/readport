@@ -55,7 +55,13 @@ async function open(viewport) {
     if (route.request().method() === 'PATCH')
       commits.push({ path, body: route.request().postDataJSON() });
     if (path === '/api/auth/me')
-      data = { user: { id: 'tablet-qa', username: 'qa', role: 'user' }, needsLibraries: false };
+      // `whatsNewSeen` far ahead: a fixture account has read every release,
+      // so the release dialog never lands its backdrop on the queue.
+      data = {
+        user: { id: 'tablet-qa', username: 'qa', role: 'user' },
+        needsLibraries: false,
+        whatsNewSeen: '999.0.0',
+      };
     if (path === '/api/shelves')
       data = {
         shelves,
