@@ -1608,5 +1608,116 @@ const messages: Record<string, string> = {
     '{kinds, select, hn {Zvýraznění a poznámky} hb {Zvýraznění a záložky} nb {Poznámky a záložky} other {Vše označené}}',
   'notes.export.bookmark': 'Záložka',
   'notes.export.whereWhen': '{where} · {date}',
+  // nav
+  'nav.joinRequests': 'Čekají žádosti o připojení',
+
+  // shell
+  'shell.jobType.language-backfill': 'Čtení jazyků knih',
+
+  // library
+  'library.lang.group': 'Filtrovat podle jazyka',
+  'library.lang.all': 'Vše',
+
+  // reader
+  'reader.select.share': 'Sdílet',
+  'reader.select.clear': 'Zrušit výběr',
+  'reader.select.continue': 'Pokračovat ve výběru',
+  'reader.select.continueArmed': 'Klepněte tam, kde končí',
+  'reader.share.text': 'Podívej se, co čtu v {title}: „{quote}“ {url}',
+  'reader.share.copied': 'Zkopírováno – vložte to kamkoli',
+  'reader.toast.copyFailed': 'Nepodařilo se zkopírovat',
+
+  // people
+  'people.joinRequests.title': 'Žádosti o připojení',
+  'people.joinRequests.lede':
+    'Lidé, kteří otevřeli sdílený odkaz a požádali o vstup. Potvrzení vytvoří pozvánku pro čtenáře, kterou jim předá stejný odkaz.',
+  'people.joinRequests.askedFor': 'žádá o {title}, odkaz od {name}',
+  'people.joinRequests.askedForUnknown': 'žádá přes odkaz, který byl mezitím odvolán',
+  'people.joinRequests.when': 'Žádost {when}',
+  'people.joinRequests.approve': 'Potvrdit',
+  'people.joinRequests.decline': 'Odmítnout',
+  'people.joinRequests.approved': 'Potvrzeno – účet si teď mohou vytvořit přes sdílený odkaz',
+  'people.joinRequests.declined': 'Žádost odmítnuta',
+  'people.joinRequests.failed': 'Nepodařilo se to odeslat – zkontrolujte připojení.',
+
+  // stats
+  'stats.focus.title': 'Vaše nit',
+  'stats.focus.lede':
+    'Krok zpět o stránku nebo dvě je opakované čtení: nit se ztratí a vy se pro ni vrátíte. Dělají to i pozorní čtenáři – jde o to, kdy se vám to stává nejméně.',
+  'stats.focus.collecting':
+    'Zatím se sbírají data. Až pár dalších sezení bude mít krok zpět, tahle stránka vám ukáže, kdy nit držíte nejlépe.',
+  'stats.focus.week':
+    '{n, plural, =0 {Tento týden jste se ani jednou nevrátili v {time} čtení} one {Tento týden jste se jednou vrátili v {time} čtení} few {Tento týden jste se vrátili #krát v {time} čtení} many {Tento týden jste se vrátili #krát v {time} čtení} other {Tento týden jste se vrátili #krát v {time} čtení}}{verdict, select, less {, méně než obvykle.} more {, více než obvykle.} usual {, přibližně jako obvykle.} other {.}}',
+  'stats.focus.weekEmpty':
+    'Tento týden zatím nic. Za posledních {days} dní {n, plural, =0 {jste se ani jednou nevrátili} one {jste se jednou vrátili} few {jste se vrátili #krát} many {jste se vrátili #krát} other {jste se vrátili #krát}} v {time} čtení.',
+  'stats.focus.stripLabel': 'Kdy držíte nit, podle hodiny dne',
+  'stats.focus.cell': '{hour}: vracíte se asi {rate}krát za hodinu čtení',
+  'stats.focus.cellThin': '{hour}: zde je zatím málo čtení na posouzení',
+  'stats.focus.less': 'Víc návratů',
+  'stats.focus.more': 'Držení nitě',
+  'stats.focus.steadiest':
+    'Mezi {from} a {to} se vracíte o {pct} % méně často než obvykle: tehdy nit držíte nejlépe.',
+  'stats.focus.even':
+    'Žádná hodina nevyčnívá: nit držíte přibližně stejně dobře, ať čtete kdykoli.',
+  'stats.best.focus': 'Také se tam méně často vracíte pro nit.',
+
+  // friends
+  'friends.bar.bead': '{name}, na {pct}',
+
+  // share
+  'share.button': 'Sdílet',
+  'share.sheet.title': 'Sdílet {title}',
+  'share.sheet.lede':
+    'Kdokoli s odkazem uvidí obálku, název a vaše jméno a může požádat o připojení k této knihovně.',
+  'share.sheet.linkLabel': 'Odkaz',
+  'share.sheet.copy': 'Kopírovat odkaz',
+  'share.sheet.copied': 'Odkaz zkopírován',
+  'share.sheet.copyFailed': 'Vyberte a zkopírujte odkaz',
+  'share.sheet.native': 'Sdílet…',
+  'share.sheet.text': '{name} s vámi sdílí {title} na ReadPortu',
+  'share.sheet.creating': 'Vytváření odkazu…',
+  'share.sheet.failed': 'Tento odkaz se teď nepodařilo vytvořit.',
+  'share.page.checking': 'Kontrola odkazu…',
+  'share.page.invalidTitle': 'Tento sdílený odkaz už není platný',
+  'share.page.invalidLede': 'Mohl být odvolán, nebo kniha knihovnu opustila.',
+  'share.page.openLibrary': 'Otevřít knihovnu',
+  'share.page.unreachableTitle': 'Tento odkaz se nepodařilo zkontrolovat',
+  'share.page.unreachableLede': 'Server neodpověděl. Zkuste to za chvíli znovu.',
+  'share.page.sharedWithYou': '{name} s vámi sdílí tuto knihu',
+  'share.page.sharedTeaser': '{name} s vámi sdílí knihu na ReadPortu',
+  'share.page.addToList': 'Přidat na seznam ke čtení',
+  'share.page.onList': 'Na vašem seznamu ke čtení',
+  'share.page.added': 'Přidáno na seznam ke čtení',
+  'share.page.addFailed': 'Toto se teď nepodařilo přidat.',
+  'share.page.openBook': 'Otevřít knihu',
+  'share.page.haveAccount': 'Mám účet',
+  'share.page.askToJoin': 'Požádat o připojení',
+  'share.page.signInLede': 'Přihlaste se a kniha bude jen jedno klepnutí daleko.',
+  'share.page.coverAlt': 'Obálka knihy {title}',
+  'share.join.lede':
+    'Nechte tu svůj e-mail, administrátor vás pak pustí dál. Potom se vraťte na tento odkaz.',
+  'share.join.email': 'E-mail',
+  'share.join.name': 'Vaše jméno',
+  'share.join.message': 'Pár slov administrátorovi',
+  'share.join.messagePlaceholder': 'Nepovinné – kdo jste a odkud se znáte',
+  'share.join.send': 'Odeslat žádost',
+  'share.join.sending': 'Odesílání…',
+  'share.join.failed': 'Žádost se nepodařilo odeslat. Je server dostupný?',
+  'share.join.tooMany': 'Příliš mnoho žádostí odtud – zkuste to znovu později.',
+  'share.join.pendingTitle': 'Žádost odeslána',
+  'share.join.pendingBody': 'Musí ji potvrdit administrátor; potom se vraťte na tento odkaz.',
+  'share.join.pendingAs': 'Požádáno jako {email}',
+  'share.join.notYou': 'Nejste to vy? Požádejte s jinou adresou',
+  'share.join.declinedTitle': 'Tentokrát ne',
+  'share.join.declinedBody':
+    'Tato žádost nebyla potvrzena. Pokud vám to přijde jako omyl, zeptejte se osoby, která s vámi odkaz sdílela.',
+  'share.join.approvedTitle': 'Jste uvnitř',
+  'share.join.approvedLede':
+    'Zvolte si uživatelské jméno a heslo a kniha na vás bude čekat na seznamu ke čtení.',
+  'share.join.approvedUsedTitle': 'Váš účet je připraven',
+  'share.join.approvedUsedBody':
+    'Tato žádost byla potvrzena a účet vytvořen. Přihlaste se a otevřete knihu.',
+  'share.join.inviteLapsed': 'Platnost této pozvánky vypršela. Požádejte o připojení znovu.',
+  'share.recommendedBy': 'Doporučeno od {name}',
 };
 export default messages;

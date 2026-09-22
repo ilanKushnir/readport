@@ -1627,5 +1627,119 @@ const messages: Record<string, string> = {
     '{kinds, select, hn {Markeringen en notities} hb {Markeringen en bladwijzers} nb {Notities en bladwijzers} other {Alles wat gemarkeerd is}}',
   'notes.export.bookmark': 'Bladwijzer',
   'notes.export.whereWhen': '{where} · {date}',
+  // nav
+  'nav.joinRequests': 'Iemand wil lid worden',
+
+  // shell
+  'shell.jobType.language-backfill': 'Boektalen inlezen',
+
+  // library
+  'library.lang.group': 'Filteren op taal',
+  'library.lang.all': 'Alle',
+
+  // reader
+  'reader.select.share': 'Delen',
+  'reader.select.clear': 'Selectie wissen',
+  'reader.select.continue': 'Selectie voortzetten',
+  'reader.select.continueArmed': 'Tik waar de selectie eindigt',
+  'reader.share.text': 'Kijk wat ik las in {title}: „{quote}” {url}',
+  'reader.share.copied': 'Gekopieerd – overal te plakken',
+  'reader.toast.copyFailed': 'Kopiëren mislukt',
+
+  // people
+  'people.joinRequests.title': 'Verzoeken om lid te worden',
+  'people.joinRequests.lede':
+    'Mensen die een deellink volgden en vroegen om lid te worden. Goedkeuren maakt er een lezersuitnodiging van, die via diezelfde link aankomt.',
+  'people.joinRequests.askedFor': 'vroeg naar {title}, gedeeld door {name}',
+  'people.joinRequests.askedForUnknown': 'kwam binnen via een link die inmiddels is ingetrokken',
+  'people.joinRequests.when': 'Gevraagd {when}',
+  'people.joinRequests.approve': 'Goedkeuren',
+  'people.joinRequests.decline': 'Weigeren',
+  'people.joinRequests.approved':
+    'Goedgekeurd – via de deellink kan nu een account worden aangemaakt',
+  'people.joinRequests.declined': 'Verzoek geweigerd',
+  'people.joinRequests.failed': 'Dat is niet gelukt – controleer je verbinding.',
+
+  // stats
+  'stats.focus.title': 'De draad vasthouden',
+  'stats.focus.lede':
+    'Een pagina of twee terugbladeren is herlezen: je raakte de draad kwijt en bladerde terug om hem weer op te pakken. Ook aandachtige lezers doen dat – dit gaat over wanneer je dat het minst doet.',
+  'stats.focus.collecting':
+    'Nog aan het verzamelen. Zodra in een paar zittingen ook is teruggebladerd, laat deze pagina zien wanneer je de draad het best vasthoudt.',
+  'stats.focus.week':
+    '{n, plural, =0 {Deze week: geen keer teruggebladerd bij {time} leestijd} one {Deze week: één keer teruggebladerd bij {time} leestijd} other {Deze week: # keer teruggebladerd bij {time} leestijd}}{verdict, select, less {, minder dan gebruikelijk.} more {, meer dan gebruikelijk.} usual {, ongeveer gebruikelijk.} other {.}}',
+  'stats.focus.weekEmpty':
+    'Nog niets deze week. In de laatste {days} dagen {n, plural, =0 {geen enkele keer teruggebladerd} one {één keer teruggebladerd} other {# keer teruggebladerd}} bij {time} leestijd.',
+  'stats.focus.stripLabel': 'Hoe goed je de draad vasthoudt, per uur van de dag',
+  'stats.focus.cell': '{hour}: ongeveer {rate} keer per leesuur teruggebladerd',
+  'stats.focus.cellThin': '{hour}: hier nog te weinig gelezen om dat te zeggen',
+  'stats.focus.less': 'vaker teruggebladerd',
+  'stats.focus.more': 'draad vastgehouden',
+  'stats.focus.steadiest':
+    'Tussen {from} en {to} blader je {pct}% minder vaak terug dan gebruikelijk: dan houd je de draad het best vast.',
+  'stats.focus.even':
+    'Geen uur springt eruit: je houdt de draad ongeveer even goed vast, wanneer je ook leest.',
+  'stats.best.focus': 'In dat tijdvenster blader je ook minder vaak terug.',
+
+  // friends
+  'friends.bar.bead': '{name}, bij {pct}',
+
+  // share
+  'share.button': 'Delen',
+  'share.sheet.title': '{title} delen',
+  'share.sheet.lede':
+    'Iedereen met de link ziet de omslag, de titel en je naam, en kan vragen om lid te worden van deze mediatheek.',
+  'share.sheet.linkLabel': 'Link',
+  'share.sheet.copy': 'Link kopiëren',
+  'share.sheet.copied': 'Link gekopieerd',
+  'share.sheet.copyFailed': 'Selecteer en kopieer de link',
+  'share.sheet.native': 'Delen…',
+  'share.sheet.text': '{name} deelde {title} met je via ReadPort',
+  'share.sheet.creating': 'Link wordt aangemaakt…',
+  'share.sheet.failed': 'De link kon zojuist niet worden gemaakt.',
+  'share.page.checking': 'Link wordt gecontroleerd…',
+  'share.page.invalidTitle': 'Deze deellink is niet meer geldig',
+  'share.page.invalidLede':
+    'Hij is misschien ingetrokken, of het boek staat niet meer in de mediatheek.',
+  'share.page.openLibrary': 'Mediatheek openen',
+  'share.page.unreachableTitle': 'Deze link kon niet worden gecontroleerd',
+  'share.page.unreachableLede': 'De server reageerde niet. Probeer het zo weer.',
+  'share.page.sharedWithYou': '{name} deelde dit boek met je',
+  'share.page.sharedTeaser': '{name} deelde dit met je via ReadPort',
+  'share.page.addToList': 'Aan leeslijst toevoegen',
+  'share.page.onList': 'Op je leeslijst',
+  'share.page.added': 'Aan je leeslijst toegevoegd',
+  'share.page.addFailed': 'Kon zojuist niet worden toegevoegd.',
+  'share.page.openBook': 'Boek openen',
+  'share.page.haveAccount': 'Ik heb al een account',
+  'share.page.askToJoin': 'Vraag om lid te worden',
+  'share.page.signInLede': 'Meld je aan, dan is het boek nog maar één tik verwijderd.',
+  'share.page.coverAlt': 'Omslag van {title}',
+  'share.join.lede':
+    'Laat je e-mailadres achter, dan laat een beheerder je binnen. Kom daarna terug via deze link.',
+  'share.join.email': 'E-mail',
+  'share.join.name': 'Je naam',
+  'share.join.message': 'Een regel voor de beheerder',
+  'share.join.messagePlaceholder': 'Optioneel – wie je bent, hoe je elkaar kent',
+  'share.join.send': 'Verzoek verzenden',
+  'share.join.sending': 'Wordt verzonden…',
+  'share.join.failed': 'Het verzoek kon niet worden verzonden. Is de server bereikbaar?',
+  'share.join.tooMany': 'Te veel verzoeken vanaf hier – probeer het later opnieuw.',
+  'share.join.pendingTitle': 'Verzoek verzonden',
+  'share.join.pendingBody':
+    'Een beheerder moet het nog goedkeuren; kom daarna terug via deze link.',
+  'share.join.pendingAs': 'Gevraagd als {email}',
+  'share.join.notYou': 'Niet jouw verzoek? Vraag het met een ander adres aan.',
+  'share.join.declinedTitle': 'Deze keer niet',
+  'share.join.declinedBody':
+    'Dit verzoek is niet goedgekeurd. Klopt dat niet, vraag het na bij degene die de link deelde.',
+  'share.join.approvedTitle': 'Je bent erbij',
+  'share.join.approvedLede':
+    'Kies een gebruikersnaam en wachtwoord, dan staat het boek klaar op je leeslijst.',
+  'share.join.approvedUsedTitle': 'Je account is klaar',
+  'share.join.approvedUsedBody':
+    'Dit verzoek is goedgekeurd en het account is aangemaakt. Meld je aan om het boek te openen.',
+  'share.join.inviteLapsed': 'Deze uitnodiging is verlopen. Vraag opnieuw om lid te worden.',
+  'share.recommendedBy': 'Aanbevolen door {name}',
 } as const;
 export default messages;

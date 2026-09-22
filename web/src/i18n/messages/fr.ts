@@ -1629,6 +1629,119 @@ const messages: Record<string, string> = {
     '{kinds, select, hn {Surlignages et notes} hb {Surlignages et signets} nb {Notes et signets} other {Tous les repères}}',
   'notes.export.bookmark': 'Signet',
   'notes.export.whereWhen': '{where} · {date}',
+  // nav
+  'nav.joinRequests': "Quelqu'un a demandé à rejoindre",
+
+  // shell
+  'shell.jobType.language-backfill': 'Lire les langues des livres',
+
+  // library
+  'library.lang.group': 'Filtrer par langue',
+  'library.lang.all': 'Tous',
+
+  // reader
+  'reader.select.share': 'Partager',
+  'reader.select.clear': 'Effacer la sélection',
+  'reader.select.continue': 'Continuer la sélection',
+  'reader.select.continueArmed': 'Touchez où elle se termine',
+  'reader.share.text': "Regardez ce que j'ai lu dans {title} : « {quote} » {url}",
+  'reader.share.copied': "Copié - collez-le n'importe où",
+  'reader.toast.copyFailed': 'Impossible de copier',
+
+  // people
+  'people.joinRequests.title': 'Demandes pour rejoindre',
+  'people.joinRequests.lede':
+    'Des personnes qui ont suivi un lien de partage et ont demandé à entrer. Approuver crée une invitation de lecteur, que ce même lien leur remet.',
+  'people.joinRequests.askedFor': 'a demandé {title}, partagé par {name}',
+  'people.joinRequests.askedForUnknown': 'a demandé par un lien qui a depuis été retiré',
+  'people.joinRequests.when': 'Demandé {when}',
+  'people.joinRequests.approve': 'Approuver',
+  'people.joinRequests.decline': 'Refuser',
+  'people.joinRequests.approved':
+    'Approuvée - la personne peut créer son compte depuis le lien de partage',
+  'people.joinRequests.declined': 'Demande refusée',
+  'people.joinRequests.failed': "Cela n'a pas abouti - vérifiez la connexion.",
+
+  // stats
+  'stats.focus.title': 'Tenir le fil',
+  'stats.focus.lede':
+    "Revenir en arrière d'une page ou deux, c'est une relecture : le fil a glissé et vous l'avez repris. Les lecteurs attentifs le font aussi - il s'agit ici de savoir quand vous le faites le moins.",
+  'stats.focus.collecting':
+    'Collecte en cours. Dès que quelques séances de plus contiendront un retour en arrière, cette page dira quand vous tenez le fil au mieux.',
+  'stats.focus.week':
+    "{n, plural, =0 {Cette semaine, vous n'avez pas repris le fil une seule fois en {time} de lecture} one {Cette semaine, vous avez repris le fil une fois en {time} de lecture} other {Cette semaine, vous avez repris le fil # fois en {time} de lecture}}{verdict, select, less {, moins que d'habitude.} more {, plus que d'habitude.} usual {, à peu près comme d'habitude.} other {.}}",
+  'stats.focus.weekEmpty':
+    'Rien pour le moment cette semaine. Au cours des {days} derniers jours, vous avez repris le fil {n, plural, =0 {pas une seule fois} one {une fois} other {# fois}} en {time} de lecture.',
+  'stats.focus.stripLabel': 'Quand vous tenez le fil, par heure de la journée',
+  'stats.focus.cell': '{hour} : vous avez repris le fil environ {rate} fois par heure de lecture',
+  'stats.focus.cellThin': '{hour} : pas assez de lecture ici pour le dire',
+  'stats.focus.less': 'Reprend le fil plus souvent',
+  'stats.focus.more': 'Tient le fil',
+  'stats.focus.steadiest':
+    "Entre {from} et {to}, vous reprenez le fil {pct} % moins souvent que d'habitude : c'est là que vous tenez le fil au mieux.",
+  'stats.focus.even':
+    "Aucune heure ne se démarque : vous tenez le fil à peu près aussi bien, quelle que soit l'heure où vous lisez.",
+  'stats.best.focus': 'Vous y reprenez aussi le fil moins souvent.',
+
+  // friends
+  'friends.bar.bead': '{name}, à {pct}',
+
+  // share
+  'share.button': 'Partager',
+  'share.sheet.title': 'Partager {title}',
+  'share.sheet.lede':
+    'Quiconque a le lien voit la couverture, le titre et votre nom, et peut demander à rejoindre cette bibliothèque.',
+  'share.sheet.linkLabel': 'Lien',
+  'share.sheet.copy': 'Copier le lien',
+  'share.sheet.copied': 'Lien copié',
+  'share.sheet.copyFailed': 'Sélectionnez et copiez le lien',
+  'share.sheet.native': 'Partager…',
+  'share.sheet.text': '{name} a partagé {title} avec vous sur ReadPort',
+  'share.sheet.creating': 'Création du lien…',
+  'share.sheet.failed': 'Impossible de créer un lien pour le moment.',
+  'share.page.checking': 'Vérification du lien…',
+  'share.page.invalidTitle': "Ce lien de partage n'est plus valide",
+  'share.page.invalidLede':
+    "Il a peut-être été retiré, ou le livre n'est plus dans la bibliothèque.",
+  'share.page.openLibrary': 'Ouvrir la bibliothèque',
+  'share.page.unreachableTitle': 'Impossible de vérifier ce lien',
+  'share.page.unreachableLede': "Le serveur n'a pas répondu. Réessayez dans un instant.",
+  'share.page.sharedWithYou': '{name} a partagé ce livre avec vous',
+  'share.page.sharedTeaser': '{name} a partagé ceci avec vous sur ReadPort',
+  'share.page.addToList': 'Ajouter à la liste de lecture',
+  'share.page.onList': 'Sur votre liste de lecture',
+  'share.page.added': 'Ajouté à votre liste de lecture',
+  'share.page.addFailed': "Impossible de l'ajouter pour le moment.",
+  'share.page.openBook': 'Ouvrir le livre',
+  'share.page.haveAccount': "J'ai un compte",
+  'share.page.askToJoin': 'Demander à rejoindre',
+  'share.page.signInLede': 'Connectez-vous, et le livre est à portée de main.',
+  'share.page.coverAlt': 'Couverture de {title}',
+  'share.join.lede':
+    'Laissez votre e-mail, un administrateur vous laissera entrer. Revenez ensuite sur ce lien.',
+  'share.join.email': 'E-mail',
+  'share.join.name': 'Votre nom',
+  'share.join.message': "Quelques mots pour l'administrateur",
+  'share.join.messagePlaceholder': 'Facultatif - qui vous êtes, comment vous les connaissez',
+  'share.join.send': 'Envoyer la demande',
+  'share.join.sending': 'Envoi…',
+  'share.join.failed': "Impossible d'envoyer la demande. Le serveur est-il joignable ?",
+  'share.join.tooMany': 'Trop de demandes depuis cet endroit - réessayez plus tard.',
+  'share.join.pendingTitle': 'Demande envoyée',
+  'share.join.pendingBody': "Un administrateur doit l'approuver ; revenez ensuite sur ce lien.",
+  'share.join.pendingAs': 'Demandé en tant que {email}',
+  'share.join.notYou': 'Pas vous ? Demandez avec une autre adresse',
+  'share.join.declinedTitle': 'Pas cette fois',
+  'share.join.declinedBody':
+    "Cette demande n'a pas été approuvée. Si cela vous semble erroné, demandez à la personne qui vous a partagé le lien.",
+  'share.join.approvedTitle': 'Vous êtes accepté',
+  'share.join.approvedLede':
+    "Choisissez un nom d'utilisateur et un mot de passe, et le livre vous attendra sur votre liste de lecture.",
+  'share.join.approvedUsedTitle': 'Votre compte est prêt',
+  'share.join.approvedUsedBody':
+    'Cette demande a été approuvée et le compte créé. Connectez-vous pour ouvrir le livre.',
+  'share.join.inviteLapsed': 'Cette invitation a expiré. Demandez à nouveau à rejoindre.',
+  'share.recommendedBy': 'Recommandé par {name}',
 };
 
 export default messages;

@@ -1583,5 +1583,116 @@ const messages: Record<string, string> = {
     '{kinds, select, hn {Uthevinger og notater} hb {Uthevinger og bokmerker} nb {Notater og bokmerker} other {Alt merket}}',
   'notes.export.bookmark': 'Bokmerke',
   'notes.export.whereWhen': '{where} · {date}',
+  // nav
+  'nav.joinRequests': 'Noen ba om å bli med',
+
+  // shell
+  'shell.jobType.language-backfill': 'Les bøkenes språk',
+
+  // library
+  'library.lang.group': 'Filtrer etter språk',
+  'library.lang.all': 'Alle',
+
+  // reader
+  'reader.select.share': 'Del',
+  'reader.select.clear': 'Fjern valg',
+  'reader.select.continue': 'Fortsett valget',
+  'reader.select.continueArmed': 'Trykk der den slutter',
+  'reader.share.text': 'Se hva jeg leste i {title}: «{quote}» {url}',
+  'reader.share.copied': 'Kopiert - lim den inn hvor som helst',
+  'reader.toast.copyFailed': 'Kunne ikke kopiere',
+
+  // people
+  'people.joinRequests.title': 'Forespørsler om å bli med',
+  'people.joinRequests.lede':
+    'Personer som fulgte en delingslenke og ba om å bli sluppet inn. Å godkjenne oppretter en leserinvitasjon, som den samme lenken gir dem.',
+  'people.joinRequests.askedFor': 'ba om {title}, delt av {name}',
+  'people.joinRequests.askedForUnknown': 'spurte via en lenke som siden er trukket tilbake',
+  'people.joinRequests.when': 'Spurte {when}',
+  'people.joinRequests.approve': 'Godta',
+  'people.joinRequests.decline': 'Avvis',
+  'people.joinRequests.approved': 'Godkjent - de kan opprette kontoen sin fra delingslenken',
+  'people.joinRequests.declined': 'Forespørsel avvist',
+  'people.joinRequests.failed': 'Det gikk ikke gjennom - sjekk tilkoblingen.',
+
+  // stats
+  'stats.focus.title': 'Å holde tråden',
+  'stats.focus.lede':
+    'Et steg tilbake på en side eller to er en gjenlesning: tråden glapp, og du gikk tilbake for å finne den igjen. Selv nøye lesere gjør det - dette handler om når du gjør det minst.',
+  'stats.focus.collecting':
+    'Samler fortsatt data. Så snart noen flere økter har hatt et steg tilbake, forteller denne siden når du holder tråden best.',
+  'stats.focus.week':
+    '{n, plural, =0 {Denne uken har du ikke gått tilbake en eneste gang i {time} med lesing} one {Denne uken gikk du tilbake én gang i {time} med lesing} other {Denne uken gikk du tilbake # ganger i {time} med lesing}}{verdict, select, less {, sjeldnere enn vanlig.} more {, oftere enn vanlig.} usual {, omtrent som vanlig.} other {.}}',
+  'stats.focus.weekEmpty':
+    'Ingenting ennå denne uken. {n, plural, =0 {De siste {days} dagene gikk du ikke tilbake en eneste gang i {time} med lesing.} one {De siste {days} dagene gikk du tilbake én gang i {time} med lesing.} other {De siste {days} dagene gikk du tilbake # ganger i {time} med lesing.}}',
+  'stats.focus.stripLabel': 'Når du holder tråden, etter time på døgnet',
+  'stats.focus.cell': '{hour}: gikk tilbake omtrent {rate} ganger per lesetime',
+  'stats.focus.cellThin': '{hour}: for lite lesing her til å si noe',
+  'stats.focus.less': 'gikk oftere tilbake',
+  'stats.focus.more': 'holdt tråden',
+  'stats.focus.steadiest':
+    'Mellom {from} og {to} går du {pct}% sjeldnere tilbake enn vanlig: det er da du holder tråden best.',
+  'stats.focus.even':
+    'Ingen time skiller seg ut: du holder tråden omtrent like godt uansett når du leser.',
+  'stats.best.focus': 'Du går også sjeldnere tilbake for å finne tråden da.',
+
+  // friends
+  'friends.bar.bead': '{name}, ved {pct}',
+
+  // share
+  'share.button': 'Del',
+  'share.sheet.title': 'Del {title}',
+  'share.sheet.lede':
+    'Alle med lenken ser omslaget, tittelen og navnet ditt, og kan be om å bli med i dette biblioteket.',
+  'share.sheet.linkLabel': 'Lenke',
+  'share.sheet.copy': 'Kopier lenke',
+  'share.sheet.copied': 'Lenke kopiert',
+  'share.sheet.copyFailed': 'Merk og kopier lenken',
+  'share.sheet.native': 'Del…',
+  'share.sheet.text': '{name} delte {title} med deg på ReadPort',
+  'share.sheet.creating': 'Oppretter lenken…',
+  'share.sheet.failed': 'Kunne ikke opprette lenken akkurat nå.',
+  'share.page.checking': 'Sjekker lenken…',
+  'share.page.invalidTitle': 'Denne delingslenken er ikke lenger gyldig',
+  'share.page.invalidLede':
+    'Den kan ha blitt trukket tilbake, eller boken er ikke lenger i biblioteket.',
+  'share.page.openLibrary': 'Åpne biblioteket',
+  'share.page.unreachableTitle': 'Kunne ikke sjekke denne lenken',
+  'share.page.unreachableLede': 'Serveren svarte ikke. Prøv igjen om et øyeblikk.',
+  'share.page.sharedWithYou': '{name} delte denne boken med deg',
+  'share.page.sharedTeaser': '{name} delte dette med deg på ReadPort',
+  'share.page.addToList': 'Legg til på leselisten',
+  'share.page.onList': 'På leselisten din',
+  'share.page.added': 'Lagt til på leselisten din',
+  'share.page.addFailed': 'Kunne ikke legge den til akkurat nå.',
+  'share.page.openBook': 'Åpne bok',
+  'share.page.haveAccount': 'Jeg har en konto',
+  'share.page.askToJoin': 'Be om å bli med',
+  'share.page.signInLede': 'Logg inn, så er boken ett trykk unna.',
+  'share.page.coverAlt': 'Omslaget til {title}',
+  'share.join.lede':
+    'Legg igjen e-posten din, så slipper en admin deg inn. Kom tilbake til denne lenken etterpå.',
+  'share.join.email': 'E-post',
+  'share.join.name': 'Navnet ditt',
+  'share.join.message': 'En linje til admin',
+  'share.join.messagePlaceholder': 'Valgfritt - hvem du er, hvordan du kjenner dem',
+  'share.join.send': 'Send forespørsel',
+  'share.join.sending': 'Sender…',
+  'share.join.failed': 'Kunne ikke sende forespørselen. Er serveren tilgjengelig?',
+  'share.join.tooMany': 'For mange forespørsler herfra - prøv igjen senere.',
+  'share.join.pendingTitle': 'Forespørsel sendt',
+  'share.join.pendingBody': 'En admin må godkjenne den; kom tilbake til denne lenken etterpå.',
+  'share.join.pendingAs': 'Spurte som {email}',
+  'share.join.notYou': 'Ikke deg? Spør med en annen adresse',
+  'share.join.declinedTitle': 'Ikke denne gangen',
+  'share.join.declinedBody':
+    'Denne forespørselen ble ikke godkjent. Hvis det virker feil, spør personen som delte lenken med deg.',
+  'share.join.approvedTitle': 'Du er inne',
+  'share.join.approvedLede': 'Velg et brukernavn og et passord, så venter boken på leselisten din.',
+  'share.join.approvedUsedTitle': 'Kontoen din er klar',
+  'share.join.approvedUsedBody':
+    'Denne forespørselen ble godkjent, og kontoen ble opprettet. Logg inn for å åpne boken.',
+  'share.join.inviteLapsed': 'Denne invitasjonen er bortfalt. Be om å bli med igjen.',
+  'share.recommendedBy': 'Anbefalt av {name}',
 };
 export default messages;

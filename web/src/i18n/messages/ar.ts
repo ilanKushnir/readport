@@ -1658,5 +1658,114 @@ const messages: Record<string, string> = {
     '{kinds, select, hn {التظليلات والملاحظات} hb {التظليلات والإشارات المرجعية} nb {الملاحظات والإشارات المرجعية} other {كل شيء مُعلَّم}}',
   'notes.export.bookmark': 'إشارة مرجعية',
   'notes.export.whereWhen': '{where} · {date}',
+  // nav
+  'nav.joinRequests': 'شخص ما طلب الانضمام',
+
+  // shell
+  'shell.jobType.language-backfill': 'قراءة لغات الكتب',
+
+  // library
+  'library.lang.group': 'التصفية حسب اللغة',
+  'library.lang.all': 'الكل',
+
+  // reader
+  'reader.select.share': 'مشاركة',
+  'reader.select.clear': 'مسح التحديد',
+  'reader.select.continue': 'متابعة التحديد',
+  'reader.select.continueArmed': 'اضغط حيث ينتهي',
+  'reader.share.text': 'انظر ماذا قرأت في {title}: «{quote}» {url}',
+  'reader.share.copied': 'تم النسخ - الصقه في أي مكان',
+  'reader.toast.copyFailed': 'تعذّر النسخ',
+
+  // people
+  'people.joinRequests.title': 'طلبات الانضمام',
+  'people.joinRequests.lede':
+    'أشخاص فتحوا رابط مشاركة وطلبوا الانضمام. الموافقة تُنشئ دعوة قارئ، يُسلّمها لهم الرابط نفسه.',
+  'people.joinRequests.askedFor': 'طلب كتاب {title}، شاركه {name}',
+  'people.joinRequests.askedForUnknown': 'طلب الانضمام عبر رابط أُلغي لاحقًا',
+  'people.joinRequests.when': 'طلب {when}',
+  'people.joinRequests.approve': 'قبول',
+  'people.joinRequests.decline': 'رفض',
+  'people.joinRequests.approved': 'تمت الموافقة على الطلب - يمكنهم إنشاء حسابهم من رابط المشاركة',
+  'people.joinRequests.declined': 'تم رفض الطلب',
+  'people.joinRequests.failed': 'لم ينجح ذلك - يُرجى التحقق من الاتصال.',
+
+  // stats
+  'stats.focus.title': 'الإمساك بالخيط',
+  'stats.focus.lede':
+    'الرجوع صفحة أو صفحتين إلى الوراء هو إعادة قراءة: انفلت الخيط فرجعت لتمسكه. القراء المنتبهون يفعلون ذلك أيضًا - المقصود هنا معرفة متى تفعله أقل ما يكون.',
+  'stats.focus.collecting':
+    'لا تزال البيانات قيد الجمع. بمجرد أن تحتوي بضع جلسات أخرى على رجوع إلى الوراء، ستخبرك هذه الصفحة بالوقت الذي تُمسك فيه بالخيط أفضل ما يكون.',
+  'stats.focus.week':
+    '{n, plural, =0 {هذا الأسبوع لم ترجع إلى الوراء ولو مرة في {time} من القراءة} one {هذا الأسبوع رجعت إلى الوراء مرة واحدة في {time} من القراءة} two {هذا الأسبوع رجعت إلى الوراء مرتين في {time} من القراءة} few {هذا الأسبوع رجعت إلى الوراء # مرات في {time} من القراءة} many {هذا الأسبوع رجعت إلى الوراء # مرةً في {time} من القراءة} other {هذا الأسبوع رجعت إلى الوراء # مرة في {time} من القراءة}}{verdict, select, less {، أقل من المعتاد.} more {، أكثر من المعتاد.} usual {، كالمعتاد تقريبًا.} other {.}}',
+  'stats.focus.weekEmpty':
+    'لا شيء بعد هذا الأسبوع. خلال آخر {days} يومًا رجعت إلى الوراء {n, plural, =0 {ولا مرة} one {مرة واحدة} two {مرتين} few {# مرات} many {# مرةً} other {# مرة}} في {time} من القراءة.',
+  'stats.focus.stripLabel': 'متى تُمسك بالخيط، حسب ساعة اليوم',
+  'stats.focus.cell': '{hour}: ترجع إلى الوراء نحو {rate} مرة في كل ساعة قراءة',
+  'stats.focus.cellThin': '{hour}: لا قراءة كافية هنا لمعرفة ذلك',
+  'stats.focus.less': 'رجوع أكثر',
+  'stats.focus.more': 'إمساك بالخيط',
+  'stats.focus.steadiest':
+    'بين {from} و{to} ترجع إلى الوراء بنسبة {pct}% أقل من المعتاد: هذا هو الوقت الذي تُمسك فيه بالخيط أفضل ما يكون.',
+  'stats.focus.even': 'لا توجد ساعة مميزة: تُمسك بالخيط بالقدر نفسه تقريبًا في أي وقت تقرأ فيه.',
+  'stats.best.focus': 'كما أنك ترجع إلى الخيط هناك أقل تكرارًا.',
+
+  // friends
+  'friends.bar.bead': '{name}، عند {pct}',
+
+  // share
+  'share.button': 'مشاركة',
+  'share.sheet.title': 'مشاركة {title}',
+  'share.sheet.lede':
+    'أي شخص لديه الرابط يرى الغلاف والعنوان واسمك، ويمكنه طلب الانضمام إلى هذه المكتبة.',
+  'share.sheet.linkLabel': 'الرابط',
+  'share.sheet.copy': 'نسخ الرابط',
+  'share.sheet.copied': 'تم نسخ الرابط',
+  'share.sheet.copyFailed': 'حدّد الرابط وانسخه',
+  'share.sheet.native': 'مشاركة…',
+  'share.sheet.text': 'شاركك {name} كتاب {title} على ReadPort',
+  'share.sheet.creating': 'جارٍ إنشاء الرابط…',
+  'share.sheet.failed': 'تعذّر إنشاء رابط الآن.',
+  'share.page.checking': 'جارٍ التحقق من الرابط…',
+  'share.page.invalidTitle': 'رابط المشاركة هذا لم يعد صالحًا',
+  'share.page.invalidLede': 'ربما أُلغي، أو لم يعد الكتاب في المكتبة.',
+  'share.page.openLibrary': 'فتح المكتبة',
+  'share.page.unreachableTitle': 'تعذّر التحقق من هذا الرابط',
+  'share.page.unreachableLede': 'لم يستجب الخادم. يُرجى المحاولة مرة أخرى بعد لحظة.',
+  'share.page.sharedWithYou': 'شارك {name} هذا الكتاب معك',
+  'share.page.sharedTeaser': 'شارك {name} هذا معك على ReadPort',
+  'share.page.addToList': 'إضافة إلى قائمة القراءة',
+  'share.page.onList': 'في قائمة قراءتك',
+  'share.page.added': 'أُضيف إلى قائمة قراءتك',
+  'share.page.addFailed': 'تعذّرت إضافته الآن.',
+  'share.page.openBook': 'فتح الكتاب',
+  'share.page.haveAccount': 'لديّ حساب',
+  'share.page.askToJoin': 'طلب الانضمام',
+  'share.page.signInLede': 'سجّل الدخول، ويصبح الكتاب على بعد نقرة واحدة منك.',
+  'share.page.coverAlt': 'غلاف {title}',
+  'share.join.lede':
+    'اترك بريدك الإلكتروني، وسيسمح لك أحد المسؤولين بالدخول. عُد إلى هذا الرابط لاحقًا.',
+  'share.join.email': 'البريد الإلكتروني',
+  'share.join.name': 'اسمك',
+  'share.join.message': 'سطر إلى المسؤول',
+  'share.join.messagePlaceholder': 'اختياري - من أنت، وكيف تعرفهم',
+  'share.join.send': 'إرسال الطلب',
+  'share.join.sending': 'جارٍ الإرسال…',
+  'share.join.failed': 'تعذّر إرسال الطلب. هل الخادم متاح؟',
+  'share.join.tooMany': 'عدد كبير جدًا من الطلبات من هذا المصدر - يُرجى المحاولة مرة أخرى لاحقًا.',
+  'share.join.pendingTitle': 'تم إرسال الطلب',
+  'share.join.pendingBody': 'على أحد المسؤولين الموافقة عليه؛ عُد إلى هذا الرابط لاحقًا.',
+  'share.join.pendingAs': 'طلبت بالبريد الإلكتروني {email}',
+  'share.join.notYou': 'لست أنت؟ اطلب ببريد إلكتروني مختلف',
+  'share.join.declinedTitle': 'ليس هذه المرة',
+  'share.join.declinedBody':
+    'لم تتم الموافقة على هذا الطلب. إذا بدا هذا غير صحيح، اسأل الشخص الذي شارك الرابط معك.',
+  'share.join.approvedTitle': 'أنت مقبول',
+  'share.join.approvedLede': 'اختر اسم مستخدم وكلمة مرور، وسيكون الكتاب بانتظارك في قائمة القراءة.',
+  'share.join.approvedUsedTitle': 'حسابك جاهز',
+  'share.join.approvedUsedBody':
+    'تمت الموافقة على هذا الطلب وأُنشئ الحساب. سجّل الدخول لفتح الكتاب.',
+  'share.join.inviteLapsed': 'انتهت صلاحية هذه الدعوة. اطلب الانضمام مرة أخرى.',
+  'share.recommendedBy': 'توصية من {name}',
 };
 export default messages;

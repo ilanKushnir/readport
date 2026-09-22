@@ -1634,5 +1634,119 @@ const messages: Record<string, string> = {
     '{kinds, select, hn {Markierungen und Notizen} hb {Markierungen und Lesezeichen} nb {Notizen und Lesezeichen} other {Alles Markierte}}',
   'notes.export.bookmark': 'Lesezeichen',
   'notes.export.whereWhen': '{where} · {date}',
+  // nav
+  'nav.joinRequests': 'Jemand möchte beitreten',
+
+  // shell
+  'shell.jobType.language-backfill': 'Buchsprachen einlesen',
+
+  // library
+  'library.lang.group': 'Nach Sprache filtern',
+  'library.lang.all': 'Alle',
+
+  // reader
+  'reader.select.share': 'Teilen',
+  'reader.select.clear': 'Auswahl aufheben',
+  'reader.select.continue': 'Auswahl fortsetzen',
+  'reader.select.continueArmed': 'Antippen, wo die Auswahl endet',
+  'reader.share.text': 'Schau, was ich in {title} gelesen habe: „{quote}“ {url}',
+  'reader.share.copied': 'Kopiert – lässt sich überall einfügen',
+  'reader.toast.copyFailed': 'Kopieren fehlgeschlagen',
+
+  // people
+  'people.joinRequests.title': 'Beitrittsanfragen',
+  'people.joinRequests.lede':
+    'Personen, die einem Freigabelink gefolgt sind und um Beitritt gebeten haben. Nach der Genehmigung wird daraus eine Leser-Einladung, die über denselben Link ankommt.',
+  'people.joinRequests.askedFor': 'fragte nach {title}, geteilt von {name}',
+  'people.joinRequests.askedForUnknown': 'kam über einen Link, der inzwischen zurückgezogen wurde',
+  'people.joinRequests.when': 'Angefragt {when}',
+  'people.joinRequests.approve': 'Genehmigen',
+  'people.joinRequests.decline': 'Ablehnen',
+  'people.joinRequests.approved':
+    'Genehmigt – über den Freigabelink lässt sich jetzt ein Konto anlegen',
+  'people.joinRequests.declined': 'Anfrage abgelehnt',
+  'people.joinRequests.failed': 'Das hat nicht geklappt – Verbindung prüfen.',
+
+  // stats
+  'stats.focus.title': 'Den Faden halten',
+  'stats.focus.lede':
+    'Ein, zwei Seiten zurückzublättern ist ein erneutes Lesen: der Faden ist gerissen, und man ist zurückgeblättert, um ihn wiederzufinden. Auch aufmerksame Leser tun das – hier geht es darum, wann das am seltensten passiert.',
+  'stats.focus.collecting':
+    'Es wird noch gesammelt. Sobald in ein paar weiteren Sitzungen zurückgeblättert wurde, zeigt diese Seite, wann der Faden am besten hält.',
+  'stats.focus.week':
+    '{n, plural, =0 {Diese Woche: kein Zurückblättern bei {time} Lesezeit} one {Diese Woche: einmal zurückgeblättert bei {time} Lesezeit} other {Diese Woche: # Mal zurückgeblättert bei {time} Lesezeit}}{verdict, select, less {, seltener als sonst.} more {, häufiger als sonst.} usual {, wie gewohnt.} other {.}}',
+  'stats.focus.weekEmpty':
+    'Diese Woche noch nichts. In den letzten {days} Tagen {n, plural, =0 {kein einziges Mal zurückgeblättert} one {einmal zurückgeblättert} other {# Mal zurückgeblättert}} bei {time} Lesezeit.',
+  'stats.focus.stripLabel': 'Wie gut der Faden hält, nach Stunde des Tages',
+  'stats.focus.cell': '{hour}: etwa {rate}-mal pro Lesestunde zurückgeblättert',
+  'stats.focus.cellThin': '{hour}: hier noch zu wenig gelesen, um das zu sagen',
+  'stats.focus.less': 'öfter zurückgeblättert',
+  'stats.focus.more': 'Faden gehalten',
+  'stats.focus.steadiest':
+    'Zwischen {from} und {to} wird {pct}% seltener zurückgeblättert als sonst: Dann hält der Faden am besten.',
+  'stats.focus.even':
+    'Keine Stunde sticht heraus: Der Faden hält etwa gleich gut, wann immer gelesen wird.',
+  'stats.best.focus': 'In diesem Zeitfenster wird außerdem seltener zurückgeblättert.',
+
+  // friends
+  'friends.bar.bead': '{name}, bei {pct}',
+
+  // share
+  'share.button': 'Teilen',
+  'share.sheet.title': '{title} teilen',
+  'share.sheet.lede':
+    'Jeder mit dem Link sieht das Cover, den Titel und den eigenen Namen und kann um Beitritt zu dieser Mediathek bitten.',
+  'share.sheet.linkLabel': 'Link',
+  'share.sheet.copy': 'Link kopieren',
+  'share.sheet.copied': 'Link kopiert',
+  'share.sheet.copyFailed': 'Link auswählen und kopieren',
+  'share.sheet.native': 'Teilen…',
+  'share.sheet.text': '{name} hat {title} auf ReadPort geteilt',
+  'share.sheet.creating': 'Link wird erstellt…',
+  'share.sheet.failed': 'Der Link konnte gerade eben nicht erstellt werden.',
+  'share.page.checking': 'Link wird geprüft…',
+  'share.page.invalidTitle': 'Dieser Freigabelink ist nicht mehr gültig',
+  'share.page.invalidLede':
+    'Er wurde vielleicht zurückgezogen, oder das Buch ist nicht mehr in der Mediathek.',
+  'share.page.openLibrary': 'Mediathek öffnen',
+  'share.page.unreachableTitle': 'Dieser Link konnte nicht geprüft werden',
+  'share.page.unreachableLede': 'Der Server hat nicht geantwortet. Gleich noch einmal versuchen.',
+  'share.page.sharedWithYou': '{name} hat dieses Buch geteilt',
+  'share.page.sharedTeaser': '{name} hat das auf ReadPort geteilt',
+  'share.page.addToList': 'Zur Leseliste hinzufügen',
+  'share.page.onList': 'Auf der Leseliste',
+  'share.page.added': 'Zur Leseliste hinzugefügt',
+  'share.page.addFailed': 'Konnte gerade eben nicht hinzugefügt werden.',
+  'share.page.openBook': 'Buch öffnen',
+  'share.page.haveAccount': 'Ich habe bereits ein Konto',
+  'share.page.askToJoin': 'Beitritt anfragen',
+  'share.page.signInLede': 'Anmelden, dann ist das Buch nur einen Klick entfernt.',
+  'share.page.coverAlt': 'Cover von {title}',
+  'share.join.lede':
+    'E-Mail hinterlassen – ein Administrator lässt einen hinein. Danach diesen Link noch einmal öffnen.',
+  'share.join.email': 'E-Mail',
+  'share.join.name': 'Name',
+  'share.join.message': 'Eine Zeile an den Administrator',
+  'share.join.messagePlaceholder': 'Optional – wer schreibt und woher man sich kennt',
+  'share.join.send': 'Anfrage senden',
+  'share.join.sending': 'Wird gesendet…',
+  'share.join.failed': 'Die Anfrage konnte nicht gesendet werden. Ist der Server erreichbar?',
+  'share.join.tooMany': 'Zu viele Anfragen von hier – später erneut versuchen.',
+  'share.join.pendingTitle': 'Anfrage gesendet',
+  'share.join.pendingBody':
+    'Ein Administrator muss sie noch genehmigen; danach diesen Link noch einmal öffnen.',
+  'share.join.pendingAs': 'Angefragt als {email}',
+  'share.join.notYou': 'Falsche Adresse? Mit einer anderen Adresse erneut anfragen.',
+  'share.join.declinedTitle': 'Diesmal nicht',
+  'share.join.declinedBody':
+    'Diese Anfrage wurde nicht genehmigt. Falls das falsch erscheint, bei der Person nachfragen, die den Link geteilt hat.',
+  'share.join.approvedTitle': 'Zugang gewährt',
+  'share.join.approvedLede':
+    'Benutzername und Kennwort wählen – das Buch wartet dann schon auf der Leseliste.',
+  'share.join.approvedUsedTitle': 'Das Konto ist bereit',
+  'share.join.approvedUsedBody':
+    'Diese Anfrage wurde genehmigt, das Konto wurde angelegt. Anmelden, um das Buch zu öffnen.',
+  'share.join.inviteLapsed': 'Diese Einladung ist abgelaufen. Erneut um Beitritt bitten.',
+  'share.recommendedBy': 'Empfohlen von {name}',
 } as const;
 export default messages;

@@ -1580,5 +1580,117 @@ const messages: Record<string, string> = {
     '{kinds, select, hn {Markeringar och anteckningar} hb {Markeringar och bokmärken} nb {Anteckningar och bokmärken} other {Allt markerat}}',
   'notes.export.bookmark': 'Bokmärke',
   'notes.export.whereWhen': '{where} · {date}',
+  // nav
+  'nav.joinRequests': 'Någon har bett om att gå med',
+
+  // shell
+  'shell.jobType.language-backfill': 'Läs om bokspråk',
+
+  // library
+  'library.lang.group': 'Filtrera efter språk',
+  'library.lang.all': 'Alla',
+
+  // reader
+  'reader.select.share': 'Dela',
+  'reader.select.clear': 'Rensa markering',
+  'reader.select.continue': 'Fortsätt markering',
+  'reader.select.continueArmed': 'Tryck där den slutar',
+  'reader.share.text': 'Kolla vad jag läste i {title}: ”{quote}” {url}',
+  'reader.share.copied': 'Kopierat – klistra in var som helst',
+  'reader.toast.copyFailed': 'Kunde inte kopiera',
+
+  // people
+  'people.joinRequests.title': 'Förfrågningar om att gå med',
+  'people.joinRequests.lede':
+    'Personer som följde en delningslänk och bad om att bli insläppta. Att godkänna skapar en läsarinbjudan, som samma länk ger dem.',
+  'people.joinRequests.askedFor': 'Bad om {title}, delad av {name}',
+  'people.joinRequests.askedForUnknown': 'Bad om tillgång via en länk som sedan har återkallats',
+  'people.joinRequests.when': 'Bett {when}',
+  'people.joinRequests.approve': 'Godkänn',
+  'people.joinRequests.decline': 'Avböj',
+  'people.joinRequests.approved': 'Godkänt – de kan skapa sitt konto från delningslänken',
+  'people.joinRequests.declined': 'Förfrågan avböjd',
+  'people.joinRequests.failed': 'Det gick inte igenom – kontrollera anslutningen.',
+
+  // stats
+  'stats.focus.title': 'Att hålla tråden',
+  'stats.focus.lede':
+    'Ett steg tillbaka på en sida eller två är en omläsning: tråden gled, och du gick tillbaka efter den. Noggranna läsare gör det också – det här handlar om när du gör det minst.',
+  'stats.focus.collecting':
+    'Samlar fortfarande in. När några fler läspass har haft ett steg tillbaka, berättar den här sidan när du håller tråden bäst.',
+  'stats.focus.week':
+    '{n, plural, =0 {Den här veckan har du inte gått tillbaka en enda gång på {time} läsning} one {Den här veckan gick du tillbaka en gång på {time} läsning} other {Den här veckan gick du tillbaka # gånger på {time} läsning}}{verdict, select, less {, mindre än vanligt.} more {, mer än vanligt.} usual {, ungefär som vanligt.} other {.}}',
+  'stats.focus.weekEmpty':
+    'Inget än den här veckan. Under de senaste {days} dagarna gick du tillbaka {n, plural, =0 {inte en enda gång} one {en gång} other {# gånger}} på {time} läsning.',
+  'stats.focus.stripLabel': 'När du håller tråden, efter timme på dagen',
+  'stats.focus.cell': '{hour}: gick tillbaka omkring {rate} gånger per lästimme',
+  'stats.focus.cellThin': '{hour}: för lite läsning här för att säga något',
+  'stats.focus.less': 'gick tillbaka mer',
+  'stats.focus.more': 'höll tråden',
+  'stats.focus.steadiest':
+    'Mellan {from} och {to} går du tillbaka {pct}% mer sällan än vanligt: det är då du håller tråden bäst.',
+  'stats.focus.even':
+    'Ingen timme sticker ut: du håller tråden ungefär lika bra oavsett när du läser.',
+  'stats.best.focus': 'Du går också tillbaka efter tråden mer sällan under den perioden.',
+
+  // friends
+  'friends.bar.bead': '{name}, vid {pct}',
+
+  // share
+  'share.button': 'Dela',
+  'share.sheet.title': 'Dela {title}',
+  'share.sheet.lede':
+    'Alla med länken ser omslaget, titeln och ditt namn, och kan be om att gå med i det här biblioteket.',
+  'share.sheet.linkLabel': 'Länk',
+  'share.sheet.copy': 'Kopiera länk',
+  'share.sheet.copied': 'Länk kopierad',
+  'share.sheet.copyFailed': 'Markera och kopiera länken',
+  'share.sheet.native': 'Dela…',
+  'share.sheet.text': '{name} delade {title} med dig på ReadPort',
+  'share.sheet.creating': 'Skapar länken…',
+  'share.sheet.failed': 'Kunde inte skapa en länk just nu.',
+  'share.page.checking': 'Kontrollerar länken…',
+  'share.page.invalidTitle': 'Den här delningslänken är inte längre giltig',
+  'share.page.invalidLede': 'Den kan ha blivit återkallad, eller så har boken lämnat biblioteket.',
+  'share.page.openLibrary': 'Öppna biblioteket',
+  'share.page.unreachableTitle': 'Kunde inte kontrollera den här länken',
+  'share.page.unreachableLede': 'Servern svarade inte. Försök igen om en stund.',
+  'share.page.sharedWithYou': '{name} delade den här boken med dig',
+  'share.page.sharedTeaser': '{name} delade det här med dig på ReadPort',
+  'share.page.addToList': 'Lägg till i läslistan',
+  'share.page.onList': 'På din läslista',
+  'share.page.added': 'Tillagd i din läslista',
+  'share.page.addFailed': 'Kunde inte lägga till den just nu.',
+  'share.page.openBook': 'Öppna bok',
+  'share.page.haveAccount': 'Jag har ett konto',
+  'share.page.askToJoin': 'Be om att gå med',
+  'share.page.signInLede': 'Logga in, så är boken bara ett tryck bort.',
+  'share.page.coverAlt': 'Omslag till {title}',
+  'share.join.lede':
+    'Ange din e-post, så släpper en admin in dig. Kom tillbaka till den här länken efteråt.',
+  'share.join.email': 'E-post',
+  'share.join.name': 'Ditt namn',
+  'share.join.message': 'En rad till admin',
+  'share.join.messagePlaceholder': 'Valfritt – vem du är, hur du känner dem',
+  'share.join.send': 'Skicka förfrågan',
+  'share.join.sending': 'Skickar…',
+  'share.join.failed': 'Kunde inte skicka förfrågan. Är servern nåbar?',
+  'share.join.tooMany': 'För många förfrågningar härifrån – försök igen senare.',
+  'share.join.pendingTitle': 'Förfrågan skickad',
+  'share.join.pendingBody':
+    'En admin måste godkänna den; kom tillbaka till den här länken efteråt.',
+  'share.join.pendingAs': 'Bett som {email}',
+  'share.join.notYou': 'Inte du? Be igen med en annan adress',
+  'share.join.declinedTitle': 'Inte den här gången',
+  'share.join.declinedBody':
+    'Den här förfrågan godkändes inte. Om det verkar fel kan du fråga personen som delade länken med dig.',
+  'share.join.approvedTitle': 'Du är med',
+  'share.join.approvedLede':
+    'Välj ett användarnamn och ett lösenord, så väntar boken på din läslista.',
+  'share.join.approvedUsedTitle': 'Ditt konto är klart',
+  'share.join.approvedUsedBody':
+    'Den här förfrågan godkändes och kontot skapades. Logga in för att öppna boken.',
+  'share.join.inviteLapsed': 'Den här inbjudan har gått ut. Be om att gå med igen.',
+  'share.recommendedBy': 'Rekommenderad av {name}',
 };
 export default messages;

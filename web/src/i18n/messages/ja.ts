@@ -1600,6 +1600,118 @@ const messages: Record<string, string> = {
     '{kinds, select, hn {ハイライトとノート} hb {ハイライトとブックマーク} nb {ノートとブックマーク} other {すべての印}}',
   'notes.export.bookmark': 'ブックマーク',
   'notes.export.whereWhen': '{where} · {date}',
+  // nav
+  'nav.joinRequests': '参加リクエストが届いています',
+
+  // shell
+  'shell.jobType.language-backfill': '本の言語を読み取り',
+
+  // library
+  'library.lang.group': '言語で絞り込み',
+  'library.lang.all': 'すべて',
+
+  // reader
+  'reader.select.share': '共有',
+  'reader.select.clear': '選択を解除',
+  'reader.select.continue': '選択を続ける',
+  'reader.select.continueArmed': '終わる位置をタップ',
+  'reader.share.text': '『{title}』で読んだ一節: 「{quote}」 {url}',
+  'reader.share.copied': 'コピーしました - どこにでも貼り付けられます',
+  'reader.toast.copyFailed': 'コピーできませんでした',
+
+  // people
+  'people.joinRequests.title': '参加リクエスト',
+  'people.joinRequests.lede':
+    '共有リンクから参加をリクエストした人たちです。承認するとリーダーの招待が作成され、同じリンクからその人に渡されます。',
+  'people.joinRequests.askedFor': '『{title}』をリクエスト · {name}さんが共有',
+  'people.joinRequests.askedForUnknown': 'すでに取り消されたリンクからのリクエスト',
+  'people.joinRequests.when': '{when}にリクエスト',
+  'people.joinRequests.approve': '承認',
+  'people.joinRequests.decline': '却下',
+  'people.joinRequests.approved': '承認済み - 共有リンクからアカウントを作成できます',
+  'people.joinRequests.declined': 'リクエストを却下しました',
+  'people.joinRequests.failed': '送信できませんでした。接続を確認してください。',
+
+  // stats
+  'stats.focus.title': '筋を保つ',
+  'stats.focus.lede':
+    '1〜2ページ戻るのは読み返しです。筋を見失って、確かめに戻ったということ。丁寧に読む人ほどよくあることで、ここで見ているのは、それが最も少ない時間帯です。',
+  'stats.focus.collecting':
+    'まだ集計中です。読み返しのあるセッションがもう少し増えると、最も筋を保てている時間帯がわかります。',
+  'stats.focus.week':
+    '{n, plural, =0 {今週は{time}の読書で一度も戻っていません} other {今週は{time}の読書で#回戻りました}}{verdict, select, less {、いつもより少なめです。} more {、いつもより多めです。} usual {、いつもと同じくらいです。} other {。}}',
+  'stats.focus.weekEmpty':
+    '今週はまだ記録がありません。過去{days}日間では、{time}の読書で{n, plural, =0 {一度も戻っていません} other {#回戻りました}}。',
+  'stats.focus.stripLabel': '時間帯ごとの筋の保ち具合',
+  'stats.focus.cell': '{hour}: 読書1時間あたり約{rate}回戻っています',
+  'stats.focus.cellThin': '{hour}: ここは読書量が少なく判断できません',
+  'stats.focus.less': '戻りが多い',
+  'stats.focus.more': '筋を保てている',
+  'stats.focus.steadiest':
+    '{from}〜{to}の間は、いつもより戻る回数が{pct}%少なくなります。最も筋を保てている時間帯です。',
+  'stats.focus.even': '際立つ時間帯はありません。いつ読んでも同じくらい筋を保てています。',
+  'stats.best.focus': 'その時間帯は戻る回数も少なめです。',
+
+  // friends
+  'friends.bar.bead': '{name}、{pct}の位置',
+
+  // share
+  'share.button': '共有',
+  'share.sheet.title': '『{title}』を共有',
+  'share.sheet.lede':
+    'リンクを持つ人は誰でも表紙とタイトル、あなたの名前を見ることができ、このライブラリへの参加をリクエストできます。',
+  'share.sheet.linkLabel': 'リンク',
+  'share.sheet.copy': 'リンクをコピー',
+  'share.sheet.copied': 'リンクをコピーしました',
+  'share.sheet.copyFailed': 'リンクを選択してコピーしてください',
+  'share.sheet.native': '共有…',
+  'share.sheet.text': '{name}さんがReadPortで『{title}』をあなたと共有しました',
+  'share.sheet.creating': 'リンクを作成しています…',
+  'share.sheet.failed': '今はリンクを作成できませんでした。',
+  'share.page.checking': 'リンクを確認しています…',
+  'share.page.invalidTitle': 'この共有リンクはすでに無効です',
+  'share.page.invalidLede':
+    'リンクが取り消されたか、本がライブラリからなくなった可能性があります。',
+  'share.page.openLibrary': 'ライブラリを開く',
+  'share.page.unreachableTitle': 'このリンクを確認できませんでした',
+  'share.page.unreachableLede':
+    'サーバーから応答がありませんでした。しばらくしてからもう一度お試しください。',
+  'share.page.sharedWithYou': '{name}さんがこの本をあなたと共有しました',
+  'share.page.sharedTeaser': '{name}さんがReadPortでこれをあなたと共有しました',
+  'share.page.addToList': '読書リストに追加',
+  'share.page.onList': '読書リストに追加済み',
+  'share.page.added': '読書リストに追加しました',
+  'share.page.addFailed': '今は追加できませんでした。',
+  'share.page.openBook': '本を開く',
+  'share.page.haveAccount': 'アカウントを持っています',
+  'share.page.askToJoin': '参加をリクエスト',
+  'share.page.signInLede': 'サインインすれば、あとワンタップで本が開けます。',
+  'share.page.coverAlt': '『{title}』の表紙',
+  'share.join.lede':
+    'メールアドレスを残してください。管理者が承認すると参加できます。その後はこのリンクに戻ってきてください。',
+  'share.join.email': 'メールアドレス',
+  'share.join.name': 'お名前',
+  'share.join.message': '管理者への一言',
+  'share.join.messagePlaceholder': '任意 - ご自身のことや相手との関係など',
+  'share.join.send': 'リクエストを送信',
+  'share.join.sending': '送信中…',
+  'share.join.failed': 'リクエストを送信できませんでした。サーバーに接続できていますか?',
+  'share.join.tooMany':
+    'ここからのリクエストが多すぎます。しばらくしてからもう一度お試しください。',
+  'share.join.pendingTitle': 'リクエストを送信しました',
+  'share.join.pendingBody': '管理者の承認が必要です。その後、このリンクに戻ってきてください。',
+  'share.join.pendingAs': '{email}としてリクエストしました',
+  'share.join.notYou': 'ご自身ではない場合は、別のメールアドレスでリクエストしてください',
+  'share.join.declinedTitle': '今回は見送りとなりました',
+  'share.join.declinedBody':
+    'このリクエストは承認されませんでした。心当たりがない場合は、リンクを共有した相手に確認してください。',
+  'share.join.approvedTitle': '参加が承認されました',
+  'share.join.approvedLede': 'ユーザー名とパスワードを決めると、本が読書リストで待っています。',
+  'share.join.approvedUsedTitle': 'アカウントの準備ができました',
+  'share.join.approvedUsedBody':
+    'このリクエストは承認され、アカウントが作成されました。サインインして本を開いてください。',
+  'share.join.inviteLapsed': '招待の有効期限が切れました。もう一度参加をリクエストしてください。',
+  'share.recommendedBy': '{name}さんのおすすめ',
 };
 
 export default messages;

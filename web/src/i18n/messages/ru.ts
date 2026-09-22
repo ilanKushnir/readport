@@ -1617,6 +1617,117 @@ const messages: Record<string, string> = {
     '{kinds, select, hn {Выделения и заметки} hb {Выделения и закладки} nb {Заметки и закладки} other {Всё отмеченное}}',
   'notes.export.bookmark': 'Закладка',
   'notes.export.whereWhen': '{where} · {date}',
+  // nav
+  'nav.joinRequests': 'Есть запрос на присоединение',
+
+  // shell
+  'shell.jobType.language-backfill': 'Определение языка книг',
+
+  // library
+  'library.lang.group': 'Фильтр по языку',
+  'library.lang.all': 'Все',
+
+  // reader
+  'reader.select.share': 'Поделиться',
+  'reader.select.clear': 'Снять выделение',
+  'reader.select.continue': 'Продолжить выделение',
+  'reader.select.continueArmed': 'Нажмите, где закончить выделение',
+  'reader.share.text': 'Смотрите, что я читаю в «{title}»: «{quote}» {url}',
+  'reader.share.copied': 'Скопировано — вставьте куда угодно',
+  'reader.toast.copyFailed': 'Не удалось скопировать',
+
+  // people
+  'people.joinRequests.title': 'Запросы на присоединение',
+  'people.joinRequests.lede':
+    'Люди, которые перешли по ссылке и попросились присоединиться. Одобрение создаёт приглашение для читателя — та же ссылка передаст его им.',
+  'people.joinRequests.askedFor': 'Запрос пришёл по ссылке на «{title}» от {name}',
+  'people.joinRequests.askedForUnknown': 'Запрос пришёл по ссылке, которая с тех пор отозвана',
+  'people.joinRequests.when': 'Запрошено {when}',
+  'people.joinRequests.approve': 'Одобрить',
+  'people.joinRequests.decline': 'Отклонить',
+  'people.joinRequests.approved': 'Одобрено — они смогут создать учётную запись по той же ссылке',
+  'people.joinRequests.declined': 'Запрос отклонён',
+  'people.joinRequests.failed': 'Не получилось — проверьте соединение.',
+
+  // stats
+  'stats.focus.title': 'Держим нить',
+  'stats.focus.lede':
+    'Шаг назад на страницу-другую — это перечитывание: нить соскользнула, и вы вернулись за ней. Так делают даже внимательные читатели — вопрос в том, когда это происходит у вас реже всего.',
+  'stats.focus.collecting':
+    'Данные ещё собираются. Ещё несколько сеансов с шагом назад — и эта страница покажет, когда вы лучше всего держите нить.',
+  'stats.focus.week':
+    '{n, plural, =0 {На этой неделе вы не сделали ни одного шага назад} one {На этой неделе вы сделали один шаг назад} few {На этой неделе вы сделали # шага назад} many {На этой неделе вы сделали # шагов назад} other {На этой неделе вы сделали # шага назад}} за {time} чтения{verdict, select, less {, это меньше обычного.} more {, это больше обычного.} usual {, это примерно как обычно.} other {.}}',
+  'stats.focus.weekEmpty':
+    'На этой неделе пока пусто. За последние {days} дней вы {n, plural, =0 {не сделали ни одного шага назад} one {сделали один шаг назад} few {сделали # шага назад} many {сделали # шагов назад} other {сделали # шага назад}} за {time} чтения.',
+  'stats.focus.stripLabel': 'Когда вы держите нить — по часам',
+  'stats.focus.cell': '{hour}: примерно {rate} шага назад в час чтения',
+  'stats.focus.cellThin': '{hour}: здесь ещё недостаточно чтения, чтобы судить',
+  'stats.focus.less': 'Возвращались чаще',
+  'stats.focus.more': 'Держали нить',
+  'stats.focus.steadiest':
+    'Между {from} и {to} вы делаете шаг назад на {pct}% реже, чем обычно — именно тогда вы лучше всего держите нить.',
+  'stats.focus.even':
+    'Ни один час не выделяется — вы одинаково хорошо держите нить, когда бы ни читали.',
+  'stats.best.focus': 'В это время вы ещё и реже теряете нить.',
+
+  // friends
+  'friends.bar.bead': '{name}, на {pct}',
+
+  // share
+  'share.button': 'Поделиться',
+  'share.sheet.title': 'Поделиться «{title}»',
+  'share.sheet.lede':
+    'Любой, у кого есть ссылка, увидит обложку, название и ваше имя — и сможет попроситься в эту библиотеку.',
+  'share.sheet.linkLabel': 'Ссылка',
+  'share.sheet.copy': 'Скопировать ссылку',
+  'share.sheet.copied': 'Ссылка скопирована',
+  'share.sheet.copyFailed': 'Выделите и скопируйте ссылку',
+  'share.sheet.native': 'Поделиться…',
+  'share.sheet.text': '{name} делится с вами «{title}» в ReadPort',
+  'share.sheet.creating': 'Создание ссылки…',
+  'share.sheet.failed': 'Не удалось создать ссылку прямо сейчас.',
+  'share.page.checking': 'Проверяем ссылку…',
+  'share.page.invalidTitle': 'Эта ссылка больше не действует',
+  'share.page.invalidLede': 'Возможно, её отозвали, или книга покинула библиотеку.',
+  'share.page.openLibrary': 'Открыть библиотеку',
+  'share.page.unreachableTitle': 'Не удалось проверить эту ссылку',
+  'share.page.unreachableLede': 'Сервер не ответил. Попробуйте ещё раз через минуту.',
+  'share.page.sharedWithYou': '{name} делится с вами этой книгой',
+  'share.page.sharedTeaser': '{name} делится этим с вами в ReadPort',
+  'share.page.addToList': 'Добавить в список чтения',
+  'share.page.onList': 'В вашем списке чтения',
+  'share.page.added': 'Добавлено в ваш список чтения',
+  'share.page.addFailed': 'Не удалось добавить прямо сейчас.',
+  'share.page.openBook': 'Открыть книгу',
+  'share.page.haveAccount': 'У меня есть учётная запись',
+  'share.page.askToJoin': 'Попроситься',
+  'share.page.signInLede': 'Войдите — и книга будет всего в одном касании.',
+  'share.page.coverAlt': 'Обложка «{title}»',
+  'share.join.lede':
+    'Оставьте свой email, и администратор вас впустит. Затем возвращайтесь по этой ссылке.',
+  'share.join.email': 'Email',
+  'share.join.name': 'Ваше имя',
+  'share.join.message': 'Пара слов администратору',
+  'share.join.messagePlaceholder': 'Необязательно — кто вы и как вы знакомы',
+  'share.join.send': 'Отправить запрос',
+  'share.join.sending': 'Отправка…',
+  'share.join.failed': 'Не удалось отправить запрос. Сервер доступен?',
+  'share.join.tooMany': 'Слишком много запросов отсюда — попробуйте позже.',
+  'share.join.pendingTitle': 'Запрос отправлен',
+  'share.join.pendingBody': 'Администратору нужно его одобрить — потом вернитесь по этой ссылке.',
+  'share.join.pendingAs': 'Вы указали {email}',
+  'share.join.notYou': 'Это не вы? Отправьте запрос с другого адреса',
+  'share.join.declinedTitle': 'Не в этот раз',
+  'share.join.declinedBody':
+    'Запрос не был одобрен. Если это кажется ошибкой, обратитесь к тому, кто поделился с вами ссылкой.',
+  'share.join.approvedTitle': 'Вас приняли',
+  'share.join.approvedLede':
+    'Выберите имя пользователя и пароль — и книга будет ждать вас в списке чтения.',
+  'share.join.approvedUsedTitle': 'Ваша учётная запись готова',
+  'share.join.approvedUsedBody':
+    'Запрос был одобрен, и учётная запись уже создана. Войдите, чтобы открыть книгу.',
+  'share.join.inviteLapsed': 'Это приглашение больше не действует. Попроситесь ещё раз.',
+  'share.recommendedBy': 'Рекомендовано {name}',
 };
 
 export default messages;

@@ -1627,5 +1627,117 @@ const messages: Record<string, string> = {
     '{kinds, select, hn {Επισημάνσεις και σημειώσεις} hb {Επισημάνσεις και σελιδοδείκτες} nb {Σημειώσεις και σελιδοδείκτες} other {Ό,τι έχει σημειωθεί}}',
   'notes.export.bookmark': 'Σελιδοδείκτης',
   'notes.export.whereWhen': '{where} · {date}',
+  // nav
+  'nav.joinRequests': 'Κάποιος έστειλε αίτημα συμμετοχής',
+
+  // shell
+  'shell.jobType.language-backfill': 'Ανάγνωση γλωσσών βιβλίων',
+
+  // library
+  'library.lang.group': 'Φιλτράρισμα κατά γλώσσα',
+  'library.lang.all': 'Όλα',
+
+  // reader
+  'reader.select.share': 'Κοινή χρήση',
+  'reader.select.clear': 'Απαλοιφή επιλογής',
+  'reader.select.continue': 'Συνέχεια επιλογής',
+  'reader.select.continueArmed': 'Πάτησε εκεί που τελειώνει',
+  'reader.share.text': 'Δες τι διάβασα στο {title}: “{quote}” {url}',
+  'reader.share.copied': 'Αντιγράφηκε - επικόλλησέ το όπου θέλεις',
+  'reader.toast.copyFailed': 'Δεν ήταν δυνατή η αντιγραφή',
+
+  // people
+  'people.joinRequests.title': 'Αιτήματα συμμετοχής',
+  'people.joinRequests.lede':
+    'Άτομα που ακολούθησαν έναν σύνδεσμο κοινής χρήσης και ζήτησαν να μπουν. Η έγκριση δημιουργεί μια πρόσκληση αναγνώστη, την οποία ο ίδιος σύνδεσμος τους δίνει.',
+  'people.joinRequests.askedFor': 'ζήτησε το {title}, που μοιράστηκε από {name}',
+  'people.joinRequests.askedForUnknown': 'ζήτησε μέσω ενός συνδέσμου που έχει έκτοτε αποσυρθεί',
+  'people.joinRequests.when': 'Ζήτησε {when}',
+  'people.joinRequests.approve': 'Έγκριση',
+  'people.joinRequests.decline': 'Απόρριψη',
+  'people.joinRequests.approved':
+    'Εγκρίθηκε - μπορούν να δημιουργήσουν τον λογαριασμό τους από τον σύνδεσμο κοινής χρήσης',
+  'people.joinRequests.declined': 'Το αίτημα απορρίφθηκε',
+  'people.joinRequests.failed': 'Δεν ολοκληρώθηκε - έλεγξε τη σύνδεση.',
+
+  // stats
+  'stats.focus.title': 'Κρατώντας τον ειρμό',
+  'stats.focus.lede':
+    'Ένα βήμα πίσω μιας ή δύο σελίδων είναι επανάγνωση: ο ειρμός σου ξέφυγε και γύρισες πίσω για αυτόν. Το κάνουν και οι προσεκτικοί αναγνώστες - εδώ βλέπεις πότε το κάνεις λιγότερο.',
+  'stats.focus.collecting':
+    'Συλλέγουμε ακόμα δεδομένα. Λίγες ακόμα συνεδρίες με ένα βήμα πίσω μέσα τους, και αυτή η σελίδα θα σου πει πότε κρατάς τον ειρμό καλύτερα.',
+  'stats.focus.week':
+    '{n, plural, =0 {Αυτή την εβδομάδα δεν γύρισες πίσω ούτε μία φορά σε {time} ανάγνωσης} one {Αυτή την εβδομάδα γύρισες πίσω μία φορά σε {time} ανάγνωσης} other {Αυτή την εβδομάδα γύρισες πίσω # φορές σε {time} ανάγνωσης}}{verdict, select, less {, λιγότερο από το συνηθισμένο.} more {, περισσότερο από το συνηθισμένο.} usual {, περίπου όσο το συνηθισμένο σου.} other {.}}',
+  'stats.focus.weekEmpty':
+    'Τίποτα ακόμα αυτή την εβδομάδα. Τις τελευταίες {days} ημέρες γύρισες πίσω {n, plural, =0 {ούτε μία φορά} one {μία φορά} other {# φορές}} σε {time} ανάγνωσης.',
+  'stats.focus.stripLabel': 'Πότε κρατάς τον ειρμό, ανά ώρα της ημέρας',
+  'stats.focus.cell': '{hour}: γύρισες πίσω περίπου {rate} φορές την ώρα ανάγνωσης',
+  'stats.focus.cellThin': '{hour}: δεν υπάρχει αρκετή ανάγνωση εδώ για να πούμε',
+  'stats.focus.less': 'Γύρισες πίσω περισσότερο',
+  'stats.focus.more': 'Κράτησες τον ειρμό',
+  'stats.focus.steadiest':
+    'Ανάμεσα σε {from} και {to} γυρίζεις πίσω {pct}% λιγότερο συχνά από το συνηθισμένο σου: τότε κρατάς καλύτερα τον ειρμό.',
+  'stats.focus.even': 'Καμία ώρα δεν ξεχωρίζει: κρατάς τον ειρμό εξίσου καλά όποτε διαβάζεις.',
+  'stats.best.focus': 'Εκεί επίσης γυρίζεις πίσω για τον ειρμό λιγότερο συχνά.',
+
+  // friends
+  'friends.bar.bead': '{name}, στο {pct}',
+
+  // share
+  'share.button': 'Κοινή χρήση',
+  'share.sheet.title': 'Κοινή χρήση: {title}',
+  'share.sheet.lede':
+    'Όποιος έχει τον σύνδεσμο βλέπει το εξώφυλλο, τον τίτλο και το όνομά σου, και μπορεί να ζητήσει να συμμετάσχει σε αυτή τη βιβλιοθήκη.',
+  'share.sheet.linkLabel': 'Σύνδεσμος',
+  'share.sheet.copy': 'Αντιγραφή συνδέσμου',
+  'share.sheet.copied': 'Ο σύνδεσμος αντιγράφηκε',
+  'share.sheet.copyFailed': 'Επίλεξε και αντέγραψε τον σύνδεσμο',
+  'share.sheet.native': 'Κοινή χρήση…',
+  'share.sheet.text': 'Ο/Η {name} μοιράστηκε το {title} μαζί σου στο ReadPort',
+  'share.sheet.creating': 'Δημιουργία συνδέσμου…',
+  'share.sheet.failed': 'Δεν ήταν δυνατή η δημιουργία συνδέσμου αυτή τη στιγμή.',
+  'share.page.checking': 'Έλεγχος του συνδέσμου…',
+  'share.page.invalidTitle': 'Αυτός ο σύνδεσμος κοινής χρήσης δεν ισχύει πια',
+  'share.page.invalidLede': 'Μπορεί να αποσύρθηκε, ή το βιβλίο να έχει φύγει από τη βιβλιοθήκη.',
+  'share.page.openLibrary': 'Άνοιγμα βιβλιοθήκης',
+  'share.page.unreachableTitle': 'Δεν ήταν δυνατός ο έλεγχος αυτού του συνδέσμου',
+  'share.page.unreachableLede': 'Ο διακομιστής δεν απάντησε. Δοκίμασε ξανά σε λίγο.',
+  'share.page.sharedWithYou': 'Ο/Η {name} μοιράστηκε αυτό το βιβλίο μαζί σου',
+  'share.page.sharedTeaser': 'Ο/Η {name} το μοιράστηκε μαζί σου στο ReadPort',
+  'share.page.addToList': 'Προσθήκη στη λίστα ανάγνωσης',
+  'share.page.onList': 'Στη λίστα ανάγνωσής σου',
+  'share.page.added': 'Προστέθηκε στη λίστα ανάγνωσης',
+  'share.page.addFailed': 'Δεν ήταν δυνατή η προσθήκη αυτή τη στιγμή.',
+  'share.page.openBook': 'Άνοιγμα βιβλίου',
+  'share.page.haveAccount': 'Έχω λογαριασμό',
+  'share.page.askToJoin': 'Αίτημα συμμετοχής',
+  'share.page.signInLede': 'Συνδέσου, και το βιβλίο είναι μόλις ένα άγγιγμα μακριά.',
+  'share.page.coverAlt': 'Εξώφυλλο του {title}',
+  'share.join.lede':
+    'Άφησε το email σου και ένας διαχειριστής θα σε αφήσει να μπεις. Ξαναγύρισε σε αυτόν τον σύνδεσμο μετά.',
+  'share.join.email': 'Email',
+  'share.join.name': 'Το όνομά σου',
+  'share.join.message': 'Λίγα λόγια για τον διαχειριστή',
+  'share.join.messagePlaceholder': 'Προαιρετικό - ποιος είσαι, πώς τους ξέρεις',
+  'share.join.send': 'Αποστολή αιτήματος',
+  'share.join.sending': 'Αποστολή…',
+  'share.join.failed': 'Δεν ήταν δυνατή η αποστολή του αιτήματος. Είναι προσβάσιμος ο διακομιστής;',
+  'share.join.tooMany': 'Πάρα πολλά αιτήματα από εδώ - δοκίμασε ξανά αργότερα.',
+  'share.join.pendingTitle': 'Το αίτημα στάλθηκε',
+  'share.join.pendingBody':
+    'Ένας διαχειριστής πρέπει να το εγκρίνει· ξαναγύρισε σε αυτόν τον σύνδεσμο μετά.',
+  'share.join.pendingAs': 'Ζήτησες ως {email}',
+  'share.join.notYou': 'Δεν είσαι εσύ; Ζήτα με διαφορετική διεύθυνση',
+  'share.join.declinedTitle': 'Όχι αυτή τη φορά',
+  'share.join.declinedBody':
+    'Αυτό το αίτημα δεν εγκρίθηκε. Αν αυτό σου φαίνεται λάθος, ρώτησε το άτομο που μοιράστηκε τον σύνδεσμο μαζί σου.',
+  'share.join.approvedTitle': 'Μπήκες',
+  'share.join.approvedLede':
+    'Διάλεξε ένα όνομα χρήστη και έναν κωδικό πρόσβασης, και το βιβλίο θα σε περιμένει στη λίστα ανάγνωσής σου.',
+  'share.join.approvedUsedTitle': 'Ο λογαριασμός σου είναι έτοιμος',
+  'share.join.approvedUsedBody':
+    'Αυτό το αίτημα εγκρίθηκε και ο λογαριασμός δημιουργήθηκε. Συνδέσου για να ανοίξεις το βιβλίο.',
+  'share.join.inviteLapsed': 'Αυτή η πρόσκληση έχει λήξει. Ζήτα ξανά να συμμετάσχεις.',
+  'share.recommendedBy': 'Πρόταση από {name}',
 };
 export default messages;

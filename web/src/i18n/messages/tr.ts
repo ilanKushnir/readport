@@ -1600,6 +1600,120 @@ const messages: Record<string, string> = {
     '{kinds, select, hn {Vurgulamalar ve notlar} hb {Vurgulamalar ve yer imleri} nb {Notlar ve yer imleri} other {İşaretlenen her şey}}',
   'notes.export.bookmark': 'Yer imi',
   'notes.export.whereWhen': '{where} · {date}',
+  // nav
+  'nav.joinRequests': 'Biri katılma isteği gönderdi',
+
+  // shell
+  'shell.jobType.language-backfill': 'Kitap dillerini oku',
+
+  // library
+  'library.lang.group': 'Dile göre filtrele',
+  'library.lang.all': 'Tümü',
+
+  // reader
+  'reader.select.share': 'Paylaş',
+  'reader.select.clear': 'Seçimi temizle',
+  'reader.select.continue': 'Seçime devam et',
+  'reader.select.continueArmed': 'Bittiği yere dokunun',
+  'reader.share.text': '{title} kitabında ne okuduğuma bakın: “{quote}” {url}',
+  'reader.share.copied': 'Kopyalandı - istediğiniz yere yapıştırın',
+  'reader.toast.copyFailed': 'Kopyalanamadı',
+
+  // people
+  'people.joinRequests.title': 'Katılma istekleri',
+  'people.joinRequests.lede':
+    'Bir paylaşım bağlantısını takip edip içeri alınmak isteyen kişiler. Onaylamak bir okuyucu daveti oluşturur; bunu onlara aynı bağlantı iletir.',
+  'people.joinRequests.askedFor': '{name} tarafından paylaşılan {title} için istek gönderdi',
+  'people.joinRequests.askedForUnknown':
+    'o zamandan beri geri çekilmiş bir bağlantı üzerinden istek gönderdi',
+  'people.joinRequests.when': '{when} istedi',
+  'people.joinRequests.approve': 'Onayla',
+  'people.joinRequests.decline': 'Reddet',
+  'people.joinRequests.approved':
+    'Onaylandı - hesaplarını paylaşım bağlantısından oluşturabilirler',
+  'people.joinRequests.declined': 'İstek reddedildi',
+  'people.joinRequests.failed': 'Bu gerçekleşmedi - bağlantıyı kontrol edin.',
+
+  // stats
+  'stats.focus.title': 'İpin ucunu tutmak',
+  'stats.focus.lede':
+    'Bir iki sayfa geri gitmek bir yeniden okumadır: ipin ucu kaçtı, siz de onu yakalamaya döndünüz. Dikkatli okuyucular da bunu yapar - burada görünen, bunu en az ne zaman yaptığınız.',
+  'stats.focus.collecting':
+    'Hâlâ veri topluyoruz. İçinde bir geri adım bulunan birkaç oturum daha, bu sayfa ipin ucunu en iyi ne zaman tuttuğunuzu söyleyecek.',
+  'stats.focus.week':
+    '{n, plural, =0 {Bu hafta {time} okuma boyunca hiç geri dönmediniz} one {Bu hafta {time} okuma boyunca bir kez geri döndünüz} other {Bu hafta {time} okuma boyunca # kez geri döndünüz}}{verdict, select, less {, her zamankinden az.} more {, her zamankinden çok.} usual {, her zamanki kadar.} other {.}}',
+  'stats.focus.weekEmpty':
+    'Bu hafta henüz bir şey yok. Son {days} günde, {time} okuma boyunca {n, plural, =0 {hiç geri dönmediniz} one {bir kez geri döndünüz} other {# kez geri döndünüz}}.',
+  'stats.focus.stripLabel': 'Günün saatine göre ipin ucunu ne zaman tuttuğunuz',
+  'stats.focus.cell': '{hour}: bir saatlik okumada ortalama {rate} kez geri döndünüz',
+  'stats.focus.cellThin': '{hour}: burada bunu söylemek için yeterli okuma yok',
+  'stats.focus.less': 'Daha çok geri döndünüz',
+  'stats.focus.more': 'İpin ucunu tuttunuz',
+  'stats.focus.steadiest':
+    '{from} ile {to} arasında, her zamankinden yüzde {pct} daha az geri dönüyorsunuz: ipin ucunu en iyi o zaman tutuyorsunuz.',
+  'stats.focus.even':
+    'Hiçbir saat öne çıkmıyor: ne zaman okursanız okuyun ipin ucunu aynı derecede iyi tutuyorsunuz.',
+  'stats.best.focus': 'Orada da ipin ucuna daha az sıklıkla geri dönüyorsunuz.',
+
+  // friends
+  'friends.bar.bead': '{name}, {pct} konumunda',
+
+  // share
+  'share.button': 'Paylaş',
+  'share.sheet.title': '{title} kitabını paylaş',
+  'share.sheet.lede':
+    'Bağlantıya sahip olan herkes kapağı, başlığı ve adınızı görür ve bu kitaplığa katılmak için istek gönderebilir.',
+  'share.sheet.linkLabel': 'Bağlantı',
+  'share.sheet.copy': 'Bağlantıyı kopyala',
+  'share.sheet.copied': 'Bağlantı kopyalandı',
+  'share.sheet.copyFailed': 'Bağlantıyı seçip kopyalayın',
+  'share.sheet.native': 'Paylaş…',
+  'share.sheet.text': "{name}, {title} kitabını ReadPort'ta sizinle paylaştı",
+  'share.sheet.creating': 'Bağlantı oluşturuluyor…',
+  'share.sheet.failed': 'Şu anda bir bağlantı oluşturulamadı.',
+  'share.page.checking': 'Bağlantı kontrol ediliyor…',
+  'share.page.invalidTitle': 'Bu paylaşım bağlantısı artık geçerli değil',
+  'share.page.invalidLede': 'Geri çekilmiş ya da kitap kitaplıktan ayrılmış olabilir.',
+  'share.page.openLibrary': 'Kitaplığı aç',
+  'share.page.unreachableTitle': 'Bu bağlantı kontrol edilemedi',
+  'share.page.unreachableLede': 'Sunucu yanıt vermedi. Birazdan tekrar deneyin.',
+  'share.page.sharedWithYou': '{name} bu kitabı sizinle paylaştı',
+  'share.page.sharedTeaser': "{name} bunu ReadPort'ta sizinle paylaştı",
+  'share.page.addToList': 'Okuma listesine ekle',
+  'share.page.onList': 'Okuma listenizde',
+  'share.page.added': 'Okuma listenize eklendi',
+  'share.page.addFailed': 'Şu anda eklenemedi.',
+  'share.page.openBook': 'Kitabı aç',
+  'share.page.haveAccount': 'Hesabım var',
+  'share.page.askToJoin': 'Katılma isteği gönder',
+  'share.page.signInLede': 'Oturum açın, kitap bir dokunuş uzağınızda.',
+  'share.page.coverAlt': '{title} kapağı',
+  'share.join.lede':
+    'E-postanızı bırakın, bir yönetici sizi içeri alacak. Daha sonra bu bağlantıya geri dönün.',
+  'share.join.email': 'E-posta',
+  'share.join.name': 'Adınız',
+  'share.join.message': 'Yöneticiye bir not',
+  'share.join.messagePlaceholder': 'İsteğe bağlı - kim olduğunuz, onları nereden tanıdığınız',
+  'share.join.send': 'İstek gönder',
+  'share.join.sending': 'Gönderiliyor…',
+  'share.join.failed': 'İstek gönderilemedi. Sunucuya ulaşılabiliyor mu?',
+  'share.join.tooMany': 'Buradan çok fazla istek gönderildi - daha sonra tekrar deneyin.',
+  'share.join.pendingTitle': 'İstek gönderildi',
+  'share.join.pendingBody':
+    'Bir yöneticinin onaylaması gerekiyor; daha sonra bu bağlantıya geri dönün.',
+  'share.join.pendingAs': '{email} olarak istek gönderdiniz',
+  'share.join.notYou': 'Siz değil misiniz? Farklı bir adresle istek gönderin',
+  'share.join.declinedTitle': 'Bu sefer olmadı',
+  'share.join.declinedBody':
+    'Bu istek onaylanmadı. Bu size yanlış görünüyorsa, bağlantıyı sizinle paylaşan kişiye sorun.',
+  'share.join.approvedTitle': 'İçeri alındınız',
+  'share.join.approvedLede':
+    'Bir kullanıcı adı ve parola seçin, kitap okuma listenizde sizi bekliyor olacak.',
+  'share.join.approvedUsedTitle': 'Hesabınız hazır',
+  'share.join.approvedUsedBody':
+    'Bu istek onaylandı ve hesap oluşturuldu. Kitabı açmak için oturum açın.',
+  'share.join.inviteLapsed': 'Bu davetin süresi doldu. Katılmak için tekrar istek gönderin.',
+  'share.recommendedBy': '{name} tarafından önerildi',
 };
 
 export default messages;

@@ -1619,6 +1619,119 @@ const messages: Record<string, string> = {
     '{kinds, select, hn {Виділення і нотатки} hb {Виділення і закладки} nb {Нотатки і закладки} other {Усе відмічене}}',
   'notes.export.bookmark': 'Закладка',
   'notes.export.whereWhen': '{where} · {date}',
+  // nav
+  'nav.joinRequests': 'Хтось попросив приєднатися',
+
+  // shell
+  'shell.jobType.language-backfill': 'Читання мов книг',
+
+  // library
+  'library.lang.group': 'Фільтр за мовою',
+  'library.lang.all': 'Усі',
+
+  // reader
+  'reader.select.share': 'Поділитися',
+  'reader.select.clear': 'Очистити виділення',
+  'reader.select.continue': 'Продовжити виділення',
+  'reader.select.continueArmed': 'Торкніться, де закінчується',
+  'reader.share.text': 'Дивіться, що я читаю в {title}: «{quote}» {url}',
+  'reader.share.copied': 'Скопійовано — вставте де завгодно',
+  'reader.toast.copyFailed': 'Не вдалося скопіювати',
+
+  // people
+  'people.joinRequests.title': 'Запити на приєднання',
+  'people.joinRequests.lede':
+    'Люди, які перейшли за спільним посиланням і попросили впустити їх. Схвалення створює запрошення для читача, яке те саме посилання їм і передає.',
+  'people.joinRequests.askedFor': 'просить «{title}», яким ділиться {name}',
+  'people.joinRequests.askedForUnknown': 'просить за посиланням, яке відтоді відкликали',
+  'people.joinRequests.when': 'Попрошено {when}',
+  'people.joinRequests.approve': 'Схвалити',
+  'people.joinRequests.decline': 'Відхилити',
+  'people.joinRequests.approved':
+    'Схвалено — обліковий запис можна створити за спільним посиланням',
+  'people.joinRequests.declined': 'Запит відхилено',
+  'people.joinRequests.failed': 'Це не вдалося надіслати — перевірте з’єднання.',
+
+  // stats
+  'stats.focus.title': 'Тримаєте нитку',
+  'stats.focus.lede':
+    'Крок назад на сторінку-другу — це перечитування: нитка вислизнула, і ви повернулися за нею. Так буває навіть з уважними читачами — тут ідеться про те, коли це трапляється з вами найрідше.',
+  'stats.focus.collecting':
+    'Дані ще збираються. Ще кілька занять із кроком назад — і ця сторінка підкаже, коли ви найкраще тримаєте нитку.',
+  'stats.focus.week':
+    '{n, plural, =0 {Цього тижня ви жодного разу не поверталися за {time} читання} one {Цього тижня ви поверталися раз за {time} читання} few {Цього тижня ви поверталися # рази за {time} читання} many {Цього тижня ви поверталися # разів за {time} читання} other {Цього тижня ви поверталися # рази за {time} читання}}{verdict, select, less {, рідше, ніж зазвичай.} more {, частіше, ніж зазвичай.} usual {, приблизно як зазвичай.} other {.}}',
+  'stats.focus.weekEmpty':
+    'Поки що нічого цього тижня. За останні {days} днів ви поверталися {n, plural, =0 {жодного разу} one {раз} few {# рази} many {# разів} other {# рази}} за {time} читання.',
+  'stats.focus.stripLabel': 'Коли ви тримаєте нитку, за годинами доби',
+  'stats.focus.cell': '{hour}: ви поверталися приблизно {rate} рази на годину читання',
+  'stats.focus.cellThin': '{hour}: тут замало читання, щоб сказати',
+  'stats.focus.less': 'повертається частіше',
+  'stats.focus.more': 'тримає нитку',
+  'stats.focus.steadiest':
+    'Між {from} і {to} ви повертаєтеся на {pct}% рідше, ніж зазвичай: саме тоді ви найкраще тримаєте нитку.',
+  'stats.focus.even':
+    'Жодна година не вирізняється: ви тримаєте нитку приблизно однаково добре, коли б ви не читали.',
+  'stats.best.focus': 'У цей час ви також рідше повертаєтеся за ниткою.',
+
+  // friends
+  'friends.bar.bead': '{name}, на {pct}',
+
+  // share
+  'share.button': 'Поділитися',
+  'share.sheet.title': 'Поділитися «{title}»',
+  'share.sheet.lede':
+    'Будь-хто з посиланням бачить обкладинку, назву і ваше ім’я та може попросити приєднатися до цієї бібліотеки.',
+  'share.sheet.linkLabel': 'Посилання',
+  'share.sheet.copy': 'Копіювати посилання',
+  'share.sheet.copied': 'Посилання скопійовано',
+  'share.sheet.copyFailed': 'Виділіть і скопіюйте посилання',
+  'share.sheet.native': 'Поділитися…',
+  'share.sheet.text': '{name} ділиться з вами {title} на ReadPort',
+  'share.sheet.creating': 'Створення посилання…',
+  'share.sheet.failed': 'Не вдалося створити посилання щойно.',
+  'share.page.checking': 'Перевіряємо посилання…',
+  'share.page.invalidTitle': 'Це посилання більше не дійсне',
+  'share.page.invalidLede': 'Можливо, його відкликали, або книга залишила бібліотеку.',
+  'share.page.openLibrary': 'Відкрити бібліотеку',
+  'share.page.unreachableTitle': 'Не вдалося перевірити це посилання',
+  'share.page.unreachableLede': 'Сервер не відповів. Спробуйте ще раз за мить.',
+  'share.page.sharedWithYou': '{name} ділиться цією книгою з вами',
+  'share.page.sharedTeaser': '{name} ділиться цим із вами на ReadPort',
+  'share.page.addToList': 'Додати до списку читання',
+  'share.page.onList': 'У вашому списку читання',
+  'share.page.added': 'Додано до вашого списку читання',
+  'share.page.addFailed': 'Не вдалося додати це щойно.',
+  'share.page.openBook': 'Відкрити книгу',
+  'share.page.haveAccount': 'У мене є обліковий запис',
+  'share.page.askToJoin': 'Попросити приєднатися',
+  'share.page.signInLede': 'Увійдіть, і книга — на відстані одного дотику.',
+  'share.page.coverAlt': 'Обкладинка книги {title}',
+  'share.join.lede':
+    'Залиште свою електронну пошту, і адміністратор вас впустить. Поверніться за цим посиланням пізніше.',
+  'share.join.email': 'Електронна пошта',
+  'share.join.name': 'Ваше ім’я',
+  'share.join.message': 'Повідомлення для адміністратора',
+  'share.join.messagePlaceholder': 'Необов’язково — хто ви, звідки їх знаєте',
+  'share.join.send': 'Надіслати запит',
+  'share.join.sending': 'Надсилання…',
+  'share.join.failed': 'Не вдалося надіслати запит. Сервер доступний?',
+  'share.join.tooMany': 'Забагато запитів звідси — спробуйте пізніше.',
+  'share.join.pendingTitle': 'Запит надіслано',
+  'share.join.pendingBody':
+    'Адміністратор має його схвалити; поверніться за цим посиланням пізніше.',
+  'share.join.pendingAs': 'Ви подали запит як {email}',
+  'share.join.notYou': 'Не ви? Попросіть з іншою адресою',
+  'share.join.declinedTitle': 'Цього разу ні',
+  'share.join.declinedBody':
+    'Цей запит не було схвалено. Якщо це здається помилкою, запитайте людину, яка поділилася з вами посиланням.',
+  'share.join.approvedTitle': 'Вас прийняли',
+  'share.join.approvedLede':
+    'Виберіть ім’я користувача і пароль, і книга чекатиме на вас у вашому списку читання.',
+  'share.join.approvedUsedTitle': 'Ваш обліковий запис готовий',
+  'share.join.approvedUsedBody':
+    'Цей запит схвалено, і обліковий запис створено. Увійдіть, щоб відкрити книгу.',
+  'share.join.inviteLapsed': 'Термін дії цього запрошення минув. Попросіть приєднатися ще раз.',
+  'share.recommendedBy': 'Рекомендує {name}',
 };
 
 export default messages;

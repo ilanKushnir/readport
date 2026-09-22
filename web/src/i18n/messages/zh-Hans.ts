@@ -1507,5 +1507,110 @@ const messages: Record<string, string> = {
     '{kinds, select, hn {高亮与笔记} hb {高亮与书签} nb {笔记与书签} other {全部标记}}',
   'notes.export.bookmark': '书签',
   'notes.export.whereWhen': '{where} · {date}',
+  // nav
+  'nav.joinRequests': '有人申请加入',
+
+  // shell
+  'shell.jobType.language-backfill': '读取书籍语言',
+
+  // library
+  'library.lang.group': '按语言筛选',
+  'library.lang.all': '全部',
+
+  // reader
+  'reader.select.share': '分享',
+  'reader.select.clear': '取消选择',
+  'reader.select.continue': '继续选择',
+  'reader.select.continueArmed': '点按文本结束的位置',
+  'reader.share.text': '看看我在{title}里读到了什么：“{quote}” {url}',
+  'reader.share.copied': '已复制——可粘贴到任何地方',
+  'reader.toast.copyFailed': '无法复制',
+
+  // people
+  'people.joinRequests.title': '加入申请',
+  'people.joinRequests.lede':
+    '通过分享链接申请加入的人。批准后会生成一份读者邀请，同一个链接会将它交给对方。',
+  'people.joinRequests.askedFor': '通过{name}分享的{title}链接申请加入',
+  'people.joinRequests.askedForUnknown': '通过一个后来已撤销的链接申请加入',
+  'people.joinRequests.when': '申请于{when}',
+  'people.joinRequests.approve': '批准',
+  'people.joinRequests.decline': '拒绝',
+  'people.joinRequests.approved': '已批准——对方可以通过该分享链接创建账户',
+  'people.joinRequests.declined': '申请已拒绝',
+  'people.joinRequests.failed': '未能成功——请检查网络连接。',
+
+  // stats
+  'stats.focus.title': '跟上思路',
+  'stats.focus.lede':
+    '往回翻一两页也是一种重读：思路断了，你翻回去接上它。细心的读者也会这样——这里显示的是你这样做得最少的时段。',
+  'stats.focus.collecting':
+    '数据还在收集中。等更多阅读记录里出现往回翻页，这里就会显示你最能跟上思路的时段。',
+  'stats.focus.week':
+    '{n, plural, =0 {这周你在{time}阅读中一次也没有往回翻} other {这周你在{time}阅读中往回翻了#次}}{verdict, select, less {，比平时少。} more {，比平时多。} usual {，和平时差不多。} other {。}}',
+  'stats.focus.weekEmpty':
+    '这周还没有数据。过去{days}天里，你在{time}阅读中{n, plural, =0 {一次也没有往回翻} other {往回翻了#次}}。',
+  'stats.focus.stripLabel': '你何时最能跟上思路——按小时分布',
+  'stats.focus.cell': '{hour}：每小时阅读大约往回翻{rate}次',
+  'stats.focus.cellThin': '{hour}：这里的阅读数据还不够，无法判断',
+  'stats.focus.less': '往回翻得更多',
+  'stats.focus.more': '跟上了思路',
+  'stats.focus.steadiest':
+    '在{from}到{to}之间，你往回翻的次数比平时少{pct}%——这是你最能跟上思路的时候。',
+  'stats.focus.even': '没有哪个小时特别突出：不管什么时候读，你跟上思路的程度都差不多。',
+  'stats.best.focus': '那段时间你往回翻的次数也更少。',
+
+  // friends
+  'friends.bar.bead': '{name}，进度{pct}',
+
+  // share
+  'share.button': '分享',
+  'share.sheet.title': '分享{title}',
+  'share.sheet.lede': '任何持有链接的人都能看到封面、书名和你的名字，还可以申请加入这个书库。',
+  'share.sheet.linkLabel': '链接',
+  'share.sheet.copy': '复制链接',
+  'share.sheet.copied': '链接已复制',
+  'share.sheet.copyFailed': '请选中链接并复制',
+  'share.sheet.native': '分享…',
+  'share.sheet.text': '{name}在ReadPort上与你分享了{title}',
+  'share.sheet.creating': '创建链接中…',
+  'share.sheet.failed': '暂时无法创建链接。',
+  'share.page.checking': '正在核实链接…',
+  'share.page.invalidTitle': '此链接已失效',
+  'share.page.invalidLede': '可能已被撤销，或者这本书已从书库中移除。',
+  'share.page.openLibrary': '打开书库',
+  'share.page.unreachableTitle': '无法核实此链接',
+  'share.page.unreachableLede': '服务器没有响应。请稍等片刻再试。',
+  'share.page.sharedWithYou': '{name}与你分享了这本书',
+  'share.page.sharedTeaser': '{name}在ReadPort上与你分享了这本书',
+  'share.page.addToList': '加入阅读列表',
+  'share.page.onList': '已在你的阅读列表中',
+  'share.page.added': '已加入你的阅读列表',
+  'share.page.addFailed': '暂时无法添加。',
+  'share.page.openBook': '打开书籍',
+  'share.page.haveAccount': '我已有账户',
+  'share.page.askToJoin': '申请加入',
+  'share.page.signInLede': '登录后，这本书只需轻轻一点就能打开。',
+  'share.page.coverAlt': '{title}封面',
+  'share.join.lede': '留下你的邮箱，管理员会让你加入。之后请回到这个链接。',
+  'share.join.email': '邮箱',
+  'share.join.name': '你的名字',
+  'share.join.message': '给管理员的留言',
+  'share.join.messagePlaceholder': '可选——你是谁，怎么认识对方',
+  'share.join.send': '发送申请',
+  'share.join.sending': '发送中…',
+  'share.join.failed': '无法发送申请，服务器是否可以访问？',
+  'share.join.tooMany': '来自这里的请求太多——请稍后再试。',
+  'share.join.pendingTitle': '已发送申请',
+  'share.join.pendingBody': '需要管理员批准；之后请回到这个链接。',
+  'share.join.pendingAs': '已使用{email}申请',
+  'share.join.notYou': '不是你？用另一个邮箱地址申请',
+  'share.join.declinedTitle': '这次不行',
+  'share.join.declinedBody': '此申请未获批准。如果你觉得这不对，请联系与你分享这个链接的人。',
+  'share.join.approvedTitle': '你已获准加入',
+  'share.join.approvedLede': '设置用户名和密码，这本书就会在你的阅读列表里等着你。',
+  'share.join.approvedUsedTitle': '账户已就绪',
+  'share.join.approvedUsedBody': '此申请已获批准，账户已创建。登录即可打开这本书。',
+  'share.join.inviteLapsed': '此邀请已失效。请再次申请加入。',
+  'share.recommendedBy': '由{name}推荐',
 };
 export default messages;

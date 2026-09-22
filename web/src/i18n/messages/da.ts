@@ -1584,5 +1584,118 @@ const messages: Record<string, string> = {
     '{kinds, select, hn {Fremhævninger og noter} hb {Fremhævninger og bogmærker} nb {Noter og bogmærker} other {Alt markeret}}',
   'notes.export.bookmark': 'Bogmærke',
   'notes.export.whereWhen': '{where} · {date}',
+  // nav
+  'nav.joinRequests': 'Nogen har bedt om at deltage',
+
+  // shell
+  'shell.jobType.language-backfill': 'Genlæs bogsprog',
+
+  // library
+  'library.lang.group': 'Filtrer efter sprog',
+  'library.lang.all': 'Alle',
+
+  // reader
+  'reader.select.share': 'Del',
+  'reader.select.clear': 'Ryd markering',
+  'reader.select.continue': 'Fortsæt markering',
+  'reader.select.continueArmed': 'Tryk hvor den ender',
+  'reader.share.text': 'Se lige hvad jeg læste i {title}: »{quote}« {url}',
+  'reader.share.copied': 'Kopieret – sæt ind hvor som helst',
+  'reader.toast.copyFailed': 'Kunne ikke kopiere',
+
+  // people
+  'people.joinRequests.title': 'Anmodninger om at deltage',
+  'people.joinRequests.lede':
+    'Personer, der fulgte et delingslink og bad om at blive lukket ind. At godkende opretter en læserinvitation, som det samme link giver dem.',
+  'people.joinRequests.askedFor': 'Bad om {title}, delt af {name}',
+  'people.joinRequests.askedForUnknown':
+    'Bad om adgang via et link, der siden er blevet tilbagekaldt',
+  'people.joinRequests.when': 'Bedt {when}',
+  'people.joinRequests.approve': 'Godkend',
+  'people.joinRequests.decline': 'Afvis',
+  'people.joinRequests.approved': 'Godkendt – de kan oprette deres konto fra delingslinket',
+  'people.joinRequests.declined': 'Anmodning afvist',
+  'people.joinRequests.failed': 'Det gik ikke igennem – tjek forbindelsen.',
+
+  // stats
+  'stats.focus.title': 'At holde tråden',
+  'stats.focus.lede':
+    'Et skridt tilbage på en side eller to er en genlæsning: tråden gled, og du gik tilbage efter den. Omhyggelige læsere gør det også – det her handler om, hvornår du gør det mindst.',
+  'stats.focus.collecting':
+    'Samler stadig. Når nogle flere sessioner har haft et skridt tilbage, fortæller denne side dig, hvornår du holder tråden bedst.',
+  'stats.focus.week':
+    '{n, plural, =0 {Denne uge er du ikke gået tilbage en eneste gang på {time} læsning} one {Denne uge gik du tilbage én gang på {time} læsning} other {Denne uge gik du tilbage # gange på {time} læsning}}{verdict, select, less {, mindre end sædvanligt.} more {, mere end sædvanligt.} usual {, cirka som sædvanligt.} other {.}}',
+  'stats.focus.weekEmpty':
+    'Intet endnu denne uge. De seneste {days} dage gik du tilbage {n, plural, =0 {ikke en eneste gang} one {én gang} other {# gange}} på {time} læsning.',
+  'stats.focus.stripLabel': 'Hvornår du holder tråden, efter time på dagen',
+  'stats.focus.cell': '{hour}: gik tilbage cirka {rate} gange pr. læsetime',
+  'stats.focus.cellThin': '{hour}: for lidt læsning her til at sige noget',
+  'stats.focus.less': 'gik tilbage mere',
+  'stats.focus.more': 'holdt tråden',
+  'stats.focus.steadiest':
+    'Mellem {from} og {to} går du tilbage {pct}% sjældnere end sædvanligt: det er der, du holder tråden bedst.',
+  'stats.focus.even':
+    'Ingen time skiller sig ud: du holder tråden nogenlunde lige godt, uanset hvornår du læser.',
+  'stats.best.focus': 'Du går også sjældnere tilbage efter tråden i det tidsrum.',
+
+  // friends
+  'friends.bar.bead': '{name}, ved {pct}',
+
+  // share
+  'share.button': 'Del',
+  'share.sheet.title': 'Del {title}',
+  'share.sheet.lede':
+    'Alle med linket ser omslaget, titlen og dit navn, og kan bede om at deltage i dette bibliotek.',
+  'share.sheet.linkLabel': 'Link',
+  'share.sheet.copy': 'Kopier link',
+  'share.sheet.copied': 'Link kopieret',
+  'share.sheet.copyFailed': 'Marker og kopier linket',
+  'share.sheet.native': 'Del…',
+  'share.sheet.text': '{name} delte {title} med dig på ReadPort',
+  'share.sheet.creating': 'Opretter linket…',
+  'share.sheet.failed': 'Kunne ikke oprette et link lige nu.',
+  'share.page.checking': 'Tjekker linket…',
+  'share.page.invalidTitle': 'Dette delingslink er ikke længere gyldigt',
+  'share.page.invalidLede':
+    'Det er måske blevet tilbagekaldt, eller også har bogen forladt biblioteket.',
+  'share.page.openLibrary': 'Åbn biblioteket',
+  'share.page.unreachableTitle': 'Kunne ikke tjekke dette link',
+  'share.page.unreachableLede': 'Serveren svarede ikke. Prøv igen om lidt.',
+  'share.page.sharedWithYou': '{name} delte denne bog med dig',
+  'share.page.sharedTeaser': '{name} delte dette med dig på ReadPort',
+  'share.page.addToList': 'Føj til læselisten',
+  'share.page.onList': 'På din læseliste',
+  'share.page.added': 'Tilføjet til din læseliste',
+  'share.page.addFailed': 'Kunne ikke tilføje den lige nu.',
+  'share.page.openBook': 'Åbn bog',
+  'share.page.haveAccount': 'Jeg har en konto',
+  'share.page.askToJoin': 'Bed om at deltage',
+  'share.page.signInLede': 'Log ind, så er bogen kun et tryk væk.',
+  'share.page.coverAlt': 'Omslag til {title}',
+  'share.join.lede':
+    'Angiv din e-mail, så lukker en admin dig ind. Kom tilbage til dette link bagefter.',
+  'share.join.email': 'E-mail',
+  'share.join.name': 'Dit navn',
+  'share.join.message': 'En besked til admin',
+  'share.join.messagePlaceholder': 'Valgfrit – hvem du er, hvordan du kender dem',
+  'share.join.send': 'Send anmodning',
+  'share.join.sending': 'Sender…',
+  'share.join.failed': 'Kunne ikke sende anmodningen. Kan serveren nås?',
+  'share.join.tooMany': 'For mange anmodninger herfra – prøv igen senere.',
+  'share.join.pendingTitle': 'Anmodning sendt',
+  'share.join.pendingBody': 'En admin skal godkende den; kom tilbage til dette link bagefter.',
+  'share.join.pendingAs': 'Bedt som {email}',
+  'share.join.notYou': 'Ikke dig? Bed igen med en anden adresse',
+  'share.join.declinedTitle': 'Ikke denne gang',
+  'share.join.declinedBody':
+    'Denne anmodning blev ikke godkendt. Hvis det virker forkert, så spørg den, der delte linket med dig.',
+  'share.join.approvedTitle': 'Du er med',
+  'share.join.approvedLede':
+    'Vælg et brugernavn og en adgangskode, så venter bogen på din læseliste.',
+  'share.join.approvedUsedTitle': 'Din konto er klar',
+  'share.join.approvedUsedBody':
+    'Denne anmodning blev godkendt, og kontoen blev oprettet. Log ind for at åbne bogen.',
+  'share.join.inviteLapsed': 'Denne invitation er udløbet. Bed om at deltage igen.',
+  'share.recommendedBy': 'Anbefalet af {name}',
 };
 export default messages;

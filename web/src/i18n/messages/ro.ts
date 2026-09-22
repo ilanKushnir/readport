@@ -1620,5 +1620,117 @@ const messages: Record<string, string> = {
     '{kinds, select, hn {Evidențieri și notițe} hb {Evidențieri și semne de carte} nb {Notițe și semne de carte} other {Tot ce e marcat}}',
   'notes.export.bookmark': 'Semn de carte',
   'notes.export.whereWhen': '{where} · {date}',
+  // nav
+  'nav.joinRequests': 'Cineva a cerut să se alăture',
+
+  // shell
+  'shell.jobType.language-backfill': 'Citește limbile cărților',
+
+  // library
+  'library.lang.group': 'Filtrează după limbă',
+  'library.lang.all': 'Toate',
+
+  // reader
+  'reader.select.share': 'Distribuie',
+  'reader.select.clear': 'Deselectează',
+  'reader.select.continue': 'Continuă selecția',
+  'reader.select.continueArmed': 'Atinge unde se termină',
+  'reader.share.text': 'Uite ce am citit în {title}: „{quote}” {url}',
+  'reader.share.copied': 'Copiat - lipește-l oriunde',
+  'reader.toast.copyFailed': 'Nu s-a putut copia',
+
+  // people
+  'people.joinRequests.title': 'Cereri de alăturare',
+  'people.joinRequests.lede':
+    'Persoane care au deschis un link distribuit și au cerut să li se permită accesul. Aprobarea creează o invitație de cititor, pe care le-o dă tot acel link.',
+  'people.joinRequests.askedFor': 'a cerut {title}, prin linkul distribuit de {name}',
+  'people.joinRequests.askedForUnknown': 'a cerut printr-un link revocat între timp',
+  'people.joinRequests.when': 'Cerută {when}',
+  'people.joinRequests.approve': 'Aprobă',
+  'people.joinRequests.decline': 'Refuză',
+  'people.joinRequests.approved': 'Aprobat - contul poate fi creat din linkul distribuit',
+  'people.joinRequests.declined': 'Cerere refuzată',
+  'people.joinRequests.failed': 'Asta nu a trecut - verifică conexiunea.',
+
+  // stats
+  'stats.focus.title': 'Ții firul',
+  'stats.focus.lede':
+    'Un pas înapoi de o pagină sau două este o recitire: firul a scăpat și ai revenit după el. Li se întâmplă și cititorilor atenți - aici e vorba despre când ți se întâmplă cel mai rar.',
+  'stats.focus.collecting':
+    'Încă se adună date. După câteva ședințe în plus cu câte un pas înapoi, această pagină îți va spune când ții cel mai bine firul.',
+  'stats.focus.week':
+    '{n, plural, =0 {Săptămâna aceasta nu ai revenit deloc în {time} de lectură} one {Săptămâna aceasta ai revenit o dată în {time} de lectură} few {Săptămâna aceasta ai revenit de # ori în {time} de lectură} other {Săptămâna aceasta ai revenit de # de ori în {time} de lectură}}{verdict, select, less {, mai rar decât de obicei.} more {, mai des decât de obicei.} usual {, cam ca de obicei.} other {.}}',
+  'stats.focus.weekEmpty':
+    'Încă nimic săptămâna aceasta. În ultimele {days} zile ai revenit {n, plural, =0 {deloc} one {o dată} few {de # ori} other {de # de ori}} în {time} de lectură.',
+  'stats.focus.stripLabel': 'Când ții firul, pe ore ale zilei',
+  'stats.focus.cell': '{hour}: ai revenit de circa {rate} ori pe oră de lectură',
+  'stats.focus.cellThin': '{hour}: prea puțină lectură aici ca să se poată spune',
+  'stats.focus.less': 'revine mai des',
+  'stats.focus.more': 'ține firul',
+  'stats.focus.steadiest':
+    'Între {from} și {to} revii cu {pct}% mai rar decât de obicei: atunci ții cel mai bine firul.',
+  'stats.focus.even':
+    'Nicio oră nu iese în evidență: ții firul cam la fel de bine oricând citești.',
+  'stats.best.focus': 'Tot atunci revii mai rar după fir.',
+
+  // friends
+  'friends.bar.bead': '{name}, la {pct}',
+
+  // share
+  'share.button': 'Distribuie',
+  'share.sheet.title': 'Distribuie {title}',
+  'share.sheet.lede':
+    'Oricine are linkul vede coperta, titlul și numele tău și poate cere să se alăture acestei biblioteci.',
+  'share.sheet.linkLabel': 'Link',
+  'share.sheet.copy': 'Copiază linkul',
+  'share.sheet.copied': 'Link copiat',
+  'share.sheet.copyFailed': 'Selectează și copiază linkul',
+  'share.sheet.native': 'Distribuie…',
+  'share.sheet.text': '{name} ți-a distribuit {title} pe ReadPort',
+  'share.sheet.creating': 'Se creează linkul…',
+  'share.sheet.failed': 'Linkul nu a putut fi creat chiar acum.',
+  'share.page.checking': 'Se verifică linkul…',
+  'share.page.invalidTitle': 'Acest link nu mai este valabil',
+  'share.page.invalidLede': 'Poate a fost revocat sau cartea a părăsit biblioteca.',
+  'share.page.openLibrary': 'Deschide biblioteca',
+  'share.page.unreachableTitle': 'Linkul nu a putut fi verificat',
+  'share.page.unreachableLede': 'Serverul nu a răspuns. Încearcă din nou peste puțin timp.',
+  'share.page.sharedWithYou': '{name} ți-a distribuit această carte',
+  'share.page.sharedTeaser': '{name} ți-a distribuit asta pe ReadPort',
+  'share.page.addToList': 'Adaugă pe lista de lectură',
+  'share.page.onList': 'Pe lista ta de lectură',
+  'share.page.added': 'Adăugată pe lista ta de lectură',
+  'share.page.addFailed': 'Nu a putut fi adăugată chiar acum.',
+  'share.page.openBook': 'Deschide cartea',
+  'share.page.haveAccount': 'Am un cont',
+  'share.page.askToJoin': 'Cere să te alături',
+  'share.page.signInLede': 'Conectează-te și cartea e la o atingere distanță.',
+  'share.page.coverAlt': 'Coperta cărții {title}',
+  'share.join.lede':
+    'Lasă-ți emailul și un administrator te va lăsa să intri. Revino la acest link după aceea.',
+  'share.join.email': 'Email',
+  'share.join.name': 'Numele tău',
+  'share.join.message': 'Un rând pentru administrator',
+  'share.join.messagePlaceholder': 'Opțional - cine ești, de unde îi cunoști',
+  'share.join.send': 'Trimite cererea',
+  'share.join.sending': 'Se trimite…',
+  'share.join.failed': 'Cererea nu a putut fi trimisă. Este serverul accesibil?',
+  'share.join.tooMany': 'Prea multe cereri de aici - încearcă din nou mai târziu.',
+  'share.join.pendingTitle': 'Cerere trimisă',
+  'share.join.pendingBody':
+    'Un administrator trebuie să o aprobe; revino la acest link după aceea.',
+  'share.join.pendingAs': 'Ai trimis cererea ca {email}',
+  'share.join.notYou': 'Nu tu? Cere cu o altă adresă',
+  'share.join.declinedTitle': 'Nu de data aceasta',
+  'share.join.declinedBody':
+    'Această cerere nu a fost aprobată. Dacă ți se pare greșit, întreabă persoana care ți-a distribuit linkul.',
+  'share.join.approvedTitle': 'Ai fost acceptat',
+  'share.join.approvedLede':
+    'Alege un nume de utilizator și o parolă, iar cartea te va aștepta pe lista ta de lectură.',
+  'share.join.approvedUsedTitle': 'Contul tău este gata',
+  'share.join.approvedUsedBody':
+    'Această cerere a fost aprobată și contul a fost creat. Conectează-te pentru a deschide cartea.',
+  'share.join.inviteLapsed': 'Această invitație a expirat. Cere din nou să te alături.',
+  'share.recommendedBy': 'Recomandată de {name}',
 };
 export default messages;

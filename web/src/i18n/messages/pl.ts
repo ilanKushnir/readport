@@ -1625,5 +1625,117 @@ const messages: Record<string, string> = {
     '{kinds, select, hn {Zaznaczenia i notatki} hb {Zaznaczenia i zakładki} nb {Notatki i zakładki} other {Wszystko zaznaczone}}',
   'notes.export.bookmark': 'Zakładka',
   'notes.export.whereWhen': '{where} · {date}',
+  // nav
+  'nav.joinRequests': 'Czekają prośby o dołączenie',
+
+  // shell
+  'shell.jobType.language-backfill': 'Odczytywanie języków książek',
+
+  // library
+  'library.lang.group': 'Filtruj według języka',
+  'library.lang.all': 'Wszystko',
+
+  // reader
+  'reader.select.share': 'Udostępnij',
+  'reader.select.clear': 'Wyczyść zaznaczenie',
+  'reader.select.continue': 'Kontynuuj zaznaczenie',
+  'reader.select.continueArmed': 'Dotknij tam, gdzie się kończy',
+  'reader.share.text': 'Zobacz, co czytam w {title}: „{quote}” {url}',
+  'reader.share.copied': 'Skopiowano – wklej to gdziekolwiek',
+  'reader.toast.copyFailed': 'Nie udało się skopiować',
+
+  // people
+  'people.joinRequests.title': 'Prośby o dołączenie',
+  'people.joinRequests.lede':
+    'Osoby, które otworzyły udostępniony link i poprosiły o dostęp. Zatwierdzenie tworzy zaproszenie dla czytelnika, które przekazuje im ten sam link.',
+  'people.joinRequests.askedFor': 'prosi o {title}, link od {name}',
+  'people.joinRequests.askedForUnknown':
+    'prosi przez link, który został od tego czasu unieważniony',
+  'people.joinRequests.when': 'Prośba {when}',
+  'people.joinRequests.approve': 'Zatwierdź',
+  'people.joinRequests.decline': 'Odrzuć',
+  'people.joinRequests.approved':
+    'Zatwierdzono – mogą teraz utworzyć konto przez udostępniony link',
+  'people.joinRequests.declined': 'Prośba odrzucona',
+  'people.joinRequests.failed': 'Nie wysłano – sprawdź połączenie.',
+
+  // stats
+  'stats.focus.title': 'Twój wątek',
+  'stats.focus.lede':
+    'Cofnięcie się o stronę lub dwie to ponowne przeczytanie: wątek się urywa, a ty wracasz po niego. Robią tak nawet uważni czytelnicy – chodzi o to, kiedy zdarza ci się to najrzadziej.',
+  'stats.focus.collecting':
+    'Wciąż zbieramy dane. Gdy kilka kolejnych sesji będzie miało krok wstecz, ta strona powie ci, kiedy najlepiej trzymasz wątek.',
+  'stats.focus.week':
+    '{n, plural, =0 {W tym tygodniu nie cofnięto się ani razu w {time} czytania} one {W tym tygodniu cofnięto się raz w {time} czytania} few {W tym tygodniu cofnięto się # razy w {time} czytania} many {W tym tygodniu cofnięto się # razy w {time} czytania} other {W tym tygodniu cofnięto się # razy w {time} czytania}}{verdict, select, less {, rzadziej niż zwykle.} more {, częściej niż zwykle.} usual {, mniej więcej jak zwykle.} other {.}}',
+  'stats.focus.weekEmpty':
+    'W tym tygodniu jeszcze nic. W ciągu ostatnich {days} dni {n, plural, =0 {nie cofnięto się ani razu} one {cofnięto się raz} few {cofnięto się # razy} many {cofnięto się # razy} other {cofnięto się # razy}} w {time} czytania.',
+  'stats.focus.stripLabel': 'Kiedy trzymasz wątek, według godziny dnia',
+  'stats.focus.cell': '{hour}: cofasz się około {rate} razy na godzinę czytania',
+  'stats.focus.cellThin': '{hour}: tu jest na razie za mało czytania, by to ocenić',
+  'stats.focus.less': 'Więcej powrotów',
+  'stats.focus.more': 'Trzymanie wątku',
+  'stats.focus.steadiest':
+    'Między {from} a {to} cofasz się o {pct}% rzadziej niż zwykle: wtedy najlepiej trzymasz wątek.',
+  'stats.focus.even':
+    'Żadna godzina się nie wyróżnia: trzymasz wątek mniej więcej tak samo dobrze, niezależnie od tego, kiedy czytasz.',
+  'stats.best.focus': 'Też rzadziej się tam cofasz po wątek.',
+
+  // friends
+  'friends.bar.bead': '{name}, na {pct}',
+
+  // share
+  'share.button': 'Udostępnij',
+  'share.sheet.title': 'Udostępnij {title}',
+  'share.sheet.lede':
+    'Każdy, kto ma link, zobaczy okładkę, tytuł i twoje imię i będzie mógł poprosić o dołączenie do tej biblioteki.',
+  'share.sheet.linkLabel': 'Link',
+  'share.sheet.copy': 'Kopiuj link',
+  'share.sheet.copied': 'Link skopiowany',
+  'share.sheet.copyFailed': 'Zaznacz i skopiuj link',
+  'share.sheet.native': 'Udostępnij…',
+  'share.sheet.text': '{name} udostępnia ci {title} w ReadPort',
+  'share.sheet.creating': 'Tworzenie linku…',
+  'share.sheet.failed': 'Nie udało się teraz utworzyć linku.',
+  'share.page.checking': 'Sprawdzanie linku…',
+  'share.page.invalidTitle': 'Ten udostępniony link już nie jest ważny',
+  'share.page.invalidLede': 'Mógł zostać unieważniony albo książka opuściła bibliotekę.',
+  'share.page.openLibrary': 'Otwórz bibliotekę',
+  'share.page.unreachableTitle': 'Nie udało się sprawdzić tego linku',
+  'share.page.unreachableLede': 'Serwer nie odpowiedział. Spróbuj ponownie za chwilę.',
+  'share.page.sharedWithYou': '{name} udostępnia ci tę książkę',
+  'share.page.sharedTeaser': '{name} udostępnia ci książkę w ReadPort',
+  'share.page.addToList': 'Dodaj do listy do przeczytania',
+  'share.page.onList': 'Na twojej liście do przeczytania',
+  'share.page.added': 'Dodano do listy do przeczytania',
+  'share.page.addFailed': 'Nie udało się teraz tego dodać.',
+  'share.page.openBook': 'Otwórz książkę',
+  'share.page.haveAccount': 'Mam konto',
+  'share.page.askToJoin': 'Poproś o dołączenie',
+  'share.page.signInLede': 'Zaloguj się, a książka będzie tylko jedno dotknięcie dalej.',
+  'share.page.coverAlt': 'Okładka książki {title}',
+  'share.join.lede': 'Zostaw swój e-mail, administrator cię wtedy wpuści. Potem wróć pod ten link.',
+  'share.join.email': 'E-mail',
+  'share.join.name': 'Twoje imię',
+  'share.join.message': 'Kilka słów do administratora',
+  'share.join.messagePlaceholder': 'Opcjonalnie – kim jesteś i skąd się znacie',
+  'share.join.send': 'Wyślij prośbę',
+  'share.join.sending': 'Wysyłanie…',
+  'share.join.failed': 'Nie udało się wysłać prośby. Czy serwer jest dostępny?',
+  'share.join.tooMany': 'Zbyt wiele próśb stąd – spróbuj ponownie później.',
+  'share.join.pendingTitle': 'Prośba wysłana',
+  'share.join.pendingBody': 'Musi to zatwierdzić administrator; potem wróć pod ten link.',
+  'share.join.pendingAs': 'Poproszono jako {email}',
+  'share.join.notYou': 'To nie ty? Poproś z innym adresem',
+  'share.join.declinedTitle': 'Tym razem nie',
+  'share.join.declinedBody':
+    'Ta prośba nie została zatwierdzona. Jeśli to wygląda na pomyłkę, zapytaj osobę, która udostępniła ci ten link.',
+  'share.join.approvedTitle': 'Jesteś w środku',
+  'share.join.approvedLede':
+    'Wybierz nazwę użytkownika i hasło, a książka będzie czekać na twojej liście do przeczytania.',
+  'share.join.approvedUsedTitle': 'Twoje konto jest gotowe',
+  'share.join.approvedUsedBody':
+    'Ta prośba została zatwierdzona, a konto utworzone. Zaloguj się, aby otworzyć książkę.',
+  'share.join.inviteLapsed': 'To zaproszenie wygasło. Poproś o dołączenie ponownie.',
+  'share.recommendedBy': 'Polecono przez {name}',
 };
 export default messages;

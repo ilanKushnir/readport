@@ -1562,5 +1562,115 @@ const messages: Record<string, string> = {
     '{kinds, select, hn {하이라이트 및 노트} hb {하이라이트 및 책갈피} nb {노트 및 책갈피} other {모든 마크}}',
   'notes.export.bookmark': '책갈피',
   'notes.export.whereWhen': '{where} · {date}',
+  // nav
+  'nav.joinRequests': '가입 요청이 기다리고 있습니다',
+
+  // shell
+  'shell.jobType.language-backfill': '책 언어 읽기',
+
+  // library
+  'library.lang.group': '언어로 필터링',
+  'library.lang.all': '전체',
+
+  // reader
+  'reader.select.share': '공유',
+  'reader.select.clear': '선택 해제',
+  'reader.select.continue': '선택 계속',
+  'reader.select.continueArmed': '끝나는 위치를 탭하세요',
+  'reader.share.text': '{title}에서 읽은 구절: “{quote}” {url}',
+  'reader.share.copied': '복사됨 - 어디에나 붙여넣으세요',
+  'reader.toast.copyFailed': '복사할 수 없습니다',
+
+  // people
+  'people.joinRequests.title': '가입 요청',
+  'people.joinRequests.lede':
+    '공유 링크를 통해 가입을 요청한 사람들입니다. 승인하면 독자 초대가 생성되고, 같은 링크로 전달됩니다.',
+  'people.joinRequests.askedFor': '{title} 요청 · {name}님이 공유',
+  'people.joinRequests.askedForUnknown': '이미 철회된 링크를 통한 요청',
+  'people.joinRequests.when': '{when} 요청',
+  'people.joinRequests.approve': '승인',
+  'people.joinRequests.decline': '거절',
+  'people.joinRequests.approved': '승인됨 - 공유 링크에서 계정을 만들 수 있습니다',
+  'people.joinRequests.declined': '요청이 거절됨',
+  'people.joinRequests.failed': '전송되지 않았습니다. 연결을 확인하세요.',
+
+  // stats
+  'stats.focus.title': '맥락 유지',
+  'stats.focus.lede':
+    '한두 페이지 뒤로 가는 것은 다시 읽기입니다. 맥락을 놓쳐서 되돌아가 확인한 것입니다. 꼼꼼히 읽는 사람도 자주 그렇게 하며, 이 페이지는 그 일이 가장 적은 시간대를 보여줍니다.',
+  'stats.focus.collecting':
+    '아직 데이터를 모으는 중입니다. 되돌아간 세션이 몇 번 더 쌓이면, 맥락을 가장 잘 유지하는 시간대를 알려드립니다.',
+  'stats.focus.week':
+    '{n, plural, =0 {이번 주에는 {time}의 독서 중 한 번도 되돌아가지 않았습니다} other {이번 주에는 {time}의 독서 중 #번 되돌아갔습니다}}{verdict, select, less {, 평소보다 적었습니다.} more {, 평소보다 많았습니다.} usual {, 평소와 비슷했습니다.} other {.}}',
+  'stats.focus.weekEmpty':
+    '이번 주는 아직 기록이 없습니다. 지난 {days}일 동안 {time}의 독서 중 {n, plural, =0 {한 번도 되돌아가지 않았습니다} other {#번 되돌아갔습니다}}.',
+  'stats.focus.stripLabel': '시간대별 맥락 유지 정도',
+  'stats.focus.cell': '{hour}: 독서 1시간당 약 {rate}번 되돌아감',
+  'stats.focus.cellThin': '{hour}: 이 시간대는 독서량이 적어 판단할 수 없습니다',
+  'stats.focus.less': '더 자주 되돌아감',
+  'stats.focus.more': '맥락을 잘 유지함',
+  'stats.focus.steadiest':
+    '{from}~{to} 사이에는 평소보다 {pct}% 적게 되돌아갑니다. 맥락을 가장 잘 유지하는 시간대입니다.',
+  'stats.focus.even': '두드러지는 시간대는 없습니다. 언제 읽어도 맥락을 비슷하게 유지합니다.',
+  'stats.best.focus': '그 시간대는 되돌아가는 횟수도 더 적습니다.',
+
+  // friends
+  'friends.bar.bead': '{name}, {pct} 지점',
+
+  // share
+  'share.button': '공유',
+  'share.sheet.title': '{title} 공유',
+  'share.sheet.lede':
+    '링크를 가진 누구나 표지와 제목, 당신의 이름을 볼 수 있고, 이 라이브러리에 가입을 요청할 수 있습니다.',
+  'share.sheet.linkLabel': '링크',
+  'share.sheet.copy': '링크 복사',
+  'share.sheet.copied': '링크 복사됨',
+  'share.sheet.copyFailed': '링크를 선택하여 복사하세요',
+  'share.sheet.native': '공유…',
+  'share.sheet.text': '{name}님이 ReadPort에서 {title}을(를) 당신과 공유했습니다',
+  'share.sheet.creating': '링크를 만드는 중…',
+  'share.sheet.failed': '지금은 링크를 만들 수 없습니다.',
+  'share.page.checking': '링크를 확인하는 중…',
+  'share.page.invalidTitle': '이 공유 링크는 더 이상 유효하지 않습니다',
+  'share.page.invalidLede': '링크가 철회되었거나, 책이 더 이상 라이브러리에 없을 수 있습니다.',
+  'share.page.openLibrary': '라이브러리 열기',
+  'share.page.unreachableTitle': '이 링크를 확인할 수 없습니다',
+  'share.page.unreachableLede': '서버가 응답하지 않았습니다. 잠시 후 다시 시도하세요.',
+  'share.page.sharedWithYou': '{name}님이 이 책을 당신과 공유했습니다',
+  'share.page.sharedTeaser': '{name}님이 ReadPort에서 이것을 당신과 공유했습니다',
+  'share.page.addToList': '읽기 목록에 추가',
+  'share.page.onList': '읽기 목록에 있음',
+  'share.page.added': '읽기 목록에 추가됨',
+  'share.page.addFailed': '지금은 추가할 수 없습니다.',
+  'share.page.openBook': '책 열기',
+  'share.page.haveAccount': '계정이 있습니다',
+  'share.page.askToJoin': '가입 요청',
+  'share.page.signInLede': '로그인하면 탭 한 번으로 책을 열 수 있습니다.',
+  'share.page.coverAlt': '{title} 표지',
+  'share.join.lede':
+    '이메일을 남겨 주세요. 관리자가 승인하면 가입할 수 있습니다. 이후 이 링크로 다시 돌아오세요.',
+  'share.join.email': '이메일',
+  'share.join.name': '이름',
+  'share.join.message': '관리자에게 한마디',
+  'share.join.messagePlaceholder': '선택 사항 - 누구인지, 어떻게 아는 사이인지',
+  'share.join.send': '요청 보내기',
+  'share.join.sending': '보내는 중…',
+  'share.join.failed': '요청을 보낼 수 없습니다. 서버에 연결할 수 있나요?',
+  'share.join.tooMany': '이 위치에서 요청이 너무 많습니다. 나중에 다시 시도하세요.',
+  'share.join.pendingTitle': '요청을 보냈습니다',
+  'share.join.pendingBody': '관리자가 승인해야 합니다. 이후 이 링크로 다시 돌아오세요.',
+  'share.join.pendingAs': '{email}(으)로 요청함',
+  'share.join.notYou': '본인이 아니신가요? 다른 이메일 주소로 요청하세요',
+  'share.join.declinedTitle': '이번에는 어렵습니다',
+  'share.join.declinedBody':
+    '이 요청은 승인되지 않았습니다. 이상하다고 느껴지면 링크를 공유한 사람에게 확인하세요.',
+  'share.join.approvedTitle': '가입이 승인되었습니다',
+  'share.join.approvedLede':
+    '사용자 이름과 비밀번호를 정하면 책이 읽기 목록에서 기다리고 있습니다.',
+  'share.join.approvedUsedTitle': '계정이 준비되었습니다',
+  'share.join.approvedUsedBody':
+    '이 요청이 승인되어 계정이 만들어졌습니다. 로그인하여 책을 여세요.',
+  'share.join.inviteLapsed': '초대가 만료되었습니다. 다시 가입을 요청하세요.',
+  'share.recommendedBy': '{name}님의 추천',
 };
 export default messages;

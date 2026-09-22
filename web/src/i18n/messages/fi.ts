@@ -1596,5 +1596,116 @@ const messages: Record<string, string> = {
     '{kinds, select, hn {Korostukset ja muistiinpanot} hb {Korostukset ja kirjanmerkit} nb {Muistiinpanot ja kirjanmerkit} other {Kaikki merkitty}}',
   'notes.export.bookmark': 'Kirjanmerkki',
   'notes.export.whereWhen': '{where} · {date}',
+  // nav
+  'nav.joinRequests': 'Joku pyysi liittymistä',
+
+  // shell
+  'shell.jobType.language-backfill': 'Lue kirjojen kielet',
+
+  // library
+  'library.lang.group': 'Suodata kielen mukaan',
+  'library.lang.all': 'Kaikki',
+
+  // reader
+  'reader.select.share': 'Jaa',
+  'reader.select.clear': 'Tyhjennä valinta',
+  'reader.select.continue': 'Jatka valintaa',
+  'reader.select.continueArmed': 'Napauta kohtaa, johon se päättyy',
+  'reader.share.text': 'Katso, mitä luin kirjasta {title}: ”{quote}” {url}',
+  'reader.share.copied': 'Kopioitu - liitä se minne tahansa',
+  'reader.toast.copyFailed': 'Kopiointi epäonnistui',
+
+  // people
+  'people.joinRequests.title': 'Liittymispyynnöt',
+  'people.joinRequests.lede':
+    'Henkilöt, jotka seurasivat jakolinkkiä ja pyysivät päästä sisään. Hyväksyminen luo lukijakutsun, jonka sama linkki toimittaa heille.',
+  'people.joinRequests.askedFor': 'pyysi kirjaa {title}, jonka {name} jakoi',
+  'people.joinRequests.askedForUnknown': 'pyysi linkin kautta, joka on sittemmin peruutettu',
+  'people.joinRequests.when': 'Pyysi {when}',
+  'people.joinRequests.approve': 'Hyväksy',
+  'people.joinRequests.decline': 'Hylkää',
+  'people.joinRequests.approved': 'Hyväksytty - he voivat luoda tilinsä jakolinkistä',
+  'people.joinRequests.declined': 'Pyyntö hylätty',
+  'people.joinRequests.failed': 'Se ei mennyt läpi - tarkista yhteys.',
+
+  // stats
+  'stats.focus.title': 'Lanka käsissä',
+  'stats.focus.lede':
+    'Askel taaksepäin sivun tai kahden verran on uudelleenluku: lanka pääsi käsistä, ja palasit hakemaan sen. Huolelliset lukijatkin tekevät niin - tämä kertoo, milloin teet sitä vähiten.',
+  'stats.focus.collecting':
+    'Kerätään yhä tietoa. Kun muutama lukukerta lisää on sisältänyt askeleen taaksepäin, tämä sivu kertoo, milloin pidät langan parhaiten käsissäsi.',
+  'stats.focus.week':
+    '{n, plural, =0 {Tällä viikolla et palannut kertaakaan {time} lukemisen aikana} one {Tällä viikolla palasit kerran {time} lukemisen aikana} other {Tällä viikolla palasit # kertaa {time} lukemisen aikana}}{verdict, select, less {, harvemmin kuin tavallisesti.} more {, useammin kuin tavallisesti.} usual {, suunnilleen tavalliseen tapaan.} other {.}}',
+  'stats.focus.weekEmpty':
+    'Ei vielä mitään tällä viikolla. {n, plural, =0 {Viimeisten {days} päivän aikana et palannut kertaakaan {time} lukemisen aikana.} one {Viimeisten {days} päivän aikana palasit kerran {time} lukemisen aikana.} other {Viimeisten {days} päivän aikana palasit # kertaa {time} lukemisen aikana.}}',
+  'stats.focus.stripLabel': 'Milloin pidät langan käsissäsi, kellonajan mukaan',
+  'stats.focus.cell': '{hour}: palasit noin {rate} kertaa lukutuntia kohti',
+  'stats.focus.cellThin': '{hour}: tässä on liian vähän lukemista sanoakseen',
+  'stats.focus.less': 'palasi useammin',
+  'stats.focus.more': 'piti langan käsissään',
+  'stats.focus.steadiest':
+    'Välillä {from} ja {to} palaat {pct} % harvemmin kuin tavallisesti: silloin pidät langan parhaiten käsissäsi.',
+  'stats.focus.even':
+    'Mikään tunti ei erotu joukosta: pidät langan yhtä hyvin käsissäsi, luitpa milloin tahansa.',
+  'stats.best.focus': 'Palaat myös harvemmin hakemaan lankaa silloin.',
+
+  // friends
+  'friends.bar.bead': '{name}, kohdassa {pct}',
+
+  // share
+  'share.button': 'Jaa',
+  'share.sheet.title': 'Jaa {title}',
+  'share.sheet.lede':
+    'Kuka tahansa, jolla on linkki, näkee kannen, nimekkeen ja nimesi, ja voi pyytää päästä tähän kirjastoon.',
+  'share.sheet.linkLabel': 'Linkki',
+  'share.sheet.copy': 'Kopioi linkki',
+  'share.sheet.copied': 'Linkki kopioitu',
+  'share.sheet.copyFailed': 'Valitse ja kopioi linkki',
+  'share.sheet.native': 'Jaa…',
+  'share.sheet.text': '{name} jakoi kirjan {title} kanssasi ReadPortissa',
+  'share.sheet.creating': 'Luodaan linkkiä…',
+  'share.sheet.failed': 'Linkkiä ei voitu luoda juuri nyt.',
+  'share.page.checking': 'Tarkistetaan linkkiä…',
+  'share.page.invalidTitle': 'Tämä jakolinkki ei ole enää voimassa',
+  'share.page.invalidLede': 'Se on saatettu peruuttaa, tai kirja ei ole enää kirjastossa.',
+  'share.page.openLibrary': 'Avaa kirjasto',
+  'share.page.unreachableTitle': 'Tätä linkkiä ei voitu tarkistaa',
+  'share.page.unreachableLede': 'Palvelin ei vastannut. Yritä uudelleen hetken kuluttua.',
+  'share.page.sharedWithYou': '{name} jakoi tämän kirjan kanssasi',
+  'share.page.sharedTeaser': '{name} jakoi tämän kanssasi ReadPortissa',
+  'share.page.addToList': 'Lisää lukulistalle',
+  'share.page.onList': 'Lukulistallasi',
+  'share.page.added': 'Lisätty lukulistallesi',
+  'share.page.addFailed': 'Sitä ei voitu lisätä juuri nyt.',
+  'share.page.openBook': 'Avaa kirja',
+  'share.page.haveAccount': 'Minulla on tili',
+  'share.page.askToJoin': 'Pyydä liittymistä',
+  'share.page.signInLede': 'Kirjaudu sisään, niin kirja on yhden napautuksen päässä.',
+  'share.page.coverAlt': 'Kirjan ”{title}” kansi',
+  'share.join.lede':
+    'Jätä sähköpostiosoitteesi, niin ylläpitäjä päästää sinut sisään. Palaa tähän linkkiin myöhemmin.',
+  'share.join.email': 'Sähköposti',
+  'share.join.name': 'Nimesi',
+  'share.join.message': 'Pari sanaa ylläpitäjälle',
+  'share.join.messagePlaceholder': 'Valinnainen - kuka olet, mistä tunnet heidät',
+  'share.join.send': 'Lähetä pyyntö',
+  'share.join.sending': 'Lähetetään…',
+  'share.join.failed': 'Pyyntöä ei voitu lähettää. Onko palvelin tavoitettavissa?',
+  'share.join.tooMany': 'Liian monta pyyntöä täältä - yritä myöhemmin uudelleen.',
+  'share.join.pendingTitle': 'Pyyntö lähetetty',
+  'share.join.pendingBody': 'Ylläpitäjän täytyy hyväksyä se; palaa tähän linkkiin myöhemmin.',
+  'share.join.pendingAs': 'Pyysit osoitteella {email}',
+  'share.join.notYou': 'Etkö ollut sinä? Pyydä toisella osoitteella',
+  'share.join.declinedTitle': 'Ei tällä kertaa',
+  'share.join.declinedBody':
+    'Tätä pyyntöä ei hyväksytty. Jos tämä tuntuu väärältä, kysy henkilöltä, joka jakoi linkin kanssasi.',
+  'share.join.approvedTitle': 'Pääsit sisään',
+  'share.join.approvedLede':
+    'Valitse käyttäjätunnus ja salasana, niin kirja odottaa lukulistallasi.',
+  'share.join.approvedUsedTitle': 'Tilisi on valmis',
+  'share.join.approvedUsedBody':
+    'Tämä pyyntö hyväksyttiin ja tili luotiin. Kirjaudu sisään avataksesi kirjan.',
+  'share.join.inviteLapsed': 'Tämä kutsu on rauennut. Pyydä liittymistä uudelleen.',
+  'share.recommendedBy': 'Suositteli: {name}',
 };
 export default messages;

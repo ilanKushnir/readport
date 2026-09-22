@@ -1623,5 +1623,113 @@ const messages: Record<string, string> = {
     '{kinds, select, hn {הדגשות והערות} hb {הדגשות וסימניות} nb {הערות וסימניות} other {כל מה שסומן}}',
   'notes.export.bookmark': 'סימנייה',
   'notes.export.whereWhen': '{where} · {date}',
+  // nav
+  'nav.joinRequests': 'מישהו ביקש להצטרף',
+
+  // shell
+  'shell.jobType.language-backfill': 'קריאת שפות הספרים',
+
+  // library
+  'library.lang.group': 'סינון לפי שפה',
+  'library.lang.all': 'הכול',
+
+  // reader
+  'reader.select.share': 'שיתוף',
+  'reader.select.clear': 'ניקוי הבחירה',
+  'reader.select.continue': 'המשך הבחירה',
+  'reader.select.continueArmed': 'יש להקיש היכן שזה נגמר',
+  'reader.share.text': 'הנה מה שקראתי ב-{title}: „{quote}” {url}',
+  'reader.share.copied': 'הועתק - אפשר להדביק בכל מקום',
+  'reader.toast.copyFailed': 'לא ניתן היה להעתיק',
+
+  // people
+  'people.joinRequests.title': 'בקשות הצטרפות',
+  'people.joinRequests.lede':
+    'אנשים שפתחו קישור שיתוף וביקשו להצטרף. אישור יוצר הזמנת קורא, שאותו קישור מעביר אליהם.',
+  'people.joinRequests.askedFor': 'ביקש/ה את הספר {title}, שאותו שיתף/ה {name}',
+  'people.joinRequests.askedForUnknown': 'ביקש/ה להצטרף דרך קישור שבוטל מאז',
+  'people.joinRequests.when': 'ביקש/ה {when}',
+  'people.joinRequests.approve': 'אישור',
+  'people.joinRequests.decline': 'דחייה',
+  'people.joinRequests.approved': 'אושרה - הם יכולים ליצור את החשבון שלהם מקישור השיתוף',
+  'people.joinRequests.declined': 'הבקשה נדחתה',
+  'people.joinRequests.failed': 'זה לא עבר - יש לבדוק את החיבור.',
+
+  // stats
+  'stats.focus.title': 'אחיזה בחוט',
+  'stats.focus.lede':
+    'חזרה של עמוד או שניים אחורה היא קריאה חוזרת: החוט התפוגג לרגע וחזרת אליו. גם קוראים קשובים עושים את זה - זה עוסק במתי זה קורה הכי פחות.',
+  'stats.focus.collecting':
+    'עדיין אוספים נתונים. ברגע שכמה ישיבות קריאה נוספות יכללו חזרה לחוט, העמוד הזה יגיד מתי אוחזים בחוט הכי טוב.',
+  'stats.focus.week':
+    '{n, plural, =0 {השבוע לא חזרת אחורה אף פעם ב-{time} של קריאה} one {השבוע חזרת אחורה פעם אחת ב-{time} של קריאה} two {השבוע חזרת אחורה פעמיים ב-{time} של קריאה} other {השבוע חזרת אחורה # פעמים ב-{time} של קריאה}}{verdict, select, less {, פחות מהרגיל.} more {, יותר מהרגיל.} usual {, בערך כרגיל.} other {.}}',
+  'stats.focus.weekEmpty':
+    'עדיין שום דבר השבוע. ב-{days} הימים האחרונים חזרת אחורה {n, plural, =0 {אף לא פעם} one {פעם אחת} two {פעמיים} other {# פעמים}} ב-{time} של קריאה.',
+  'stats.focus.stripLabel': 'מתי אוחזים בחוט, לפי שעה ביום',
+  'stats.focus.cell': '{hour}: כ-{rate} חזרות לחוט בכל שעת קריאה',
+  'stats.focus.cellThin': '{hour}: אין כאן מספיק קריאה כדי לדעת',
+  'stats.focus.less': 'יותר חזרות',
+  'stats.focus.more': 'אחיזה בחוט',
+  'stats.focus.steadiest':
+    'בין {from} ל-{to} החזרות לחוט נדירות ב-{pct}% מהרגיל שלך: זה הזמן שבו אוחזים בחוט הכי טוב.',
+  'stats.focus.even': 'אין שעה שבולטת: אוחזים בחוט בערך באותה מידה בכל שעת קריאה.',
+  'stats.best.focus': 'גם שם החזרות לחוט נדירות יותר.',
+
+  // friends
+  'friends.bar.bead': '{name}, ב-{pct}',
+
+  // share
+  'share.button': 'שיתוף',
+  'share.sheet.title': 'שיתוף {title}',
+  'share.sheet.lede':
+    'כל מי שיש לו את הקישור רואה את הכריכה, הכותרת והשם שלך, ויכול לבקש להצטרף לספרייה הזו.',
+  'share.sheet.linkLabel': 'קישור',
+  'share.sheet.copy': 'העתקת הקישור',
+  'share.sheet.copied': 'הקישור הועתק',
+  'share.sheet.copyFailed': 'יש לבחור ולהעתיק את הקישור',
+  'share.sheet.native': 'שיתוף…',
+  'share.sheet.text': '{name} שיתף/ה איתך את {title} ב-ReadPort',
+  'share.sheet.creating': 'יוצר קישור…',
+  'share.sheet.failed': 'לא ניתן היה ליצור קישור כרגע.',
+  'share.page.checking': 'בודק את הקישור…',
+  'share.page.invalidTitle': 'קישור השיתוף הזה כבר לא בתוקף',
+  'share.page.invalidLede': 'ייתכן שהוא בוטל, או שהספר כבר לא בספרייה.',
+  'share.page.openLibrary': 'פתיחת הספרייה',
+  'share.page.unreachableTitle': 'לא ניתן היה לבדוק את הקישור הזה',
+  'share.page.unreachableLede': 'השרת לא הגיב. כדאי לנסות שוב בעוד רגע.',
+  'share.page.sharedWithYou': '{name} שיתף/ה איתך את הספר הזה',
+  'share.page.sharedTeaser': '{name} שיתף/ה איתך את זה ב-ReadPort',
+  'share.page.addToList': 'הוספה לרשימת הקריאה',
+  'share.page.onList': 'ברשימת הקריאה שלך',
+  'share.page.added': 'התווסף לרשימת הקריאה שלך',
+  'share.page.addFailed': 'לא ניתן היה להוסיף את זה כרגע.',
+  'share.page.openBook': 'פתיחת הספר',
+  'share.page.haveAccount': 'יש לי חשבון',
+  'share.page.askToJoin': 'בקשת הצטרפות',
+  'share.page.signInLede': 'יש להתחבר, והספר במרחק הקשה אחת.',
+  'share.page.coverAlt': 'כריכת {title}',
+  'share.join.lede':
+    'יש להשאיר כתובת אימייל, והגישה תאושר על ידי מנהל/ת. יש לחזור לקישור הזה אחר כך.',
+  'share.join.email': 'אימייל',
+  'share.join.name': 'השם שלך',
+  'share.join.message': 'שורה למנהל/ת',
+  'share.join.messagePlaceholder': 'לא חובה - מי אתה, איך אתה מכיר אותם',
+  'share.join.send': 'שליחת הבקשה',
+  'share.join.sending': 'שולח…',
+  'share.join.failed': 'לא ניתן היה לשלוח את הבקשה. האם השרת זמין?',
+  'share.join.tooMany': 'יותר מדי בקשות ממקום זה - יש לנסות שוב מאוחר יותר.',
+  'share.join.pendingTitle': 'הבקשה נשלחה',
+  'share.join.pendingBody': 'הבקשה ממתינה לאישור מנהל/ת; יש לחזור לקישור הזה אחר כך.',
+  'share.join.pendingAs': 'ביקשת עם כתובת האימייל {email}',
+  'share.join.notYou': 'לא את/ה? אפשר לבקש עם כתובת אחרת',
+  'share.join.declinedTitle': 'לא הפעם',
+  'share.join.declinedBody':
+    'הבקשה הזו לא אושרה. אם זה נראה לא נכון, כדאי לשאול את מי ששיתף/ה איתך את הקישור.',
+  'share.join.approvedTitle': 'התקבלת',
+  'share.join.approvedLede': 'יש לבחור שם משתמש וסיסמה, והספר יחכה לך ברשימת הקריאה שלך.',
+  'share.join.approvedUsedTitle': 'החשבון שלך מוכן',
+  'share.join.approvedUsedBody': 'הבקשה אושרה והחשבון נוצר. יש להתחבר כדי לפתוח את הספר.',
+  'share.join.inviteLapsed': 'תוקף ההזמנה הזו פג. אפשר לבקש להצטרף שוב.',
+  'share.recommendedBy': 'המלצה של {name}',
 };
 export default messages;
