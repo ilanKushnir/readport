@@ -1611,7 +1611,7 @@ const messages: Record<string, string> = {
   'reader.select.clear': 'Tyhjennä valinta',
   'reader.select.continue': 'Jatka valintaa',
   'reader.select.continueArmed': 'Napauta kohtaa, johon se päättyy',
-  'reader.share.text': 'Katso, mitä luin kirjasta {title}: ”{quote}” {url}',
+  'reader.share.text': 'Katso, mitä luin kirjasta {title}:\n\n”{quote}”\n\n{url}',
   'reader.share.copied': 'Kopioitu - liitä se minne tahansa',
   'reader.toast.copyFailed': 'Kopiointi epäonnistui',
 

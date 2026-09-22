@@ -222,6 +222,24 @@ export const IconGitHub = ({ size = 18, ...rest }: P) => (
   </svg>
 );
 
+/** A highlighter pen: the mark a reader leaves on the words. */
+export const IconHighlighter = (p: P) => (
+  <I {...p}>
+    <path d="m9.5 14.5-3.6 3.6a1 1 0 0 0 0 1.4l.6.6a1 1 0 0 0 1.4 0l3.6-3.6" />
+    <path d="m9.5 14.5 8.3-8.3a1.5 1.5 0 0 1 2.1 0l.9.9a1.5 1.5 0 0 1 0 2.1l-8.3 8.3" />
+    <path d="M3 21h7" />
+  </I>
+);
+
+/** The same pen, struck through: the mark taken back. */
+export const IconHighlighterOff = (p: P) => (
+  <I {...p}>
+    <path d="m9.5 14.5-3.6 3.6a1 1 0 0 0 0 1.4l.6.6a1 1 0 0 0 1.4 0l3.6-3.6" />
+    <path d="m9.5 14.5 8.3-8.3a1.5 1.5 0 0 1 2.1 0l.9.9a1.5 1.5 0 0 1 0 2.1l-8.3 8.3" />
+    <path d="m4 4 16 16" />
+  </I>
+);
+
 /** Share: a box with an arrow leaving it, the way every phone draws it. */
 export const IconShare = (p: P) => (
   <I {...p}>

@@ -65,6 +65,13 @@ export const readerPrefsSchema = z.object({
    * used to switch itself off every time the reader so much as scrolled.
    */
   autoScroll: z.boolean().default(false),
+  /**
+   * How the voice is shown while reading along: a mark in the margin beside
+   * the line being spoken, or a wash on the sentence itself. The margin is
+   * the default - it is the honest one, roughly here and moving - and the
+   * wash is there for whoever wants the words themselves lit.
+   */
+  voiceMark: z.enum(['margin', 'wash']).default('margin'),
 });
 
 export type ReaderPrefs = z.infer<typeof readerPrefsSchema>;
@@ -86,6 +93,7 @@ export const DEFAULT_READER_PREFS: ReaderPrefs = {
   brightness: 1,
   progressBar: 'full',
   autoScroll: false,
+  voiceMark: 'margin',
 };
 
 /**

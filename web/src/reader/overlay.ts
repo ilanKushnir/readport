@@ -65,6 +65,21 @@ export function lineBoxes(rects: Iterable<Rect>, clip?: Rect | null): LineBox[] 
   }));
 }
 
+/**
+ * Where a host's content begins, in viewport pixels: its box, less however
+ * far it has scrolled. Boxes measured against this stay put while the host
+ * scrolls, which is what lets them be drawn INSIDE it and move with the
+ * text natively rather than chase it a frame behind.
+ */
+export function hostOrigin(host: {
+  getBoundingClientRect: () => { left: number; top: number };
+  scrollLeft: number;
+  scrollTop: number;
+}): { left: number; top: number } {
+  const r = host.getBoundingClientRect();
+  return { left: r.left - host.scrollLeft, top: r.top - host.scrollTop };
+}
+
 /** The same boxes, moved into a container's coordinate space. */
 export function relativeTo(boxes: LineBox[], origin: { left: number; top: number }): LineBox[] {
   return boxes.map((b) => ({ ...b, left: b.left - origin.left, top: b.top - origin.top }));
@@ -103,4 +118,61 @@ export function sameBoxes(a: LineBox[] | null, b: LineBox[] | null): boolean {
       Math.abs(x.height - y.height) < 0.5
     );
   });
+}
+
+/**
+ * One outline around a run of lines, rather than a box per line.
+ *
+ * A selection is one thing to the eye, and a border between its lines
+ * says otherwise. The lines of one column stack top to bottom, each with
+ * its own left and right; the outline runs down the right-hand edges,
+ * stepping sideways between lines, back along the bottom, and up the
+ * left-hand edges - a rectilinear polygon, corners softened by the stroke
+ * that draws it. Lines that jump upward begin another run, which is what
+ * the second column of a spread looks like, and get an outline of their own.
+ */
+export function outlineRuns(boxes: LineBox[]): LineBox[][] {
+  const runs: LineBox[][] = [];
+  for (const b of boxes) {
+    const run = runs[runs.length - 1];
+    const prev = run?.[run.length - 1];
+    // A next line sits below the last one (or beside it, on a spread's
+    // seam); one that sits above it is another column.
+    if (run && prev && b.top >= prev.top - 2) run.push(b);
+    else runs.push([b]);
+  }
+  return runs;
+}
+
+/** The SVG path of one run's outline, in the boxes' own pixels. */
+export function outlinePath(run: LineBox[], inset = 0): string {
+  if (run.length === 0) return '';
+  const l = (b: LineBox) => b.left - inset;
+  const r = (b: LineBox) => b.left + b.width + inset;
+  const t = (b: LineBox) => b.top - inset;
+  const btm = (b: LineBox) => b.top + b.height + inset;
+  const pts: [number, number][] = [];
+  const first = run[0]!;
+  pts.push([l(first), t(first)], [r(first), t(first)]);
+  // Down the right-hand side, stepping at each line's seam to the next
+  // line's right edge; the seam is drawn where the two lines meet.
+  for (let i = 0; i < run.length; i++) {
+    const b = run[i]!;
+    const next = run[i + 1];
+    const y = next ? (btm(b) + t(next)) / 2 : btm(b);
+    pts.push([r(b), y]);
+    if (next) pts.push([r(next), y]);
+  }
+  const last = run[run.length - 1]!;
+  pts.push([l(last), btm(last)]);
+  // And up the left-hand side.
+  for (let i = run.length - 1; i >= 0; i--) {
+    const b = run[i]!;
+    const prev = run[i - 1];
+    const y = prev ? (btm(prev) + t(b)) / 2 : t(b);
+    pts.push([l(b), y]);
+    if (prev) pts.push([l(prev), y]);
+  }
+  const n = (v: number) => Math.round(v * 2) / 2;
+  return pts.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${n(x)} ${n(y)}`).join(' ') + ' Z';
 }

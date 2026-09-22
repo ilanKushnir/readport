@@ -1633,7 +1633,7 @@ const messages: Record<string, string> = {
   'reader.select.clear': 'Deseleccionar',
   'reader.select.continue': 'Continuar selección',
   'reader.select.continueArmed': 'Toca donde termina',
-  'reader.share.text': 'Mira lo que leí en {title}: «{quote}» {url}',
+  'reader.share.text': 'Mira lo que leí en {title}:\n\n«{quote}»\n\n{url}',
   'reader.share.copied': 'Copiado - pégalo donde quieras',
   'reader.toast.copyFailed': 'No se pudo copiar',
 

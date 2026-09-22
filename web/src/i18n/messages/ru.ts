@@ -1632,7 +1632,7 @@ const messages: Record<string, string> = {
   'reader.select.clear': 'Снять выделение',
   'reader.select.continue': 'Продолжить выделение',
   'reader.select.continueArmed': 'Нажмите, где закончить выделение',
-  'reader.share.text': 'Смотрите, что я читаю в «{title}»: «{quote}» {url}',
+  'reader.share.text': 'Смотрите, что я читаю в «{title}»:\n\n«{quote}»\n\n{url}',
   'reader.share.copied': 'Скопировано — вставьте куда угодно',
   'reader.toast.copyFailed': 'Не удалось скопировать',
 

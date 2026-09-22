@@ -1615,7 +1615,7 @@ const messages: Record<string, string> = {
   'reader.select.clear': 'Seçimi temizle',
   'reader.select.continue': 'Seçime devam et',
   'reader.select.continueArmed': 'Bittiği yere dokunun',
-  'reader.share.text': '{title} kitabında ne okuduğuma bakın: “{quote}” {url}',
+  'reader.share.text': '{title} kitabında ne okuduğuma bakın:\n\n“{quote}”\n\n{url}',
   'reader.share.copied': 'Kopyalandı - istediğiniz yere yapıştırın',
   'reader.toast.copyFailed': 'Kopyalanamadı',
 

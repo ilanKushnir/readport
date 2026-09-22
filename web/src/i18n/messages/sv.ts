@@ -1595,7 +1595,7 @@ const messages: Record<string, string> = {
   'reader.select.clear': 'Rensa markering',
   'reader.select.continue': 'Fortsätt markering',
   'reader.select.continueArmed': 'Tryck där den slutar',
-  'reader.share.text': 'Kolla vad jag läste i {title}: ”{quote}” {url}',
+  'reader.share.text': 'Kolla vad jag läste i {title}:\n\n”{quote}”\n\n{url}',
   'reader.share.copied': 'Kopierat – klistra in var som helst',
   'reader.toast.copyFailed': 'Kunde inte kopiera',
 

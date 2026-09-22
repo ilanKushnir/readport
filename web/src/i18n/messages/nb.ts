@@ -1598,7 +1598,7 @@ const messages: Record<string, string> = {
   'reader.select.clear': 'Fjern valg',
   'reader.select.continue': 'Fortsett valget',
   'reader.select.continueArmed': 'Trykk der den slutter',
-  'reader.share.text': 'Se hva jeg leste i {title}: «{quote}» {url}',
+  'reader.share.text': 'Se hva jeg leste i {title}:\n\n«{quote}»\n\n{url}',
   'reader.share.copied': 'Kopiert - lim den inn hvor som helst',
   'reader.toast.copyFailed': 'Kunne ikke kopiere',
 

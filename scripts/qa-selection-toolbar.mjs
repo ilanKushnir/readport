@@ -114,8 +114,8 @@ async function select(page, length, backward = false, nearBottom = false) {
         const bottom = document
           .querySelector('.immersive-chrome--bottom')
           .getBoundingClientRect().top;
-        // 44px dock + 8px chrome gap + 12px handles, with rounding clearance.
-        scroller.scrollTop += nearBottom ? rects.at(-1).bottom - (bottom - 66) : rects[0].top - 320;
+        // 48px toolbar + 8px chrome gap + 12px handles, with rounding clearance.
+        scroller.scrollTop += nearBottom ? rects.at(-1).bottom - (bottom - 70) : rects[0].top - 320;
       }
       const s = getSelection();
       if (backward) s.setBaseAndExtent(node, range.endOffset, node, 0);
@@ -198,26 +198,41 @@ function assertSafe(g, coarse = true) {
   }
 }
 async function assertTouchTargets(page) {
-  const buttons = await page.locator('.selection-menu button').evaluateAll((buttons) =>
-    buttons.map((button) => {
-      const r = button.getBoundingClientRect();
-      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-      return {
-        name: button.ariaLabel || button.textContent,
-        width: r.width,
-        height: r.height,
-        actionable: !button.disabled && button.contains(hit),
-      };
-    }),
-  );
-  assert.equal(buttons.length, 8, 'five colours, note, bookmark and share present');
-  for (const button of buttons) {
-    assert(
-      button.width >= 44 && button.height >= 44,
-      `undersized target ${JSON.stringify(button)}`,
+  const measure = () =>
+    page.locator('.selection-menu button').evaluateAll((buttons) =>
+      buttons.map((button) => {
+        const r = button.getBoundingClientRect();
+        const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        return {
+          name: button.ariaLabel || button.textContent,
+          width: r.width,
+          height: r.height,
+          actionable: !button.disabled && button.contains(hit),
+        };
+      }),
     );
-    assert(button.actionable, `occluded action ${button.name}`);
-  }
+  const sized = (buttons) => {
+    for (const button of buttons) {
+      assert(
+        button.width >= 44 && button.height >= 44,
+        `undersized target ${JSON.stringify(button)}`,
+      );
+      assert(button.actionable, `occluded action ${button.name}`);
+    }
+  };
+  let buttons = await measure();
+  assert.equal(buttons.length, 4, 'highlight, note, bookmark and share present');
+  sized(buttons);
+  // The colours sit behind the highlighter: a row of five and the way back.
+  await page.getByRole('button', { name: 'Highlight', exact: true }).click();
+  await page.waitForTimeout(120);
+  const colours = await measure();
+  assert.equal(colours.length, 6, 'back and five colours present');
+  sized(colours);
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
+  await page.waitForTimeout(80);
+  buttons = await measure();
+  assert.equal(buttons.length, 4, 'back to the four');
   console.log('PASS computed 44px targets and hit testing', JSON.stringify(buttons));
 }
 try {
@@ -293,7 +308,9 @@ try {
       await page.waitForTimeout(260);
       const dock = await geometry(page);
       assertSafe(dock);
-      assert.equal(dock.mode, 'dock');
+      // A toolbar small enough to fit under the last line is placed there;
+      // only when it cannot does it dock at the foot.
+      assert(['below', 'dock'].includes(dock.mode), `near the foot: ${dock.mode}`);
       assert(dock.lines.length > 1);
       assert(dock.lines.at(-1).bottom > dock.bottom.top - 90);
       console.log(
@@ -382,7 +399,9 @@ try {
           'bottom fixture is not near Read Along',
         );
         assertSafe(dock);
-        assert.equal(dock.mode, 'dock');
+        // A toolbar small enough to fit under the last line is placed there;
+        // only when it cannot does it dock at the foot.
+        assert(['below', 'dock'].includes(dock.mode), `near the foot: ${dock.mode}`);
         await assertTouchTargets(page);
         if (process.env.SELECTION_QA_SCREENSHOTS) {
           await page.screenshot({
@@ -397,8 +416,16 @@ try {
         await page.waitForTimeout(60);
         const stable = await geometry(page);
         assertSafe(stable);
-        assert.equal(stable.mode, 'dock', 'dock flickered back to floating');
-        assert.equal(stable.toolbar.top, dock.toolbar.top, 'dock not stable under reader scroll');
+        if (dock.mode === 'dock') {
+          assert.equal(stable.mode, 'dock', 'dock flickered back to floating');
+          assert.equal(stable.toolbar.top, dock.toolbar.top, 'dock not stable under reader scroll');
+        } else {
+          // Placed under the selection, it moves with the text it belongs to.
+          assert(
+            Math.abs(stable.toolbar.top - (dock.toolbar.top - 10)) <= 1.5,
+            'floating toolbar did not follow the text',
+          );
+        }
         console.log('PASS stable dock under reader scroll');
         passed++;
         await page.evaluate(() => getSelection().removeAllRanges());
@@ -535,6 +562,9 @@ try {
       for (let cycle = 0; cycle < 4; cycle++) {
         await select(page, 30 + cycle * 10, false, cycle % 2 === 1);
         assertSafe(await geometry(page), true);
+        // The colours sit behind the highlighter now.
+        await page.getByRole('button', { name: 'Highlight', exact: true }).click();
+        await page.waitForTimeout(80);
         await page.getByRole('button', { name: 'Highlight in amber' }).click();
         await page.waitForTimeout(220);
         // A trackpad click in the text between two finger selections: a whole
@@ -606,8 +636,8 @@ try {
         )
         .map((r) => r.toJSON());
       return {
-        boxes: [...document.querySelectorAll('.selframe > span')].map((s) =>
-          s.getBoundingClientRect().toJSON(),
+        paths: [...document.querySelectorAll('.selframe path')].map((p) =>
+          p.getBoundingClientRect().toJSON(),
         ),
         x: document.querySelector('.selframe__x')?.getBoundingClientRect().toJSON() ?? null,
         lines,
@@ -615,30 +645,48 @@ try {
     });
   }
   function assertFrame(f) {
-    assert(f.boxes.length > 0 && f.lines.length > 0, 'a settled selection must have a frame');
-    // Every line on the page is framed exactly: same top and bottom, and the
-    // frame runs from the line's first fragment to its last.
-    for (const b of f.boxes) {
-      const line = f.lines.filter((l) => Math.abs(l.top - b.top) <= 1);
-      assert(line.length > 0, `frame box on no line: ${JSON.stringify(b)}`);
-      const left = Math.min(...line.map((l) => l.left));
-      const right = Math.max(...line.map((l) => l.right));
-      const bottom = Math.max(...line.map((l) => l.bottom));
+    assert(f.paths.length > 0 && f.lines.length > 0, 'a settled selection must have a frame');
+    // One outline per run of lines, hugging them: every line lies inside an
+    // outline's box, and no outline reaches further than the lines it holds
+    // (an inset of 2px and a 1.5px stroke, with rounding).
+    const slack = 4.5;
+    for (const l of f.lines) {
+      const inside = f.paths.some(
+        (p) =>
+          l.left >= p.left - slack &&
+          l.right <= p.right + slack &&
+          l.top >= p.top - slack &&
+          l.bottom <= p.bottom + slack,
+      );
+      assert(inside, `line outside every outline: ${JSON.stringify({ l, paths: f.paths })}`);
+    }
+    for (const p of f.paths) {
+      const held = f.lines.filter((l) => l.top >= p.top - slack && l.bottom <= p.bottom + slack);
+      assert(held.length > 0, `outline around no line: ${JSON.stringify(p)}`);
+      const left = Math.min(...held.map((l) => l.left));
+      const right = Math.max(...held.map((l) => l.right));
+      const top = Math.min(...held.map((l) => l.top));
+      const bottom = Math.max(...held.map((l) => l.bottom));
       assert(
-        Math.abs(b.left - left) <= 1 &&
-          Math.abs(b.right - right) <= 1 &&
-          Math.abs(b.bottom - bottom) <= 1,
-        `frame box off its line: ${JSON.stringify({ b, left, right, bottom })}`,
+        Math.abs(p.left - left) <= slack &&
+          Math.abs(p.right - right) <= slack &&
+          Math.abs(p.top - top) <= slack &&
+          Math.abs(p.bottom - bottom) <= slack,
+        `outline off its lines: ${JSON.stringify({ p, left, right, top, bottom })}`,
       );
     }
-    const last = f.boxes.at(-1);
+    // The dismiss sits on the end corner of the selection's last line.
+    const endTop = f.lines.at(-1).top;
+    const lastLine = f.lines.filter((l) => Math.abs(l.top - endTop) <= 1);
+    const right = Math.max(...lastLine.map((l) => l.right));
     assert(
       f.x &&
-        Math.abs(f.x.x + f.x.width / 2 - last.right) <= 1.5 &&
-        Math.abs(f.x.y + f.x.height / 2 - last.top) <= 1.5,
-      `dismiss must sit on the end corner: ${JSON.stringify({ x: f.x, last })}`,
+        Math.abs(f.x.x + f.x.width / 2 - right) <= 2.5 &&
+        Math.abs(f.x.y + f.x.height / 2 - endTop) <= 2.5,
+      `dismiss must sit on the end corner: ${JSON.stringify({ x: f.x, right, endTop })}`,
     );
   }
+
   for (const viewport of [
     { width: 1180, height: 820 },
     { width: 390, height: 844 },
@@ -755,9 +803,9 @@ try {
       const g = await geometry(page);
       assertSafe(g, coarse);
       assertFrame(await frameGeometry(page));
-      // Eight actions, and on a phone the new one is a finger's size and
-      // under nothing (the 44px rule for every swatch belongs to the dock).
-      assert.equal(await page.locator('.selection-menu button').count(), 8);
+      // Four icons - highlight, note, bookmark, share - and on a phone each
+      // is a finger's size and under nothing.
+      assert.equal(await page.locator('.selection-menu button').count(), 4);
       const share = await page
         .getByRole('button', { name: 'Share', exact: true })
         .evaluate((button) => {
@@ -784,27 +832,15 @@ try {
       await page.waitForFunction(() => typeof window.__copied === 'string');
       const shared = await page.evaluate(() => window.__copied);
       assert.equal(shareCalls, 1, 'one share link requested');
-      assert(shared.startsWith('Look what I read in Selection QA: “'), shared);
-      assert(shared.endsWith('” https://readport.test/s/abc'), shared);
-      const quote = shared.slice(
-        'Look what I read in Selection QA: “'.length,
-        shared.indexOf('” https'),
-      );
+      // The message: the lead, the quotation on its own lines, the link on
+      // its own line, and the quotation whole - a reader who chose a passage
+      // wants the passage to arrive.
+      const lead = 'Look what I read in Selection QA:\n\n“';
+      assert(shared.startsWith(lead), shared);
+      assert(shared.endsWith('”\n\nhttps://readport.test/s/abc'), shared);
+      const quote = shared.slice(lead.length, shared.indexOf('”\n\nhttps'));
       const prose = span.text.replace(/\s+/g, ' ').trim();
-      if (prose.length > 600) {
-        // A long selection is cut at a word, with an ellipsis to say so.
-        assert(quote.endsWith('…') && quote.length <= 601, `quote not trimmed: ${quote.length}`);
-        const body = quote.slice(0, -1);
-        assert(prose.startsWith(body), 'quote is not the selection');
-        assert(
-          /[ .,;:-]/.test(prose[body.length]),
-          `trimmed mid-word: ${JSON.stringify(body.slice(-16))}`,
-        );
-      } else assert.equal(quote, prose, 'a short selection is quoted whole');
-      assert(
-        viewport.width < 600 || prose.length > 600,
-        'the wide fixture must be long enough to exercise the trim',
-      );
+      assert.equal(quote.replace(/\s+/g, ' ').trim(), prose, 'the selection is quoted whole');
       assert.equal(
         await page.locator('.toast').innerText(),
         'Copied - paste it anywhere',

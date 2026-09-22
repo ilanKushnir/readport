@@ -1,6 +1,14 @@
 import { useLayoutEffect, useState } from 'react';
 import { rangeForSpan, type TextMap } from './textmap';
-import { fadeAlong, lineBoxes, relativeTo, sameBoxes, type LineBox, type Rect } from './overlay';
+import {
+  fadeAlong,
+  hostOrigin,
+  lineBoxes,
+  relativeTo,
+  sameBoxes,
+  type LineBox,
+  type Rect,
+} from './overlay';
 
 /**
  * Boxes over the lines of a chapter span, kept in step with the text.
@@ -31,7 +39,7 @@ export function LineOverlay({
   /** Chapter character span to draw. */
   span: { start: number; end: number };
   map: () => TextMap | null;
-  /** The element the boxes are positioned in. */
+  /** The element the boxes are positioned in: the scrolling host, so they scroll with the text. */
   container: () => HTMLElement | null;
   /** The box the lines are cut to: the page box, or the scroller's window. */
   clip: () => Rect | null;
@@ -62,10 +70,9 @@ export function LineOverlay({
         setBoxes(null);
         return;
       }
-      const next = relativeTo(
-        lineBoxes(range.getClientRects(), clip()),
-        box.getBoundingClientRect(),
-      );
+      // Against the host's content origin: drawn inside a scrolling host,
+      // the boxes then move with the text and never lag it.
+      const next = relativeTo(lineBoxes(range.getClientRects(), clip()), hostOrigin(box));
       setBoxes((prev) => (sameBoxes(prev, next) ? prev : next.length > 0 ? next : null));
     };
     const schedule = () => {

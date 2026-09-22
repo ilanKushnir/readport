@@ -1522,7 +1522,7 @@ const messages: Record<string, string> = {
   'reader.select.clear': '取消选择',
   'reader.select.continue': '继续选择',
   'reader.select.continueArmed': '点按文本结束的位置',
-  'reader.share.text': '看看我在{title}里读到了什么：“{quote}” {url}',
+  'reader.share.text': '看看我在{title}里读到了什么：\n\n“{quote}”\n\n{url}',
   'reader.share.copied': '已复制——可粘贴到任何地方',
   'reader.toast.copyFailed': '无法复制',
 

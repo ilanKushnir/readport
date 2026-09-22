@@ -1635,7 +1635,7 @@ const messages: Record<string, string> = {
   'reader.select.clear': 'Limpar seleção',
   'reader.select.continue': 'Continuar seleção',
   'reader.select.continueArmed': 'Toca onde termina',
-  'reader.share.text': 'Vê o que li em {title}: «{quote}» {url}',
+  'reader.share.text': 'Vê o que li em {title}:\n\n«{quote}»\n\n{url}',
   'reader.share.copied': 'Copiado - cola-o onde quiseres',
   'reader.toast.copyFailed': 'Não foi possível copiar',
 

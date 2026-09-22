@@ -1577,7 +1577,7 @@ const messages: Record<string, string> = {
   'reader.select.clear': '선택 해제',
   'reader.select.continue': '선택 계속',
   'reader.select.continueArmed': '끝나는 위치를 탭하세요',
-  'reader.share.text': '{title}에서 읽은 구절: “{quote}” {url}',
+  'reader.share.text': '{title}에서 읽은 구절:\n\n“{quote}”\n\n{url}',
   'reader.share.copied': '복사됨 - 어디에나 붙여넣으세요',
   'reader.toast.copyFailed': '복사할 수 없습니다',
 

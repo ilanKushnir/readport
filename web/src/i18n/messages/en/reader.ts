@@ -45,7 +45,7 @@ export const reader = {
   'reader.select.continueArmed': 'Tap where it ends',
 
   // Sharing a quotation
-  'reader.share.text': 'Look what I read in {title}: “{quote}” {url}',
+  'reader.share.text': 'Look what I read in {title}:\n\n“{quote}”\n\n{url}',
   'reader.share.copied': 'Copied - paste it anywhere',
 
   // Highlight colours, as a screen reader says them
@@ -58,6 +58,7 @@ export const reader = {
   // A mark, and its popover
   'reader.mark.kind': '{kind, select, bookmark {Bookmark} note {Note} other {Highlight}}',
   'reader.mark.colour': 'Colour',
+  'reader.mark.removeHighlight': 'Remove highlight',
   'reader.quoted': '“{text}”',
 
   // Bottom chrome: where you are
@@ -195,6 +196,9 @@ export const reader = {
   'reader.pageTurn.instant': 'Instant',
   'reader.settings.pagesNote': 'Tap either edge, swipe, or use the arrow keys.',
   'reader.settings.scrollNote': 'One continuous column. Scroll, or swipe up and down.',
+  'reader.settings.voiceMark': 'Following the voice',
+  'reader.voiceMark.margin': 'Mark in the margin',
+  'reader.voiceMark.wash': 'Wash on the sentence',
   'reader.settings.progressBar': 'Progress bar',
   'reader.progressBar.full': 'Full',
   'reader.progressBar.compact': 'Compact',

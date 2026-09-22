@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fadeAlong, lineBoxes, relativeTo, sameBoxes } from './overlay';
+import { fadeAlong, lineBoxes, outlinePath, outlineRuns, relativeTo, sameBoxes } from './overlay';
 
 const rect = (left: number, top: number, width = 100, height = 24) => ({
   left,
@@ -63,5 +63,27 @@ describe('sameBoxes', () => {
     expect(sameBoxes(a, [{ left: 2, top: 2, width: 3, height: 4 }])).toBe(false);
     expect(sameBoxes(a, null)).toBe(false);
     expect(sameBoxes(null, null)).toBe(true);
+  });
+});
+
+describe('outlineRuns', () => {
+  it('keeps lines that stack downward in one run and starts another at a column jump', () => {
+    const a = { left: 10, top: 0, width: 100, height: 20 };
+    const b = { left: 10, top: 20, width: 60, height: 20 };
+    const c = { left: 200, top: 0, width: 100, height: 20 };
+    expect(outlineRuns([a, b, c])).toEqual([[a, b], [c]]);
+  });
+});
+
+describe('outlinePath', () => {
+  it('draws one closed polygon around a run, stepping at the seams', () => {
+    const d = outlinePath([
+      { left: 10, top: 0, width: 100, height: 20 },
+      { left: 10, top: 20, width: 60, height: 20 },
+    ]);
+    expect(d).toBe('M10 0 L110 0 L110 20 L70 20 L70 40 L10 40 L10 20 L10 20 L10 0 Z');
+  });
+  it('is empty for no lines', () => {
+    expect(outlinePath([])).toBe('');
   });
 });

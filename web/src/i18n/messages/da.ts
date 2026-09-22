@@ -1599,7 +1599,7 @@ const messages: Record<string, string> = {
   'reader.select.clear': 'Ryd markering',
   'reader.select.continue': 'Fortsæt markering',
   'reader.select.continueArmed': 'Tryk hvor den ender',
-  'reader.share.text': 'Se lige hvad jeg læste i {title}: »{quote}« {url}',
+  'reader.share.text': 'Se lige hvad jeg læste i {title}:\n\n»{quote}«\n\n{url}',
   'reader.share.copied': 'Kopieret – sæt ind hvor som helst',
   'reader.toast.copyFailed': 'Kunne ikke kopiere',
 

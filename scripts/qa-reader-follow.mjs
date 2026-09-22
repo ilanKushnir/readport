@@ -51,6 +51,7 @@ async function open(
   rtl = false,
   reducedMotion = 'no-preference',
   viewport = { width: 1180, height: 820 },
+  extraPrefs = {},
 ) {
   const context = await browser.newContext({
     viewport,
@@ -70,12 +71,12 @@ async function open(
     console.log('PAGEERROR', e.message);
   });
   await page.addInitScript(
-    ({ mode }) =>
+    ({ mode, extraPrefs }) =>
       localStorage.setItem(
         'rp-reader-prefs',
-        JSON.stringify({ mode, columns: 'two', pageTurn: 'instant' }),
+        JSON.stringify({ mode, columns: 'two', pageTurn: 'instant', ...extraPrefs }),
       ),
-    { mode },
+    { mode, extraPrefs },
   );
   await page.route('**/src/reader/Narration.tsx*', async (route) => {
     const response = await route.fetch();
@@ -588,7 +589,7 @@ try {
     assert(off <= 1, `spoken mark is ${off.toFixed(2)}px off its line box: ${JSON.stringify(g)}`);
   };
   for (const mode of ['paginated', 'scroll']) {
-    const spoken = await open(mode);
+    const spoken = await open(mode, false, 'no-preference', undefined, { voiceMark: 'wash' });
     await spoken.page.getByRole('button', { name: 'Read along', exact: true }).click();
     const sentence = { ...cue(deep), charEnd: deep + 90, uncertaintyMs: 100 };
     await clock(spoken.page, [sentence]);
@@ -630,7 +631,13 @@ try {
     });
     await spoken.context.close();
   }
-  const phone = await open('scroll', false, 'no-preference', { width: 390, height: 844 });
+  const phone = await open(
+    'scroll',
+    false,
+    'no-preference',
+    { width: 390, height: 844 },
+    { voiceMark: 'wash' },
+  );
   await phone.page.getByRole('button', { name: 'Read along', exact: true }).click();
   const phoneSentence = { ...cue(deep), charEnd: deep + 90, uncertaintyMs: 100 };
   await clock(phone.page, [phoneSentence]);
@@ -657,7 +664,7 @@ try {
         box.scrollTop + r.top - b.top - b.height * 0.4,
       );
     }, offset);
-  const eased = await open('scroll');
+  const eased = await open('scroll', false, 'no-preference', undefined, { voiceMark: 'wash' });
   await eased.page.getByRole('button', { name: 'Read along', exact: true }).click();
   await check('a follow relocation eases in and out instead of jumping', async () => {
     const from = await scrollTop(eased.page);

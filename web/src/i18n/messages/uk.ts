@@ -1634,7 +1634,7 @@ const messages: Record<string, string> = {
   'reader.select.clear': 'Очистити виділення',
   'reader.select.continue': 'Продовжити виділення',
   'reader.select.continueArmed': 'Торкніться, де закінчується',
-  'reader.share.text': 'Дивіться, що я читаю в {title}: «{quote}» {url}',
+  'reader.share.text': 'Дивіться, що я читаю в {title}:\n\n«{quote}»\n\n{url}',
   'reader.share.copied': 'Скопійовано — вставте де завгодно',
   'reader.toast.copyFailed': 'Не вдалося скопіювати',
 

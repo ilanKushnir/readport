@@ -1629,7 +1629,7 @@ const messages: Record<string, string> = {
   'reader.select.clear': 'Cancella la selezione',
   'reader.select.continue': 'Continua la selezione',
   'reader.select.continueArmed': 'Tocca dove finisce',
-  'reader.share.text': 'Guarda cosa ho letto in {title}: «{quote}» {url}',
+  'reader.share.text': 'Guarda cosa ho letto in {title}:\n\n«{quote}»\n\n{url}',
   'reader.share.copied': 'Copiato - incollalo ovunque',
   'reader.toast.copyFailed': 'Impossibile copiare',
 

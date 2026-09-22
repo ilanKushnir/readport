@@ -1673,7 +1673,7 @@ const messages: Record<string, string> = {
   'reader.select.clear': 'مسح التحديد',
   'reader.select.continue': 'متابعة التحديد',
   'reader.select.continueArmed': 'اضغط حيث ينتهي',
-  'reader.share.text': 'انظر ماذا قرأت في {title}: «{quote}» {url}',
+  'reader.share.text': 'انظر ماذا قرأت في {title}:\n\n«{quote}»\n\n{url}',
   'reader.share.copied': 'تم النسخ - الصقه في أي مكان',
   'reader.toast.copyFailed': 'تعذّر النسخ',
 

@@ -21,8 +21,12 @@ import {
   IconBack,
   IconBookmark,
   IconChevronDown,
+  IconChevronLeft,
   IconCheck,
   IconClose,
+  IconHighlighter,
+  IconHighlighterOff,
+  IconNotes,
   IconTrash,
   IconHeadphones,
   IconReadAlong,
@@ -64,6 +68,7 @@ import {
   ScrollOwnership,
 } from './motion';
 import { LineOverlay, pageTurning } from './LineOverlay';
+import { hostOrigin, outlinePath, outlineRuns } from './overlay';
 import { lineBoxes, relativeTo, sameBoxes, type LineBox } from './overlay';
 import { trimQuote } from './share';
 import { liveCheckpointOffset } from './liveOffset';
@@ -223,7 +228,7 @@ export function ReaderPage() {
    */
   const [blink, setBlink] = useState<{ start: number; end: number; nonce: number } | null>(null);
   /** The active column's margin and narrated line, in viewport pixels. */
-  const [pace, setPace] = useState<{ left: number; top: number } | null>(null);
+  const [pace, setPace] = useState<{ left: number; top: number; nailed?: boolean } | null>(null);
   /** Keep the pace marker still and scroll the page under it. */
   const [autoScroll, setAutoScroll] = useState(false);
   /**
@@ -1132,8 +1137,12 @@ export function ReaderPage() {
       applyPagination();
       // Reflow is not the reader moving, so this restores rather than records.
       restoreOffset(currentOffsetRef.current);
-      // A few pixels of rounding is normal; a trapped paragraph is not.
-      if (el.scrollHeight > el.clientHeight + 8) setPaginationFailed(true);
+      // Trapped text is judged by geometry, not by scrollHeight, which
+      // WebKit reports for a multi-column box as if it were one column - so
+      // every chapter longer than a page "failed" on an iPhone and scrolled.
+      // Judged on every pass, so a chapter that failed while a font was
+      // still swapping in is paged again once it has settled.
+      setPaginationFailed(trappedContent(el));
     };
 
     const pending = Array.from(content.querySelectorAll('img')).filter((img) => !img.complete);
@@ -1939,11 +1948,20 @@ export function ReaderPage() {
       return;
     }
     const map = textMapRef.current;
-    const at = paceOffset(narration.cues, narration.bookMs);
-    if (at === null || !map) {
+    const raw = paceOffset(narration.cues, narration.bookMs);
+    if (raw === null || !map) {
       setPace(null);
       return;
     }
+    // Held to the sentence being spoken: the estimate and the sentence are
+    // read from the same clock, but the clock is sampled a few times a
+    // second and a sentence can be picked up mid-way, and the mark must
+    // never sit on a line the voice has not reached or has left.
+    const cue = narration.cue;
+    const at =
+      cue && narration.state === 'on'
+        ? Math.min(cue.charEnd - 1, Math.max(cue.charStart, raw))
+        : raw;
     const offset = Math.round(at);
     const range = rangeForSpan(map, offset, offset + 1);
     const paged = prefs.mode === 'paginated' && !paginationFailed;
@@ -1957,7 +1975,11 @@ export function ReaderPage() {
     // the gutter and the height of a column.
     const r = range.getClientRects()[0] ?? range.getBoundingClientRect();
     const b = box.getBoundingClientRect();
-    const origin = viewportRef.current?.getBoundingClientRect();
+    // Nailed to the viewport while the page is being driven under it;
+    // otherwise drawn inside the box the text moves in, so it moves with
+    // the text and never chases it.
+    const nailed = autoScroll && following && narration.playing && !reduceMotion && !paged;
+    const origin = nailed ? viewportRef.current?.getBoundingClientRect() : contentOriginBox(box);
     const textBox = (paged ? box : contentRef.current)?.getBoundingClientRect();
     if (!origin || !textBox) return;
     const position = markerPosition(
@@ -1980,11 +2002,15 @@ export function ReaderPage() {
     // Auto-scrolling: the marker is nailed to the anchor line and the text is
     // moved to meet it. Its position is therefore a constant, and what varies
     // is where the page has to be.
-    if (autoScroll && following && narration.playing && !reduceMotion && !paged) {
+    if (nailed) {
       const scroller = scrollerRef.current;
       setPace(
         position && scroller
-          ? { ...position, top: b.top - origin.top + scroller.clientHeight * AUTO_SCROLL_ANCHOR }
+          ? {
+              ...position,
+              top: b.top - origin.top + scroller.clientHeight * AUTO_SCROLL_ANCHOR,
+              nailed: true,
+            }
           : null,
       );
       if (scroller) {
@@ -2373,6 +2399,18 @@ export function ReaderPage() {
         fullText: text.slice(0, SELECTION_TEXT_MAX),
         geometry,
       });
+      // On a touch screen the platform draws its own edit menu over a
+      // fresh selection - sometimes over ours, sometimes not at all. Setting
+      // the same selection again takes that menu down, every time; a tap on
+      // the selected words brings it back, and ours steps aside for that
+      // tap (see the tap handlers), so one menu shows at a time.
+      if (selCoarseRef.current && reappliedRef.current !== span && sel.rangeCount) {
+        reappliedRef.current = span;
+        const keep = sel.getRangeAt(0).cloneRange();
+        reappliedRangeRef.current = keep;
+        sel.removeAllRanges();
+        sel.addRange(keep);
+      }
     };
     const onPointerDown = (e: PointerEvent) => {
       if (contentRef.current?.contains(e.target as Node))
@@ -2385,6 +2423,26 @@ export function ReaderPage() {
       // instead of to the passage the reader had chosen, losing the quotation
       // with it. The sheet owns the selection until it closes.
       if (sheetRef.current === 'note') return;
+      // A press released on the toolbar itself - opening the colours, say -
+      // is not the selection settling, and must not hide the toolbar for
+      // the length of a settle.
+      if (event.type === 'pointerup' && selMenuRef.current?.contains(event.target as Node)) return;
+      // The change our own re-setting of the selection raises is not a
+      // selection being made: the toolbar would hide and settle again for
+      // nothing. Told apart by the range itself, not by the clock - a handle
+      // dragged a moment later is a different range and is a change.
+      if (event.type === 'selectionchange' && reappliedRangeRef.current) {
+        const live = document.getSelection();
+        const r = live?.rangeCount ? live.getRangeAt(0) : null;
+        const same =
+          !!r &&
+          r.startContainer === reappliedRangeRef.current.startContainer &&
+          r.startOffset === reappliedRangeRef.current.startOffset &&
+          r.endContainer === reappliedRangeRef.current.endContainer &&
+          r.endOffset === reappliedRangeRef.current.endOffset;
+        if (same) return;
+        reappliedRangeRef.current = null;
+      }
       if (event.type === 'selectionchange' && selMenuRef.current) {
         // Hide stale geometry while the OS drags a handle; the settled
         // snapshot restores the toolbar once, before paint.
@@ -2486,36 +2544,39 @@ export function ReaderPage() {
    * the words go - without the link. The platform's own share sheet where
    * there is one; the clipboard where there is not, with a word to say so.
    */
-  const shareSelection = useCallback(async () => {
-    const quote = trimQuote(selectedText());
-    if (!quote || !manifest) return;
-    let url = '';
-    try {
-      const res = await api<{ url: string; token: string }>(`/api/books/${id}/share`, {
-        method: 'POST',
-      });
-      url = res.url;
-    } catch {
-      /* no share links on this server, or offline: the quotation still travels */
-    }
-    const text = t('reader.share.text', { title: manifest.title, quote, url }).trim();
-    if (typeof navigator.share === 'function') {
+  const shareSelection = useCallback(
+    async (passage?: string) => {
+      const quote = trimQuote(passage ?? selectedText());
+      if (!quote || !manifest) return;
+      let url = '';
       try {
-        await navigator.share({ text });
-        return;
-      } catch (err) {
-        // Dismissed is dismissed. A sheet that could not open at all - a
-        // desktop that has the API and nothing behind it - falls through.
-        if ((err as { name?: string } | null)?.name === 'AbortError') return;
+        const res = await api<{ url: string; token: string }>(`/api/books/${id}/share`, {
+          method: 'POST',
+        });
+        url = res.url;
+      } catch {
+        /* no share links on this server, or offline: the quotation still travels */
       }
-    }
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.show(t('reader.share.copied'));
-    } catch {
-      toast.show(t('reader.toast.copyFailed'));
-    }
-  }, [selectedText, manifest, id, toast, t]);
+      const text = t('reader.share.text', { title: manifest.title, quote, url }).trim();
+      if (typeof navigator.share === 'function') {
+        try {
+          await navigator.share({ text });
+          return;
+        } catch (err) {
+          // Dismissed is dismissed. A sheet that could not open at all - a
+          // desktop that has the API and nothing behind it - falls through.
+          if ((err as { name?: string } | null)?.name === 'AbortError') return;
+        }
+      }
+      try {
+        await navigator.clipboard.writeText(text);
+        toast.show(t('reader.share.copied'));
+      } catch {
+        toast.show(t('reader.toast.copyFailed'));
+      }
+    },
+    [selectedText, manifest, id, toast, t],
+  );
 
   /**
    * The mark the reader tapped. A highlight is paint, not an element, so the
@@ -2534,6 +2595,10 @@ export function ReaderPage() {
   const selMenuSettlingRef = useRef(false);
   /** The span the toolbar was placed for; a new span forgets a dock. */
   const selSpanRef = useRef<string | null>(null);
+  /** The span the platform's edit menu was taken down for, so it is done once per selection. */
+  const reappliedRef = useRef<string | null>(null);
+  /** The range set again, so the selectionchange that raises is not read as a new selection. */
+  const reappliedRangeRef = useRef<Range | null>(null);
   /**
    * What made the CURRENT selection. The media query says whether this device
    * HAS a coarse pointer; an iPad with a trackpad has both, and a selection
@@ -2567,6 +2632,22 @@ export function ReaderPage() {
   sheetRef.current = sheet;
 
   const [markPop, setMarkPop] = useState<{ a: Annotation; x: number; y: number } | null>(null);
+  /** The colour row in place of the icons, while a highlight colour is being chosen. */
+  const [palette, setPalette] = useState(false);
+  const [markPalette, setMarkPalette] = useState(false);
+  /**
+   * Our toolbar stepping aside for the platform's. On a phone a tap on the
+   * selected words brings the platform's own edit menu up, and two menus
+   * over one selection is one too many; the next tap brings ours back.
+   */
+  const [toolbarHidden, setToolbarHidden] = useState(false);
+  const toolbarHiddenRef = useRef(false);
+  toolbarHiddenRef.current = toolbarHidden;
+  useEffect(() => {
+    setPalette(false);
+    setToolbarHidden(false);
+  }, [selection]);
+  useEffect(() => setMarkPalette(false), [markPop]);
   /** Measured position for the popover; null until it has been measured. */
   const [markPopTop, setMarkPopTop] = useState<number | null>(null);
   const markPopRef = useRef<HTMLDivElement | null>(null);
@@ -2590,6 +2671,15 @@ export function ReaderPage() {
     },
     [annotations, spineIdx],
   );
+
+  // The contents open on the chapter being read, not at the top of the list.
+  useEffect(() => {
+    if (sheet !== 'toc' || contentsTab !== 'toc') return;
+    const raf = requestAnimationFrame(() => {
+      document.querySelector('.list-row[aria-current="true"]')?.scrollIntoView({ block: 'center' });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [sheet, contentsTab]);
 
   // Read native geometry without ever cancelling contextmenu, callout or
   // selection gestures. Layout measurement and placement happen before paint.
@@ -2658,7 +2748,6 @@ export function ReaderPage() {
         bottom: (vv?.offsetTop ?? 0) + (vv?.height ?? window.innerHeight) - safe('bottom'),
       };
       el.style.maxWidth = `${Math.max(0, viewport.right - viewport.left - 16)}px`;
-      el.dataset.compact = selMenuModeRef.current === 'dock' ? 'true' : 'false';
       const input = {
         selection: geometry,
         viewport,
@@ -2672,17 +2761,7 @@ export function ReaderPage() {
         coarse: selCoarseRef.current,
         previous: selMenuModeRef.current,
       };
-      let placement = placeSelectionToolbar(input);
-      if (!placement || placement.mode === 'dock') {
-        // Compact dock is a single scrollable row, never a wrapped panel over
-        // the text. Measure its real height before checking the dock clearance.
-        el.dataset.compact = 'true';
-        placement = placeSelectionToolbar({
-          ...input,
-          toolbar: el.getBoundingClientRect(),
-          previous: 'dock',
-        });
-      }
+      const placement = placeSelectionToolbar(input);
       if (!placement) {
         el.style.visibility = 'hidden';
         setToolbarShown(false);
@@ -2693,14 +2772,19 @@ export function ReaderPage() {
       el.dataset.placement = placement.mode;
       el.style.left = `${placement.left}px`;
       el.style.top = `${placement.top}px`;
-      el.style.visibility = 'visible';
+      el.style.visibility = toolbarHiddenRef.current ? 'hidden' : 'visible';
       setToolbarShown(true);
-      // The frame: the same settled lines, in the viewport's own pixels, and
-      // nothing at all while a page is still sliding under them.
-      const origin = viewportRef.current?.getBoundingClientRect();
+      // The frame: the same settled lines, in the pixels of the box the text
+      // moves in (clipped to the page when there is one), and nothing at all
+      // while a page is still sliding under them.
+      const paged = prefs.mode === 'paginated';
+      const host = paged ? pagesRef.current : scrollerRef.current;
       const boxes =
-        origin && !pageTurning(content)
-          ? relativeTo(lineBoxes(geometry.rects, origin), origin)
+        host && !pageTurning(content)
+          ? relativeTo(
+              lineBoxes(geometry.rects, paged ? host.getBoundingClientRect() : null),
+              hostOrigin(host),
+            )
           : [];
       const last = boxes[boxes.length - 1];
       setSelFrame((prev) => {
@@ -2762,7 +2846,18 @@ export function ReaderPage() {
       window.visualViewport?.removeEventListener('scroll', schedule);
       mq.removeEventListener('change', schedule);
     };
-  }, [selection, page, loadSeq, chrome, chromeInset, sheet, prefs.mode, pageClipBox]);
+  }, [
+    selection,
+    page,
+    loadSeq,
+    chrome,
+    chromeInset,
+    sheet,
+    prefs.mode,
+    pageClipBox,
+    palette,
+    toolbarHidden,
+  ]);
 
   /**
    * Keep the mark's popover on the screen, vertically.
@@ -3109,7 +3204,11 @@ export function ReaderPage() {
   // Stable getters for the overlays: what they measure changes; where to
   // find it does not.
   const getMap = useCallback(() => textMapRef.current, []);
-  const getViewport = useCallback(() => viewportRef.current, []);
+  /** The box the text moves in - the scroller, or the page box - and so the box to draw over it in. */
+  const getHost = useCallback(
+    () => (prefs.mode === 'paginated' ? pagesRef.current : scrollerRef.current),
+    [prefs.mode],
+  );
   const getContent = useCallback(() => contentRef.current, []);
   const getScroller = useCallback(() => scrollBox(), [scrollBox]);
   const getClip = useCallback(
@@ -3150,6 +3249,90 @@ export function ReaderPage() {
   })();
   const margins = MARGINS[prefs.margin];
   const pagesLeft = Math.max(0, pageCount - page - 1);
+
+  /**
+   * Drawn over the text, inside the box the text moves in - the scroller,
+   * or the page box - so it all moves with the text natively rather than
+   * chasing it a frame behind: the resumed line, the voice's mark, the
+   * sentence being spoken, the blink where the voice starts again after a
+   * tap, and the frame around a settled selection.
+   */
+  const overText = (
+    <>
+      {resumeMark && resumeMark.spineIdx === spineIdx && (
+        <ResumeMarker
+          target={resumeMark}
+          map={() => textMapRef.current}
+          container={getHost}
+          scroller={() => scrollerRef.current}
+          layoutKey={layoutKey}
+        />
+      )}
+      {pace && !pace.nailed && prefs.voiceMark === 'margin' && (
+        // Beside the text, never on it: an estimate drawn as one.
+        <span
+          className={`pace-marker${paceJump ? ' is-jump' : ''}`}
+          style={{ left: pace.left, top: pace.top }}
+          aria-hidden="true"
+          data-paused={narration.playing ? undefined : 'yes'}
+        />
+      )}
+      {readAlong && narration.cue && prefs.voiceMark === 'wash' && (
+        <LineOverlay
+          className="spoken-mark"
+          span={{ start: narration.cue.charStart, end: narration.cue.charEnd }}
+          map={getMap}
+          container={getHost}
+          clip={getClip}
+          scroller={getScroller}
+          content={getContent}
+          layoutKey={layoutKey}
+          data={{
+            start: String(narration.cue.charStart),
+            confident: isConfident(narration.cue) ? 'yes' : 'no',
+            paused: narration.playing ? undefined : 'yes',
+          }}
+        />
+      )}
+      {blink && (
+        <LineOverlay
+          key={blink.nonce}
+          className="blink-mark"
+          span={blink}
+          fade
+          map={getMap}
+          container={getHost}
+          clip={getClip}
+          scroller={getScroller}
+          content={getContent}
+          layoutKey={layoutKey}
+          data={{ start: String(blink.start) }}
+        />
+      )}
+      {selFrame && (
+        // One outline around the whole of it, not a box per line.
+        <svg className="line-overlay selframe" aria-hidden="true">
+          {outlineRuns(selFrame.boxes).map((run, i) => (
+            <path key={i} d={outlinePath(run, 2)} />
+          ))}
+        </svg>
+      )}
+      {selFrame && (
+        <button
+          type="button"
+          className="selframe__x"
+          style={{ left: selFrame.end.x, top: selFrame.end.y }}
+          aria-label={t('reader.select.clear')}
+          // Like the toolbar: a press must not collapse the selection
+          // before the click that is meant to.
+          onPointerDown={(e) => e.preventDefault()}
+          onClick={clearSelection}
+        >
+          <IconClose size={12} />
+        </button>
+      )}
+    </>
+  );
 
   return (
     <div
@@ -3272,22 +3455,14 @@ export function ReaderPage() {
             <path d="M0 0h22v34l-11-8-11 8z" fill="currentColor" />
           </svg>
         )}
-        {resumeMark && resumeMark.spineIdx === spineIdx && (
-          <ResumeMarker
-            target={resumeMark}
-            map={() => textMapRef.current}
-            container={() => viewportRef.current}
-            scroller={() => scrollerRef.current}
-            layoutKey={layoutKey}
-          />
-        )}
-        {pace !== null && (
-          // Beside the text, never on it: an estimate drawn as one.
+        {pace?.nailed && (
+          // Driving the page: the mark holds still in the viewport and the
+          // text is moved to meet it.
           <span
             className={`pace-marker${paceJump ? ' is-jump' : ''}`}
-            style={pace}
+            style={{ left: pace.left, top: pace.top }}
             aria-hidden="true"
-            data-auto={autoScroll ? 'on' : undefined}
+            data-auto="on"
             data-paused={narration.playing ? undefined : 'yes'}
           />
         )}
@@ -3340,7 +3515,13 @@ export function ReaderPage() {
                     !(e.target as Element).closest('a')
                   ) {
                     const sel = document.getSelection();
-                    if (sel && !sel.isCollapsed) return;
+                    if (sel && !sel.isCollapsed) {
+                      // A tap on the selected words brings the platform's own
+                      // menu up on a phone: ours steps aside, and comes back
+                      // with the next tap.
+                      if (tapInSelection(sel, e.clientX, e.clientY)) setToolbarHidden((h) => !h);
+                      return;
+                    }
                     // Armed to continue a selection: this tap is where it ends.
                     if (extendSelectionTo(e.clientX, e.clientY)) return;
                     if (openMarkAt(e.clientX, e.clientY)) return;
@@ -3353,6 +3534,7 @@ export function ReaderPage() {
                 lang={language ?? undefined}
                 dangerouslySetInnerHTML={{ __html: html }}
               />
+              {overText}
             </div>
           </>
         ) : (
@@ -3369,7 +3551,10 @@ export function ReaderPage() {
                   return;
                 }
                 const sel = document.getSelection();
-                if (sel && !sel.isCollapsed) return;
+                if (sel && !sel.isCollapsed) {
+                  if (tapInSelection(sel, e.clientX, e.clientY)) setToolbarHidden((h) => !h);
+                  return;
+                }
                 if (openMarkAt(e.clientX, e.clientY)) return;
                 if (seekVoiceAt(e.clientX, e.clientY)) return;
                 setChrome((c) => !c);
@@ -3403,63 +3588,8 @@ export function ReaderPage() {
                 )}
               </div>
             )}
+            {overText}
           </div>
-        )}
-        {/* Drawn over the text, from its own rectangles at draw time: the
-            sentence being spoken, the blink where the voice starts again
-            after a tap, and the frame around a settled selection. */}
-        {readAlong && narration.cue && (
-          <LineOverlay
-            className="spoken-mark"
-            span={{ start: narration.cue.charStart, end: narration.cue.charEnd }}
-            map={getMap}
-            container={getViewport}
-            clip={getClip}
-            scroller={getScroller}
-            content={getContent}
-            layoutKey={layoutKey}
-            data={{
-              start: String(narration.cue.charStart),
-              confident: isConfident(narration.cue) ? 'yes' : 'no',
-              paused: narration.playing ? undefined : 'yes',
-            }}
-          />
-        )}
-        {blink && (
-          <LineOverlay
-            key={blink.nonce}
-            className="blink-mark"
-            span={blink}
-            fade
-            map={getMap}
-            container={getViewport}
-            clip={getClip}
-            scroller={getScroller}
-            content={getContent}
-            layoutKey={layoutKey}
-            data={{ start: String(blink.start) }}
-          />
-        )}
-        {selFrame && (
-          <div className="line-overlay selframe" aria-hidden="true">
-            {selFrame.boxes.map((b, i) => (
-              <span key={i} style={b} />
-            ))}
-          </div>
-        )}
-        {selFrame && (
-          <button
-            type="button"
-            className="selframe__x"
-            style={{ left: selFrame.end.x, top: selFrame.end.y }}
-            aria-label={t('reader.select.clear')}
-            // Like the toolbar: a press must not collapse the selection
-            // before the click that is meant to.
-            onPointerDown={(e) => e.preventDefault()}
-            onClick={clearSelection}
-          >
-            <IconClose size={12} />
-          </button>
         )}
         {/* A selection carried over a page turn: the way to finish it, at
             the corner the reading is heading for. Yields to the toolbar of
@@ -3554,40 +3684,72 @@ export function ReaderPage() {
           // it touches neither the selectable text nor the native menu.
           onPointerDown={(e) => e.preventDefault()}
         >
-          {/* The colours ARE the highlight button: picking one is the act, so
-              highlighting in a chosen colour costs the same single tap as
-              highlighting at all. */}
-          <span className="swatches" role="group" aria-label={t('reader.select.highlight')}>
-            {HIGHLIGHT_COLORS.map((c) => (
+          {palette ? (
+            // The colours, in place of the icons: picking one is the act.
+            <>
               <button
-                key={c}
-                className={`swatch swatch--${c}`}
-                aria-label={t('reader.select.highlightIn', { color: c })}
-                onClick={() => void addAnnotation('highlight', undefined, c)}
-              />
-            ))}
-          </span>
-          <button
-            onClick={() => {
-              setNoteDraft('');
-              setSheet('note');
-            }}
-          >
-            {t('reader.select.note')}
-          </button>
-          <button onClick={() => void addAnnotation('bookmark')}>
-            {t('reader.select.bookmark')}
-          </button>
-          {/* An icon, so it fits a phone's toolbar beside the words already
-              there; the name is on it for anyone who cannot see the icon. */}
-          <button
-            className="selection-menu__icon"
-            aria-label={t('reader.select.share')}
-            title={t('reader.select.share')}
-            onClick={() => void shareSelection()}
-          >
-            <IconShare size={18} />
-          </button>
+                type="button"
+                aria-label={t('common.back')}
+                title={t('common.back')}
+                onClick={() => setPalette(false)}
+              >
+                <IconChevronLeft size={18} />
+              </button>
+              <span className="swatches" role="group" aria-label={t('reader.select.highlight')}>
+                {HIGHLIGHT_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    className={`swatch swatch--${c}`}
+                    aria-label={t('reader.select.highlightIn', { color: c })}
+                    onClick={() => {
+                      setPalette(false);
+                      void addAnnotation('highlight', undefined, c);
+                    }}
+                  />
+                ))}
+              </span>
+            </>
+          ) : (
+            // Icons, so the toolbar fits a phone beside the words; the name
+            // is on each for anyone who cannot see the icon.
+            <>
+              <button
+                type="button"
+                aria-label={t('reader.select.highlight')}
+                title={t('reader.select.highlight')}
+                onClick={() => setPalette(true)}
+              >
+                <IconHighlighter size={19} />
+              </button>
+              <button
+                type="button"
+                aria-label={t('reader.select.note')}
+                title={t('reader.select.note')}
+                onClick={() => {
+                  setNoteDraft('');
+                  setSheet('note');
+                }}
+              >
+                <IconNotes size={19} />
+              </button>
+              <button
+                type="button"
+                aria-label={t('reader.select.bookmark')}
+                title={t('reader.select.bookmark')}
+                onClick={() => void addAnnotation('bookmark')}
+              >
+                <IconBookmark size={19} />
+              </button>
+              <button
+                type="button"
+                aria-label={t('reader.select.share')}
+                title={t('reader.select.share')}
+                onClick={() => void shareSelection()}
+              >
+                <IconShare size={19} />
+              </button>
+            </>
+          )}
         </div>
       )}
 
@@ -3612,42 +3774,99 @@ export function ReaderPage() {
           )}
           {markPop.a.note && <p className="mark-pop__note">{markPop.a.note}</p>}
           <div className="mark-pop__row">
-            {markPop.a.kind === 'highlight' && (
-              <span className="swatches" role="group" aria-label={t('reader.mark.colour')}>
-                {HIGHLIGHT_COLORS.map((c) => (
+            {markPalette ? (
+              <>
+                <button
+                  type="button"
+                  className="mark-pop__icon"
+                  aria-label={t('common.back')}
+                  title={t('common.back')}
+                  onClick={() => setMarkPalette(false)}
+                >
+                  <IconChevronLeft size={18} />
+                </button>
+                <span className="swatches" role="group" aria-label={t('reader.mark.colour')}>
+                  {HIGHLIGHT_COLORS.map((c) => (
+                    <button
+                      key={c}
+                      className={`swatch swatch--${c}`}
+                      aria-pressed={colorOf(markPop.a) === c}
+                      aria-label={t(COLOR_LABELS[c])}
+                      onClick={() => {
+                        setMarkPalette(false);
+                        void recolour(markPop.a.id, c);
+                      }}
+                    />
+                  ))}
+                </span>
+              </>
+            ) : (
+              <>
+                {markPop.a.kind === 'highlight' && (
                   <button
-                    key={c}
-                    className={`swatch swatch--${c}`}
-                    aria-pressed={colorOf(markPop.a) === c}
-                    aria-label={t(COLOR_LABELS[c])}
-                    onClick={() => void recolour(markPop.a.id, c)}
-                  />
-                ))}
-              </span>
+                    type="button"
+                    className="mark-pop__icon"
+                    aria-label={t('reader.mark.colour')}
+                    title={t('reader.mark.colour')}
+                    onClick={() => setMarkPalette(true)}
+                  >
+                    <IconHighlighter size={18} />
+                  </button>
+                )}
+                {markPop.a.kind === 'note' && (
+                  <button
+                    type="button"
+                    className="mark-pop__icon"
+                    aria-label={t('common.edit')}
+                    title={t('common.edit')}
+                    onClick={() => {
+                      setNoteDraft(markPop.a.note ?? '');
+                      setEditingNote(markPop.a.id);
+                      setMarkPop(null);
+                      setSheet('note');
+                    }}
+                  >
+                    <IconNotes size={18} />
+                  </button>
+                )}
+                {markPop.a.selectedText && (
+                  <button
+                    type="button"
+                    className="mark-pop__icon"
+                    aria-label={t('reader.select.share')}
+                    title={t('reader.select.share')}
+                    onClick={() => void shareSelection(markPop.a.selectedText ?? undefined)}
+                  >
+                    <IconShare size={18} />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="mark-pop__icon mark-pop__icon--remove"
+                  aria-label={
+                    markPop.a.kind === 'highlight'
+                      ? t('reader.mark.removeHighlight')
+                      : t('common.remove')
+                  }
+                  title={
+                    markPop.a.kind === 'highlight'
+                      ? t('reader.mark.removeHighlight')
+                      : t('common.remove')
+                  }
+                  onClick={() => {
+                    const target = markPop.a.id;
+                    setMarkPop(null);
+                    void deleteAnnotation(target);
+                  }}
+                >
+                  {markPop.a.kind === 'highlight' ? (
+                    <IconHighlighterOff size={18} />
+                  ) : (
+                    <IconTrash size={17} />
+                  )}
+                </button>
+              </>
             )}
-            {markPop.a.kind === 'note' && (
-              <button
-                className="btn btn--ghost"
-                onClick={() => {
-                  setNoteDraft(markPop.a.note ?? '');
-                  setEditingNote(markPop.a.id);
-                  setMarkPop(null);
-                  setSheet('note');
-                }}
-              >
-                {t('common.edit')}
-              </button>
-            )}
-            <button
-              className="btn btn--ghost"
-              onClick={() => {
-                const target = markPop.a.id;
-                setMarkPop(null);
-                void deleteAnnotation(target);
-              }}
-            >
-              <IconTrash size={15} /> {t('common.remove')}
-            </button>
           </div>
         </div>
       )}
@@ -4112,6 +4331,41 @@ type HighlightApi = {
  * offset arithmetic knows the height of. The paginated container clips, so a
  * range on another page has a rect well outside the box.
  */
+/**
+ * Whether any element of the chapter runs past the foot of the page box by
+ * more than a line: columns that never formed, or one element too tall to
+ * fragment. A fragmented block reports the union of its fragments, all of
+ * them inside the box, so only trapped content reaches below it.
+ */
+function trappedContent(el: HTMLElement): boolean {
+  const box = el.getBoundingClientRect();
+  const limit = box.bottom + Math.max(12, parseFloat(getComputedStyle(el).lineHeight) || 24);
+  for (const child of el.querySelectorAll('*')) {
+    const r = child.getBoundingClientRect();
+    if (r.height > 0 && r.bottom > limit) return true;
+  }
+  return false;
+}
+
+/** Whether a point lies on the selected words, with a little slack for a finger. */
+function tapInSelection(sel: Selection, x: number, y: number): boolean {
+  if (!sel.rangeCount) return false;
+  for (const r of sel.getRangeAt(0).getClientRects())
+    if (x >= r.left - 6 && x <= r.right + 6 && y >= r.top - 6 && y <= r.bottom + 6) return true;
+  return false;
+}
+
+/** A host's content origin as a box, for the marker arithmetic that wants one. */
+function contentOriginBox(host: HTMLElement): {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+} {
+  const o = hostOrigin(host);
+  return { ...o, right: o.left + host.scrollWidth, bottom: o.top + host.scrollHeight };
+}
+
 function spanOnScreen(
   map: TextMap,
   offset: number,
@@ -4327,6 +4581,21 @@ function ReaderSettingsSheet({
               onClick={() => set('progressBar', v)}
             >
               {t(`reader.progressBar.${v}` as const)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="rs-group">
+        <div className="rs-label">{t('reader.settings.voiceMark')}</div>
+        <div className="segmented" role="group" aria-label={t('reader.settings.voiceMark')}>
+          {(['margin', 'wash'] as const).map((v) => (
+            <button
+              key={v}
+              aria-pressed={prefs.voiceMark === v}
+              onClick={() => set('voiceMark', v)}
+            >
+              {t(`reader.voiceMark.${v}` as const)}
             </button>
           ))}
         </div>

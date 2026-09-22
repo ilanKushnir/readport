@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useT } from '../i18n';
 import { offsetToDom, rangeForSpan, type TextMap } from './textmap';
+import { hostOrigin } from './overlay';
 import { type ReadingPoint } from './continuity';
 import './continuity.css';
 
@@ -58,13 +59,21 @@ export function ResumeMarker({
       if (!m || !box) return;
       const b = box.getBoundingClientRect();
       const r = markerRect(m, target.charOffset, b.width);
-      if (!r || r.bottom < b.top || r.top > b.bottom || r.right < b.left || r.left > b.right) {
+      // A page box that does not scroll shows one page: a mark on another
+      // page is not drawn at all. A scrolling host keeps it, scrolled away.
+      const scrolls = box.scrollHeight > box.clientHeight + 1;
+      const offBox =
+        !!r && (r.bottom < b.top || r.top > b.bottom || r.right < b.left || r.left > b.right);
+      if (!r || r.height <= 0 || (!scrolls && offBox)) {
         setRect(null);
         return;
       }
+      // In the host's own content pixels: inside a scrolling host the mark
+      // then scrolls with the text, and a paged host clips what is off its page.
+      const origin = hostOrigin(box);
       setRect({
-        left: r.left - b.left,
-        top: r.top - b.top,
+        left: r.left - origin.left,
+        top: r.top - origin.top,
         width: Math.max(8, r.width),
         height: r.height,
       });

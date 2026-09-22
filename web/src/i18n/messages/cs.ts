@@ -1623,7 +1623,7 @@ const messages: Record<string, string> = {
   'reader.select.clear': 'Zrušit výběr',
   'reader.select.continue': 'Pokračovat ve výběru',
   'reader.select.continueArmed': 'Klepněte tam, kde končí',
-  'reader.share.text': 'Podívej se, co čtu v {title}: „{quote}“ {url}',
+  'reader.share.text': 'Podívej se, co čtu v {title}:\n\n„{quote}“\n\n{url}',
   'reader.share.copied': 'Zkopírováno – vložte to kamkoli',
   'reader.toast.copyFailed': 'Nepodařilo se zkopírovat',
 

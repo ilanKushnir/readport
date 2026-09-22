@@ -1640,7 +1640,7 @@ const messages: Record<string, string> = {
   'reader.select.clear': 'Wyczyść zaznaczenie',
   'reader.select.continue': 'Kontynuuj zaznaczenie',
   'reader.select.continueArmed': 'Dotknij tam, gdzie się kończy',
-  'reader.share.text': 'Zobacz, co czytam w {title}: „{quote}” {url}',
+  'reader.share.text': 'Zobacz, co czytam w {title}:\n\n„{quote}”\n\n{url}',
   'reader.share.copied': 'Skopiowano – wklej to gdziekolwiek',
   'reader.toast.copyFailed': 'Nie udało się skopiować',
 

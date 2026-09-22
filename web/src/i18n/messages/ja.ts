@@ -1615,7 +1615,7 @@ const messages: Record<string, string> = {
   'reader.select.clear': '選択を解除',
   'reader.select.continue': '選択を続ける',
   'reader.select.continueArmed': '終わる位置をタップ',
-  'reader.share.text': '『{title}』で読んだ一節: 「{quote}」 {url}',
+  'reader.share.text': '『{title}』で読んだ一節:\n\n「{quote}」\n\n{url}',
   'reader.share.copied': 'コピーしました - どこにでも貼り付けられます',
   'reader.toast.copyFailed': 'コピーできませんでした',
 

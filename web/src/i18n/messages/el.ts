@@ -1642,7 +1642,7 @@ const messages: Record<string, string> = {
   'reader.select.clear': 'Απαλοιφή επιλογής',
   'reader.select.continue': 'Συνέχεια επιλογής',
   'reader.select.continueArmed': 'Πάτησε εκεί που τελειώνει',
-  'reader.share.text': 'Δες τι διάβασα στο {title}: “{quote}” {url}',
+  'reader.share.text': 'Δες τι διάβασα στο {title}:\n\n“{quote}”\n\n{url}',
   'reader.share.copied': 'Αντιγράφηκε - επικόλλησέ το όπου θέλεις',
   'reader.toast.copyFailed': 'Δεν ήταν δυνατή η αντιγραφή',
 

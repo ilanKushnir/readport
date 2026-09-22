@@ -6,12 +6,19 @@
  * about a paragraph, at a word, with an ellipsis that says it was cut.
  */
 
-/** About four sentences: enough to be worth sending, short enough to be read where it lands. */
-export const QUOTE_MAX = 600;
+/**
+ * A ceiling, not a target: a selection is sent whole, because a reader who
+ * chose a passage wants the passage to arrive. The cap only stops a
+ * runaway selection of a chapter from being handed to a share tray.
+ */
+export const QUOTE_MAX = 20_000;
 
-/** The quote as it should read in a message: one line of prose, trimmed at a word. */
+/** The quote as it should read in a message: paragraphs kept, runs of space collapsed, cut at a word only past the ceiling. */
 export function trimQuote(text: string, max = QUOTE_MAX): string {
-  const clean = text.replace(/\s+/g, ' ').trim();
+  const clean = text
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\s*\n\s*/g, '\n')
+    .trim();
   if (clean.length <= max) return clean;
   const head = clean.slice(0, max);
   const cut = head.lastIndexOf(' ');

@@ -1649,7 +1649,7 @@ const messages: Record<string, string> = {
   'reader.select.clear': 'Auswahl aufheben',
   'reader.select.continue': 'Auswahl fortsetzen',
   'reader.select.continueArmed': 'Antippen, wo die Auswahl endet',
-  'reader.share.text': 'Schau, was ich in {title} gelesen habe: „{quote}“ {url}',
+  'reader.share.text': 'Schau, was ich in {title} gelesen habe:\n\n„{quote}“\n\n{url}',
   'reader.share.copied': 'Kopiert – lässt sich überall einfügen',
   'reader.toast.copyFailed': 'Kopieren fehlgeschlagen',
 

@@ -1638,7 +1638,7 @@ const messages: Record<string, string> = {
   'reader.select.clear': 'ניקוי הבחירה',
   'reader.select.continue': 'המשך הבחירה',
   'reader.select.continueArmed': 'יש להקיש היכן שזה נגמר',
-  'reader.share.text': 'הנה מה שקראתי ב-{title}: „{quote}” {url}',
+  'reader.share.text': 'הנה מה שקראתי ב-{title}:\n\n„{quote}”\n\n{url}',
   'reader.share.copied': 'הועתק - אפשר להדביק בכל מקום',
   'reader.toast.copyFailed': 'לא ניתן היה להעתיק',
 

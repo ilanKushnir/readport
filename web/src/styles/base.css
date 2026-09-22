@@ -1677,8 +1677,11 @@ body:has(.app-body) {
    with an edge rule rather than a fill: the row is still a button, the list
    is still scanned by title, and one row in it is where you already are. */
 .list-row[aria-current='true'] {
-  color: var(--rp-accent);
-  font-weight: 650;
+  color: var(--rp-text);
+  font-weight: 700;
+  /* A wash as well as the bar: the row is the one thing the list is opened
+     to find, and a change of colour alone was easy to read past. */
+  background: color-mix(in srgb, var(--rp-primary) 10%, transparent);
 }
 .list-row[aria-current='true']::before {
   content: '';
@@ -1688,7 +1691,7 @@ body:has(.app-body) {
   width: 3px;
   border-start-end-radius: 3px;
   border-end-end-radius: 3px;
-  background: var(--rp-accent);
+  background: var(--rp-primary);
 }
 /* Colour is never the only signal: in a forced-colours theme the accent is
    overridden away, and the rule has to stay visible on its own. */

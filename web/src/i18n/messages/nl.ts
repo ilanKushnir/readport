@@ -1642,7 +1642,7 @@ const messages: Record<string, string> = {
   'reader.select.clear': 'Selectie wissen',
   'reader.select.continue': 'Selectie voortzetten',
   'reader.select.continueArmed': 'Tik waar de selectie eindigt',
-  'reader.share.text': 'Kijk wat ik las in {title}: „{quote}” {url}',
+  'reader.share.text': 'Kijk wat ik las in {title}:\n\n„{quote}”\n\n{url}',
   'reader.share.copied': 'Gekopieerd – overal te plakken',
   'reader.toast.copyFailed': 'Kopiëren mislukt',
 
