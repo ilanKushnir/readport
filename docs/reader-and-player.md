@@ -44,6 +44,14 @@ Implemented:
   Highlight API; on browsers without it the annotations still save and list,
   they just are not painted in the text). How a mark is made, recoloured and
   found again has a section of its own below.
+- A selection can run past the page. Turn the page with one held and a
+  _Continue selection_ pill waits at the top corner the reading is heading
+  for; tap it and the next tap ends the selection, across as many pages as
+  it takes. A settled selection is framed line by line in the theme's
+  accent, with a small cross to drop it, and the selection menu has a Share
+  button: "Look what I read in {title}", the quotation (trimmed at a word
+  past 600 characters) and the book's share link, through the phone's share
+  tray where there is one and to the clipboard where there is not.
 - Progress with revision-checked sync, percent, page-within-chapter.
 - RTL books (`page-progression-direction`, or inferred from a Hebrew /
   Arabic / Persian / Urdu language tag when the OPF declares no direction),
@@ -51,7 +59,9 @@ Implemented:
   direction-aware arrow keys.
 - Turning past the last page marks the book finished; a page turn after
   the tab regains focus re-claims progress for this device, and if another
-  device has since read further a toast offers to jump there.
+  device has since read further a toast offers to jump there. The offer
+  stays until it is taken or closed: the moment to decide is the end of the
+  paragraph, not eight seconds from now.
 - Hideable chrome, iPhone safe areas, reduced-motion support.
 - Internal links navigate inside the book; external links open in a new tab
   with `rel=noopener`; images load from authenticated asset routes.
@@ -63,7 +73,7 @@ Known limitations (deliberate for V1, documented rather than half-built):
   own typography. Heavily designed/fixed-layout EPUBs will look simplified.
 - PDF, MOBI/AZW3, and comics are detected during scans but reported as
   unsupported instead of rendered badly.
-- No dictionary/share popovers yet; no reading ruler.
+- No dictionary popover yet; no reading ruler.
 - Sentence-range highlights spanning chapter boundaries are not supported.
 - The Notes & marks page returns the 500 most recent marks and does not page
   past them. A reader who has passed that will still find everything in the
@@ -176,6 +186,20 @@ Press **Read along** in the reader of an aligned pair and the narration starts
 at the sentence in front of you, the spoken sentence is washed as it is read,
 and the page turns itself to keep up. The player is untouched by this - this is
 the reader, with a voice.
+
+The wash sits on the line boxes of the words themselves, measured from the
+text at draw time and again after every relayout, so a font, a size or a
+rotation cannot leave it on a line the text has left; it is firmer at the edge
+the sentence starts on, dimmer while the aligner is unsure or the voice is
+paused, and distinct from a highlight, which stays flat and in its own colour.
+A sentence the page ends in the middle of turns the page the moment the voice
+crosses onto the next one - judged by where the voice is within the sentence,
+not by where the sentence starts - so the words being spoken are the words on
+screen. In scroll mode the page glides to the voice with a short ease in and
+out that a wheel or a finger cancels, and reduced motion makes the move
+instant. Tapping an earlier passage to move the voice back blinks the sentence
+it picks up from: full at its first word, gone by its last, twice over a
+second and a half.
 
 The transport is deliberately four controls: play/pause, back (the same skip
 length the player uses), speed, and stop. Everything else a listener wants -

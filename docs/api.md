@@ -136,6 +136,7 @@ step.
 | GET    | `/api/library?filter=both-formats`    | one row per paired title (see Shelves)          |
 | GET    | `/api/library?filter=recently-added`  | arrivals of the last 30 days, capped at 60      |
 | GET    | `/api/library?facet=kind:value`       | one grouping the library itself carries         |
+| GET    | `/api/library?lang=he,en`             | only these languages; `unknown` for none        |
 | GET    | `/api/facets`                         | every grouping this library supports, counted   |
 | POST   | `/api/library/rescan`                 | admin                                           |
 | GET    | `/api/library/roots`                  | admin; the configured read-only roots           |
@@ -357,6 +358,14 @@ Counts are of **rows, not titles**: a paired book shows up as an ebook and an
 audiobook, so a genre both sides carry counts two, which is exactly how many
 cards `?facet=` then returns. A count that did not match its own list would be
 the worse lie.
+
+`lang=he,en` narrows the library and the facets to those languages (`unknown`
+stands for a book with none), by a book's effective language, composing with
+a search, a format, a shelf or a facet. The Languages group is the one
+exception to "counts describe the narrowed view": it is counted without the
+`lang` narrowing, so a language chip's count says what tapping it would show
+rather than zero because it is not tapped yet. Spellings a tag might use
+(`eng`, `pt-BR`) are accepted; anything else is ignored.
 
 Values are grouped case- and whitespace-insensitively (`Science Fiction` and
 `science fiction` are one), and one spelling is chosen to display; filtering

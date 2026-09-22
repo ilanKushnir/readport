@@ -75,7 +75,9 @@ read-along only works inside ReadPort.
 
 - **Browse what your library already says about itself** - genres, series,
   narrators, publishers, years, ratings, authors and languages, each built from
-  the metadata your files already carry, each one click from the grid.
+  the metadata your files already carry, each one click from the grid. A
+  book's language is read from its own text, so a tag a tool defaulted does
+  not file a Hebrew novel under English, and a row of flags filters by it.
 - **Marks you can find again** - highlights in five colours, notes on a dashed
   underline, bookmarks, and one page that searches every mark in every book.
 - **Progress that survives** - IndexedDB-first, offline-tolerant, append-only on
@@ -87,12 +89,16 @@ read-along only works inside ReadPort.
 - **23 interface languages**, chosen per account, Hebrew and Arabic right-to-left
   while every book keeps its own direction. Everything but English is
   model-generated and says so.
-- **Friends** - see where a friend is in a book, draw them on your progress
-  bar in a colour you pick, and put a book in front of them with a note.
+- **Friends** - see where a friend is in a book as a bead on your progress
+  bar, in a colour you pick, and put a book in front of them with a note.
   Sharing is consent, per person, and nothing in the margins is ever shared.
-- **Your reading** - when you read, how much, how long a sitting runs, and
-  after two weeks of evidence the hour of the day you read best. Kept for
-  good, worked out in your own timezone, compared only with yourself.
+- **A link to a book** - share one to WhatsApp or anywhere else and it
+  previews with the cover; a friend with an account saves it as recommended
+  by you, and anyone else can ask to join, for an admin to approve.
+- **Your reading** - when you read, how much, how long a sitting runs, how
+  often you go back for the thread, and after two weeks of evidence the hour
+  of the day you read best. Kept for good, worked out in your own timezone,
+  compared only with yourself.
 - **Highlights you can hand over** - every mark by book and chapter, sorted
   by place or colour, exported as a clean PDF with the cover on the front.
 - **The apps beside it** - Calibre-Web Automated, Audiobookshelf, Shelfmark,
