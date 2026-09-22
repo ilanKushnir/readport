@@ -1176,6 +1176,24 @@ body:has(.app-body) {
   cursor: pointer;
   white-space: nowrap;
 }
+.toast__close {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin: -4px -8px -4px -2px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  opacity: 0.75;
+  cursor: pointer;
+}
+.toast__close:hover,
+.toast__close:focus-visible {
+  opacity: 1;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
 .toast > div {
   display: inline-flex;
   align-items: center;

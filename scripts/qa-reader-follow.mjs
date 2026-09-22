@@ -776,6 +776,69 @@ try {
     await back.context.close();
   }
   await check('no runtime page errors', () => assert.deepEqual(errors, []));
+  // A sentence the spread ends in the middle of: its start is on the page,
+  // so the cue-based follow has nothing to do, and the voice would read the
+  // rest from the page after. The pace estimate inside the cue crosses the
+  // edge, and the page has to turn then - forward, to the very next page.
+  for (const rtl of [false, true]) {
+    const { page, context } = await open('paginated', rtl);
+    await page.getByRole('button', { name: 'Read along', exact: true }).click();
+    // Reading along re-lays the chapter under the transport; measure after.
+    await page.waitForSelector('.reader-content #p219', { state: 'attached' });
+    await page.waitForTimeout(500);
+    const edge = await page.evaluate(async () => {
+      const { buildTextMap, rangeForSpan } = await import('/src/reader/textmap.ts');
+      const map = buildTextMap(document.querySelector('.reader-content'));
+      const box = document.querySelector('.reader-pages').getBoundingClientRect();
+      const shown = (at) => {
+        const r = rangeForSpan(map, at, at + 1).getBoundingClientRect();
+        return (
+          r.height > 0 &&
+          r.left >= box.left - 1 &&
+          r.right <= box.right + 1 &&
+          r.top >= box.top - 1 &&
+          r.bottom <= box.bottom + 1
+        );
+      };
+      let last = null;
+      for (let at = 0; at < 30000; at += 1) {
+        if (shown(at)) last = at;
+        else if (last !== null && at - last > 300) break;
+      }
+      return last;
+    });
+    const visible = (r) =>
+      r.left >= 0 && r.right <= 1180 && r.top >= r.boxTop && r.bottom <= r.boxBottom;
+    await check(
+      `a sentence split across the spread turns the page as the voice crosses ${rtl ? 'RTL' : 'LTR'}`,
+      async () => {
+        assert(edge !== null, 'the spread must show text');
+        const split = {
+          id: 'split',
+          charStart: edge - 60,
+          charEnd: edge + 60,
+          startMs: 0,
+          endMs: 2000,
+          uncertaintyMs: 100,
+        };
+        // Early in the sentence the voice is on the visible half: no turn.
+        await clock(page, [split], 100);
+        await page.waitForTimeout(300);
+        assert(visible(await rectAt(page, edge)), 'the page stays while the voice is on it');
+        assert(
+          !visible(await rectAt(page, edge + 42)),
+          'the rest of the sentence is off the spread',
+        );
+        // Most of the way through, the estimate is past the edge: the page turns.
+        await clock(page, [split], 1700);
+        await page.waitForTimeout(700);
+        const r = await rectAt(page, edge + 42);
+        assert(visible(r), `the page turns to the spoken half: ${JSON.stringify(r)}`);
+        assert(!visible(await rectAt(page, edge - 60)), 'and the page before is gone');
+      },
+    );
+    await context.close();
+  }
 } finally {
   await browser.close();
 }

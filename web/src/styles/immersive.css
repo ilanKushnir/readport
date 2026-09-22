@@ -441,7 +441,7 @@
 /* The chapter label is the only part of this row that may give up space.
    Without this it held its full width, pushed the Listen pill over the
    percentage, and the percentage truncated to "4…". */
-.reader-footer-row > span:first-child {
+.reader-footer-row > .reader-footer-label {
   flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
@@ -468,6 +468,9 @@
 .reader-minibar {
   position: relative;
   flex: 1 1 120px;
+  /* Room for a line to be a line, and for the friends' beads on it, even
+     beside the read-along pill on a phone. */
+  min-width: 72px;
   max-width: 320px;
   height: 3px;
   border-radius: 2px;
@@ -1858,7 +1861,9 @@
   .reader-page .tandem-pill > span {
     white-space: nowrap;
   }
-  .reader-footer-row > span {
+  /* Every label may give up width; the compact bar is a line, not a
+     label, and the beads on it must not be cut to its height. */
+  .reader-footer-row > span:not(.reader-minibar) {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;

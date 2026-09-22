@@ -1,6 +1,7 @@
 import {
   createContext,
   useCallback,
+  useMemo,
   useContext,
   useEffect,
   useRef,
@@ -209,22 +210,46 @@ export interface ToastAction {
   label: string;
   onClick: () => void;
 }
-interface ToastCtx {
-  show: (msg: string, action?: ToastAction) => void;
+export interface ToastOptions {
+  /**
+   * Stays until the reader acts on it or closes it. For the one message
+   * that is an offer rather than a report - another device is further
+   * along, jump there? - which a person may want to consider after they
+   * have read to the end of the paragraph, not within eight seconds.
+   */
+  sticky?: boolean;
 }
-const ToastContext = createContext<ToastCtx>({ show: () => {} });
+interface ToastCtx {
+  show: (msg: string, action?: ToastAction, opts?: ToastOptions) => void;
+  /** Take the toast down, whatever it says: the surface that raised it is leaving. */
+  dismiss: () => void;
+}
+const ToastContext = createContext<ToastCtx>({ show: () => {}, dismiss: () => {} });
 export const useToast = () => useContext(ToastContext);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toast, setToast] = useState<{ msg: string; action?: ToastAction } | null>(null);
+  const t = useT();
+  const [toast, setToast] = useState<{
+    msg: string;
+    action?: ToastAction;
+    sticky: boolean;
+  } | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const show = useCallback((msg: string, action?: ToastAction) => {
-    setToast({ msg, action });
+  const dismiss = useCallback(() => {
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => setToast(null), action ? 8000 : 3200);
+    timer.current = undefined;
+    setToast(null);
   }, []);
+  const show = useCallback((msg: string, action?: ToastAction, opts?: ToastOptions) => {
+    setToast({ msg, action, sticky: opts?.sticky === true });
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = opts?.sticky
+      ? undefined
+      : setTimeout(() => setToast(null), action ? 8000 : 3200);
+  }, []);
+  const ctx = useMemo(() => ({ show, dismiss }), [show, dismiss]);
   return (
-    <ToastContext.Provider value={{ show }}>
+    <ToastContext.Provider value={ctx}>
       {children}
       {toast &&
         createPortal(
@@ -236,10 +261,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                   className="toast__action"
                   onClick={() => {
                     toast.action?.onClick();
-                    setToast(null);
+                    dismiss();
                   }}
                 >
                   {toast.action.label}
+                </button>
+              )}
+              {toast.sticky && (
+                <button
+                  className="toast__close"
+                  type="button"
+                  aria-label={t('common.dismiss')}
+                  onClick={dismiss}
+                >
+                  <IconClose size={14} />
                 </button>
               )}
             </div>

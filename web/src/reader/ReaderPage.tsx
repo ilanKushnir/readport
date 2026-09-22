@@ -54,7 +54,7 @@ import {
   type HighlightColor,
 } from './marks';
 import { NarrationBar, useNarration } from './Narration';
-import { cueForOffset, isConfident, nearestCue, paceOffset } from './readalong';
+import { cueForOffset, isConfident, nearestCue, paceOffset, type Cue } from './readalong';
 import {
   autoScrollDelta,
   markerPosition,
@@ -789,17 +789,24 @@ export function ReaderPage() {
           Math.abs(l.pct - here) > 0.005 &&
           (l.spineIdx !== spineIdx || l.charOffset !== currentOffsetRef.current)
         ) {
-          toast.show(t('reader.toast.otherDeviceAt', { pct: f.percent(l.pct) }), {
-            label: t('reader.toast.jumpThere'),
-            onClick: () => {
-              void resumeLocator(id).then(() => {
-                gotoChapterRef.current(l.spineIdx, l.charOffset, 'open', undefined, 'resume', {
-                  sentenceId: l.sentenceId,
-                  mark: true,
+          // An offer, not a report: it stays until the reader takes it or
+          // closes it, because the moment to decide is the end of the
+          // paragraph they are in, not eight seconds from now.
+          toast.show(
+            t('reader.toast.otherDeviceAt', { pct: f.percent(l.pct) }),
+            {
+              label: t('reader.toast.jumpThere'),
+              onClick: () => {
+                void resumeLocator(id).then(() => {
+                  gotoChapterRef.current(l.spineIdx, l.charOffset, 'open', undefined, 'resume', {
+                    sentenceId: l.sentenceId,
+                    mark: true,
+                  });
                 });
-              });
+              },
             },
-          });
+            { sticky: true },
+          );
         }
       } catch {
         /* offline: nothing to reconcile */
@@ -809,6 +816,8 @@ export function ReaderPage() {
     document.addEventListener('visibilitychange', handler);
     return () => document.removeEventListener('visibilitychange', handler);
   }, [manifest, id, spineIdx, toast, t, f]);
+  // Leaving the book takes its offer with it.
+  useEffect(() => () => toast.dismiss(), [toast]);
 
   // After chapter HTML renders: fix asset URLs, build text map, paginate,
   // jump to pending target, paint highlights.
@@ -1663,9 +1672,13 @@ export function ReaderPage() {
       const paged = prefs.mode === 'paginated' && !paginationFailed;
       const box = prefs.mode === 'paginated' ? pagesRef.current : scrollerRef.current;
       if (!box) return false;
+      // The page the voice is on: mid-sentence, that can be the page after
+      // the one the sentence starts on.
+      const spoken =
+        narration.cue === cue ? spokenOffset(narration.cues, cue, narration.bookMs) : cue.charStart;
       if (paged) {
         if (!layoutRef.current) return false;
-        const target = pageForOffset(cue.charStart);
+        const target = pageForOffset(spoken);
         // No page to name is no relocation: the caller tells the reader that
         // the voice could not be found rather than moving them anywhere.
         if (target === null || target >= pageCount) return false;
@@ -1686,7 +1699,7 @@ export function ReaderPage() {
         if (!spanOnScreen(map, cue.charStart, shifted(b, delta))) return false;
         glideTo(box, want);
       }
-      if (paged && !spanOnScreen(map, cue.charStart, box.getBoundingClientRect())) return false;
+      if (paged && !spanOnScreen(map, spoken, box.getBoundingClientRect())) return false;
       // Late layout/image passes must preserve this relocation, not the old landing.
       currentOffsetRef.current = cue.charStart;
       setLiveOffset(cue.charStart);
@@ -1751,7 +1764,12 @@ export function ReaderPage() {
     if (!cue || !map) return;
     const paged = prefs.mode === 'paginated' && !paginationFailed;
     const box = prefs.mode === 'paginated' ? pagesRef.current : scrollerRef.current;
-    const onScreen = spanOnScreen(map, cue.charStart, box?.getBoundingClientRect());
+    // Judged by where the voice IS in the sentence, not by the sentence's
+    // first character: a sentence the page ends in the middle of has its
+    // start on this page and its voice, before long, on the next - and a
+    // page turned to the voice must not be pulled back to the start.
+    const spoken = spokenOffset(narration.cues, cue, narration.bookMs);
+    const onScreen = spanOnScreen(map, spoken, box?.getBoundingClientRect());
     if (!following || !followingRef.current) {
       // The reader took the wheel. Following comes back on its own the
       // moment the voice reaches the page they went to - once it has been
@@ -1767,14 +1785,14 @@ export function ReaderPage() {
     }
     if (onScreen) return;
     if (paged) {
-      const target = pageForOffset(cue.charStart);
+      const target = pageForOffset(spoken);
       if (target !== null && target !== page) goToPage(target, 'heartbeat', false);
       // The page is no longer where the chapter landed, and the tracked
       // offset has to say so - the same thing the scroll branch below has
       // always done. Without it the next relayout (an image arriving, a
       // rotation, coming back to the tab) reads a position the voice left
       // long ago and yanks the reader back to it mid-sentence.
-      if (target !== null) currentOffsetRef.current = cue.charStart;
+      if (target !== null) currentOffsetRef.current = spoken;
     } else {
       const range = rangeForSpan(map, cue.charStart, cue.charStart + 1);
       if (range && box) {
@@ -1809,6 +1827,47 @@ export function ReaderPage() {
     glideTo,
     pageForOffset,
     chromeInset.bottom,
+  ]);
+
+  /**
+   * A sentence that runs off the page.
+   *
+   * Following turns the page when a sentence STARTS off it, which is right
+   * for every sentence but the one the page ends in the middle of: its
+   * start is on the page, so nothing turns, and the voice reads the rest of
+   * it - two lines, or ten - from a page the reader cannot see. The voice's
+   * place inside a sentence is the pace estimate, the same one the margin
+   * tick is drawn from; once that place has crossed onto the next page, the
+   * page turns to it. Forward only, and only to the very next page: an
+   * estimate is reason enough to turn a page on, and not to turn one back.
+   */
+  useEffect(() => {
+    if (!readAlong || !following || !followingRef.current || !narration.playing) return;
+    if (prefs.mode !== 'paginated' || paginationFailed) return;
+    const map = textMapRef.current;
+    const cue = narration.cue;
+    const box = pagesRef.current;
+    if (!cue || !map || !box || !layoutRef.current) return;
+    const offset = spokenOffset(narration.cues, cue, narration.bookMs);
+    if (offset <= cue.charStart) return;
+    if (spanOnScreen(map, offset, box.getBoundingClientRect())) return;
+    const target = pageForOffset(offset);
+    if (target !== page + 1 || target >= pageCount) return;
+    goToPage(target, 'heartbeat', false);
+    currentOffsetRef.current = offset;
+  }, [
+    readAlong,
+    following,
+    narration.playing,
+    narration.cue,
+    narration.cues,
+    narration.bookMs,
+    prefs.mode,
+    paginationFailed,
+    page,
+    pageCount,
+    pageForOffset,
+    goToPage,
   ]);
 
   /**
@@ -3667,7 +3726,7 @@ export function ReaderPage() {
         )}
         <div className="reader-footer-row">
           {prefs.progressBar === 'full' && (
-            <span>
+            <span className="reader-footer-label">
               {prefs.mode !== 'paginated'
                 ? chapterTitle
                 : paginationFailed
@@ -4064,6 +4123,17 @@ function spanOnScreen(
   const r = range.getBoundingClientRect();
   if (r.width === 0 && r.height === 0) return false;
   return r.bottom > box.top && r.top < box.bottom && r.right > box.left && r.left < box.right;
+}
+
+/**
+ * Where the voice is inside a sentence: the pace estimate, held to the
+ * sentence's own span, else the sentence's start. Between sentences the
+ * estimate walks the gap, which is not this sentence, so it is clamped.
+ */
+function spokenOffset(cues: Cue[], cue: Cue, bookMs: number): number {
+  const at = paceOffset(cues, bookMs);
+  if (at === null) return cue.charStart;
+  return Math.min(cue.charEnd - 1, Math.max(cue.charStart, Math.round(at)));
 }
 
 /** The same box, moved down the page by `dy`: where a glide will leave it. */

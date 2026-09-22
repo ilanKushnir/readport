@@ -61,7 +61,8 @@
    centred on its track line. Each host draws its track at its own height,
    so the variant says where the centre is: the reader's 3px line, its 28px
    slider (track 12-16px), and the player's 32px scrubber (track 13-19px).
-   Two beads closer than a bead step aside by `--fbead-shift` bead widths. */
+   A bead whose place is under the bead before it is drawn `--fbead-shift`
+   pixels further along, past that bead. */
 .fbar {
   position: absolute;
   inset: 0;
@@ -71,9 +72,7 @@
   position: absolute;
   pointer-events: auto;
   top: 50%;
-  margin-inline-start: calc(
-    var(--fbead-size) / -2 + var(--fbead-shift, 0) * (var(--fbead-size) + 2px)
-  );
+  margin-inline-start: calc(var(--fbead-size) / -2 + var(--fbead-shift, 0px));
   transform: translateY(-50%);
   transition:
     transform var(--rp-duration-quick) var(--rp-ease),
@@ -141,6 +140,15 @@
    player's track has one already. */
 .reader-slider {
   position: relative;
+}
+/* The compact bar paints its fill on a child span, and the beads' box is a
+   span too: it must stay an unpainted box the height of the line. */
+.reader-minibar > .fbar {
+  display: block;
+  height: auto;
+  border-radius: 0;
+  background: none;
+  transition: none;
 }
 /* The end of the player's times row: the stack, then the time left. */
 .player-times__end {

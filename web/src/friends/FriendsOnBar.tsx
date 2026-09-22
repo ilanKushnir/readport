@@ -182,10 +182,17 @@ export function FriendMarkers({
   }, []);
   const drawn = friends.filter((x) => shownIds.has(x.userId)).sort((x, y) => x.pct - y.pct);
   if (drawn.length === 0) return null;
-  const tooClose = width > 0 ? (BEAD_PX + 2) / width : 0;
+  // Where each bead is drawn, in pixels along the bar: at its place, or
+  // right after the bead before it when its place is under that bead -
+  // judged against where the previous one was DRAWN, since a bead that
+  // stepped aside can land on the next one's place.
   const shifts: number[] = [];
-  drawn.forEach((x, i) => {
-    shifts.push(i > 0 && x.pct - drawn[i - 1]!.pct < tooClose ? shifts[i - 1]! + 1 : 0);
+  let lastDrawn = -Infinity;
+  drawn.forEach((x) => {
+    const at = x.pct * width;
+    const drawnAt = width > 0 ? Math.max(at, lastDrawn + BEAD_PX + 2) : at;
+    shifts.push(drawnAt - at);
+    lastDrawn = drawnAt;
   });
   return (
     <span className={`fbar fbar--${on}`} ref={measure}>
@@ -197,7 +204,7 @@ export function FriendMarkers({
           style={
             {
               insetInlineStart: `${Math.min(100, Math.max(0, x.pct * 100))}%`,
-              '--fbead-shift': shifts[i],
+              '--fbead-shift': `${shifts[i]}px`,
               ...friendColourStyle(x.colour),
             } as React.CSSProperties
           }
