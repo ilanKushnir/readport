@@ -1279,6 +1279,15 @@ const messages: Record<string, string> = {
   'notes.bookmarkedPage': 'Сторінка в закладках',
   'notes.markedPassage': 'Відмічений уривок',
   'notes.deleteFailed': 'Не вдалося видалити — ви не в мережі?',
+
+  // whatsnew
+  'whatsnew.eyebrow': 'Версія {version}',
+  'whatsnew.title': 'Що нового',
+  'whatsnew.lede': 'Від вашого минулого візиту дещо змінилося.',
+  'whatsnew.showOlder': 'Попередні версії',
+  'whatsnew.hideOlder': 'Сховати попередні версії',
+  'whatsnew.olderHeading': 'Версія {version}',
+  'whatsnew.done': 'Почати читати',
 };
 
 export default messages;

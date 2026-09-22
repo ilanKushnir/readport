@@ -1322,5 +1322,14 @@ const messages: Record<string, string> = {
   'notes.bookmarkedPage': 'صفحة بإشارة مرجعية',
   'notes.markedPassage': 'مقطع مُعلَّم',
   'notes.deleteFailed': 'تعذّر الحذف - هل أنت غير متصل؟',
+
+  // whatsnew
+  'whatsnew.eyebrow': 'الإصدار {version}',
+  'whatsnew.title': 'ما الجديد',
+  'whatsnew.lede': 'تغيّرت بعض الأمور منذ زيارتك الأخيرة.',
+  'whatsnew.showOlder': 'الإصدارات السابقة',
+  'whatsnew.hideOlder': 'إخفاء الإصدارات السابقة',
+  'whatsnew.olderHeading': 'الإصدار {version}',
+  'whatsnew.done': 'ابدأ القراءة',
 };
 export default messages;

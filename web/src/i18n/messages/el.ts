@@ -1291,5 +1291,14 @@ const messages: Record<string, string> = {
   'notes.bookmarkedPage': 'Σελίδα με σελιδοδείκτη',
   'notes.markedPassage': 'Σημειωμένο απόσπασμα',
   'notes.deleteFailed': 'Δεν ήταν δυνατή η διαγραφή - μήπως είσαι εκτός σύνδεσης;',
+
+  // whatsnew
+  'whatsnew.eyebrow': 'Έκδοση {version}',
+  'whatsnew.title': 'Τι νέο υπάρχει',
+  'whatsnew.lede': 'Κάποια πράγματα άλλαξαν από την τελευταία σου επίσκεψη.',
+  'whatsnew.showOlder': 'Παλαιότερες εκδόσεις',
+  'whatsnew.hideOlder': 'Απόκρυψη παλαιότερων εκδόσεων',
+  'whatsnew.olderHeading': 'Έκδοση {version}',
+  'whatsnew.done': 'Ξεκίνα την ανάγνωση',
 };
 export default messages;

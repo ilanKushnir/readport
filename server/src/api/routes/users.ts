@@ -19,6 +19,7 @@ import { requireRole } from '../../auth/roles.js';
 import { resolveSettings } from '../../domain/settings.js';
 import { UNUSABLE_PASSWORD } from '../../auth/proxyAuth.js';
 import { newId } from '../../util/ids.js';
+import { stampWhatsNewSeen } from './prefs.js';
 import { nowIso } from '../../db/index.js';
 import { SESSION_COOKIE } from '../guards.js';
 import { sessionCookieOpts } from '../../auth/cookie.js';
@@ -147,6 +148,7 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
       req.user!.id,
       nowIso(),
     );
+    stampWhatsNewSeen(ctx, id);
     ctx.log.info(
       `Admin ${req.user!.username} created ${parsed.data.role} "${parsed.data.username}"`,
     );
@@ -380,6 +382,7 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
         id,
         String(inv.id),
       );
+      stampWhatsNewSeen(ctx, id);
       db.exec('COMMIT');
     } catch (err) {
       db.exec('ROLLBACK');

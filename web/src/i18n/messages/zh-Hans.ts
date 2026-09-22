@@ -1188,5 +1188,14 @@ const messages: Record<string, string> = {
   'notes.bookmarkedPage': '已添加书签的页面',
   'notes.markedPassage': '已标记的段落',
   'notes.deleteFailed': '无法删除——你是否处于离线状态？',
+
+  // whatsnew
+  'whatsnew.eyebrow': '版本 {version}',
+  'whatsnew.title': '新增功能',
+  'whatsnew.lede': '自你上次来过之后，有一些变化。',
+  'whatsnew.showOlder': '早期版本',
+  'whatsnew.hideOlder': '隐藏早期版本',
+  'whatsnew.olderHeading': '版本 {version}',
+  'whatsnew.done': '开始阅读',
 };
 export default messages;

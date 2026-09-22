@@ -4,6 +4,7 @@ import { type AppContext } from '../context.js';
 import { type SessionUser } from './sessions.js';
 import { newId } from '../util/ids.js';
 import { nowIso, type DB } from '../db/index.js';
+import { stampWhatsNewSeen } from '../api/routes/prefs.js';
 
 /**
  * Reverse-proxy single sign-on (Authentik / Authelia / oauth2-proxy style).
@@ -114,6 +115,7 @@ export function proxyAuthUser(
     db.prepare(
       'INSERT INTO users (id, username, password_hash, role, created_at) VALUES (?, ?, ?, ?, ?)',
     ).run(id, username, UNUSABLE_PASSWORD, role, nowIso());
+    stampWhatsNewSeen(ctx, id);
     db.exec('COMMIT');
     ctx.log.info(`Provisioned ${role} "${username}" from proxy header ${proxyAuthHeader}`);
     if (count === 0) ctx.setupToken = null;

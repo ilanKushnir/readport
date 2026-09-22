@@ -1268,6 +1268,15 @@ const messages: Record<string, string> = {
   'notes.bookmarkedPage': 'Yer imli sayfa',
   'notes.markedPassage': 'İşaretli pasaj',
   'notes.deleteFailed': 'Silinemedi - çevrimdışı mısınız?',
+
+  // whatsnew
+  'whatsnew.eyebrow': 'Sürüm {version}',
+  'whatsnew.title': 'Yenilikler',
+  'whatsnew.lede': 'Son ziyaretinizden bu yana birkaç şey değişti.',
+  'whatsnew.showOlder': 'Önceki sürümler',
+  'whatsnew.hideOlder': 'Önceki sürümleri gizle',
+  'whatsnew.olderHeading': 'Sürüm {version}',
+  'whatsnew.done': 'Okumaya başla',
 };
 
 export default messages;

@@ -1284,6 +1284,15 @@ const messages: Record<string, string> = {
   'notes.bookmarkedPage': 'Página marcada',
   'notes.markedPassage': 'Pasaje marcado',
   'notes.deleteFailed': 'No se pudo eliminar: ¿estás sin conexión?',
+
+  // whatsnew
+  'whatsnew.eyebrow': 'Versión {version}',
+  'whatsnew.title': 'Novedades',
+  'whatsnew.lede': 'Han cambiado algunas cosas desde la última vez.',
+  'whatsnew.showOlder': 'Versiones anteriores',
+  'whatsnew.hideOlder': 'Ocultar versiones anteriores',
+  'whatsnew.olderHeading': 'Versión {version}',
+  'whatsnew.done': 'Empezar a leer',
 };
 
 export default messages;

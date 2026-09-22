@@ -38,6 +38,8 @@ interface SessionCtx {
   phase: 'loading' | 'setup' | 'login' | 'ready' | 'offline';
   /** The interface language this account chose, or null to follow the browser. */
   locale: string | null;
+  /** undefined until /api/auth/me answers; see whatsnew/changelog.ts. */
+  whatsNewSeen: string | null | undefined;
   refresh: () => Promise<void>;
   setUser: (u: User | null) => void;
   logout: () => Promise<void>;
@@ -50,6 +52,7 @@ const Ctx = createContext<SessionCtx>({
   needsLibraries: false,
   phase: 'loading',
   locale: null,
+  whatsNewSeen: undefined,
   refresh: async () => {},
   setUser: () => {},
   logout: async () => {},
@@ -77,6 +80,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [needsLibraries, setNeedsLibraries] = useState(false);
   const [phase, setPhase] = useState<SessionCtx['phase']>('loading');
   const [locale, setLocale] = useState<string | null>(null);
+  const [whatsNewSeen, setWhatsNewSeen] = useState<string | null | undefined>(undefined);
 
   const refresh = useCallback(async () => {
     try {
@@ -86,6 +90,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         hasPassword?: boolean;
         needsLibraries?: boolean;
         locale?: string | null;
+        whatsNewSeen?: string | null;
       }>('/api/auth/me', { signal: sessionCheckSignal() });
       // Before anything can be delivered: queued checkpoints belong to the
       // account that recorded them. The same person keeps a backlog written
@@ -98,6 +103,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setHasPassword(me.hasPassword !== false);
       setNeedsLibraries(me.needsLibraries === true);
       setLocale(me.locale ?? null);
+      setWhatsNewSeen(me.whatsNewSeen ?? null);
       setPhase('ready');
       return;
     } catch (err) {
@@ -215,6 +221,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         needsLibraries,
         phase,
         locale,
+        whatsNewSeen,
         refresh,
         logout,
         setUser: (u) => {

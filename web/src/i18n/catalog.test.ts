@@ -15,6 +15,23 @@ const files = import.meta.glob<{ default: Record<string, string> }>('./messages/
 
 const locales = UI_LOCALES.map((l) => l.code).filter((c) => c !== 'en');
 
+/**
+ * Release notes are the ONE exception to full parity.
+ *
+ * `whatsnew.release.*` is written when a release is cut and translated
+ * afterwards. The runtime already falls back to English for a missing key,
+ * so an untranslated line is a line in English rather than a broken dialog -
+ * and holding a release until 22 languages have caught up would mean either
+ * late releases or machine output nobody looked at. Every other key, the
+ * dialog's own chrome included, is still required everywhere.
+ *
+ * A locale that HAS translated one of these is still checked for arguments
+ * and plural categories like anything else; it is only absence that is
+ * forgiven.
+ */
+const OPTIONAL = /^whatsnew\.release\./;
+const required = Object.keys(en).filter((k) => !OPTIONAL.test(k));
+
 describe('the English catalog', () => {
   it('has no empty strings and no key used twice across fragments', () => {
     for (const [key, value] of Object.entries(en)) {
@@ -32,7 +49,7 @@ describe.each(locales)('locale %s', (code) => {
   if (!mod) return;
   const messages = mod.default;
   it('has every English key and no others', () => {
-    const missing = Object.keys(en).filter((k) => !(k in messages));
+    const missing = required.filter((k) => !(k in messages));
     const extra = Object.keys(messages).filter((k) => !(k in en));
     expect(missing, 'missing').toEqual([]);
     expect(extra, 'extra').toEqual([]);
@@ -41,6 +58,7 @@ describe.each(locales)('locale %s', (code) => {
     const wrong: string[] = [];
     for (const [key, value] of Object.entries(en)) {
       const translated = messages[key];
+      if (translated === undefined && OPTIONAL.test(key)) continue; // falls back to English
       if (typeof translated !== 'string' || translated === '') {
         wrong.push(`${key}: empty`);
         continue;

@@ -1293,5 +1293,14 @@ const messages: Record<string, string> = {
   'notes.bookmarkedPage': 'Gemarkeerde pagina',
   'notes.markedPassage': 'Gemarkeerde passage',
   'notes.deleteFailed': 'Kon niet worden verwijderd – ben je offline?',
+
+  // whatsnew
+  'whatsnew.eyebrow': 'Versie {version}',
+  'whatsnew.title': 'Wat is er nieuw',
+  'whatsnew.lede': 'Er is het een en ander veranderd sinds je laatste bezoek.',
+  'whatsnew.showOlder': 'Oudere versies',
+  'whatsnew.hideOlder': 'Oudere versies verbergen',
+  'whatsnew.olderHeading': 'Versie {version}',
+  'whatsnew.done': 'Beginnen met lezen',
 } as const;
 export default messages;

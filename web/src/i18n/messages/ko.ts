@@ -1236,5 +1236,14 @@ const messages: Record<string, string> = {
   'notes.bookmarkedPage': '책갈피 추가된 페이지',
   'notes.markedPassage': '표시된 구절',
   'notes.deleteFailed': '삭제할 수 없습니다 - 오프라인 상태인가요?',
+
+  // whatsnew
+  'whatsnew.eyebrow': '버전 {version}',
+  'whatsnew.title': '새로운 기능',
+  'whatsnew.lede': '지난번 방문 이후 몇 가지가 바뀌었습니다.',
+  'whatsnew.showOlder': '이전 버전',
+  'whatsnew.hideOlder': '이전 버전 숨기기',
+  'whatsnew.olderHeading': '버전 {version}',
+  'whatsnew.done': '읽기 시작',
 };
 export default messages;

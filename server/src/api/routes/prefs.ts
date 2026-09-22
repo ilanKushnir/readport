@@ -10,6 +10,7 @@ import {
 } from '@readport/shared';
 import { type AppContext } from '../../context.js';
 import { nowIso } from '../../db/index.js';
+import { APP_VERSION } from '../../util/version.js';
 
 /**
  * Per-person interface state.
@@ -40,6 +41,12 @@ const KEYS = {
   playback: playbackPrefsSchema,
   /** The language the interface speaks to this person, on every device. */
   locale: z.object({ locale: uiLocaleSchema }),
+  /**
+   * The newest release this person has been told about. Account-level on
+   * purpose: dismissing "What's new" on a phone has to silence it on the
+   * laptop too, or it becomes the thing you close three times a release.
+   */
+  whatsnew: z.object({ seenVersion: z.string().min(1).max(32) }),
 } as const;
 
 type PrefKey = keyof typeof KEYS;
@@ -70,6 +77,18 @@ function writePref(ctx: AppContext, userId: string, key: PrefKey, value: unknown
          updated_at = excluded.updated_at`,
     )
     .run(userId, key, JSON.stringify(value), nowIso());
+}
+
+/**
+ * Mark a brand-new account as already up to date.
+ *
+ * "What's new" is for people who were here before the release, so an account
+ * created ON a version is not told about it. Called from every place a user
+ * is created - first-run setup, an admin adding someone, an accepted invite,
+ * and first sight through a trusted proxy.
+ */
+export function stampWhatsNewSeen(ctx: AppContext, userId: string): void {
+  writePref(ctx, userId, 'whatsnew', { seenVersion: APP_VERSION });
 }
 
 export function registerPrefsRoutes(app: FastifyInstance, ctx: AppContext): void {
@@ -138,6 +157,17 @@ export function registerPrefsRoutes(app: FastifyInstance, ctx: AppContext): void
       writePref(ctx, req.user!.id, 'locale', { locale: body.data.locale });
     }
     return { locale: body.data.locale };
+  });
+
+  /**
+   * "What's new". Read through /api/auth/me with everything else the first
+   * paint needs; only the write lives here.
+   */
+  app.put('/api/prefs/whatsnew', async (req, reply) => {
+    const body = z.object({ seenVersion: z.string().min(1).max(32) }).safeParse(req.body);
+    if (!body.success) return reply.code(400).send({ error: 'invalid' });
+    writePref(ctx, req.user!.id, 'whatsnew', { seenVersion: body.data.seenVersion });
+    return { seenVersion: body.data.seenVersion };
   });
 
   app.put('/api/prefs/sidebar', async (req, reply) => {

@@ -1,0 +1,192 @@
+/* "What's new" - the only thing in this app that interrupts somebody on the
+   way to a book, so it is a quiet card rather than a celebration: the same
+   raised surface, hairline and ember the rest of the app uses, and a single
+   primary button that closes it. Three ways out (the backdrop, the close
+   button, Escape via the focus trap) because the fastest possible dismissal
+   is the whole courtesy. */
+
+.wn-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--rp-scrim);
+  animation: wn-fade var(--rp-duration-base) var(--rp-ease);
+}
+
+.wn {
+  position: fixed;
+  z-index: 61;
+  inset-inline: 0;
+  bottom: 0;
+  margin-inline: auto;
+  width: min(480px, 100%);
+  max-height: min(78dvh, 640px);
+  display: flex;
+  flex-direction: column;
+  background: var(--rp-surface-raised);
+  border: 1px solid var(--rp-border);
+  border-block-end: 0;
+  border-start-start-radius: 18px;
+  border-start-end-radius: 18px;
+  box-shadow: var(--rp-shadow-2);
+  padding-block-end: var(--rp-safe-bottom);
+  animation: wn-rise var(--rp-duration-slow) var(--rp-ease);
+}
+
+/* On anything with room, it is a centred card rather than a sheet. */
+@media (min-width: 560px) {
+  .wn {
+    inset: 0;
+    bottom: auto;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 1px solid var(--rp-border);
+    border-radius: 18px;
+    animation: wn-fade var(--rp-duration-base) var(--rp-ease);
+  }
+}
+
+.wn__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-5) var(--sp-5) var(--sp-3);
+}
+
+.wn__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.wn__eyebrow {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rp-interactive);
+}
+
+.wn__title {
+  margin: 0;
+  font-family: var(--rp-font-reading);
+  font-size: 25px;
+  line-height: 1.15;
+}
+
+.wn__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 var(--sp-5);
+}
+
+.wn__lede {
+  margin: 0 0 var(--sp-4);
+  color: var(--rp-text-soft);
+  font-size: 14.5px;
+}
+
+.wn__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.wn__list li {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: var(--sp-3);
+  align-items: start;
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+
+.wn__emoji {
+  font-size: 19px;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.wn__older {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-block-start: var(--sp-5);
+  padding: var(--sp-2) 0;
+  background: none;
+  border: 0;
+  border-block-start: 1px solid var(--rp-border);
+  padding-block-start: var(--sp-4);
+  color: var(--rp-interactive);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.wn__older svg {
+  transition: transform var(--rp-duration-quick) var(--rp-ease);
+}
+.wn__older[aria-expanded='true'] svg {
+  transform: rotate(90deg);
+}
+[dir='rtl'] .wn__older[aria-expanded='true'] svg {
+  transform: rotate(-90deg);
+}
+
+/* Each past release is its own block, divided from the one above it, so a
+   line is never read as belonging to the wrong version. */
+.wn__past {
+  margin-block-start: var(--sp-4);
+  padding-block-start: var(--sp-4);
+  border-block-start: 1px solid var(--rp-border);
+}
+
+.wn__pasthead {
+  margin: 0 0 var(--sp-3);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rp-text-soft);
+}
+
+.wn__foot {
+  padding: var(--sp-4) var(--sp-5) var(--sp-5);
+}
+
+.wn__done {
+  width: 100%;
+  justify-content: center;
+}
+
+@keyframes wn-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes wn-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wn,
+  .wn-backdrop {
+    animation: none;
+  }
+  .wn__older svg {
+    transition: none;
+  }
+}

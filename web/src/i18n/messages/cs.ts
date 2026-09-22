@@ -1266,5 +1266,14 @@ const messages: Record<string, string> = {
   'notes.bookmarkedPage': 'Stránka se záložkou',
   'notes.markedPassage': 'Označený úsek',
   'notes.deleteFailed': 'Nepodařilo se smazat – jste offline?',
+
+  // whatsnew
+  'whatsnew.eyebrow': 'Verze {version}',
+  'whatsnew.title': 'Co je nového',
+  'whatsnew.lede': 'Od tvé poslední návštěvy se něco změnilo.',
+  'whatsnew.showOlder': 'Starší verze',
+  'whatsnew.hideOlder': 'Skrýt starší verze',
+  'whatsnew.olderHeading': 'Verze {version}',
+  'whatsnew.done': 'Začít číst',
 };
 export default messages;

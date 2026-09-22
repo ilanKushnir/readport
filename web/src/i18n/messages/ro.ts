@@ -1277,5 +1277,14 @@ const messages: Record<string, string> = {
   'notes.bookmarkedPage': 'Pagină cu semn de carte',
   'notes.markedPassage': 'Pasaj marcat',
   'notes.deleteFailed': 'Nu s-a putut șterge - ești offline?',
+
+  // whatsnew
+  'whatsnew.eyebrow': 'Versiunea {version}',
+  'whatsnew.title': 'Noutăți',
+  'whatsnew.lede': 'S-au schimbat câteva lucruri de la ultima vizită.',
+  'whatsnew.showOlder': 'Versiuni anterioare',
+  'whatsnew.hideOlder': 'Ascunde versiunile anterioare',
+  'whatsnew.olderHeading': 'Versiunea {version}',
+  'whatsnew.done': 'Începe să citești',
 };
 export default messages;

@@ -1256,5 +1256,14 @@ const messages: Record<string, string> = {
   'notes.bookmarkedPage': 'Side med bogmærke',
   'notes.markedPassage': 'Markeret passage',
   'notes.deleteFailed': 'Kunne ikke slette – er du offline?',
+
+  // whatsnew
+  'whatsnew.eyebrow': 'Version {version}',
+  'whatsnew.title': 'Nyheder',
+  'whatsnew.lede': 'Et par ting har ændret sig, siden du var her sidst.',
+  'whatsnew.showOlder': 'Ældre versioner',
+  'whatsnew.hideOlder': 'Skjul ældre versioner',
+  'whatsnew.olderHeading': 'Version {version}',
+  'whatsnew.done': 'Begynd at læse',
 };
 export default messages;

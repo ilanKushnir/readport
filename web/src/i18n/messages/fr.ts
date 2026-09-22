@@ -1293,6 +1293,15 @@ const messages: Record<string, string> = {
   'notes.bookmarkedPage': 'Page mise en signet',
   'notes.markedPassage': 'Passage marqué',
   'notes.deleteFailed': 'Impossible de supprimer - êtes-vous hors ligne ?',
+
+  // whatsnew
+  'whatsnew.eyebrow': 'Version {version}',
+  'whatsnew.title': 'Nouveautés',
+  'whatsnew.lede': 'Quelques changements depuis votre dernière visite.',
+  'whatsnew.showOlder': 'Versions précédentes',
+  'whatsnew.hideOlder': 'Masquer les versions précédentes',
+  'whatsnew.olderHeading': 'Version {version}',
+  'whatsnew.done': 'Commencer à lire',
 };
 
 export default messages;

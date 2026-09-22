@@ -1251,5 +1251,14 @@ const messages: Record<string, string> = {
   'notes.bookmarkedPage': 'Bokmärkt sida',
   'notes.markedPassage': 'Markerad passage',
   'notes.deleteFailed': 'Kunde inte ta bort – är du offline?',
+
+  // whatsnew
+  'whatsnew.eyebrow': 'Version {version}',
+  'whatsnew.title': 'Nyheter',
+  'whatsnew.lede': 'En del har ändrats sedan du var här sist.',
+  'whatsnew.showOlder': 'Äldre versioner',
+  'whatsnew.hideOlder': 'Dölj äldre versioner',
+  'whatsnew.olderHeading': 'Version {version}',
+  'whatsnew.done': 'Börja läsa',
 };
 export default messages;

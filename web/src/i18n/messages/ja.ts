@@ -1272,6 +1272,15 @@ const messages: Record<string, string> = {
   'notes.bookmarkedPage': 'ブックマーク済みページ',
   'notes.markedPassage': '印を付けた箇所',
   'notes.deleteFailed': '削除できませんでした。オフラインですか?',
+
+  // whatsnew
+  'whatsnew.eyebrow': 'バージョン {version}',
+  'whatsnew.title': '新着情報',
+  'whatsnew.lede': '前回からいくつか変わりました。',
+  'whatsnew.showOlder': '以前のバージョン',
+  'whatsnew.hideOlder': '以前のバージョンを隠す',
+  'whatsnew.olderHeading': 'バージョン {version}',
+  'whatsnew.done': '読み始める',
 };
 
 export default messages;

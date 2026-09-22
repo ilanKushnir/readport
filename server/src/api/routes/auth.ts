@@ -2,7 +2,7 @@ import { type FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { loginSchema, setupSchema, testPathsSchema, LANGUAGES } from '@readport/shared';
 import { type AppContext } from '../../context.js';
-import { readPref } from './prefs.js';
+import { readPref, stampWhatsNewSeen } from './prefs.js';
 import { hashPassword, verifyAgainstDummy, verifyPassword } from '../../auth/passwords.js';
 import { createSession, destroySession, LoginThrottle } from '../../auth/sessions.js';
 import { newId } from '../../util/ids.js';
@@ -155,6 +155,7 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
       }
       if (body.data.alignmentDirs) patch.alignmentDirs = body.data.alignmentDirs;
       if (Object.keys(patch).length) saveSettings(db, patch);
+      stampWhatsNewSeen(ctx, id);
       db.exec('COMMIT');
     } catch (err) {
       db.exec('ROLLBACK');
@@ -275,6 +276,12 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
       // The interface language this person chose, so the first paint after
       // sign-in is already in it rather than flashing English.
       locale: readPref(ctx, req.user.id, 'locale')?.locale ?? null,
+      // The newest release this person has been told about, or null for an
+      // account that has never been told about one. Null is NOT "show them
+      // everything": a brand-new reader gets no changelog for software they
+      // have not used yet, and the first release after this becomes their
+      // first "What's new".
+      whatsNewSeen: readPref(ctx, req.user.id, 'whatsnew')?.seenVersion ?? null,
     };
   });
 }

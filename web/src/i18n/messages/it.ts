@@ -1280,6 +1280,15 @@ const messages: Record<string, string> = {
   'notes.bookmarkedPage': 'Pagina nei segnalibri',
   'notes.markedPassage': 'Passaggio segnato',
   'notes.deleteFailed': 'Impossibile eliminare - sei offline?',
+
+  // whatsnew
+  'whatsnew.eyebrow': 'Versione {version}',
+  'whatsnew.title': 'Novità',
+  'whatsnew.lede': 'Qualcosa è cambiato dall’ultima volta.',
+  'whatsnew.showOlder': 'Versioni precedenti',
+  'whatsnew.hideOlder': 'Nascondi le versioni precedenti',
+  'whatsnew.olderHeading': 'Versione {version}',
+  'whatsnew.done': 'Inizia a leggere',
 };
 
 export default messages;

@@ -1294,5 +1294,14 @@ const messages: Record<string, string> = {
   'notes.bookmarkedPage': 'עמוד מסומן',
   'notes.markedPassage': 'קטע מסומן',
   'notes.deleteFailed': 'לא ניתן היה למחוק - אולי אין לך חיבור?',
+
+  // whatsnew
+  'whatsnew.eyebrow': 'גרסה {version}',
+  'whatsnew.title': 'מה חדש',
+  'whatsnew.lede': 'כמה דברים השתנו מאז הביקור האחרון שלך.',
+  'whatsnew.showOlder': 'גרסאות קודמות',
+  'whatsnew.hideOlder': 'הסתרת גרסאות קודמות',
+  'whatsnew.olderHeading': 'גרסה {version}',
+  'whatsnew.done': 'אפשר להתחיל לקרוא',
 };
 export default messages;

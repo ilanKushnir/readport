@@ -10,6 +10,7 @@ import {
 import { AUTO_SHELVES } from '@readport/shared';
 import { SessionProvider, useSession } from './state/session';
 import { I18nProvider, useT } from './i18n';
+import { WhatsNew } from './whatsnew/WhatsNew';
 import { ShelvesProvider, useShelves } from './state/shelves';
 import { FacetsProvider } from './state/facets';
 import { Drawer, Sheet, ToastProvider } from './components/ui';
@@ -292,6 +293,9 @@ function Shell() {
         </div>
       )}
       {overlay && !immersive && <ShelfOverlay onClose={() => setOverlay(false)} />}
+      {/* Never over a book: an interruption is tolerable on the way in, and
+          not at all once somebody is reading or listening. */}
+      {!immersive && <WhatsNew />}
       {!immersive && (
         <nav className="tabbar" aria-label={t('nav.primary')}>
           {/* Shelves is a button rather than a link because it opens the same

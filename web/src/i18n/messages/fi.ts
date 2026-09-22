@@ -1264,5 +1264,14 @@ const messages: Record<string, string> = {
   'notes.bookmarkedPage': 'Kirjanmerkitty sivu',
   'notes.markedPassage': 'Merkitty kohta',
   'notes.deleteFailed': 'Ei voitu poistaa - oletko offline?',
+
+  // whatsnew
+  'whatsnew.eyebrow': 'Versio {version}',
+  'whatsnew.title': 'Mitä uutta',
+  'whatsnew.lede': 'Muutama asia on muuttunut viime käynnin jälkeen.',
+  'whatsnew.showOlder': 'Vanhemmat versiot',
+  'whatsnew.hideOlder': 'Piilota vanhemmat versiot',
+  'whatsnew.olderHeading': 'Versio {version}',
+  'whatsnew.done': 'Aloita lukeminen',
 };
 export default messages;
