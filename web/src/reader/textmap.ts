@@ -226,6 +226,25 @@ export function firstVisibleOffset(
 }
 
 /**
+ * The edge of the word an offset falls in, within its own text node.
+ *
+ * A tap gives a caret position, which is as likely to be inside a word as
+ * between two; a selection that ends there cuts the word in half. `end` is
+ * the offset after the word's last character, `start` the offset of its
+ * first. Whitespace is the only boundary considered: punctuation belongs to
+ * the word it is attached to, as it does in a quotation.
+ */
+export function wordEdge(map: TextMap, offset: number, side: 'start' | 'end'): number {
+  if (map.nodes.length === 0) return offset;
+  const entry = map.nodes[hintForOffset(map, offset)]!;
+  const data = entry.node.data;
+  let i = Math.max(0, Math.min(offset - entry.start, data.length));
+  if (side === 'end') while (i < data.length && !/\s/.test(data[i]!)) i++;
+  else while (i > 0 && !/\s/.test(data[i - 1]!)) i--;
+  return entry.start + i;
+}
+
+/**
  * The chapter's text exactly as the offsets address it.
  *
  * This is the same string `extractText()` builds on the server - text-node

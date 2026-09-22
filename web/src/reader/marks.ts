@@ -106,28 +106,6 @@ export function paintMarks(map: TextMap | null, annotations: Annotation[], spine
 }
 
 /**
- * Registry for the sentence the narrator is speaking.
- *
- * Its own registry, separate from the reader's marks: read-along repaints it
- * once a sentence for as long as the book is playing, and going through
- * `paintMarks` would rebuild every highlight in the chapter each time. It also
- * means a highlighted sentence keeps its own colour underneath the wash.
- */
-const SPEAKING = 'rp-speaking';
-
-/** Wash the sentence being spoken, or clear it when there is nothing to say. */
-export function paintSpeaking(
-  map: TextMap | null,
-  span: { start: number; end: number } | null,
-): void {
-  const css = CSS as unknown as HighlightApi;
-  if (!css.highlights || typeof Highlight === 'undefined') return;
-  const range = map && span ? rangeForSpan(map, span.start, span.end) : null;
-  if (range) css.highlights.set(SPEAKING, new Highlight(range));
-  else css.highlights.delete(SPEAKING);
-}
-
-/**
  * The mark under a point, or null.
  *
  * When marks overlap, the shortest wins: a note added inside a long highlight

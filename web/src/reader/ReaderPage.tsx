@@ -27,6 +27,7 @@ import {
   IconHeadphones,
   IconReadAlong,
   IconSearch,
+  IconShare,
   IconSun,
   IconToc,
   IconType,
@@ -38,6 +39,7 @@ import {
   hintForOffset,
   nearestOccurrence,
   rangeForSpan,
+  wordEdge,
   type TextMap,
 } from './textmap';
 import {
@@ -49,12 +51,21 @@ import {
   offsetAtPoint,
   paintFound,
   paintMarks,
-  paintSpeaking,
   type HighlightColor,
 } from './marks';
 import { NarrationBar, useNarration } from './Narration';
-import { isConfident, nearestCue, paceOffset } from './readalong';
-import { autoScrollDelta, markerPosition, canResumeAt, ScrollOwnership } from './motion';
+import { cueForOffset, isConfident, nearestCue, paceOffset } from './readalong';
+import {
+  autoScrollDelta,
+  markerPosition,
+  canResumeAt,
+  GLIDE_MS,
+  ScrollGlide,
+  ScrollOwnership,
+} from './motion';
+import { LineOverlay, pageTurning } from './LineOverlay';
+import { lineBoxes, relativeTo, sameBoxes, type LineBox } from './overlay';
+import { trimQuote } from './share';
 import { liveCheckpointOffset } from './liveOffset';
 import {
   checkpointDue,
@@ -104,12 +115,25 @@ const THEME_BG: Record<ReturnType<typeof effectiveTheme>, string> = {
 };
 
 /**
- * How long a confident anchor stays lit.
- *
- * Long enough for the eye to catch it, short enough that the page is never
- * left looking marked up - which is what a permanent wash did.
+ * How long the blink at a relocated voice lasts: two gentle pulses, then
+ * gone, so the page is never left marked. A little over the animation, so
+ * the last frame has been painted before the boxes go.
  */
-const FLASH_MS = 900;
+const BLINK_MS = 1800;
+
+/** What a selection keeps for sharing: more than a note quotes, less than a chapter. */
+const SELECTION_TEXT_MAX = 4000;
+
+/**
+ * How long a collapsed selection can still be carried over a page turn.
+ *
+ * Every pointer route to a turn - the edge of the page, the tap zones, a
+ * swipe - lands on the page first, and the platform clears the selection on
+ * that press, before the turn it was making. Long enough for the turn to
+ * follow the press; short enough that a selection dismissed on purpose a
+ * while ago is not resurrected by the next turn.
+ */
+const CARRY_GRACE_MS = 800;
 
 /**
  * Where the narrated line sits in the viewport, as a fraction of the height:
@@ -187,8 +211,17 @@ export function ReaderPage() {
   const [sheet, setSheet] = useState<SheetKind>('none');
   const [page, setPage] = useState(0);
   const [pageCount, setPageCount] = useState(1);
-  /** Timer clearing the last confident flash, so flashes never stack up. */
-  const flashTimerRef = useRef<number | null>(null);
+  /**
+   * Bumped whenever the chapter is re-laid out for a new size or a settle
+   * pass: everything drawn over the text from remembered rectangles has to
+   * measure again, and nothing else says the text moved.
+   */
+  const [layoutEpoch, setLayoutEpoch] = useState(0);
+  /**
+   * Where the voice starts again after the reader tapped a passage: the
+   * sentence to blink, and a nonce so tapping the same one blinks again.
+   */
+  const [blink, setBlink] = useState<{ start: number; end: number; nonce: number } | null>(null);
   /** The active column's margin and narrated line, in viewport pixels. */
   const [pace, setPace] = useState<{ left: number; top: number } | null>(null);
   /** Keep the pace marker still and scroll the page under it. */
@@ -224,9 +257,36 @@ export function ReaderPage() {
   const [selection, setSelection] = useState<{
     start: number;
     end: number;
+    /** What a mark stores: the first few hundred characters. */
     text: string;
+    /** What is shared or copied: the selection, up to a long paragraph. */
+    fullText: string;
     geometry: SelectionGeometry;
   } | null>(null);
+  const selectionRef = useRef(selection);
+  selectionRef.current = selection;
+  /** The last settled selection, kept a moment past its collapse (see CARRY_GRACE_MS). */
+  const recentSelRef = useRef<{ start: number; end: number; collapsedAt: number | null } | null>(
+    null,
+  );
+  /** The frame drawn over a settled selection, in viewport pixels, and where it ends. */
+  const [selFrame, setSelFrame] = useState<{
+    boxes: LineBox[];
+    end: { x: number; y: number };
+  } | null>(null);
+  /**
+   * A selection carried across a page turn.
+   *
+   * A drag stops at the edge of the page, so a passage that runs on to the
+   * next one cannot be selected in one gesture. What survives the turn is
+   * not a range - the text it was in has left the screen - but an offset in
+   * the chapter, the way a mark is stored, so it outlives any relayout in
+   * between. `armed` is the reader having said, on the new page, that their
+   * next tap or drag is where the selection ends.
+   */
+  const [pendingSel, setPendingSel] = useState<{ anchor: number; armed: boolean } | null>(null);
+  const pendingSelRef = useRef(pendingSel);
+  pendingSelRef.current = pendingSel;
   const [noteDraft, setNoteDraft] = useState('');
   /** Set while the note sheet is editing an existing note rather than making one. */
   const [editingNote, setEditingNote] = useState<string | null>(null);
@@ -260,11 +320,34 @@ export function ReaderPage() {
   const topChromeRef = useRef<HTMLDivElement>(null);
   const bottomChromeRef = useRef<HTMLDivElement>(null);
   const [chromeInset, setChromeInset] = useState({ top: 72, bottom: 64 });
+  /**
+   * Everything that can move the text without a scroll event saying so.
+   * Anything drawn from the text's rectangles measures again when it changes.
+   */
+  const layoutKey = [
+    loadSeq,
+    page,
+    prefs.mode,
+    prefs.size,
+    prefs.font,
+    prefs.weight,
+    prefs.lineHeight,
+    prefs.margin,
+    prefs.columns,
+    prefs.align,
+    prefs.hyphens,
+    chromeInset.top,
+    chromeInset.bottom,
+    paginationFailed,
+    layoutEpoch,
+  ].join(':');
 
   /** Whether the page still moves itself to keep up with the voice. */
   const [following, setFollowing] = useState(true);
   const followingRef = useRef(following);
   const scrollOwnership = useRef(new ScrollOwnership());
+  /** The eased relocation in flight, if any; a manual scroll cancels it. */
+  const glideRef = useRef(new ScrollGlide(scrollOwnership.current));
   const manualScrollEpoch = useRef(0);
   followingRef.current = following;
   const [reduceMotion, setReduceMotion] = useState(
@@ -274,6 +357,7 @@ export function ReaderPage() {
   /** Cancel the driver synchronously, before React commits the gesture. */
   const detachFollowing = useCallback(() => {
     manualScrollEpoch.current++;
+    glideRef.current.cancel();
     followingRef.current = false;
     cueLeftSinceTakeoverRef.current = false;
     setFollowing(false);
@@ -285,6 +369,89 @@ export function ReaderPage() {
     autoScrollSpeedRef.current = 0;
     autoScrollAtRef.current = null;
   }, []);
+  /**
+   * Move a scrolling box so a line comes into view: eased, so the eye can
+   * follow the text to where it lands, unless the reader asked the system
+   * for less motion, in which case the line is simply there.
+   */
+  const glideTo = useCallback(
+    (box: HTMLElement, top: number) => {
+      if (reduceMotion) {
+        glideRef.current.cancel();
+        scrollOwnership.current.write(box, Math.max(0, top));
+      } else glideRef.current.start(box, top, GLIDE_MS);
+    },
+    [reduceMotion],
+  );
+  /**
+   * A page turn made with text selected keeps where the selection began.
+   *
+   * The range itself cannot stay - its text is leaving the screen, and the
+   * platform would go on drawing handles for it - so the DOM selection is
+   * let go and its edge kept as a chapter offset, for the pill on the next
+   * page to pick up. Turning forward keeps the start and extends onward;
+   * turning back keeps the end, so what was selected stays selected.
+   */
+  const carrySelection = useCallback((dir: 'next' | 'prev') => {
+    const recent = recentSelRef.current;
+    const sel =
+      selectionRef.current ??
+      (recent &&
+      recent.collapsedAt !== null &&
+      performance.now() - recent.collapsedAt < CARRY_GRACE_MS
+        ? recent
+        : null);
+    if (!sel) return;
+    recentSelRef.current = null;
+    setPendingSel({ anchor: dir === 'next' ? sel.start : sel.end, armed: false });
+    setSelection(null);
+    document.getSelection()?.removeAllRanges();
+  }, []);
+  /**
+   * Let the selection go, on the page and in the state that follows it, and
+   * forget it: a selection the reader dismissed, or has just made a mark
+   * from, is not one to carry over the next page turn.
+   */
+  const clearSelection = useCallback(() => {
+    recentSelRef.current = null;
+    document.getSelection()?.removeAllRanges();
+    setSelection(null);
+  }, []);
+  /**
+   * Finish a carried selection at an offset: the DOM range runs from the
+   * anchor to there, whichever way round they are, and the toolbar follows
+   * as it would for any selection. The text in between is selected without
+   * being seen, which is the point. The end is moved to the edge of its
+   * word: a tap lands inside one, and a quotation cut mid-word is nobody's.
+   */
+  const completeSelection = useCallback((anchor: number, at: number): boolean => {
+    const map = textMapRef.current;
+    const sel = document.getSelection();
+    if (!map || !sel) return false;
+    const forward = at >= anchor;
+    const edge = wordEdge(map, at, forward ? 'end' : 'start');
+    const start = Math.min(anchor, edge);
+    const end = Math.max(anchor, edge);
+    if (end <= start) return false;
+    const range = rangeForSpan(map, start, end);
+    if (!range) return false;
+    pendingSelRef.current = null;
+    setPendingSel(null);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    return true;
+  }, []);
+  /** An armed tap on the page: the selection ends at the word under it. */
+  const extendSelectionTo = useCallback(
+    (x: number, y: number): boolean => {
+      const pending = pendingSelRef.current;
+      if (!pending?.armed) return false;
+      const at = offsetAtPoint(textMapRef.current, x, y);
+      if (at === null) return false;
+      return completeSelection(pending.anchor, at);
+    },
+    [completeSelection],
+  );
   /** The passage a search jumped to: landed on, marked, and then let go. */
   const [found, setFound] = useState<{
     spineIdx: number;
@@ -811,6 +978,9 @@ export function ReaderPage() {
       const content = contentRef.current;
       const map = textMapRef.current;
       if (!content || !map) return;
+      // Whatever is drawn over the text from remembered rectangles is about
+      // to be wrong: say so.
+      setLayoutEpoch((n) => n + 1);
       if (prefs.mode === 'paginated' && !paginationFailed) {
         const count = applyPagination();
         const layout = layoutRef.current;
@@ -1334,8 +1504,10 @@ export function ReaderPage() {
       if (s) s.scrollTop += s.clientHeight * 0.9;
       return;
     }
-    if (page < pageCount - 1) goToPage(page + 1);
-    else if (manifest && spineIdx < manifest.chapters.length - 1)
+    if (page < pageCount - 1) {
+      carrySelection('next');
+      goToPage(page + 1);
+    } else if (manifest && spineIdx < manifest.chapters.length - 1)
       gotoChapter(spineIdx + 1, 0, 'seek', undefined, 'progression');
     else if (manifest) finishBook();
   }, [
@@ -1346,6 +1518,7 @@ export function ReaderPage() {
     spineIdx,
     goToPage,
     gotoChapter,
+    carrySelection,
     id,
     sentences,
     toast,
@@ -1359,8 +1532,10 @@ export function ReaderPage() {
       if (s) s.scrollTop -= s.clientHeight * 0.9;
       return;
     }
-    if (page > 0) goToPage(page - 1);
-    else if (spineIdx > 0 && manifest) {
+    if (page > 0) {
+      carrySelection('prev');
+      goToPage(page - 1);
+    } else if (spineIdx > 0 && manifest) {
       readingMoved({ spineIdx: spineIdx - 1, charOffset: 0 });
       // Land on the previous chapter's end.
       const back = Math.max(0, (manifest.chapters[spineIdx - 1]?.charCount ?? 1) - 2);
@@ -1373,7 +1548,7 @@ export function ReaderPage() {
       needsClaimRef.current = false;
       void recordCheckpoint(id, 'seek', locatorAt(manifest, [], spineIdx - 1, back));
     }
-  }, [prefs.mode, page, spineIdx, manifest, goToPage, id]);
+  }, [prefs.mode, page, spineIdx, manifest, goToPage, carrySelection, id]);
 
   /* -------------------------------------------------------- read along */
 
@@ -1503,12 +1678,15 @@ export function ReaderPage() {
       } else {
         const r = range.getBoundingClientRect();
         const b = box.getBoundingClientRect();
-        scrollOwnership.current.write(
-          box,
-          box.scrollTop + r.top - b.top + r.height / 2 - b.height * AUTO_SCROLL_ANCHOR,
-        );
+        const want = box.scrollTop + r.top - b.top + r.height / 2 - b.height * AUTO_SCROLL_ANCHOR;
+        // Checked against the page as it will be once the glide has landed,
+        // because the glide has not moved anything yet.
+        const delta =
+          Math.max(0, Math.min(want, box.scrollHeight - box.clientHeight)) - box.scrollTop;
+        if (!spanOnScreen(map, cue.charStart, shifted(b, delta))) return false;
+        glideTo(box, want);
       }
-      if (!spanOnScreen(map, cue.charStart, box.getBoundingClientRect())) return false;
+      if (paged && !spanOnScreen(map, cue.charStart, box.getBoundingClientRect())) return false;
       // Late layout/image passes must preserve this relocation, not the old landing.
       currentOffsetRef.current = cue.charStart;
       setLiveOffset(cue.charStart);
@@ -1537,6 +1715,7 @@ export function ReaderPage() {
       pageCount,
       pageForOffset,
       goToPage,
+      glideTo,
       onLeaveChapter,
       spineIdx,
     ],
@@ -1558,34 +1737,17 @@ export function ReaderPage() {
   }, [resumeFollowing, narration.ready, narration.state, toast, t]);
 
   /**
-   * Wash the sentence being spoken, and bring the page to it.
+   * Bring the page to the sentence being spoken.
    *
-   * Following is abandoned as soon as the reader moves the page. Only an
-   * explicit relocation gives control back, so the return target stays put.
+   * The sentence itself is drawn by the spoken-mark overlay below, measured
+   * from the text at draw time. Following is abandoned as soon as the reader
+   * moves the page. Only an explicit relocation gives control back, so the
+   * return target stays put.
    */
   useEffect(() => {
     const map = textMapRef.current;
-    if (!readAlong) {
-      paintSpeaking(map, null);
-      return;
-    }
+    if (!readAlong) return;
     const cue = narration.cue;
-    // Only where the aligner is sure. A wash that sits on every sentence is a
-    // confident-looking guess, and the reader's eye follows it to the wrong
-    // line; worse, an inaccurate one leaves the page looking marked up. The
-    // pace marker in the margin carries the continuous signal instead, and
-    // the text itself is only touched to re-anchor the eye - briefly - when
-    // the timing is tight enough to be a fact.
-    if (flashTimerRef.current !== null) window.clearTimeout(flashTimerRef.current);
-    if (isConfident(cue)) {
-      paintSpeaking(map, { start: cue!.charStart, end: cue!.charEnd });
-      flashTimerRef.current = window.setTimeout(
-        () => paintSpeaking(textMapRef.current, null),
-        FLASH_MS,
-      );
-    } else {
-      paintSpeaking(map, null);
-    }
     if (!cue || !map) return;
     const paged = prefs.mode === 'paginated' && !paginationFailed;
     const box = prefs.mode === 'paginated' ? pagesRef.current : scrollerRef.current;
@@ -1623,7 +1785,7 @@ export function ReaderPage() {
         // far for a glide to be anything but a long wait.
         if (autoScroll && !reduceMotion && Math.abs(want - box.scrollTop) < base.height * 1.5)
           return;
-        scrollOwnership.current.write(box, want);
+        glideTo(box, want);
         // The page is no longer where the chapter landed, and the tracked
         // offset has to say so. A late layout pass - the settle re-land
         // below, an image arriving - otherwise reads a position the voice
@@ -1644,6 +1806,7 @@ export function ReaderPage() {
     reduceMotion,
     page,
     goToPage,
+    glideTo,
     pageForOffset,
     chromeInset.bottom,
   ]);
@@ -1812,7 +1975,10 @@ export function ReaderPage() {
   // blinked in and out as the on-screen test flipped between ticks.
   useEffect(() => {
     updatePace();
-  }, [updatePace, page]);
+    // The key, not only the clock: paused, the clock never ticks, and a
+    // marker computed for the layout before a rotation or a size change
+    // sat on a line the text had left.
+  }, [updatePace, page, layoutKey]);
 
   useEffect(() => {
     if (!readAlong) return;
@@ -1882,6 +2048,8 @@ export function ReaderPage() {
       raf = requestAnimationFrame(step);
       const dt = Math.min(64, now - last); // a backgrounded tab must not lurch
       last = now;
+      // A relocation glide owns the page until it lands.
+      if (glideRef.current.active) return;
       const want = autoScrollTargetRef.current;
       if (want === null) return;
 
@@ -1957,14 +2125,19 @@ export function ReaderPage() {
     };
   }, [page, pageTurn, prefs.mode]);
 
-  // Leaving the reader stops the voice; so does closing the tab.
-  useEffect(
-    () => () => {
-      if (flashTimerRef.current !== null) window.clearTimeout(flashTimerRef.current);
-      paintSpeaking(null, null);
-    },
-    [],
-  );
+  // Leaving the reader mid-glide must not leave a frame loop behind.
+  useEffect(() => () => glideRef.current.cancel(), []);
+
+  // The blink lasts its two pulses and no longer.
+  useEffect(() => {
+    if (!blink) return;
+    const timer = window.setTimeout(() => setBlink(null), BLINK_MS);
+    return () => window.clearTimeout(timer);
+  }, [blink]);
+
+  // A carried selection names offsets in this chapter's text and pages; a
+  // different chapter, or a mode with no page edge, has nothing to continue.
+  useEffect(() => setPendingSel(null), [spineIdx, prefs.mode]);
 
   /**
    * A tap while reading along. On a timed sentence it moves the voice there -
@@ -1977,8 +2150,12 @@ export function ReaderPage() {
       if (!readAlong || !narration.ready) return false;
       const offset = offsetAtPoint(textMapRef.current, x, y);
       if (offset === null) return false;
+      const cue = cueForOffset(narration.cues, offset);
       narration.playFrom(offset);
       setFollowing(true);
+      // Show where the voice starts again: the aligned start of the sentence
+      // the tap landed in, which is rarely where the finger was.
+      if (cue) setBlink({ start: cue.charStart, end: cue.charEnd, nonce: Date.now() });
       return true;
     },
     [readAlong, narration],
@@ -2041,12 +2218,21 @@ export function ReaderPage() {
         e.preventDefault();
         prevPage();
       } else if (e.key === 'Escape') {
+        // A selection being carried, then a selection, then the reader.
+        if (pendingSelRef.current) {
+          setPendingSel(null);
+          return;
+        }
+        if (selectionRef.current) {
+          clearSelection();
+          return;
+        }
         navigate(`/book/${id}`);
       }
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [nextPage, prevPage, sheet, navigate, id, rtl]);
+  }, [nextPage, prevPage, sheet, navigate, id, rtl, clearSelection]);
 
   // Selection handling.
   useEffect(() => {
@@ -2079,6 +2265,16 @@ export function ReaderPage() {
         setSelection(null);
         return;
       }
+      // Armed to continue a selection from another page: this settled range
+      // - a long-press, a drag - says where the selection ends, and is
+      // replaced by the one from the anchor. The replacement settles here
+      // again, unarmed, as an ordinary selection.
+      const pending = pendingSelRef.current;
+      if (
+        pending?.armed &&
+        completeSelection(pending.anchor, start >= pending.anchor ? end : start)
+      )
+        return;
       const geometry = selectionGeometry(
         clipRects(Array.from(range.getClientRects()), pageClipBox()),
         getComputedStyle(content).direction === 'rtl' ? 'rtl' : 'ltr',
@@ -2109,10 +2305,13 @@ export function ReaderPage() {
             : pointer !== 'mouse';
       }
       selSpanRef.current = span;
+      recentSelRef.current = { start, end, collapsedAt: null };
+      const text = sel.toString();
       setSelection({
         start,
         end,
-        text: sel.toString().slice(0, 500),
+        text: text.slice(0, 500),
+        fullText: text.slice(0, SELECTION_TEXT_MAX),
         geometry,
       });
     };
@@ -2142,6 +2341,10 @@ export function ReaderPage() {
         // would throw away the one fact worth keeping about a trackpad drag.
         if (event.type === 'pointerup') lastPointerTypeRef.current = null;
         if (settle) clearTimeout(settle);
+        // Gone from the page, remembered for a moment: the press that
+        // cleared it may be the start of a page turn.
+        const recent = recentSelRef.current;
+        if (recent && recent.collapsedAt === null) recent.collapsedAt = performance.now();
         setSelection(null);
         return;
       }
@@ -2162,7 +2365,7 @@ export function ReaderPage() {
       document.removeEventListener('pointerup', onSelectionChange);
       document.removeEventListener('selectionchange', onSelectionChange);
     };
-  }, [pageClipBox]);
+  }, [pageClipBox, completeSelection]);
 
   const addAnnotation = useCallback(
     async (
@@ -2199,16 +2402,61 @@ export function ReaderPage() {
         });
         setAnnotations((a) => [...a, res.annotation]);
         toast.show(t('reader.toast.saved', { kind }));
-        setSelection(null);
-        document.getSelection()?.removeAllRanges();
+        clearSelection();
         return true;
       } catch {
         toast.show(t('reader.toast.couldNotSave'));
         return false;
       }
     },
-    [manifest, selection, sentences, spineIdx, id, toast, t],
+    [manifest, selection, sentences, spineIdx, id, toast, t, clearSelection],
   );
+
+  /** The selected words: from the page while it still has them, from memory once it does not. */
+  const selectedText = useCallback((): string => {
+    const live = document.getSelection();
+    const fromPage = live && !live.isCollapsed ? live.toString() : '';
+    return (fromPage || selectionRef.current?.fullText || '').slice(0, SELECTION_TEXT_MAX);
+  }, []);
+
+  /**
+   * Share the quotation: the words, the book, and a link to it.
+   *
+   * The link is the caller's share link for this book, made or reused by the
+   * server. A server that has no such thing yet, or no network, still lets
+   * the words go - without the link. The platform's own share sheet where
+   * there is one; the clipboard where there is not, with a word to say so.
+   */
+  const shareSelection = useCallback(async () => {
+    const quote = trimQuote(selectedText());
+    if (!quote || !manifest) return;
+    let url = '';
+    try {
+      const res = await api<{ url: string; token: string }>(`/api/books/${id}/share`, {
+        method: 'POST',
+      });
+      url = res.url;
+    } catch {
+      /* no share links on this server, or offline: the quotation still travels */
+    }
+    const text = t('reader.share.text', { title: manifest.title, quote, url }).trim();
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ text });
+        return;
+      } catch (err) {
+        // Dismissed is dismissed. A sheet that could not open at all - a
+        // desktop that has the API and nothing behind it - falls through.
+        if ((err as { name?: string } | null)?.name === 'AbortError') return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.show(t('reader.share.copied'));
+    } catch {
+      toast.show(t('reader.toast.copyFailed'));
+    }
+  }, [selectedText, manifest, id, toast, t]);
 
   /**
    * The mark the reader tapped. A highlight is paint, not an element, so the
@@ -2293,6 +2541,7 @@ export function ReaderPage() {
       selMenuSettlingRef.current = false;
       lastPointerTypeRef.current = null;
       setToolbarShown(false);
+      setSelFrame(null);
       return;
     }
     const el = selMenuRef.current;
@@ -2327,6 +2576,7 @@ export function ReaderPage() {
       ) {
         el.style.visibility = 'hidden';
         setToolbarShown(false);
+        setSelFrame(null);
         return;
       }
       const geometry = selectionGeometry(
@@ -2336,6 +2586,7 @@ export function ReaderPage() {
       if (!geometry) {
         el.style.visibility = 'hidden';
         setToolbarShown(false);
+        setSelFrame(null);
         return;
       }
       const vv = window.visualViewport;
@@ -2376,6 +2627,7 @@ export function ReaderPage() {
       if (!placement) {
         el.style.visibility = 'hidden';
         setToolbarShown(false);
+        setSelFrame(null);
         return;
       }
       selMenuModeRef.current = placement.mode;
@@ -2384,6 +2636,25 @@ export function ReaderPage() {
       el.style.top = `${placement.top}px`;
       el.style.visibility = 'visible';
       setToolbarShown(true);
+      // The frame: the same settled lines, in the viewport's own pixels, and
+      // nothing at all while a page is still sliding under them.
+      const origin = viewportRef.current?.getBoundingClientRect();
+      const boxes =
+        origin && !pageTurning(content)
+          ? relativeTo(lineBoxes(geometry.rects, origin), origin)
+          : [];
+      const last = boxes[boxes.length - 1];
+      setSelFrame((prev) => {
+        if (!last) return null;
+        if (prev && sameBoxes(prev.boxes, boxes)) return prev;
+        return {
+          boxes,
+          end: {
+            x: geometry.direction === 'rtl' ? last.left : last.left + last.width,
+            y: last.top,
+          },
+        };
+      });
     };
     const schedule = () => {
       if (raf) return;
@@ -2774,6 +3045,23 @@ export function ReaderPage() {
     }
   }, [detail, manifest, sentences, spineIdx, id, navigate, toast, t]);
 
+  /* ----------------------------------------------------- drawn over text */
+
+  // Stable getters for the overlays: what they measure changes; where to
+  // find it does not.
+  const getMap = useCallback(() => textMapRef.current, []);
+  const getViewport = useCallback(() => viewportRef.current, []);
+  const getContent = useCallback(() => contentRef.current, []);
+  const getScroller = useCallback(() => scrollBox(), [scrollBox]);
+  const getClip = useCallback(
+    () =>
+      (prefs.mode === 'paginated'
+        ? pagesRef.current
+        : scrollerRef.current
+      )?.getBoundingClientRect() ?? null,
+    [prefs.mode],
+  );
+
   /* ------------------------------------------------------------- render */
 
   if (loadError) {
@@ -2931,22 +3219,7 @@ export function ReaderPage() {
             map={() => textMapRef.current}
             container={() => viewportRef.current}
             scroller={() => scrollerRef.current}
-            layoutKey={[
-              loadSeq,
-              page,
-              prefs.mode,
-              prefs.size,
-              prefs.font,
-              prefs.weight,
-              prefs.lineHeight,
-              prefs.margin,
-              prefs.columns,
-              prefs.align,
-              prefs.hyphens,
-              chromeInset.top,
-              chromeInset.bottom,
-              paginationFailed,
-            ].join(':')}
+            layoutKey={layoutKey}
           />
         )}
         {pace !== null && (
@@ -3009,6 +3282,8 @@ export function ReaderPage() {
                   ) {
                     const sel = document.getSelection();
                     if (sel && !sel.isCollapsed) return;
+                    // Armed to continue a selection: this tap is where it ends.
+                    if (extendSelectionTo(e.clientX, e.clientY)) return;
                     if (openMarkAt(e.clientX, e.clientY)) return;
                     if (seekVoiceAt(e.clientX, e.clientY)) return;
                     if (edgeTap(e.clientX)) return;
@@ -3069,6 +3344,95 @@ export function ReaderPage() {
                 )}
               </div>
             )}
+          </div>
+        )}
+        {/* Drawn over the text, from its own rectangles at draw time: the
+            sentence being spoken, the blink where the voice starts again
+            after a tap, and the frame around a settled selection. */}
+        {readAlong && narration.cue && (
+          <LineOverlay
+            className="spoken-mark"
+            span={{ start: narration.cue.charStart, end: narration.cue.charEnd }}
+            map={getMap}
+            container={getViewport}
+            clip={getClip}
+            scroller={getScroller}
+            content={getContent}
+            layoutKey={layoutKey}
+            data={{
+              start: String(narration.cue.charStart),
+              confident: isConfident(narration.cue) ? 'yes' : 'no',
+              paused: narration.playing ? undefined : 'yes',
+            }}
+          />
+        )}
+        {blink && (
+          <LineOverlay
+            key={blink.nonce}
+            className="blink-mark"
+            span={blink}
+            fade
+            map={getMap}
+            container={getViewport}
+            clip={getClip}
+            scroller={getScroller}
+            content={getContent}
+            layoutKey={layoutKey}
+            data={{ start: String(blink.start) }}
+          />
+        )}
+        {selFrame && (
+          <div className="line-overlay selframe" aria-hidden="true">
+            {selFrame.boxes.map((b, i) => (
+              <span key={i} style={b} />
+            ))}
+          </div>
+        )}
+        {selFrame && (
+          <button
+            type="button"
+            className="selframe__x"
+            style={{ left: selFrame.end.x, top: selFrame.end.y }}
+            aria-label={t('reader.select.clear')}
+            // Like the toolbar: a press must not collapse the selection
+            // before the click that is meant to.
+            onPointerDown={(e) => e.preventDefault()}
+            onClick={clearSelection}
+          >
+            <IconClose size={12} />
+          </button>
+        )}
+        {/* A selection carried over a page turn: the way to finish it, at
+            the corner the reading is heading for. Yields to the toolbar of
+            a selection made in the meantime, and steps aside for the
+            bookmark ribbon that hangs at the same corner. */}
+        {pendingSel && !toolbarShown && prefs.mode === 'paginated' && !paginationFailed && (
+          <div
+            className={`continue-pill${pendingSel.armed ? ' is-armed' : ''}${
+              currentBookmark ? ' is-beside-ribbon' : ''
+            }`}
+          >
+            <button
+              type="button"
+              className="continue-pill__go"
+              aria-pressed={pendingSel.armed}
+              onClick={() => setPendingSel((p) => p && { ...p, armed: !p.armed })}
+            >
+              <span>
+                {t(pendingSel.armed ? 'reader.select.continueArmed' : 'reader.select.continue')}
+              </span>
+              <span className="continue-pill__arrow" aria-hidden="true">
+                <IconBack size={15} />
+              </span>
+            </button>
+            <button
+              type="button"
+              className="continue-pill__x"
+              aria-label={t('common.dismiss')}
+              onClick={() => setPendingSel(null)}
+            >
+              <IconClose size={13} />
+            </button>
           </div>
         )}
         {!html && !loadError && (
@@ -3154,6 +3518,16 @@ export function ReaderPage() {
           </button>
           <button onClick={() => void addAnnotation('bookmark')}>
             {t('reader.select.bookmark')}
+          </button>
+          {/* An icon, so it fits a phone's toolbar beside the words already
+              there; the name is on it for anyone who cannot see the icon. */}
+          <button
+            className="selection-menu__icon"
+            aria-label={t('reader.select.share')}
+            title={t('reader.select.share')}
+            onClick={() => void shareSelection()}
+          >
+            <IconShare size={18} />
           </button>
         </div>
       )}
@@ -3679,13 +4053,22 @@ type HighlightApi = {
  * offset arithmetic knows the height of. The paginated container clips, so a
  * range on another page has a rect well outside the box.
  */
-function spanOnScreen(map: TextMap, offset: number, box: DOMRect | undefined): boolean {
+function spanOnScreen(
+  map: TextMap,
+  offset: number,
+  box: { left: number; right: number; top: number; bottom: number } | undefined,
+): boolean {
   if (!box) return false;
   const range = rangeForSpan(map, offset, offset + 1);
   if (!range) return false;
   const r = range.getBoundingClientRect();
   if (r.width === 0 && r.height === 0) return false;
   return r.bottom > box.top && r.top < box.bottom && r.right > box.left && r.left < box.right;
+}
+
+/** The same box, moved down the page by `dy`: where a glide will leave it. */
+function shifted(b: DOMRect, dy: number) {
+  return { left: b.left, right: b.right, top: b.top + dy, bottom: b.bottom + dy };
 }
 
 function paintHandoff(map: TextMap, start: number, end: number): () => void {

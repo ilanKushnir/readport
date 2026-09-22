@@ -43,9 +43,17 @@ const cue = (start, startMs = 0) => ({
   uncertaintyMs: 1000,
 });
 const errors = [];
-async function open(mode, rtl = false, reducedMotion = 'no-preference') {
+const shots = process.env.READER_QA_SCREENSHOTS;
+/** A relocation in scroll mode glides for GLIDE_MS; geometry read before it lands is mid-flight. */
+const settleGlide = (page) => page.waitForTimeout(650);
+async function open(
+  mode,
+  rtl = false,
+  reducedMotion = 'no-preference',
+  viewport = { width: 1180, height: 820 },
+) {
   const context = await browser.newContext({
-    viewport: { width: 1180, height: 820 },
+    viewport,
     hasTouch: true,
     reducedMotion,
   });
@@ -369,6 +377,7 @@ try {
   await clock(page, [cue(deep - 1000, 0), cue(deep, 10000)], 6000);
   await check('gap return relocates to nearest honest cue before attaching', async () => {
     await page.getByRole('button', { name: 'Back to the voice', exact: true }).click();
+    await settleGlide(page);
     const r = await rectAt(page, deep);
     assert(r.top >= r.boxTop && r.bottom <= r.boxBottom);
     assert.equal(
@@ -383,6 +392,7 @@ try {
   await clock(page, [cue(deep)]);
   await check('auto-scroll recenters before enabling', async () => {
     await page.getByRole('button', { name: 'Scroll with the voice', exact: true }).click();
+    await settleGlide(page);
     const r = await rectAt(page, deep);
     assert(
       r.top >= r.boxTop && r.bottom <= r.boxBottom,
@@ -454,6 +464,7 @@ try {
   await clock(pausedGap.page, [cue(deep - 1000, 0), cue(deep, 10000)], 6000);
   await check('paused same-chapter gap returns to the nearest honest cue', async () => {
     await pausedGap.page.getByRole('button', { name: 'Back to the voice', exact: true }).click();
+    await settleGlide(pausedGap.page);
     const r = await rectAt(pausedGap.page, deep);
     assert(r.top >= r.boxTop && r.bottom <= r.boxBottom);
     assert.equal(
@@ -528,6 +539,242 @@ try {
     );
   });
   await scrollbar.context.close();
+
+  /* ------------------------------------------- the spoken mark, on its line */
+
+  /**
+   * The first line of the sentence being spoken, as the text lays it out,
+   * beside the boxes the spoken mark drew. The mark is right when its first
+   * box is that line box: same top and bottom, starting at the first
+   * character, ending where the line's last fragment ends.
+   */
+  const spokenGeometry = (page, start, end) =>
+    page.evaluate(
+      async ({ start, end }) => {
+        const { buildTextMap, rangeForSpan } = await import('/src/reader/textmap.ts');
+        const map = buildTextMap(document.querySelector('.reader-content'));
+        const first = rangeForSpan(map, start, start + 1).getBoundingClientRect();
+        const line = [...rangeForSpan(map, start, end).getClientRects()]
+          .filter((r) => r.height > 0 && Math.abs(r.top - first.top) <= 1)
+          .reduce(
+            (u, r) => ({
+              left: Math.min(u.left, r.left),
+              right: Math.max(u.right, r.right),
+              top: Math.min(u.top, r.top),
+              bottom: Math.max(u.bottom, r.bottom),
+            }),
+            { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity },
+          );
+        const boxes = [...document.querySelectorAll('.spoken-mark > span')].map((s) =>
+          s.getBoundingClientRect().toJSON(),
+        );
+        return {
+          line,
+          boxes,
+          confident: document.querySelector('.spoken-mark')?.dataset.confident,
+        };
+      },
+      { start, end },
+    );
+  const assertOnLine = (g) => {
+    assert(g.boxes.length > 0, 'no spoken mark drawn');
+    const b = g.boxes[0];
+    const off = Math.max(
+      Math.abs(b.top - g.line.top),
+      Math.abs(b.bottom - g.line.bottom),
+      Math.abs(b.left - g.line.left),
+      Math.abs(b.right - g.line.right),
+    );
+    assert(off <= 1, `spoken mark is ${off.toFixed(2)}px off its line box: ${JSON.stringify(g)}`);
+  };
+  for (const mode of ['paginated', 'scroll']) {
+    const spoken = await open(mode);
+    await spoken.page.getByRole('button', { name: 'Read along', exact: true }).click();
+    const sentence = { ...cue(deep), charEnd: deep + 90, uncertaintyMs: 100 };
+    await clock(spoken.page, [sentence]);
+    await settleGlide(spoken.page);
+    await check(`${mode} spoken mark sits on the line box of the words`, async () => {
+      const g = await spokenGeometry(spoken.page, sentence.charStart, sentence.charEnd);
+      assert.equal(g.confident, 'yes');
+      assertOnLine(g);
+      assert(g.boxes.length >= 2, 'a ninety-character sentence wraps: more than one line box');
+      if (shots) await spoken.page.screenshot({ path: `${shots}/1180-${mode}-spoken-mark.png` });
+    });
+    await check(`${mode} spoken mark follows a relayout`, async () => {
+      const before = await spokenGeometry(spoken.page, sentence.charStart, sentence.charEnd);
+      await spoken.page.setViewportSize({ width: 820, height: 900 });
+      await spoken.page.evaluate(() => window.dispatchEvent(new Event('resize')));
+      await spoken.page.waitForTimeout(900);
+      const after = await spokenGeometry(spoken.page, sentence.charStart, sentence.charEnd);
+      assert(
+        Math.abs(after.line.left - before.line.left) > 4 ||
+          Math.abs(after.line.top - before.line.top) > 4,
+        'the fixture must actually have moved the line',
+      );
+      assertOnLine(after);
+    });
+    await check(`${mode} spoken mark follows a text size change while paused`, async () => {
+      await spoken.page.evaluate(() => window.readerClock({ playing: false }));
+      await spoken.page.getByRole('button', { name: 'Reading settings' }).click();
+      await spoken.page.getByRole('button', { name: 'Larger text' }).click();
+      await spoken.page.getByRole('button', { name: 'Larger text' }).click();
+      await spoken.page.getByRole('dialog').getByRole('button', { name: 'Close' }).click();
+      await spoken.page.waitForTimeout(500);
+      const g = await spokenGeometry(spoken.page, sentence.charStart, sentence.charEnd);
+      assertOnLine(g);
+      assert.equal(
+        await spoken.page.locator('.spoken-mark').getAttribute('data-paused'),
+        'yes',
+        'paused, the mark stays and says so',
+      );
+    });
+    await spoken.context.close();
+  }
+  const phone = await open('scroll', false, 'no-preference', { width: 390, height: 844 });
+  await phone.page.getByRole('button', { name: 'Read along', exact: true }).click();
+  const phoneSentence = { ...cue(deep), charEnd: deep + 90, uncertaintyMs: 100 };
+  await clock(phone.page, [phoneSentence]);
+  await settleGlide(phone.page);
+  await check('phone spoken mark sits on the line box', async () => {
+    assertOnLine(await spokenGeometry(phone.page, phoneSentence.charStart, phoneSentence.charEnd));
+    if (shots) await phone.page.screenshot({ path: `${shots}/390-spoken-mark.png` });
+  });
+  await phone.context.close();
+
+  /* ----------------------------------------------- eased following, scroll */
+
+  const scrollTop = (page) => page.locator('.reader-scroller').evaluate((el) => el.scrollTop);
+  /** Where the follow logic will put the scroller so `offset` sits at the anchor line. */
+  const followTarget = (page, offset) =>
+    page.evaluate(async (offset) => {
+      const { buildTextMap, rangeForSpan } = await import('/src/reader/textmap.ts');
+      const map = buildTextMap(document.querySelector('.reader-content'));
+      const box = document.querySelector('.reader-scroller');
+      const r = rangeForSpan(map, offset, offset + 1).getBoundingClientRect();
+      const b = box.getBoundingClientRect();
+      return Math.min(
+        box.scrollHeight - box.clientHeight,
+        box.scrollTop + r.top - b.top - b.height * 0.4,
+      );
+    }, offset);
+  const eased = await open('scroll');
+  await eased.page.getByRole('button', { name: 'Read along', exact: true }).click();
+  await check('a follow relocation eases in and out instead of jumping', async () => {
+    const from = await scrollTop(eased.page);
+    const target = await followTarget(eased.page, deep);
+    assert(target - from > 2000, 'the fixture must have a long way to go');
+    await eased.page.evaluate(
+      (c) => window.readerClock({ cues: [c], cue: c, bookMs: 0, state: 'on' }),
+      cue(deep),
+    );
+    const samples = [];
+    for (let i = 0; i < 9; i++) {
+      await eased.page.waitForTimeout(60);
+      samples.push(await scrollTop(eased.page));
+    }
+    const moving = samples.filter((s) => s > from + 1 && s < target - 1);
+    assert(moving.length >= 3, `expected a glide, saw ${JSON.stringify(samples)}`);
+    for (let i = 1; i < samples.length; i++)
+      assert(samples[i] >= samples[i - 1], `glide went backwards: ${samples}`);
+    // Eased: the first step is smaller than a step from the middle.
+    const steps = samples.slice(1).map((s, i) => s - samples[i]);
+    assert(steps[0] < Math.max(...steps), `no ease-in: ${JSON.stringify(steps)}`);
+    assert(Math.abs(samples.at(-1) - target) <= 1, `did not land: ${samples.at(-1)} vs ${target}`);
+    assert.equal(
+      await eased.page.getByRole('button', { name: 'Back to the voice', exact: true }).count(),
+      0,
+      'the glide read as the reader scrolling',
+    );
+  });
+  await check('a wheel mid-glide takes the page back from the voice', async () => {
+    const target = await followTarget(eased.page, deep + 30 * (paragraph.length + 1));
+    await eased.page.evaluate(
+      (c) => window.readerClock({ cues: [c], cue: c, bookMs: 0, state: 'on' }),
+      cue(deep + 30 * (paragraph.length + 1)),
+    );
+    await eased.page.waitForTimeout(120);
+    await manualWheel(eased.page);
+    await eased.page
+      .getByRole('button', { name: 'Back to the voice', exact: true })
+      .waitFor({ timeout: 1500 });
+    const at = await scrollTop(eased.page);
+    await eased.page.waitForTimeout(500);
+    assert.equal(await scrollTop(eased.page), at, 'the glide kept going after the wheel');
+    assert(Math.abs(at - target) > 10, 'the glide should not have landed');
+  });
+  await eased.context.close();
+  const still = await open('scroll', false, 'reduce');
+  await still.page.getByRole('button', { name: 'Read along', exact: true }).click();
+  await check('reduced motion relocates at once', async () => {
+    const target = await followTarget(still.page, deep);
+    await still.page.evaluate(
+      (c) => window.readerClock({ cues: [c], cue: c, bookMs: 0, state: 'on' }),
+      cue(deep),
+    );
+    await still.page.waitForTimeout(40);
+    assert(Math.abs((await scrollTop(still.page)) - target) <= 1, 'reduced motion must not glide');
+  });
+  await still.context.close();
+
+  /* ------------------------------------------- the blink at a tap-back */
+
+  for (const viewport of [
+    { width: 1180, height: 820 },
+    { width: 390, height: 844 },
+  ]) {
+    const back = await open('scroll', false, 'no-preference', viewport);
+    await back.page.getByRole('button', { name: 'Read along', exact: true }).click();
+    // Close together, so the earlier sentence is still on a phone's screen
+    // once the page has followed the later one.
+    const earlier = { ...cue(deep, 0), charEnd: deep + 90 };
+    const later = { ...cue(deep + 200, 5000), charEnd: deep + 260 };
+    await clock(back.page, [earlier, later], 5500);
+    await settleGlide(back.page);
+    await check(
+      `${viewport.width} tap-back blink appears at the sentence's aligned start`,
+      async () => {
+        // Tap inside the earlier sentence, well after its first word.
+        const r = await rectAt(back.page, deep + 40);
+        await back.page.mouse.click((r.left + r.right) / 2, (r.top + r.bottom) / 2);
+        await back.page.locator('.blink-mark').waitFor({ timeout: 1000 });
+        assert.equal(
+          await back.page.locator('.blink-mark').getAttribute('data-start'),
+          String(deep),
+        );
+        const first = await rectAt(back.page, deep);
+        const box = await back.page.locator('.blink-mark > span').first().boundingBox();
+        assert(
+          Math.abs(box.x - first.left) <= 1 && Math.abs(box.y - first.top) <= 1,
+          `blink not at the sentence start: ${JSON.stringify({ box, first })}`,
+        );
+        const fade = await back.page
+          .locator('.blink-mark > span')
+          .evaluateAll((spans) =>
+            spans.map((s) => [
+              s.style.getPropertyValue('--rd-fade-from'),
+              s.style.getPropertyValue('--rd-fade-to'),
+            ]),
+          );
+        assert.equal(Number(fade[0][0]), 1, 'full at the start of the sentence');
+        assert.equal(Number(fade.at(-1)[1]), 0, 'gone by its end');
+        await back.page.waitForTimeout(250);
+        if (shots) await back.page.screenshot({ path: `${shots}/${viewport.width}-blink.png` });
+        const opacity = () =>
+          back.page
+            .locator('.blink-mark > span')
+            .first()
+            .evaluate((s) => getComputedStyle(s).opacity);
+        const a = await opacity();
+        await back.page.waitForTimeout(200);
+        assert.notEqual(await opacity(), a, 'the blink must be pulsing');
+      },
+    );
+    await check(`${viewport.width} blink is gone after about two seconds`, async () => {
+      await back.page.waitForTimeout(1900);
+      assert.equal(await back.page.locator('.blink-mark').count(), 0);
+    });
+    await back.context.close();
+  }
   await check('no runtime page errors', () => assert.deepEqual(errors, []));
 } finally {
   await browser.close();

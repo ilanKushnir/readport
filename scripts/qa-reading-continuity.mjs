@@ -724,6 +724,79 @@ try {
     assert.deepEqual(away.errors, []);
   });
   await away.context.close();
+
+  /* ------------------------------- a selection carried across a page turn */
+
+  // What survives the turn is an offset in the chapter, the way a mark is
+  // stored - so a rotation between the turn and the finish, which re-lays
+  // out every page, changes nothing about where the selection began.
+  const carried = await open({ width: 834, height: 1194 }, 'paginated');
+  await check('a carried selection survives a rotation and finishes at its start', async () => {
+    // Forty characters a little way into the page the reader resumed on.
+    const anchor = await carried.page.evaluate(async () => {
+      const { buildTextMap, firstVisibleOffset, offsetToDom } =
+        await import('/src/reader/textmap.ts');
+      const map = buildTextMap(document.querySelector('.reader-content'));
+      const box = document.querySelector('.reader-pages').getBoundingClientRect();
+      const at = firstVisibleOffset(map, box) + 60;
+      const pos = offsetToDom(map, at);
+      const range = document.createRange();
+      range.setStart(pos.node, pos.offset);
+      range.setEnd(pos.node, Math.min(pos.node.data.length, pos.offset + 40));
+      getSelection().removeAllRanges();
+      getSelection().addRange(range);
+      return at;
+    });
+    await carried.page.locator('.selection-menu').waitFor();
+    await carried.page.waitForTimeout(300);
+    await nextPage(carried.page);
+    await carried.page.locator('.continue-pill').waitFor();
+    await settle(carried.page);
+    await carried.page.setViewportSize({ width: 1194, height: 834 });
+    await carried.page.evaluate(() => window.dispatchEvent(new Event('orientationchange')));
+    await carried.page.waitForTimeout(800);
+    assert.equal(await columnsNow(carried.page), '2');
+    assert.equal(
+      await carried.page.locator('.continue-pill').count(),
+      1,
+      'the rotation lost the anchor',
+    );
+    await carried.page.locator('.continue-pill__go').click();
+    // A word on screen, after where the selection began.
+    const target = await carried.page.evaluate(async (anchor) => {
+      const { buildTextMap, rangeForSpan } = await import('/src/reader/textmap.ts');
+      const map = buildTextMap(document.querySelector('.reader-content'));
+      const box = document.querySelector('.reader-pages').getBoundingClientRect();
+      for (let at = anchor + 400; at < map.totalChars; at += 50) {
+        const r = rangeForSpan(map, at, at + 1).getBoundingClientRect();
+        if (
+          r.height > 0 &&
+          r.left >= box.left &&
+          r.right <= box.right &&
+          r.top >= box.top + 80 &&
+          r.bottom <= box.bottom - 80
+        )
+          return { at, x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      }
+      throw new Error('no visible word after the anchor');
+    }, anchor);
+    await carried.page.mouse.click(target.x, target.y);
+    await carried.page.locator('.selection-menu').waitFor();
+    await carried.page.waitForTimeout(300);
+    const span = await carried.page.evaluate(async () => {
+      const { buildTextMap, domToOffset } = await import('/src/reader/textmap.ts');
+      const map = buildTextMap(document.querySelector('.reader-content'));
+      const range = getSelection().getRangeAt(0);
+      return {
+        start: domToOffset(map, range.startContainer, range.startOffset),
+        end: domToOffset(map, range.endContainer, range.endOffset),
+      };
+    });
+    assert.equal(span.start, anchor, 'the selection must begin where it began before the turn');
+    assert(span.end >= target.at, 'and end at the tapped word');
+    assert.deepEqual(carried.errors, []);
+  });
+  await carried.context.close();
 } finally {
   await browser.close();
 }

@@ -38,6 +38,15 @@ export const reader = {
     '{color, select, amber {Highlight in amber} rose {Highlight in rose} plum {Highlight in plum} sky {Highlight in sky} sand {Highlight in sand} other {Highlight}}',
   'reader.select.note': 'Note',
   'reader.select.bookmark': 'Bookmark',
+  'reader.select.share': 'Share',
+  'reader.select.clear': 'Clear selection',
+  // A selection carried over a page turn, and the pill that finishes it
+  'reader.select.continue': 'Continue selection',
+  'reader.select.continueArmed': 'Tap where it ends',
+
+  // Sharing a quotation
+  'reader.share.text': 'Look what I read in {title}: “{quote}” {url}',
+  'reader.share.copied': 'Copied - paste it anywhere',
 
   // Highlight colours, as a screen reader says them
   'reader.color.amber': 'Amber',
@@ -122,6 +131,7 @@ export const reader = {
   'reader.toast.bookmarkedPage': 'Bookmarked page {n}',
   'reader.toast.bookmarkedPassage': 'Bookmarked this passage',
   'reader.toast.openBookmarks': 'Bookmarks',
+  'reader.toast.copyFailed': 'Could not copy',
 
   // Progress notices from the engine
   'reader.notice.resetElsewhere': 'Your progress in this book was reset from another device.',

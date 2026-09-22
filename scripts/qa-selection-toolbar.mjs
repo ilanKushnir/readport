@@ -210,7 +210,7 @@ async function assertTouchTargets(page) {
       };
     }),
   );
-  assert.equal(buttons.length, 7, 'all five colors and both text actions present');
+  assert.equal(buttons.length, 8, 'five colours, note, bookmark and share present');
   for (const button of buttons) {
     assert(
       button.width >= 44 && button.height >= 44,
@@ -585,6 +585,287 @@ try {
       assertSafe(await geometry(page), true);
       assert.deepEqual(errors, []);
       console.log('PASS unmatched transitionrun does not leave a measure loop running');
+      passed++;
+    } finally {
+      await context.close();
+    }
+  }
+  /* ------------------------------- a selection that runs on to the next page */
+
+  /**
+   * The frame drawn over a settled selection, its dismiss, and the lines the
+   * browser's own selection covers on this page - the truth the frame is
+   * checked against.
+   */
+  async function frameGeometry(page) {
+    return page.evaluate(() => {
+      const box = document.querySelector('.reader-pages').getBoundingClientRect();
+      const lines = [...getSelection().getRangeAt(0).getClientRects()]
+        .filter(
+          (r) => r.width > 0 && r.height > 0 && r.left >= box.left - 1 && r.right <= box.right + 1,
+        )
+        .map((r) => r.toJSON());
+      return {
+        boxes: [...document.querySelectorAll('.selframe > span')].map((s) =>
+          s.getBoundingClientRect().toJSON(),
+        ),
+        x: document.querySelector('.selframe__x')?.getBoundingClientRect().toJSON() ?? null,
+        lines,
+      };
+    });
+  }
+  function assertFrame(f) {
+    assert(f.boxes.length > 0 && f.lines.length > 0, 'a settled selection must have a frame');
+    // Every line on the page is framed exactly: same top and bottom, and the
+    // frame runs from the line's first fragment to its last.
+    for (const b of f.boxes) {
+      const line = f.lines.filter((l) => Math.abs(l.top - b.top) <= 1);
+      assert(line.length > 0, `frame box on no line: ${JSON.stringify(b)}`);
+      const left = Math.min(...line.map((l) => l.left));
+      const right = Math.max(...line.map((l) => l.right));
+      const bottom = Math.max(...line.map((l) => l.bottom));
+      assert(
+        Math.abs(b.left - left) <= 1 &&
+          Math.abs(b.right - right) <= 1 &&
+          Math.abs(b.bottom - bottom) <= 1,
+        `frame box off its line: ${JSON.stringify({ b, left, right, bottom })}`,
+      );
+    }
+    const last = f.boxes.at(-1);
+    assert(
+      f.x &&
+        Math.abs(f.x.x + f.x.width / 2 - last.right) <= 1.5 &&
+        Math.abs(f.x.y + f.x.height / 2 - last.top) <= 1.5,
+      `dismiss must sit on the end corner: ${JSON.stringify({ x: f.x, last })}`,
+    );
+  }
+  for (const viewport of [
+    { width: 1180, height: 820 },
+    { width: 390, height: 844 },
+  ]) {
+    const coarse = viewport.width < 600;
+    const { context, page, errors } = await open(viewport, 'ltr', coarse, 'paginated');
+    try {
+      let shareStatus = 200;
+      let shareCalls = 0;
+      // The share route of a newer API than the fixture's other answers.
+      await page.route('**/api/books/qa/share', (route) => {
+        shareCalls++;
+        return shareStatus === 200
+          ? route.fulfill({ json: { url: 'https://readport.test/s/abc', token: 'abc' } })
+          : route.fulfill({ status: 404, json: { error: 'not-found' } });
+      });
+      await page.evaluate(() => {
+        // No share sheet here, so the words go to the clipboard - which is
+        // recorded rather than read back, since a headless shell has none.
+        Object.defineProperty(navigator, 'share', { value: undefined, configurable: true });
+        Object.defineProperty(Clipboard.prototype, 'writeText', {
+          value: (text) => {
+            window.__copied = text;
+            return Promise.resolve();
+          },
+          configurable: true,
+        });
+      });
+      await select(page, 30);
+      assertSafe(await geometry(page), coarse);
+      assertFrame(await frameGeometry(page));
+      if (process.env.SELECTION_QA_SCREENSHOTS)
+        await page.screenshot({
+          path: `${process.env.SELECTION_QA_SCREENSHOTS}/${viewport.width}-selection-frame.png`,
+        });
+      console.log('PASS settled selection frame and dismiss', viewport.width);
+      passed++;
+
+      const p1Start = await page.evaluate(async () => {
+        const { buildTextMap } = await import('/src/reader/textmap.ts');
+        const map = buildTextMap(document.querySelector('.reader-content'));
+        return map.nodes.find((n) => n.node.parentElement?.id === 'p1').start;
+      });
+      // Turning the page with a selection carries its start, not the range.
+      await page.keyboard.press('PageDown');
+      await page.locator('.continue-pill').waitFor();
+      await page.waitForTimeout(260);
+      assert.equal(await page.locator('.selection-menu').count(), 0, 'toolbar left with its page');
+      assert.equal(await page.locator('.selframe').count(), 0, 'frame left with its page');
+      assert(await page.evaluate(() => getSelection().isCollapsed), 'the DOM range was let go');
+      assert.equal(await page.locator('.continue-pill__go').getAttribute('aria-pressed'), 'false');
+      if (process.env.SELECTION_QA_SCREENSHOTS)
+        await page.screenshot({
+          path: `${process.env.SELECTION_QA_SCREENSHOTS}/${viewport.width}-continue-pill.png`,
+        });
+      // Back a page and on again: the anchor is kept as long as the pill is.
+      await page.keyboard.press('PageUp');
+      await page.waitForTimeout(120);
+      assert.equal(
+        await page.locator('.continue-pill').count(),
+        1,
+        'going back dropped the anchor',
+      );
+      await page.keyboard.press('PageDown');
+      await page.waitForTimeout(120);
+      await page.locator('.continue-pill__go').click();
+      assert.equal(await page.locator('.continue-pill__go').getAttribute('aria-pressed'), 'true');
+      // Armed: a tap on a word of this page ends the selection there. The
+      // furthest word still comfortably on the page - on a phone, high
+      // enough to leave the toolbar room under the platform's own menu, as
+      // any selection must.
+      const target = await page.evaluate(
+        async (clearance) => {
+          const { buildTextMap, firstVisibleOffset, rangeForSpan } =
+            await import('/src/reader/textmap.ts');
+          const map = buildTextMap(document.querySelector('.reader-content'));
+          const box = document.querySelector('.reader-pages').getBoundingClientRect();
+          let best = null;
+          for (let at = firstVisibleOffset(map, box) + 100; at < map.totalChars; at += 40) {
+            const r = rangeForSpan(map, at, at + 1).getBoundingClientRect();
+            if (r.height <= 0 || r.left < box.left || r.right > box.right) break;
+            if (r.bottom > box.bottom - clearance) break;
+            best = { at, x: r.left + r.width / 2, y: r.top + r.height / 2 };
+          }
+          if (!best) throw new Error('no word on the page to end at');
+          return best;
+        },
+        coarse ? 300 : 120,
+      );
+      await page.mouse.click(target.x, target.y);
+      await page.locator('.selection-menu').waitFor();
+      await page.waitForTimeout(300);
+      const span = await page.evaluate(async () => {
+        const { buildTextMap, domToOffset } = await import('/src/reader/textmap.ts');
+        const map = buildTextMap(document.querySelector('.reader-content'));
+        const range = getSelection().getRangeAt(0);
+        const box = document.querySelector('.reader-pages').getBoundingClientRect();
+        const rects = [...range.getClientRects()].filter((r) => r.width > 0);
+        return {
+          start: domToOffset(map, range.startContainer, range.startOffset),
+          end: domToOffset(map, range.endContainer, range.endOffset),
+          before: rects.filter((r) => r.right <= box.left + 1).length,
+          here: rects.filter((r) => r.left >= box.left - 1 && r.right <= box.right + 1).length,
+          text: getSelection().toString(),
+        };
+      });
+      assert.equal(span.start, p1Start, 'the range starts where the selection began, a page back');
+      assert(
+        span.end >= target.at,
+        `the range ends at the tapped word: ${span.end} < ${target.at}`,
+      );
+      assert(span.before > 0 && span.here > 0, 'the range must span both pages');
+      assert.equal(await page.locator('.continue-pill').count(), 0, 'pill outlived its selection');
+      const g = await geometry(page);
+      assertSafe(g, coarse);
+      assertFrame(await frameGeometry(page));
+      // Eight actions, and on a phone the new one is a finger's size and
+      // under nothing (the 44px rule for every swatch belongs to the dock).
+      assert.equal(await page.locator('.selection-menu button').count(), 8);
+      const share = await page
+        .getByRole('button', { name: 'Share', exact: true })
+        .evaluate((button) => {
+          const r = button.getBoundingClientRect();
+          const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+          return { width: r.width, height: r.height, actionable: button.contains(hit) };
+        });
+      assert(share.actionable, 'share button occluded');
+      if (coarse) assert(share.width >= 44 && share.height >= 44, JSON.stringify(share));
+      if (process.env.SELECTION_QA_SCREENSHOTS)
+        await page.screenshot({
+          path: `${process.env.SELECTION_QA_SCREENSHOTS}/${viewport.width}-toolbar-share.png`,
+        });
+      console.log(
+        'PASS cross-page selection ends on the next page',
+        viewport.width,
+        span.start,
+        span.end,
+      );
+      passed++;
+
+      // Share, with no share sheet: composed and copied, the quote trimmed at a word.
+      await page.getByRole('button', { name: 'Share', exact: true }).click();
+      await page.waitForFunction(() => typeof window.__copied === 'string');
+      const shared = await page.evaluate(() => window.__copied);
+      assert.equal(shareCalls, 1, 'one share link requested');
+      assert(shared.startsWith('Look what I read in Selection QA: “'), shared);
+      assert(shared.endsWith('” https://readport.test/s/abc'), shared);
+      const quote = shared.slice(
+        'Look what I read in Selection QA: “'.length,
+        shared.indexOf('” https'),
+      );
+      const prose = span.text.replace(/\s+/g, ' ').trim();
+      if (prose.length > 600) {
+        // A long selection is cut at a word, with an ellipsis to say so.
+        assert(quote.endsWith('…') && quote.length <= 601, `quote not trimmed: ${quote.length}`);
+        const body = quote.slice(0, -1);
+        assert(prose.startsWith(body), 'quote is not the selection');
+        assert(
+          /[ .,;:-]/.test(prose[body.length]),
+          `trimmed mid-word: ${JSON.stringify(body.slice(-16))}`,
+        );
+      } else assert.equal(quote, prose, 'a short selection is quoted whole');
+      assert(
+        viewport.width < 600 || prose.length > 600,
+        'the wide fixture must be long enough to exercise the trim',
+      );
+      assert.equal(
+        await page.locator('.toast').innerText(),
+        'Copied - paste it anywhere',
+        'the copy is announced',
+      );
+      // A server without share links: the words still go, without the link.
+      shareStatus = 404;
+      await page.evaluate(() => {
+        delete window.__copied;
+      });
+      await page.getByRole('button', { name: 'Share', exact: true }).click();
+      await page.waitForFunction(() => typeof window.__copied === 'string');
+      const unlinked = await page.evaluate(() => window.__copied);
+      assert(
+        unlinked.endsWith('”'),
+        `no link means no trailing space either: ${JSON.stringify(unlinked.slice(-12))}`,
+      );
+      assert.equal(shareCalls, 2);
+      console.log('PASS share composes and copies, with and without a link', viewport.width);
+      passed++;
+
+      // The frame's dismiss lets the selection go.
+      await page.locator('.selframe__x').click();
+      await page.waitForTimeout(260);
+      assert(await page.evaluate(() => getSelection().isCollapsed), 'dismiss must clear the range');
+      assert.equal(await page.locator('.selection-menu').count(), 0);
+      assert.equal(await page.locator('.selframe').count(), 0);
+      // Escape drops a carried selection rather than leaving the book. The
+      // selection is made on the page the reader is on now, not on #p1.
+      await page.evaluate(async () => {
+        const { buildTextMap, firstVisibleOffset, offsetToDom } =
+          await import('/src/reader/textmap.ts');
+        const map = buildTextMap(document.querySelector('.reader-content'));
+        const box = document.querySelector('.reader-pages').getBoundingClientRect();
+        const pos = offsetToDom(map, firstVisibleOffset(map, box) + 40);
+        const range = document.createRange();
+        range.setStart(pos.node, pos.offset);
+        range.setEnd(pos.node, Math.min(pos.node.data.length, pos.offset + 30));
+        getSelection().removeAllRanges();
+        getSelection().addRange(range);
+      });
+      await page.locator('.selection-menu').waitFor();
+      await page.waitForTimeout(260);
+      if (coarse) await page.keyboard.press('PageDown');
+      else {
+        // A click at the page's edge turns it - and the press collapses the
+        // selection first, so the turn has to carry what was just selected.
+        const box = await page.locator('.reader-pages').boundingBox();
+        await page.mouse.click(box.x + box.width - 30, box.y + box.height / 2);
+      }
+      await page.locator('.continue-pill').waitFor();
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(60);
+      assert.equal(await page.locator('.continue-pill').count(), 0, 'Escape must drop the anchor');
+      assert.equal(
+        await page.locator('.reader-content').count(),
+        1,
+        'Escape must not leave the reader',
+      );
+      assert.deepEqual(errors, []);
+      console.log('PASS dismiss and Escape', viewport.width);
       passed++;
     } finally {
       await context.close();

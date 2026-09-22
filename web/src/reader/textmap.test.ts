@@ -255,3 +255,28 @@ describe('offset arithmetic', () => {
     expect(nearestOccurrence(map, 'haystack', 0)).toBeNull();
   });
 });
+
+import { wordEdge } from './textmap';
+
+describe('wordEdge', () => {
+  const map = {
+    nodes: [
+      { node: { data: 'Once upon a' } as unknown as Text, start: 0 },
+      { node: { data: 'time, there' } as unknown as Text, start: 12 },
+    ],
+    totalChars: 24,
+  };
+  it('runs to the end of the word a caret is inside', () => {
+    expect(wordEdge(map, 6, 'end')).toBe(9); // up|on -> after "upon"
+    expect(wordEdge(map, 14, 'end')).toBe(17); // ti|me, -> after "time,"
+  });
+  it('runs back to the start of it', () => {
+    expect(wordEdge(map, 7, 'start')).toBe(5);
+    expect(wordEdge(map, 14, 'start')).toBe(12);
+  });
+  it('leaves a boundary where it is', () => {
+    expect(wordEdge(map, 9, 'end')).toBe(9);
+    expect(wordEdge(map, 5, 'start')).toBe(5);
+    expect(wordEdge(map, 11, 'end')).toBe(11);
+  });
+});
