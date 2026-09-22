@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, NavLink, useParams } from 'react-router-dom';
+import { Link, NavLink, useParams, useSearchParams } from 'react-router-dom';
 import {
   AUTO_SHELVES,
   type AutoShelfId,
   type BookSummary,
   type FacetKind,
+  type FacetValue,
+  UNKNOWN_LANGUAGE,
   formatFacet,
   isFacetKind,
+  languageFlag,
 } from '@readport/shared';
 import { api, ApiError } from '../api/client';
 import { useShelves } from '../state/shelves';
@@ -43,6 +46,7 @@ import {
   startDownload,
   type DownloadState,
 } from '../offline/downloads';
+import '../styles/languages.css';
 
 type Kind = 'all' | 'ebook' | 'audio';
 type Sort = 'title' | 'author' | 'recent' | 'added';
@@ -69,6 +73,30 @@ type Showing =
 
 const AUTO_IDS = AUTO_SHELVES.map((s) => s.id) as string[];
 
+/**
+ * The languages a `?lang=he,en` address names: lower-cased codes and
+ * `unknown`, each once, in the address's own order. Anything that is not
+ * a code is dropped rather than sent on.
+ */
+function parseLangParam(raw: string | null): string[] {
+  const out: string[] = [];
+  for (const part of (raw ?? '').split(',')) {
+    const v = part.trim().toLowerCase();
+    if (
+      (v === UNKNOWN_LANGUAGE || /^[a-z]{2,3}(?:[-_][a-z0-9]{2,8})?$/.test(v)) &&
+      !out.includes(v)
+    )
+      out.push(v);
+  }
+  return out;
+}
+
+/** Whether a book's language is one of the chosen ones; no language at all is "unknown". */
+function inLanguages(language: string | null, langs: string[]): boolean {
+  const base = (language ?? '').trim().toLowerCase().split(/[-_]/)[0] ?? '';
+  return base ? langs.includes(base) : langs.includes(UNKNOWN_LANGUAGE);
+}
+
 function useDebounced<T>(value: T, ms: number): T {
   const [v, setV] = useState(value);
   useEffect(() => {
@@ -83,7 +111,23 @@ export function LibraryPage() {
   const f = useFormat();
   const params = useParams();
   const { overview, refresh, refreshDownloads } = useShelves();
-  const { setScope } = useFacets();
+  const { setScope, groups, scopedCounts } = useFacets();
+  // The language chips' selection lives in the address - `?lang=he,en` -
+  // so it survives a reload and Back undoes a tap, like any other move.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const langs = useMemo(() => parseLangParam(searchParams.get('lang')), [searchParams]);
+  const langKey = langs.join(',');
+  const setLangs = useCallback(
+    (next: string[]) => {
+      setSearchParams((prev) => {
+        const params = new URLSearchParams(prev);
+        if (next.length > 0) params.set('lang', next.join(','));
+        else params.delete('lang');
+        return params;
+      });
+    },
+    [setSearchParams],
+  );
   const showing = useMemo<Showing>(() => {
     if (params.shelfId) return { kind: 'user', id: params.shelfId };
     if (params.facetKind && params.facetValue && isFacetKind(params.facetKind)) {
@@ -164,19 +208,25 @@ export function LibraryPage() {
     const q = debouncedQuery.trim();
     const k = kind === 'all' ? undefined : kind;
     if (showing.kind === 'device') {
-      setScope({ query: q || undefined, kind: k, ids: [...downloaded] });
-      return;
-    }
-    if (showing.kind === 'auto' || q || k) {
       setScope({
         query: q || undefined,
         kind: k,
+        lang: langKey || undefined,
+        ids: [...downloaded],
+      });
+      return;
+    }
+    if (showing.kind === 'auto' || q || k || langKey) {
+      setScope({
+        query: q || undefined,
+        kind: k,
+        lang: langKey || undefined,
         filter: showing.kind === 'auto' ? showing.id : undefined,
       });
       return;
     }
     setScope(null);
-  }, [showing, debouncedQuery, kind, downloaded, setScope]);
+  }, [showing, debouncedQuery, kind, langKey, downloaded, setScope]);
   useEffect(() => () => setScope(null), [setScope]);
 
   const load = useCallback(async () => {
@@ -200,6 +250,7 @@ export function LibraryPage() {
       const params = new URLSearchParams();
       if (debouncedQuery.trim()) params.set('query', debouncedQuery.trim());
       if (kind !== 'all') params.set('kind', kind);
+      if (langKey) params.set('lang', langKey);
       if (showing.kind === 'auto') params.set('filter', showing.id);
       if (showing.kind === 'facet') params.set('facet', formatFacet(showing.facet, showing.value));
       // What this browser downloaded is decided here, not by the server, and
@@ -244,7 +295,7 @@ export function LibraryPage() {
       setOfflineBooks(books);
       setError(books.length > 0 ? 'library.offlineShowingDownloads' : 'library.loadFailed');
     }
-  }, [debouncedQuery, kind, sort, showing, loadDownloads]);
+  }, [debouncedQuery, kind, langKey, sort, showing, loadDownloads]);
 
   useEffect(() => {
     void load();
@@ -326,14 +377,18 @@ export function LibraryPage() {
       }
       if (kind !== 'all') source = source.filter((b) => b.kind === kind);
     }
+    // The server narrows by language too; doing it here as well answers a
+    // user shelf, the downloads, an offline fallback and a server one
+    // version behind, which sends every language back.
+    if (langs.length > 0) source = source.filter((b) => inLanguages(b.language, langs));
     return source;
-  }, [data, offlineBooks, showing, downloaded, debouncedQuery, kind]);
+  }, [data, offlineBooks, showing, downloaded, debouncedQuery, kind, langs]);
 
   const continueBooks = data?.continueRail ?? [];
   const hero = continueBooks[0] ?? null;
   const rail = continueBooks.slice(1);
-  const showContinue =
-    showing.kind === 'library' && kind === 'all' && !query && continueBooks.length > 0;
+  const unfiltered = kind === 'all' && !query && langs.length === 0;
+  const showContinue = showing.kind === 'library' && unfiltered && continueBooks.length > 0;
   // The band shows the eight most recent; the number beside "All in progress"
   // is how many there are, which is what the sidebar already counts.
   const readingNowCount =
@@ -364,6 +419,25 @@ export function LibraryPage() {
             : t('nav.library');
 
   const showChips = showing.kind !== 'library' || (overview?.shelves.length ?? 0) > 0;
+  // The language chips: only when the library has more than one language
+  // to choose between, and not on a shelf that IS one language already.
+  const languageGroup = groups.find((g) => g.kind === 'language') ?? null;
+  const languageValues = useMemo<FacetValue[]>(() => {
+    const values = languageGroup?.values ?? [];
+    const known = values.filter((v) => v.value.toLowerCase() !== UNKNOWN_LANGUAGE);
+    return known.length >= 2 ? values : [];
+  }, [languageGroup]);
+  const showLanguages =
+    languageValues.length > 0 && !(showing.kind === 'facet' && showing.facet === 'language');
+  const toggleLang = (value: string) => {
+    const key = value.toLowerCase();
+    const next = new Set(langs);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    // In the sidebar's own order, so the address reads the same whichever
+    // chip was tapped first.
+    setLangs(languageValues.map((v) => v.value.toLowerCase()).filter((v) => next.has(v)));
+  };
   const chips = [
     { to: '/', label: t('nav.library'), end: true },
     { to: '/reading-list', label: t('shelves.readingList'), end: false },
@@ -444,7 +518,7 @@ export function LibraryPage() {
 
       {/* This week so far, one tap from the whole picture. Home only: a
           shelf or a search is a question about books, not about the reader. */}
-      {showing.kind === 'library' && kind === 'all' && !query && <StatsStrip />}
+      {showing.kind === 'library' && unfiltered && <StatsStrip />}
 
       <section className="band band--library" aria-labelledby="library-h">
         <div className="band__head">
@@ -454,7 +528,7 @@ export function LibraryPage() {
               <span className="section-title__count">{f.number(books.length)}</span>
             )}
           </h2>
-          {showing.kind === 'library' && kind === 'all' && !query && data && (
+          {showing.kind === 'library' && unfiltered && data && (
             <span className="band__stats">
               {t('library.stats', {
                 ebooks: stats.ebooks,
@@ -493,6 +567,44 @@ export function LibraryPage() {
                 <IconHeadphones size={15} /> {t('library.kind.audiobooks')}
               </button>
             </div>
+            {showLanguages && (
+              <div className="lang-chips" role="group" aria-label={t('library.lang.group')}>
+                <button
+                  type="button"
+                  className="chip lang-chip lang-chip--all"
+                  aria-pressed={langs.length === 0}
+                  onClick={() => setLangs([])}
+                >
+                  {t('library.lang.all')}
+                </button>
+                {languageValues.map((v) => {
+                  const key = v.value.toLowerCase();
+                  const on = langs.includes(key);
+                  const count = scopedCounts ? (scopedCounts.get(`language:${key}`) ?? 0) : v.count;
+                  const flag = languageFlag(v.value);
+                  return (
+                    <button
+                      key={v.value}
+                      type="button"
+                      className="chip lang-chip"
+                      aria-pressed={on}
+                      onClick={() => toggleLang(v.value)}
+                    >
+                      {flag && (
+                        <span className="lang-chip__flag" aria-hidden="true">
+                          {flag}
+                        </span>
+                      )}
+                      <span className="lang-chip__name">{f.languageName(v.value)}</span>
+                      <span className="lang-chip__count" aria-hidden="true">
+                        {f.number(count)}
+                      </span>
+                      <span className="visually-hidden">{t('common.books', { n: count })}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             <label className="visually-hidden" htmlFor="lib-sort">
               {t('library.sortBy')}
             </label>
@@ -549,7 +661,7 @@ export function LibraryPage() {
         ) : books.length === 0 ? (
           <ShelfEmpty
             showing={showing}
-            filtered={!!query || kind !== 'all'}
+            filtered={!!query || kind !== 'all' || langs.length > 0}
             gone={gone}
             scanning={data?.scanActive ?? false}
           />

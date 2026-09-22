@@ -5,6 +5,7 @@ import {
   UNKNOWN_LANGUAGE,
   facetSpec,
   languageLabel,
+  normaliseLanguage,
 } from '@readport/shared';
 import { type DB } from '../db/index.js';
 
@@ -120,7 +121,19 @@ function labelFor(kind: FacetKind, value: string): string {
  * list. A grouping with fewer than two distinct values is dropped for the same
  * reason it would not be worth a shelf.
  */
-export function facetGroups(db: DB, scope: FacetScope = WHOLE_LIBRARY): FacetGroup[] {
+/**
+ * @param languageScope the books the LANGUAGE counts are about, when that
+ *   differs from `scope`. The toolbar's language chips narrow the library
+ *   to several languages at once, and while every other count should
+ *   describe what is in front of the reader, the languages must keep
+ *   describing what tapping another chip would add - so they are counted
+ *   without that one narrowing.
+ */
+export function facetGroups(
+  db: DB,
+  scope: FacetScope = WHOLE_LIBRARY,
+  languageScope: FacetScope = scope,
+): FacetGroup[] {
   const groups: FacetGroup[] = [];
   // "Fewer than two values is not a way to browse" is a rule about the
   // library, not about a search: under a narrowed scope one matching value
@@ -136,13 +149,14 @@ export function facetGroups(db: DB, scope: FacetScope = WHOLE_LIBRARY): FacetGro
     ['language', 'language'],
   ];
   for (const [kind, col] of column) {
+    const over = kind === 'language' ? languageScope : scope;
     const rows = db
       .prepare(
-        `SELECT b.${col} AS value, COUNT(*) AS n FROM ${scope.from}
-          WHERE ${scope.where} AND b.${col} IS NOT NULL AND TRIM(b.${col}) != ''
+        `SELECT b.${col} AS value, COUNT(*) AS n FROM ${over.from}
+          WHERE ${over.where} AND b.${col} IS NOT NULL AND TRIM(b.${col}) != ''
           GROUP BY b.${col} COLLATE NOCASE ORDER BY b.${col} COLLATE NOCASE`,
       )
-      .all(...(scope.args as never[])) as { value: string; n: number }[];
+      .all(...(over.args as never[])) as { value: string; n: number }[];
     const values = rows.map((r) => ({
       value: r.value,
       label: labelFor(kind, r.value),
@@ -154,10 +168,10 @@ export function facetGroups(db: DB, scope: FacetScope = WHOLE_LIBRARY): FacetGro
       // there are any.
       const unknown = db
         .prepare(
-          `SELECT COUNT(*) AS n FROM ${scope.from}
-            WHERE ${scope.where} AND (b.language IS NULL OR TRIM(b.language) = '')`,
+          `SELECT COUNT(*) AS n FROM ${over.from}
+            WHERE ${over.where} AND (b.language IS NULL OR TRIM(b.language) = '')`,
         )
-        .get(...(scope.args as never[])) as { n: number };
+        .get(...(over.args as never[])) as { n: number };
       if (Number(unknown.n) > 0)
         values.push({
           value: UNKNOWN_LANGUAGE,
@@ -246,6 +260,45 @@ export function languageValues(value: string): { codes: Set<string>; unknown: bo
     else codes.add(v);
   }
   return { codes, unknown };
+}
+
+/**
+ * The languages a `lang=he,en,unknown` query names, in any spelling a tag
+ * might use ("eng", "pt-BR"), or null when it names none. What the
+ * library's toolbar chips send; several at once, and composable with a
+ * facet, a search or a shelf.
+ */
+export function parseLanguageList(raw: string | undefined): {
+  codes: Set<string>;
+  unknown: boolean;
+} | null {
+  if (!raw) return null;
+  const codes = new Set<string>();
+  let unknown = false;
+  for (const part of raw.split(',')) {
+    const v = foldFacet(part);
+    if (v === UNKNOWN_LANGUAGE) unknown = true;
+    else {
+      const code = normaliseLanguage(v);
+      if (code) codes.add(code);
+    }
+  }
+  return codes.size > 0 || unknown ? { codes, unknown } : null;
+}
+
+/** The SQL that keeps only books in the listed languages, over `books b`. */
+export function languageListWhere(list: { codes: Set<string>; unknown: boolean }): {
+  clause: string;
+  args: string[];
+} {
+  const clauses: string[] = [];
+  const args: string[] = [];
+  if (list.codes.size > 0) {
+    clauses.push(`LOWER(TRIM(b.language)) IN (${[...list.codes].map(() => '?').join(',')})`);
+    args.push(...list.codes);
+  }
+  if (list.unknown) clauses.push("b.language IS NULL OR TRIM(b.language) = ''");
+  return { clause: `(${clauses.join(' OR ')})`, args };
 }
 
 /** Whether a book's language column answers a language facet value. */

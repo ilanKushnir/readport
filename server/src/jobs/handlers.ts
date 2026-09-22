@@ -21,8 +21,14 @@ import { CANDIDATE_THRESHOLD, scorePair } from '../pairing/score.js';
 import { latestAlignment, storeAlignment } from '../alignment/service.js';
 import { textFingerprint, timelineFingerprint } from '../alignment/portable.js';
 import { exportAlignments, importAlignments, saveAlignmentFile } from '../alignment/library.js';
-import { detectLanguageFromText } from '../alignment/detect-language.js';
+import { detectLanguageFromText, detectLanguageFromWindows } from '../alignment/detect-language.js';
 import { recomputeBookAndPartners, recomputePairLanguages } from '../library/language.js';
+import { proseWindows } from '../library/prose.js';
+import {
+  LANGUAGE_BACKFILL_JOB,
+  runLanguageBackfill,
+  withDetectorRev,
+} from '../library/redetect.js';
 import {
   isInstalled,
   languageByCode,
@@ -70,6 +76,7 @@ export const JOB_HANDLERS: Record<string, JobHandler> = {
   'model-download': runModelDownload,
   'import-alignments': runImportAlignments,
   'export-alignments': runExportAlignments,
+  [LANGUAGE_BACKFILL_JOB]: runLanguageBackfill,
 };
 
 /**
@@ -620,10 +627,12 @@ export async function runIndexEbook(
       const textFp = textFingerprint(
         result.sentencesByChapter.flatMap((chapter) => chapter.map((sent) => sent.id)),
       );
-      // What the prose itself suggests, kept beside what the file declares:
-      // a curator's override and the file's own tag both outrank it, and it
-      // is what names the language of an EPUB whose dc:language is missing.
-      const detected = detectLanguageFromText((loadSentencesText(newDir) ?? []).flat().join(' '));
+      // What the prose itself says, kept beside what the file declares. It
+      // is read from windows spread through the chapter text just written,
+      // and the detector answers only when they agree with a clear margin -
+      // an answer that then outranks the file's tag (so often a tool's
+      // default) and yields only to a curator's override.
+      const detected = detectLanguageFromWindows(proseWindows(newDir));
       db.prepare(
         `UPDATE books SET title = ?, author = ?, language_metadata = ?, language_detected = ?,
            series = ?, series_idx = ?,
@@ -640,14 +649,16 @@ export async function runIndexEbook(
         JSON.stringify(result.meta.identifiers),
         coverPath,
         nowIso(),
-        JSON.stringify({
-          ...prevMeta,
-          totalChars: result.manifest.totalChars,
-          direction: result.manifest.direction,
-          spineCount: result.manifest.chapters.length,
-          publisher: result.meta.publisher,
-          description: result.meta.description,
-        }),
+        JSON.stringify(
+          withDetectorRev({
+            ...prevMeta,
+            totalChars: result.manifest.totalChars,
+            direction: result.manifest.direction,
+            spineCount: result.manifest.chapters.length,
+            publisher: result.meta.publisher,
+            description: result.meta.description,
+          }),
+        ),
         rev,
         textFp,
         bookId,

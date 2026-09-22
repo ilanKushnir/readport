@@ -11,9 +11,11 @@ import {
 } from './language.js';
 
 /**
- * Where a book's language comes from, in order: a curator's word, the file's
- * own tag, the other verified edition of the same book, the prose. Each of
- * the tests below is one rung of that ladder, and the ones about pairs are
+ * Where a book's language comes from, in order. For an ebook: a curator's
+ * word, its own prose, the file's tag, the other verified edition of the
+ * same book. For an audiobook, which has no prose: a curator's word, the
+ * file's tag, the other verified edition, whatever detection stored. Each
+ * of the tests below is one rung of a ladder, and the ones about pairs are
  * about evidence being lent and taken back.
  */
 
@@ -70,13 +72,19 @@ const stored = (id: string) =>
   };
 
 describe('one book on its own', () => {
-  it("takes the file's own tag over what the prose suggests", () => {
-    const id = book('ebook', { metadata: 'fr', detected: 'en' });
+  it("an ebook's prose outranks the file's tag, which is so often a tool's default", () => {
+    const id = book('ebook', { metadata: 'en', detected: 'he' });
+    expect(stored(id)).toEqual({ language: 'he', source: 'detected' });
+  });
+  it("an audiobook's tag stands, whatever detection stored for it", () => {
+    const id = book('audio', { metadata: 'fr', detected: 'en' });
     expect(stored(id)).toEqual({ language: 'fr', source: 'metadata' });
   });
-  it('falls back to the prose when the file says nothing', () => {
-    const id = book('ebook', { detected: 'de' });
-    expect(stored(id)).toEqual({ language: 'de', source: 'detected' });
+  it('falls back to the tag when the prose could not be read with confidence', () => {
+    const id = book('ebook', { metadata: 'fr' });
+    expect(stored(id)).toEqual({ language: 'fr', source: 'metadata' });
+    const untagged = book('ebook', { detected: 'de' });
+    expect(stored(untagged)).toEqual({ language: 'de', source: 'detected' });
   });
   it('is unknown when nothing is known, and a tag that says "und" is nothing', () => {
     expect(stored(book('ebook'))).toEqual({ language: null, source: null });
@@ -87,7 +95,9 @@ describe('one book on its own', () => {
     setBookLanguageOverride(db, id, 'he');
     expect(stored(id)).toEqual({ language: 'he', source: 'manual' });
     // The rescan rewrites the file's evidence; the override is not evidence.
-    db.prepare("UPDATE books SET language_metadata = 'it' WHERE id = ?").run(id);
+    db.prepare(
+      "UPDATE books SET language_metadata = 'it', language_detected = NULL WHERE id = ?",
+    ).run(id);
     recomputeBookLanguage(db, id);
     expect(stored(id)).toEqual({ language: 'he', source: 'manual' });
     setBookLanguageOverride(db, id, null);
@@ -127,15 +137,25 @@ describe('a pair as evidence', () => {
     recomputePairLanguages(db, p);
     expect(stored(a)).toEqual({ language: 'fr', source: 'pair' });
   });
-  it("the file's own tag still beats what a pair lends, and the prose does not", () => {
+  it("the file's own tag still beats what a pair lends", () => {
     const e = book('ebook', { metadata: 'fr' });
     const tagged = book('audio', { metadata: 'en' });
     pair(e, tagged, 'confirmed');
     expect(stored(tagged)).toEqual({ language: 'en', source: 'metadata' });
-    const guessed = book('ebook', { detected: 'de' });
+  });
+  it("an ebook's own prose beats what a pair lends, and an audiobook's stored detection does not", () => {
+    const read = book('ebook', { detected: 'de' });
     const a = book('audio', { metadata: 'fr' });
-    pair(guessed, a, 'confirmed');
-    expect(stored(guessed)).toEqual({ language: 'fr', source: 'pair' });
+    pair(read, a, 'confirmed');
+    expect(stored(read)).toEqual({ language: 'de', source: 'detected' });
+    // What the ebook read in its own prose is its own evidence, so the
+    // verified audiobook beside it, tagged or not, is lent exactly that.
+    const untagged = book('audio');
+    pair(book('ebook', { metadata: 'en', detected: 'he' }), untagged, 'confirmed');
+    expect(stored(untagged)).toEqual({ language: 'he', source: 'pair' });
+    const guessedAudio = book('audio', { detected: 'it' });
+    pair(book('ebook', { metadata: 'es' }), guessedAudio, 'confirmed');
+    expect(stored(guessedAudio)).toEqual({ language: 'es', source: 'pair' });
   });
   it('rejecting the pair takes the lent language back', () => {
     const e = book('ebook', { metadata: 'fr' });

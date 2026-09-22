@@ -13,9 +13,12 @@ import {
   bookIdsWithFacet,
   facetGroups,
   foldFacet,
+  languageListWhere,
   matchesLanguage,
+  parseLanguageList,
 } from '../../library/facets.js';
 import { setBookLanguageOverride } from '../../library/language.js';
+import { requestLanguageBackfill } from '../../library/redetect.js';
 import { BOOK_LANGUAGES, normaliseLanguage } from '@readport/shared';
 import { requireRole } from '../../auth/roles.js';
 import { libraryRoots } from '../../domain/settings.js';
@@ -195,6 +198,14 @@ const libraryQuerySchema = z.object({
    * audiobook must not vanish behind its undownloaded ebook.
    */
   collapse: z.enum(['pair', 'none']).optional(),
+  /**
+   * The languages to keep, as codes joined with commas - `he,en` - and
+   * `unknown` for the books with none. What the toolbar's language chips
+   * send. Several at once, by a book's effective language, and it composes
+   * with everything else here: a search, a shelf, a facet. Spellings a tag
+   * might use ("eng", "pt-BR") are accepted; anything else is ignored.
+   */
+  lang: z.string().max(200).optional(),
 });
 
 /**
@@ -252,6 +263,12 @@ function narrowing(
     where.push('b.kind = ?');
     args.push(q.kind);
   }
+  const languages = parseLanguageList(q.lang);
+  if (languages) {
+    const { clause, args: langArgs } = languageListWhere(languages);
+    where.push(clause);
+    args.push(...langArgs);
+  }
   if (q.query) {
     where.push(
       "(b.title LIKE ? COLLATE NOCASE OR COALESCE(b.author, '') LIKE ? COLLATE NOCASE" +
@@ -265,6 +282,18 @@ function narrowing(
 
 export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): void {
   const { db } = ctx;
+
+  // The library's one duty at startup: books indexed before the current
+  // language detector are read again by a job that waits behind everything
+  // else, a batch at a time, and finds nothing to do on a settled library.
+  // Queued here because this is where the library comes up, and a queue
+  // entry costs nothing until a worker - inline or the dedicated container -
+  // picks it up.
+  try {
+    requestLanguageBackfill(db);
+  } catch (err) {
+    ctx.log.warn(`Could not queue the language backfill: ${(err as Error).message}`);
+  }
 
   app.get('/api/library', async (req, reply) => {
     const parsedQuery = libraryQuerySchema.safeParse(req.query ?? {});
@@ -385,7 +414,11 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
     // "Reading now 1" while the home page showed nothing to continue. Only
     // the open library shows the band, so only the open library pays for it.
     const home =
-      q.filter === undefined && q.facet === undefined && !q.query && q.kind === undefined;
+      q.filter === undefined &&
+      q.facet === undefined &&
+      !q.query &&
+      q.kind === undefined &&
+      q.lang === undefined;
     const continueRail = home
       ? onePerPair(
           (
@@ -430,7 +463,7 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
    * parameters, the whole library, as before.
    */
   const facetQuerySchema = libraryQuerySchema
-    .pick({ query: true, kind: true, filter: true })
+    .pick({ query: true, kind: true, filter: true, lang: true })
     .extend({
       ids: z.string().max(8192).optional(),
     });
@@ -440,19 +473,28 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
     const q = parsed.data;
     // Nothing to narrow by is the whole library, and the whole library keeps
     // its rule that a grouping with one value is not a way to browse.
-    if (q.ids === undefined && !q.query && !q.kind && !q.filter) return { groups: facetGroups(db) };
-    const { from, where, args } = narrowing(q, req.user!.id);
-    if (q.ids !== undefined) {
-      const ids = q.ids
-        .split(',')
-        .filter((id) => /^[A-Za-z0-9_-]{1,64}$/.test(id))
-        .slice(0, 400);
-      if (ids.length === 0) return { groups: [] };
-      where.push(`b.id IN (${ids.map(() => '?').join(',')})`);
-      args.push(...ids);
+    if (q.ids === undefined && !q.query && !q.kind && !q.filter && !q.lang) {
+      return { groups: facetGroups(db) };
     }
-    const scope: FacetScope = { from, where: where.join(' AND '), args };
-    return { groups: facetGroups(db, scope) };
+    // Two scopes: the view as narrowed, and the same view before the
+    // language chips narrowed it, which is what the languages are counted
+    // over - a chip's count says what tapping it would show, not zero
+    // because it is not tapped yet.
+    const scopeOf = (query: typeof q): FacetScope => {
+      const { from, where, args } = narrowing(query, req.user!.id);
+      if (q.ids !== undefined) {
+        const ids = q.ids
+          .split(',')
+          .filter((id) => /^[A-Za-z0-9_-]{1,64}$/.test(id))
+          .slice(0, 400);
+        where.push(ids.length ? `b.id IN (${ids.map(() => '?').join(',')})` : '0');
+        args.push(...ids);
+      }
+      return { from, where: where.join(' AND '), args };
+    };
+    const scope = scopeOf(q);
+    const languageScope = q.lang ? scopeOf({ ...q, lang: undefined }) : scope;
+    return { groups: facetGroups(db, scope, languageScope) };
   });
 
   /**

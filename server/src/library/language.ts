@@ -6,15 +6,27 @@ import { latestAlignment } from '../alignment/service.js';
  * What language a book is in, worked out from evidence in a fixed order and
  * written back to the row every time any of that evidence changes.
  *
+ * For an ebook:
  *   1. a curator's override, which survives every rescan;
- *   2. what the file itself declares (dc:language, the audio language tag);
+ *   2. what reading its prose said - the detector answers only when the
+ *      windows it read agree with a clear margin, and a confident reading
+ *      of the text outranks the tag in the file, because the tag is so
+ *      often a tool's default (Calibre stamps "en" on everything it is not
+ *      told about) and the prose cannot be;
+ *   3. what the file declares (dc:language);
+ *   4. what the other, VERIFIED edition of the same book knows;
+ *   5. nothing - and "nothing" is browsable as Unknown.
+ *
+ * For an audiobook, which has no prose of its own:
+ *   1. a curator's override;
+ *   2. what the file declares (the audio language tag);
  *   3. what the other, VERIFIED edition of the same book knows - confirmed by
  *      a person, or an automatic pair whose narration has been checked
  *      against the text; an unverified suggestion lends nothing, because a
  *      wrong guess about which book this is must not become a wrong guess
  *      about its language too;
- *   4. what reading the ebook's prose suggested;
- *   5. nothing - and "nothing" is browsable as Unknown.
+ *   4. anything detection stored for it;
+ *   5. nothing.
  *
  * Recomputed, not cached: whenever indexing, pairing, alignment or an
  * override changes, both books of the affected pair are recomputed, so the
@@ -24,6 +36,7 @@ import { latestAlignment } from '../alignment/service.js';
 
 interface LanguageRow {
   id: string;
+  kind: string;
   language_manual: string | null;
   language_metadata: string | null;
   language_detected: string | null;
@@ -35,9 +48,19 @@ function ownEvidence(row: LanguageRow): { language: string; source: LanguageSour
   const manual = normaliseLanguage(row.language_manual);
   if (manual) return { language: manual, source: 'manual' };
   const metadata = normaliseLanguage(row.language_metadata);
-  if (metadata) return { language: metadata, source: 'metadata' };
   const detected = normaliseLanguage(row.language_detected);
-  if (detected) return { language: detected, source: 'detected' };
+  // An ebook's prose outranks its tag; an audiobook's tag is all it has of its own.
+  const ladder: [string | null, LanguageSource][] =
+    row.kind === 'ebook'
+      ? [
+          [detected, 'detected'],
+          [metadata, 'metadata'],
+        ]
+      : [
+          [metadata, 'metadata'],
+          [detected, 'detected'],
+        ];
+  for (const [language, source] of ladder) if (language) return { language, source };
   return null;
 }
 
@@ -45,7 +68,7 @@ function rowFor(db: DB, bookId: string): LanguageRow | null {
   return (
     (db
       .prepare(
-        `SELECT id, language_manual, language_metadata, language_detected, language, language_source
+        `SELECT id, kind, language_manual, language_metadata, language_detected, language, language_source
            FROM books WHERE id = ?`,
       )
       .get(bookId) as LanguageRow | undefined) ?? null
@@ -82,7 +105,9 @@ export function recomputeBookLanguage(
   if (!row) return { language: null, source: null };
   let answer: { language: string; source: LanguageSource } | null = null;
   const own = ownEvidence(row);
-  if (own && (own.source === 'manual' || own.source === 'metadata')) answer = own;
+  // Everything an ebook knows about itself beats what a pair lends; an
+  // audiobook's stored detection is the one thing a verified pair outranks.
+  if (own && (row.kind === 'ebook' || own.source !== 'detected')) answer = own;
   if (!answer) {
     const other = verifiedCounterpart(db, bookId);
     const otherRow = other ? rowFor(db, other) : null;

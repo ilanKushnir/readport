@@ -40,6 +40,8 @@ export interface FacetScope {
   query?: string;
   kind?: 'ebook' | 'audio';
   filter?: string;
+  /** Languages to keep, as the toolbar chips send them: `he,en`. */
+  lang?: string;
   ids?: string[];
 }
 
@@ -95,6 +97,7 @@ function scopeParams(scope: FacetScope): string {
   if (scope.query?.trim()) params.set('query', scope.query.trim());
   if (scope.kind) params.set('kind', scope.kind);
   if (scope.filter) params.set('filter', scope.filter);
+  if (scope.lang) params.set('lang', scope.lang);
   if (scope.ids) params.set('ids', scope.ids.slice(0, 400).join(','));
   return params.toString();
 }

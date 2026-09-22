@@ -1,0 +1,76 @@
+/* Languages: the filter chips in the library toolbar and the flag beside a
+   language's name. A flag is a hint for the eye - the name beside it is the
+   truth - so it sits small, in a soft pill, and never carries meaning alone.
+   Imported by the library page and the sidebar's Browse groups. */
+
+/* The chip row. Beside the format control when the toolbar has room for
+   the whole row, on the next line when it does not - never squeezed until a
+   chip is cut in half - and scrolling sideways on a phone, where the row is
+   wider than the screen, rather than wrapping into a wall of pills. */
+.lang-chips {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: 0 0 auto;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  padding-block: 2px;
+}
+.lang-chips::-webkit-scrollbar {
+  display: none;
+}
+
+/* One language. The base `.chip` gives the pill, the border and the primary
+   fill when pressed; this only sets the three things inside it apart. */
+.lang-chip {
+  flex: 0 0 auto;
+  gap: 7px;
+  padding-inline: 8px var(--sp-3);
+  font-weight: 500;
+}
+.lang-chip--all {
+  padding-inline: var(--sp-3);
+}
+.lang-chip__flag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-pill);
+  background: var(--rp-surface);
+  font-size: 15px;
+  line-height: 1;
+  font-family:
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Twemoji Mozilla', sans-serif;
+}
+.lang-chip[aria-pressed='true'] .lang-chip__flag {
+  background: rgb(255 255 255 / 0.22);
+}
+.lang-chip__count {
+  color: var(--rp-text-soft);
+  font-size: 12px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+.lang-chip[aria-pressed='true'] .lang-chip__count {
+  color: inherit;
+  opacity: 0.8;
+}
+
+/* The flag before a language's name in the sidebar's Languages group. */
+.lang-flag {
+  flex: 0 0 auto;
+  font-size: 15px;
+  line-height: 1;
+  font-family:
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Twemoji Mozilla', sans-serif;
+}
+
+@media (pointer: coarse) {
+  .lang-chip {
+    min-height: 44px;
+  }
+}

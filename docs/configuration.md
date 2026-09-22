@@ -93,12 +93,20 @@ does not leave every estimate wrong for the next several books.
 ### The fallback language
 
 `defaultLanguage` is the last of five answers, not the first. An alignment asks,
-in order: a language set on the pair itself, the EPUB's `dc:language`, the
-audiobook's tags, the ebook's own prose, and only then this setting. Reading it
-from the prose needs no model - a non-Latin script settles Cyrillic, Hebrew,
-Arabic or Greek outright, and a few dozen function words separate the Latin
-languages, which barely share them - and it abstains rather than guess when the
-evidence is thin.
+in order: a language set on the pair itself, the ebook's language as the library
+knows it, the audiobook's tags, the ebook's own prose, and only then this
+setting. Reading the prose needs no model. A dozen windows spread through the
+book, past the front matter, are each classified by script first - Hebrew,
+Greek or Thai settle the question outright, and the letters one language never
+writes narrow Cyrillic and Arabic script to a candidate or two - and then by
+character trigrams (`franc`); the reading counts only when the windows agree
+and the winner leads by a clear margin, and otherwise it abstains. For an ebook
+that same reading also decides the language the library files it under, ahead
+of the file's own tag, because a confident reading of the text is more
+trustworthy than a tag a tool defaulted (Calibre stamps `en` on everything it
+is not told about); a curator's override on the book page outranks both. Books
+indexed by an older build are read again after the upgrade, a batch at a time,
+by a job that waits behind every scan.
 
 Getting it wrong is cheap by design. The language decides only how numbers,
 currency and abbreviations are spelled out for matching; transliteration is

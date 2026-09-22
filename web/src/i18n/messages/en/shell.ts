@@ -113,6 +113,7 @@ export const shell = {
   'shell.jobType.index-ebook': 'Index ebook',
   'shell.jobType.index-audio': 'Index audiobook',
   'shell.jobType.pair-scan': 'Look for pairs',
+  'shell.jobType.language-backfill': 'Read book languages',
   'shell.jobState.queued': 'Queued',
   'shell.jobState.running': 'Running',
   'shell.jobState.done': 'Finished',

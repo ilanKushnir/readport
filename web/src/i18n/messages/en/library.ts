@@ -24,6 +24,9 @@ export const library = {
   'library.kind.all': 'All',
   'library.kind.ebooks': 'Ebooks',
   'library.kind.audiobooks': 'Audiobooks',
+  // The language chips beside the format control
+  'library.lang.group': 'Filter by language',
+  'library.lang.all': 'All',
   'library.sortBy': 'Sort by',
   'library.sort.title': 'By title',
   'library.sort.author': 'By author',

@@ -1,10 +1,11 @@
 import { useId, useState } from 'react';
 import { NavLink, useNavigate, useParams } from 'react-router-dom';
-import { FACET_SPECS, type FacetGroup, type FacetKind } from '@readport/shared';
+import { FACET_SPECS, type FacetGroup, type FacetKind, languageFlag } from '@readport/shared';
 import { useT } from '../i18n';
 import { useFormat } from '../i18n/useFormat';
 import { useFacets } from '../state/facets';
 import { Sheet } from './ui';
+import '../styles/languages.css';
 import {
   IconChevronDown,
   IconChevronRight,
@@ -89,10 +90,18 @@ function LanguageRows({
         const key = v.value.toLowerCase();
         const on = selected.has(key);
         const count = counts ? (counts.get(`language:${key}`) ?? 0) : v.count;
+        // A flag for the eye, the name for the meaning: Unknown has neither
+        // a country nor a flag, and a screen reader hears only the name.
+        const flag = languageFlag(v.value);
         return (
           <li key={v.value}>
             <label className={`sidebar__value sidebar__value--check${on ? ' is-active' : ''}`}>
               <input type="checkbox" checked={on} onChange={() => toggle(v.value)} />
+              {flag && (
+                <span className="lang-flag" aria-hidden="true">
+                  {flag}
+                </span>
+              )}
               <span className="sidebar__valuename">{f.languageName(v.value)}</span>
               <span className="sidebar__count" aria-hidden="true">
                 {f.number(count)}
