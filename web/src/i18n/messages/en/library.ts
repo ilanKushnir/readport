@@ -41,7 +41,6 @@ export const library = {
   // Book cards in the grid
   'library.card.details': '{title} details',
   'library.card.audioFormat': 'AUDIO',
-  'library.card.sync': 'SYNC',
   'library.card.syncedTitle': 'Synced - switching lands in the same place',
   'library.card.downloadedTitle': 'Downloaded to this device',
   'library.card.finished': 'Finished',

@@ -352,11 +352,6 @@ select.input {
   border-color: var(--rp-primary);
   color: var(--rp-interactive);
 }
-.badge--sync {
-  background: var(--rp-primary);
-  border-color: var(--rp-primary);
-  color: var(--rp-on-primary);
-}
 .badge--audio {
   color: var(--rp-accent);
   border-color: color-mix(in srgb, var(--rp-accent) 55%, transparent);
@@ -951,6 +946,14 @@ body:has(.app-body) {
   margin-inline: 1px;
   background: currentColor;
   opacity: 0.35;
+}
+/* The same seam once the pair is aligned: the switch arrows, in ember, and
+   nothing else changes - the mark is the join, not another word. */
+.badge__join {
+  display: inline-flex;
+  align-items: center;
+  margin-inline: 1px;
+  color: var(--rp-interactive);
 }
 .book-card__progress {
   position: absolute;

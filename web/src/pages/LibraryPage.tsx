@@ -25,6 +25,7 @@ import {
   IconHeadphones,
   IconLibrary,
   IconLink,
+  IconSwitch,
   IconList,
   IconOffline,
   IconPlay,
@@ -938,24 +939,33 @@ function BookCard({
                 owned in. Two separate pills read as two books - which is the
                 thing this card exists to stop - and stacked on a phone they
                 cover the artwork twice over. */}
-            <span className={`badge ${!pair && book.kind === 'audio' ? 'badge--audio' : ''}`}>
+            <span
+              className={`badge ${!pair && book.kind === 'audio' ? 'badge--audio' : ''}`}
+              title={pair?.switchable ? t('library.card.syncedTitle') : undefined}
+            >
               <FormatPart kind={book.kind} format={book.format} />
               {pair && (
                 <>
-                  <span className="badge__sep" aria-hidden="true" />
+                  {/* The join between the two formats is the synced mark: a
+                      hairline while the pair merely exists, and the switch
+                      arrows in ember once alignment lets a reader cross from
+                      one edition to the other at the same place. The badge
+                      already says the title is owned twice; a third pill
+                      saying SYNC said it again, louder. */}
+                  {pair.switchable ? (
+                    <span className="badge__join" aria-hidden="true">
+                      <IconSwitch size={10} />
+                    </span>
+                  ) : (
+                    <span className="badge__sep" aria-hidden="true" />
+                  )}
                   <FormatPart kind={pair.otherKind} format={pair.otherFormat} />
+                  {pair.switchable && (
+                    <span className="visually-hidden">{t('library.card.syncedTitle')}</span>
+                  )}
                 </>
               )}
             </span>
-            {pair?.switchable && (
-              <span
-                className="badge badge--paired badge--sync"
-                title={t('library.card.syncedTitle')}
-              >
-                <IconLink size={11} />
-                {t('library.card.sync')}
-              </span>
-            )}
           </span>
           {offline && (
             <span className="book-card__offline" title={t('library.card.downloadedTitle')}>
