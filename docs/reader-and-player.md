@@ -25,10 +25,12 @@ Implemented:
   control.
 - Table of contents (EPUB 3 nav with NCX fallback, including sub-chapter
   fragment entries), footnote and internal fragment links, in-book search
-  with jump-to-result, book-position slider, "N pages left in chapter".
-- The bars. Above: back, contents (chapters and bookmarks in one sheet,
-  opened on the chapter being read), type, and search drawn as the small
-  field it opens. Below, one row in one order on every screen: a people
+  that opens as a launcher's does - one field near the top of the page,
+  the matches filling in as you type, Enter opening the first - a
+  book-position slider, "N pages left in chapter".
+- The bars. Above: back, contents (chapters and bookmarks as two tabs in
+  the head of one sheet, opened on the chapter being read), type, and at
+  the end of the bar, search drawn as the small field it opens. Below, one row in one order on every screen: a people
   button for the friends in the book, the progress bar with their beads,
   the percentage, and round buttons for Read along and Listen. The bar
   comes in three flavours (Reading settings → Progress bar): **Full**
@@ -52,8 +54,9 @@ Implemented:
   _Continue selection_ pill waits at the top corner the reading is heading
   for; tap it and the next tap ends the selection, across as many pages as
   it takes. A settled selection is framed by one outline in the theme's
-  accent, with a small cross to drop it, and its menu is four icons:
-  highlight (the colours sit behind it), note, bookmark, and share - "Look
+  accent (Escape, or a tap elsewhere, drops it), and its menu is a pill of
+  four icons, each with its name under it: highlight (the colours sit
+  behind it), note, bookmark, and share - "Look
   what I read in {title}", the quotation whole on its own lines, and the
   book's share link, through the phone's share tray where there is one and
   to the clipboard where there is not. A tapped highlight offers its colour,
@@ -197,10 +200,12 @@ and the page turns itself to keep up. The player is untouched by this - this is
 the reader, with a voice.
 
 How the voice is shown is a choice (Reading settings → Following the
-voice): a **mark in the margin**, the default - a small tick beside the line
-being spoken, moving at the narrator's pace - or a **wash on the sentence**.
-Either is drawn inside the box the text moves in, so it scrolls with the
-text rather than chasing it. The wash sits on the line boxes of the words
+voice, two small drawings of a page): a **mark in the margin**, the
+default, a small tick beside the line being spoken that moves at the
+narrator's pace; or the **sentence highlighted**. Either is drawn inside
+the box the text moves in, so it scrolls with the text rather than chasing
+it. The mark where you last stopped reading fades as the voice leaves it
+behind, the way it fades when you scroll past it. The wash sits on the line boxes of the words
 themselves, measured from the text at draw time and again after every
 relayout, so a font, a size or a rotation cannot leave it on a line the text
 has left; it is firmer at the edge the sentence starts on, dimmer while the
