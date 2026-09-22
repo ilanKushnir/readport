@@ -4,6 +4,42 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.19.0 - 2026-09-22
+
+### Fixed
+
+- **Pages that blinked.** A chapter the page layout could not hold - one
+  with a figure taller than the page, say - was let scroll, then judged
+  again from the scrolling layout, where nothing is trapped, and put back
+  into columns, where it was, and so on at the speed of a render: the text
+  and the footer flickering between the two while the tab ground to a halt.
+  The judgement is made only while the chapter is in columns, and a chapter
+  that scrolls stays scrolling until it is opened again.
+- **The resumed line, let go by the voice.** The mark where you last
+  stopped fades as the sentence being spoken leaves it, the way it fades
+  when you scroll past it. It used to stay: a bar in the margin at the
+  resumed line while the voice was a page away, which read as the voice's
+  own mark gone astray - and, with the sentence highlighted instead of
+  marked, as a marker that would not go.
+- **The search pill keeps to the end of the top bar** on a phone, where
+  the chapter title between the buttons and the pill is gone.
+- **A row under a finger no longer lights up** while the contents list is
+  scrolled: hover is for pointers that can hover.
+
+### Changed
+
+- **The selection's menu** is a pill, each icon with its name under it, and
+  the small cross that dropped a selection is gone: Escape, or a tap
+  elsewhere, does that. A tapped highlight's row is captioned the same way.
+- **Search opens as a launcher does:** one field near the top of the page,
+  the matches filling in as you type, Enter opening the first. No sheet,
+  no Search button.
+- **Following the voice, drawn.** The two ways of showing the voice - a
+  mark in the margin beside the line, or the sentence highlighted - are
+  chosen from two small drawings of a page rather than two phrases.
+- **The contents sheet's tabs** stay in its head while the chapters or the
+  bookmarks scroll under them.
+
 ## 0.18.0 - 2026-09-22
 
 ### Fixed

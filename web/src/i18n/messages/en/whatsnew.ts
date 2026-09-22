@@ -16,6 +16,16 @@ export const whatsnew = {
   'whatsnew.olderHeading': 'Version {version}',
   'whatsnew.done': 'Start reading',
 
+  // ---------------------------------------------------------------- 0.19.0
+  'whatsnew.release.selectionCaptions':
+    'The selection menu is a pill with a name under each icon; Escape, or a tap elsewhere, drops the selection.',
+  'whatsnew.release.spotlight':
+    'Search opens as a launcher does: one field at the top, matches as you type, and Enter opens the first.',
+  'whatsnew.release.voiceDrawn':
+    'Following the voice is chosen from two small drawings: a mark in the margin, or the sentence highlighted.',
+  'whatsnew.release.contentsTabs':
+    'The contents sheet keeps its Chapters and Bookmarks tabs in view while the list scrolls under them.',
+
   // ---------------------------------------------------------------- 0.18.0
   'whatsnew.release.pagesOnPhone':
     'Pages on a phone page again: the reader no longer falls back to scrolling a chapter it can paginate.',
