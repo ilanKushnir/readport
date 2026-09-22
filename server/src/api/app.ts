@@ -15,6 +15,7 @@ import { registerReaderRoutes } from './routes/reader.js';
 import { registerAudioRoutes } from './routes/audio.js';
 import { registerProgressRoutes } from './routes/progress.js';
 import { registerStatsRoutes } from './routes/stats.js';
+import { registerFriendRoutes } from './routes/friends.js';
 import { registerAnnotationRoutes } from './routes/annotations.js';
 import { registerShelfRoutes } from './routes/shelves.js';
 import { registerPairRoutes } from './routes/pairs.js';
@@ -290,6 +291,9 @@ export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyIn
   registerProgressRoutes(app, ctx);
   // What the progress pipeline wrote down, read back as a reader's own stats.
   registerStatsRoutes(app, ctx);
+  // Friends sit here too: who may see this reader's place in a book is the
+  // reader's own to give, like a shelf.
+  registerFriendRoutes(app, ctx);
   registerAnnotationRoutes(app, ctx);
   // Personal-data neighbourhood: shelves belong next to the other things a
   // reader owns rather than beside the library-wide routes.

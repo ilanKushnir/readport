@@ -40,6 +40,8 @@ interface SessionCtx {
   locale: string | null;
   /** undefined until /api/auth/me answers; see whatsnew/changelog.ts. */
   whatsNewSeen: string | null | undefined;
+  /** Friend requests waiting on you plus recommendations you have not seen. */
+  friendsAttention: number;
   refresh: () => Promise<void>;
   setUser: (u: User | null) => void;
   logout: () => Promise<void>;
@@ -53,6 +55,7 @@ const Ctx = createContext<SessionCtx>({
   phase: 'loading',
   locale: null,
   whatsNewSeen: undefined,
+  friendsAttention: 0,
   refresh: async () => {},
   setUser: () => {},
   logout: async () => {},
@@ -81,6 +84,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [phase, setPhase] = useState<SessionCtx['phase']>('loading');
   const [locale, setLocale] = useState<string | null>(null);
   const [whatsNewSeen, setWhatsNewSeen] = useState<string | null | undefined>(undefined);
+  const [friendsAttention, setFriendsAttention] = useState(0);
 
   const refresh = useCallback(async () => {
     try {
@@ -91,6 +95,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         needsLibraries?: boolean;
         locale?: string | null;
         whatsNewSeen?: string | null;
+        friendRequests?: number;
+        recommendations?: number;
       }>('/api/auth/me', { signal: sessionCheckSignal() });
       // Before anything can be delivered: queued checkpoints belong to the
       // account that recorded them. The same person keeps a backlog written
@@ -104,6 +110,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setNeedsLibraries(me.needsLibraries === true);
       setLocale(me.locale ?? null);
       setWhatsNewSeen(me.whatsNewSeen ?? null);
+      setFriendsAttention((me.friendRequests ?? 0) + (me.recommendations ?? 0));
       setPhase('ready');
       return;
     } catch (err) {
@@ -222,6 +229,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         phase,
         locale,
         whatsNewSeen,
+        friendsAttention,
         refresh,
         logout,
         setUser: (u) => {

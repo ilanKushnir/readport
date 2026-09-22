@@ -14,6 +14,7 @@ import {
 import { bookAudioSupport } from '../lib/audioSupport';
 import { Cover, Sheet, useToast } from '../components/ui';
 import { useProgressNotices } from '../progress/notices';
+import { FriendMarkers, FriendsButton, useFriendsOnBook } from '../friends/FriendsOnBar';
 import {
   IconBack,
   IconClose,
@@ -59,6 +60,7 @@ interface SkipPrefs {
 
 export function PlayerPage() {
   const { id = '' } = useParams();
+  const friendsHere = useFriendsOnBook(id || null);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const toast = useToast();
@@ -863,6 +865,11 @@ export function PlayerPage() {
                 title={t('player.handoff.marker')}
               />
             )}
+            <FriendMarkers
+              friends={friendsHere.friends}
+              shownIds={friendsHere.shownIds}
+              on="player"
+            />
           </div>
           <input
             className="slider slider--player"
@@ -893,6 +900,13 @@ export function PlayerPage() {
           />
           <div className="player-times">
             <span>{formatDuration(bookMs)}</span>
+            <FriendsButton
+              bookId={id}
+              myPct={totalMs > 0 ? bookMs / totalMs : 0}
+              friends={friendsHere.friends}
+              shownIds={friendsHere.shownIds}
+              setShown={friendsHere.setShown}
+            />
             <span className="player-times__chapter">
               {currentChapter
                 ? t('player.transport.leftInChapter', { time: formatDuration(chapterLeftMs) })

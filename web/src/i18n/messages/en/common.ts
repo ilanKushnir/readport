@@ -35,6 +35,8 @@ export const common = {
   'nav.notes': 'Notes',
   'nav.pairing': 'Pairing',
   'nav.settings': 'Settings',
+  'nav.friends': 'Friends',
+  'nav.friendsAttention': 'Friend requests or recommendations waiting',
   'nav.shelves': 'Shelves',
   'nav.showShelves': 'Show shelves',
   'nav.hideShelves': 'Hide shelves',

@@ -11,6 +11,7 @@ import { AUTO_SHELVES } from '@readport/shared';
 import { SessionProvider, useSession } from './state/session';
 import { I18nProvider, useT } from './i18n';
 import { WhatsNew } from './whatsnew/WhatsNew';
+import { FriendsPage } from './pages/FriendsPage';
 import { ShelvesProvider, useShelves } from './state/shelves';
 import { FacetsProvider } from './state/facets';
 import { Drawer, Sheet, ToastProvider } from './components/ui';
@@ -22,6 +23,7 @@ import {
   IconNotes,
   IconSettings,
   IconStats,
+  IconPeople,
   IconShelf,
   ReadPortMark,
 } from './components/icons';
@@ -161,7 +163,7 @@ function ShelfHeaderButton({
 
 function Shell() {
   const t = useT();
-  const { phase, needsLibraries } = useSession();
+  const { phase, needsLibraries, friendsAttention } = useSession();
   const location = useLocation();
   const [setupSkipped, setSetupSkipped] = useState(
     () => localStorage.getItem('rp-setup-libraries-skipped') === '1',
@@ -260,6 +262,15 @@ function Shell() {
       <NavLink to="/stats" className="nav-wide">
         <IconStats size={18} /> {t('nav.stats')}
       </NavLink>
+      <NavLink to="/friends">
+        <span className="nav-mark">
+          <IconPeople size={18} />
+          {friendsAttention > 0 && (
+            <span className="nav-mark__dot" aria-label={t('nav.friendsAttention')} />
+          )}
+        </span>{' '}
+        {t('nav.friends')}
+      </NavLink>
       <NavLink to="/pairs" className="nav-wide">
         <IconLink size={18} /> {t('nav.pairing')}
       </NavLink>
@@ -348,6 +359,7 @@ const router = createBrowserRouter([
       { path: '/notes/:bookId', element: <NotesBookPage /> },
       { path: '/notes/:bookId/export', element: <NotesExportPage /> },
       { path: '/stats', element: <StatsPage /> },
+      { path: '/friends', element: <FriendsPage /> },
       { path: '/pairs', element: <PairsPage /> },
       { path: '/settings', element: <SettingsPage /> },
       { path: '/settings/people', element: <PeoplePage /> },

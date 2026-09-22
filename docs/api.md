@@ -256,6 +256,46 @@ it was read in as its `kind`. `totalChars` is the ebook's indexed text length
 whole diary regardless of `days`; `booksFinished` counts every edition the
 caller has finished, whether or not its file is still on disk.
 
+## Friends
+
+Everyone on a server already shares one library; a friendship is consent to
+see each other's place in it, and to have a book put in front of you. All of
+this is per account and behind `requireUser`; an admin has no extra reach.
+
+| Method | Path                                | Notes                                                                   |
+| ------ | ----------------------------------- | ----------------------------------------------------------------------- |
+| GET    | `/api/friends`                      | `{friends, incoming, outgoing, people}`                                 |
+| POST   | `/api/friends/requests`             | `{userId}`; 201 pending, or 200 accepted when they had already asked    |
+| POST   | `/api/friends/requests/:id/accept`  | the person asked                                                        |
+| POST   | `/api/friends/requests/:id/decline` | the person asked declines, or the asker takes it back                   |
+| DELETE | `/api/friends/:userId`              | either side                                                             |
+| GET    | `/api/friends/progress?bookId=`     | friends with a place in this book (or a linked edition of it)           |
+| POST   | `/api/friends/recommend`            | `{toUserId, bookId, note?}` to a friend; 409 while one is still waiting |
+| GET    | `/api/friends/inbox`                | recommendations to you, undismissed, newest first                       |
+| POST   | `/api/friends/inbox/:id/seen`       | and `/dismiss`, which also marks seen                                   |
+| GET    | `/api/friends/sent`                 | what you recommended, and whether it was seen                           |
+| GET    | `/api/prefs/friends`                | `{friends: {shareProgress, colours, shown}}`; `PUT` the whole document  |
+
+`friends[]` are `{userId, username, displayName, friendshipId, since, colour,
+sharesProgress, reading}`, where `reading` is the book they touched most
+recently and have not finished (`{bookId, title, kind, pct, updatedAt}`) or
+`null`; `people[]` are the other active accounts you have no row with.
+`/api/friends/progress` returns `{friends: [{userId, username, displayName,
+colour, locator, pct, finished, updatedAt, chapterTitle}], friendCount}`,
+furthest along first. A linked pair counts as one work: a friend listening to
+the audiobook edition is in the ebook you are reading, at the edition they
+touched last. Two absences are deliberate and reported as nothing at all,
+never as a 403: someone who is not an accepted friend, and a friend whose
+`shareProgress` is off. Nothing written in the margins is ever shared.
+
+Colours are the viewer's: `colours` maps a friend's id to one of the six
+palette names in `@readport/shared` (`plum`, `sky`, `moss`, `rose`, `amber`,
+`sand`); until one is chosen a friend is dealt a colour in the order the
+friendships were made. `shown` maps a book id to the friends drawn on its
+progress bar; a book with no entry draws everyone. `/api/auth/me` carries
+`friendRequests` (pending, incoming) and `recommendations` (unseen) so the
+shell can mark the tab.
+
 ## Connected apps
 
 | Method | Path        | Notes                                                        |

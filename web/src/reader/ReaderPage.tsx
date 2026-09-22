@@ -14,6 +14,7 @@ import { recordCheckpoint, resumeLocator, setActiveLocatorProvider } from '../pr
 import { Sheet, useToast } from '../components/ui';
 import { useT } from '../i18n';
 import { useFormat } from '../i18n/useFormat';
+import { FriendMarkers, FriendsButton, useFriendsOnBook } from '../friends/FriendsOnBar';
 import { type MessageKey } from '../i18n/messages/en';
 import { useProgressNotices } from '../progress/notices';
 import {
@@ -158,6 +159,7 @@ function recoverOffset(
 
 export function ReaderPage() {
   const { id = '' } = useParams();
+  const friendsHere = useFriendsOnBook(id || null);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const toast = useToast();
@@ -3250,36 +3252,43 @@ export function ReaderPage() {
           />
         )}
         {prefs.progressBar === 'full' && (
-          <input
-            className="slider"
-            style={{ color: 'var(--rd-link)' }}
-            type="range"
-            min={0}
-            max={1000}
-            value={Math.round((dragPct ?? bookPct) * 1000)}
-            aria-label={t('reader.progress.position')}
-            onChange={(e) => {
-              if (!manifest) return;
-              const pct = Number(e.target.value) / 1000;
-              setDragPct(pct);
-              if (dragCommitRef.current) clearTimeout(dragCommitRef.current);
-              dragCommitRef.current = setTimeout(() => {
-                dragCommitRef.current = null;
-                const targetChars = pct * manifest.totalChars;
-                let s = 0;
-                for (const c of manifest.chapters) {
-                  if (c.cumChars <= targetChars) s = c.idx;
-                  else break;
-                }
-                const within = Math.max(
-                  0,
-                  Math.floor(targetChars - manifest.chapters[s]!.cumChars),
-                );
-                gotoChapter(s, within, 'seek', undefined, 'slider');
-                setDragPct(null);
-              }, 160);
-            }}
-          />
+          <div className="reader-slider">
+            <input
+              className="slider"
+              style={{ color: 'var(--rd-link)' }}
+              type="range"
+              min={0}
+              max={1000}
+              value={Math.round((dragPct ?? bookPct) * 1000)}
+              aria-label={t('reader.progress.position')}
+              onChange={(e) => {
+                if (!manifest) return;
+                const pct = Number(e.target.value) / 1000;
+                setDragPct(pct);
+                if (dragCommitRef.current) clearTimeout(dragCommitRef.current);
+                dragCommitRef.current = setTimeout(() => {
+                  dragCommitRef.current = null;
+                  const targetChars = pct * manifest.totalChars;
+                  let s = 0;
+                  for (const c of manifest.chapters) {
+                    if (c.cumChars <= targetChars) s = c.idx;
+                    else break;
+                  }
+                  const within = Math.max(
+                    0,
+                    Math.floor(targetChars - manifest.chapters[s]!.cumChars),
+                  );
+                  gotoChapter(s, within, 'seek', undefined, 'slider');
+                  setDragPct(null);
+                }, 160);
+              }}
+            />
+            <FriendMarkers
+              friends={friendsHere.friends}
+              shownIds={friendsHere.shownIds}
+              on="slider"
+            />
+          </div>
         )}
         <div className="reader-footer-row">
           {prefs.progressBar === 'full' && (
@@ -3312,7 +3321,17 @@ export function ReaderPage() {
             >
               <span style={{ width: `${bookPct * 100}%` }} />
               <i style={{ insetInlineStart: `${bookPct * 100}%` }} aria-hidden="true" />
+              <FriendMarkers friends={friendsHere.friends} shownIds={friendsHere.shownIds} />
             </span>
+          )}
+          {prefs.progressBar !== 'hidden' && (
+            <FriendsButton
+              bookId={id}
+              myPct={bookPct}
+              friends={friendsHere.friends}
+              shownIds={friendsHere.shownIds}
+              setShown={friendsHere.setShown}
+            />
           )}
           <span className="grow" />
           {pair && (

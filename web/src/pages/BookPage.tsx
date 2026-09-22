@@ -10,6 +10,7 @@ import { api, failureMessage, isOffline } from '../api/client';
 import { type Annotation, type BookDetail, type ResolveResponse } from '../lib/types';
 import { Cover, EmptyState, Sheet, useToast } from '../components/ui';
 import { AddToSheet } from '../components/AddToSheet';
+import { BookFriendsRow } from './FriendsPage';
 import { useShelves } from '../state/shelves';
 import { useSession } from '../state/session';
 import {
@@ -522,6 +523,9 @@ export function BookPage() {
           />
         </div>
       </div>
+
+      {/* Where friends are in this book, when there are friends at all. */}
+      <BookFriendsRow book={book} />
 
       {book.pair && book.pair.status === 'candidate' && (
         <div className="banner" role="note">

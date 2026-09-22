@@ -15,6 +15,7 @@ import { browseDirectories, checkLibraryPath } from '../../setup/paths.js';
 import { mayExport } from '../../auth/roles.js';
 import { setupHelperAllowed, setupIsLocked, setupTokenAccepted } from '../../auth/setupGate.js';
 import { hasUsablePassword } from '../../auth/proxyAuth.js';
+import { pendingIncomingCount, unseenRecommendationCount } from '../../friends/service.js';
 
 const ATTEMPT_LIMIT = 10;
 const IP_ATTEMPT_LIMIT = 30;
@@ -282,6 +283,12 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
       // have not used yet, and the first release after this becomes their
       // first "What's new".
       whatsNewSeen: readPref(ctx, req.user.id, 'whatsnew')?.seenVersion ?? null,
+      // What the Friends entry in the shell needs at first paint: requests
+      // waiting on this person's answer, and books friends have put in front
+      // of them that they have not looked at. Two counts here rather than
+      // two more round-trips before the nav can show a dot.
+      friendRequests: pendingIncomingCount(db, req.user.id),
+      recommendations: unseenRecommendationCount(db, req.user.id),
     };
   });
 }

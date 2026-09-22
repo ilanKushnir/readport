@@ -11,6 +11,7 @@ import {
 import { type AppContext } from '../../context.js';
 import { nowIso } from '../../db/index.js';
 import { APP_VERSION } from '../../util/version.js';
+import { DEFAULT_FRIENDS_PREFS, friendsPrefsSchema } from '../../friends/prefs.js';
 
 /**
  * Per-person interface state.
@@ -47,6 +48,11 @@ const KEYS = {
    * laptop too, or it becomes the thing you close three times a release.
    */
   whatsnew: z.object({ seenVersion: z.string().min(1).max(32) }),
+  /**
+   * Friends: whether this person's position is shared, and the colours and
+   * per-book choices that are the viewer's business alone (migration 18).
+   */
+  friends: friendsPrefsSchema,
 } as const;
 
 type PrefKey = keyof typeof KEYS;
@@ -168,6 +174,26 @@ export function registerPrefsRoutes(app: FastifyInstance, ctx: AppContext): void
     if (!body.success) return reply.code(400).send({ error: 'invalid' });
     writePref(ctx, req.user!.id, 'whatsnew', { seenVersion: body.data.seenVersion });
     return { seenVersion: body.data.seenVersion };
+  });
+
+  /**
+   * Friends. Read as a whole document with its defaults filled in, so the
+   * client always has something to toggle; written as a whole document, like
+   * every other key here. `shareProgress` is the one field somebody ELSE
+   * reads - see friends/service.ts - and it takes effect on their next
+   * request, not their next sign-in.
+   */
+  app.get('/api/prefs/friends', async (req) => ({
+    friends: readPref(ctx, req.user!.id, 'friends') ?? DEFAULT_FRIENDS_PREFS,
+  }));
+
+  app.put('/api/prefs/friends', async (req, reply) => {
+    const body = friendsPrefsSchema.safeParse(req.body);
+    if (!body.success) {
+      return reply.code(400).send({ error: 'invalid', detail: body.error.issues[0]?.message });
+    }
+    writePref(ctx, req.user!.id, 'friends', body.data);
+    return { friends: body.data };
   });
 
   app.put('/api/prefs/sidebar', async (req, reply) => {

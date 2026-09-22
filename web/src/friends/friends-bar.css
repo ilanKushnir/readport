@@ -1,0 +1,200 @@
+/* Friends on the progress bar: a button beside it, markers on it, and the
+   card the button opens. A friend's colour is the ONLY colour any of this
+   adds; everything else is the reader's own chrome.
+
+   `--friend-colour` and `--friend-colour-dark` arrive inline from the shared
+   palette (friendColourStyle); which of the two shows is decided here, by
+   the theme the mark sits on: the reader's own night and contrast themes,
+   or the app's dark theme on the player and the card. */
+.fbtn__dots span,
+.fbar__mark,
+.fcard__dot {
+  --friend: var(--friend-colour, var(--rp-border-strong));
+}
+[data-reader-theme='night'] .fbtn__dots span,
+[data-reader-theme='night'] .fbar__mark,
+[data-reader-theme='contrast'] .fbtn__dots span,
+[data-reader-theme='contrast'] .fbar__mark,
+[data-app-theme='dark'] .fbtn__dots span,
+[data-app-theme='dark'] .fbar__mark,
+[data-app-theme='dark'] .fcard__dot {
+  --friend: var(--friend-colour-dark, var(--friend-colour));
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-app-theme='light']) .fcard__dot,
+  :root:not([data-app-theme='light']) .player-page .fbtn__dots span,
+  :root:not([data-app-theme='light']) .player-page .fbar__mark {
+    --friend: var(--friend-colour-dark, var(--friend-colour));
+  }
+}
+
+.fbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 26px;
+  padding: 0 7px;
+  border: 1px solid var(--rp-border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.fbtn:hover,
+.fbtn:focus-visible {
+  border-color: var(--rp-border-strong);
+}
+.fbtn__dots {
+  display: inline-flex;
+}
+.fbtn__dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--friend);
+  border: 1.5px solid var(--rd-bg, var(--rp-bg));
+  margin-inline-start: -4px;
+}
+.fbtn__dots span:first-child {
+  margin-inline-start: 0;
+}
+.fbtn__n {
+  opacity: 0.8;
+}
+
+/* The bar it sits on is `position: relative`; markers are laid over it.
+   Each host draws its track at its own height, so the variant says where
+   the marks go: the reader's 3px line, its 28px slider (track at 12-16px),
+   and the player's 32px scrubber (track at 13-19px). */
+.fbar {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.fbar__mark {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 3px;
+  margin-inline-start: -1.5px;
+  border-radius: 2px;
+  background: var(--friend);
+  box-shadow: 0 0 0 1.5px var(--rd-bg, var(--rp-bg));
+}
+.fbar--slider .fbar__mark {
+  top: 9px;
+  bottom: 9px;
+}
+.fbar--player .fbar__mark {
+  top: 9px;
+  bottom: auto;
+  height: 14px;
+}
+/* The reader's full-width slider needs a box to lay the marks over. */
+.reader-slider {
+  position: relative;
+}
+
+.fcard-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: var(--rp-scrim);
+}
+.fcard {
+  position: fixed;
+  z-index: 71;
+  inset-inline: 0;
+  bottom: 0;
+  margin-inline: auto;
+  width: min(440px, 100%);
+  max-height: min(70dvh, 560px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--rp-surface-raised);
+  color: var(--rp-text);
+  border: 1px solid var(--rp-border);
+  border-block-end: 0;
+  border-start-start-radius: 16px;
+  border-start-end-radius: 16px;
+  box-shadow: var(--rp-shadow-2);
+  padding: var(--sp-4) var(--sp-5) calc(var(--sp-5) + var(--rp-safe-bottom));
+  font-family: var(--rp-font-ui);
+}
+@media (min-width: 560px) {
+  .fcard {
+    inset: 0;
+    bottom: auto;
+    top: 50%;
+    transform: translateY(-50%);
+    border-block-end: 1px solid var(--rp-border);
+    border-radius: 16px;
+  }
+}
+.fcard__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+.fcard__head h2 {
+  margin: 0;
+  font-family: var(--rp-font-reading);
+  font-size: 20px;
+}
+.fcard__lede {
+  margin: 4px 0 var(--sp-3);
+  color: var(--rp-text-soft);
+  font-size: 13.5px;
+}
+.fcard__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.fcard__row {
+  display: grid;
+  grid-template-columns: 14px 1fr auto;
+  gap: var(--sp-3);
+  align-items: center;
+  padding: var(--sp-3) 0;
+  border-block-start: 1px solid var(--rp-border);
+}
+.fcard__row:first-child {
+  border-block-start: 0;
+}
+.fcard__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--friend);
+}
+.fcard__body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.fcard__name {
+  font-weight: 600;
+  font-size: 14.5px;
+}
+.fcard__where {
+  font-size: 13px;
+  color: var(--rp-text-soft);
+  overflow-wrap: anywhere;
+}
+.fcard__delta {
+  font-size: 12.5px;
+  color: var(--rp-text-soft);
+  font-variant-numeric: tabular-nums;
+}
+.fcard__switch input {
+  width: 40px;
+  height: 24px;
+  accent-color: var(--rp-primary);
+}

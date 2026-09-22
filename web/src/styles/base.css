@@ -497,6 +497,21 @@ body:has(.app-body) {
 .tabbar .nav-wide {
   display: none;
 }
+/* An icon with a small dot at its shoulder: something is waiting there. */
+.nav-mark {
+  position: relative;
+  display: inline-flex;
+}
+.nav-mark__dot {
+  position: absolute;
+  top: -2px;
+  inset-inline-end: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--rp-primary);
+  box-shadow: 0 0 0 2px var(--rp-bg);
+}
 /* A button among links: without this the browser's own button face shows
    through, and one tab looks raised where the other four are flat. */
 .tabbar__shelves {
@@ -3077,7 +3092,6 @@ body:has(.app-body) {
   font-weight: 450;
   color: var(--rp-text-soft);
 }
-
 /* An arrow that means "back" or "forward" points the other way when the
    interface reads right-to-left. Only icons that mean a DIRECTION on the
    page carry data-mirror; a skip-back on the player is about time and does
@@ -4260,5 +4274,410 @@ body[data-rp-dragging] * {
   /* btn--sm is 32px by design on a pointer; a finger still needs 44. */
   .btn--sm {
     min-height: 44px;
+  }
+}
+
+/* ---------------------------------------------------------------- friends */
+/* Who may see your place in a book, and the books they have put in front of
+   you. Rows on hairlines, like People; the only colour on the page is each
+   friend's own dot, which is why the dots are small. */
+.friends-page .page-head {
+  margin-block-end: var(--sp-6);
+}
+.friends-section {
+  margin-block-end: var(--sp-7);
+}
+.friends-section > h2 {
+  font-size: 18px;
+  margin-block-end: var(--sp-3);
+}
+.friends-section__empty {
+  margin: 0;
+  font-size: 14px;
+  color: var(--rp-text-soft);
+}
+.friends-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.friends-row {
+  padding: var(--sp-3) 0;
+  border-block-end: 1px solid var(--rp-border);
+}
+.friends-row:last-child {
+  border-block-end: 0;
+}
+.friends-row__main {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.friends-row__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.friends-row__name {
+  font-weight: 600;
+  font-size: 15px;
+}
+.friends-row__line {
+  font-size: 13px;
+  color: var(--rp-text-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.friends-row__line a {
+  color: inherit;
+  text-decoration: none;
+}
+.friends-row__line a:hover {
+  text-decoration: underline;
+}
+.friends-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+}
+@media (max-width: 560px) {
+  /* Two buttons do not fit beside a name on a phone; they take the next line,
+     indented past the dot so they read as the row's own. */
+  .friends-row__main {
+    flex-wrap: wrap;
+  }
+  .friends-row__actions {
+    flex-basis: 100%;
+    justify-content: flex-start;
+    padding-inline-start: calc(28px + var(--sp-3));
+  }
+}
+
+/* The dot: a friend's colour and nothing else. `--friend-colour` and
+   `--friend-colour-dark` are set inline from the shared palette
+   (friendColourStyle in shared/friends.ts); the dark theme picks the lifted
+   hue here, so a plum that reads on paper does not sink into the night. The
+   inset hairline keeps amber visible on cream and sand visible on black. */
+.friends-dot {
+  --fd: var(--friend-colour, var(--rp-border-strong));
+  display: inline-block;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--fd);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.14);
+}
+[data-app-theme='dark'] .friends-dot {
+  --fd: var(--friend-colour-dark, var(--friend-colour, var(--rp-border-strong)));
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.14);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-app-theme='light']) .friends-dot {
+    --fd: var(--friend-colour-dark, var(--friend-colour, var(--rp-border-strong)));
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.14);
+  }
+}
+.friends-dot--sm {
+  width: 10px;
+  height: 10px;
+}
+/* The dot on a friend's row is the way to change it. */
+.friends-dot--pick {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.friends-dot--pick[aria-expanded='true'] {
+  outline: 2px solid var(--rp-focus);
+  outline-offset: 2px;
+}
+/* Somebody who is not a friend yet has no colour: an empty ring. */
+.friends-dot--none {
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  box-shadow: none;
+  border: 1.5px dashed var(--rp-border-strong);
+}
+.friends-swatches {
+  display: flex;
+  gap: var(--sp-2);
+  padding: var(--sp-2) 0 0 calc(28px + var(--sp-3));
+}
+.friends-dot--swatch {
+  width: 26px;
+  height: 26px;
+  border: 2px solid transparent;
+  padding: 0;
+  cursor: pointer;
+}
+.friends-dot--swatch:hover {
+  transform: scale(1.1);
+}
+.friends-dot--swatch[aria-pressed='true'] {
+  border-color: var(--rp-text);
+  box-shadow: inset 0 0 0 2px var(--rp-bg);
+}
+@media (forced-colors: active) {
+  .friends-dot {
+    border: 1px solid CanvasText;
+  }
+  .friends-dot--swatch[aria-pressed='true'] {
+    border: 2px solid Highlight;
+  }
+}
+
+/* Recommended to you: a card per book, the friend's line in the reading
+   serif because it is their words, not the interface's. */
+.friends-inbox {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--sp-3);
+}
+.friends-card {
+  position: relative;
+  display: flex;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  background: var(--rp-surface-raised);
+  border: 1px solid var(--rp-border);
+  border-radius: var(--radius-card);
+}
+.friends-card__cover {
+  position: relative;
+  display: block;
+  flex: none;
+  width: 64px;
+  aspect-ratio: 2/3;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--rp-surface);
+  container-type: inline-size;
+}
+.friends-card__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.friends-card__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  /* Room for the dismiss button in the corner. */
+  padding-inline-end: var(--sp-6);
+}
+.friends-card__title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  font-weight: 650;
+  font-size: 16px;
+}
+.friends-card__title a {
+  color: inherit;
+  text-decoration: none;
+}
+.friends-card__title a:hover {
+  text-decoration: underline;
+}
+.friends-card__author {
+  font-size: 13.5px;
+  color: var(--rp-text-soft);
+}
+.friends-card__from {
+  font-size: 12.5px;
+  color: var(--rp-text-soft);
+}
+.friends-card__note {
+  margin: var(--sp-2) 0 0;
+  padding-inline-start: var(--sp-3);
+  border-inline-start: 3px solid var(--rp-border-strong);
+  font-family: var(--rp-font-reading);
+  font-size: 15.5px;
+  line-height: 1.5;
+  color: var(--rp-text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.friends-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-block-start: var(--sp-2);
+}
+.friends-card__dismiss {
+  position: absolute;
+  inset-block-start: var(--sp-2);
+  inset-inline-end: var(--sp-2);
+}
+@media (max-width: 560px) {
+  .friends-card {
+    padding: var(--sp-3);
+    gap: var(--sp-3);
+  }
+  .friends-card__cover {
+    width: 52px;
+  }
+}
+
+/* The sharing switch: the one thing on the page that is about you. */
+.friends-toggle {
+  max-width: 620px;
+}
+
+/* The recommend sheets: a book to pick, or a friend to pick, then a line. */
+.friends-search {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-block-end: var(--sp-3);
+  color: var(--rp-text-soft);
+}
+.friends-search .input {
+  flex: 1;
+}
+.friends-picklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: min(50vh, 420px);
+  overflow-y: auto;
+  border: 1px solid var(--rp-border);
+  border-radius: var(--radius-card);
+  background: var(--rp-surface-raised);
+}
+.friends-pick {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  min-height: 44px;
+  padding: var(--sp-2) var(--sp-3);
+  border: 0;
+  border-block-end: 1px solid var(--rp-border);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.friends-picklist li:last-child .friends-pick {
+  border-block-end: 0;
+}
+.friends-pick:hover {
+  background: var(--rp-surface);
+}
+.friends-pick[aria-checked='true'] {
+  background: color-mix(in srgb, var(--rp-primary) 9%, transparent);
+  font-weight: 600;
+}
+.friends-pick--chosen {
+  border: 1px solid var(--rp-border);
+  border-radius: var(--radius-card);
+  background: var(--rp-surface-raised);
+  margin-block-end: var(--sp-4);
+  cursor: default;
+}
+.friends-pick--chosen:hover {
+  background: var(--rp-surface-raised);
+}
+.friends-pick__coverwrap {
+  position: relative;
+  display: block;
+  flex: none;
+  width: 36px;
+  aspect-ratio: 2/3;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--rp-surface);
+  container-type: inline-size;
+}
+.friends-pick__cover {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.friends-pick__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.friends-pick__title {
+  font-size: 14.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.friends-pick__author {
+  font-size: 12.5px;
+  color: var(--rp-text-soft);
+}
+.friends-hint {
+  margin: var(--sp-2) 0 0;
+}
+.friends-note {
+  min-height: 88px;
+  padding: var(--sp-2) var(--sp-3);
+  resize: vertical;
+}
+
+/* The book page: one quiet row under the hero, between two hairlines. */
+.friends-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-4);
+  margin: calc(-1 * var(--sp-3)) 0 var(--sp-5);
+  padding: var(--sp-2) 0;
+  border-block: 1px solid var(--rp-border);
+  font-size: 13.5px;
+  color: var(--rp-text-soft);
+}
+.friends-strip__label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.friends-strip__entry {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--rp-text);
+  font-variant-numeric: tabular-nums;
+}
+.friends-strip__cta {
+  margin-inline-start: auto;
+}
+@media (pointer: coarse) {
+  /* A 28px dot is a small thing to hit: the hit area grows to 44px, the dot
+     does not. A pseudo-element is part of the button for hit testing. */
+  .friends-dot--pick,
+  .friends-dot--swatch {
+    position: relative;
+  }
+  .friends-dot--pick::before,
+  .friends-dot--swatch::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+  }
+  .friends-swatches {
+    gap: var(--sp-3);
   }
 }
