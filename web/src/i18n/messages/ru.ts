@@ -1627,7 +1627,6 @@ const messages: Record<string, string> = {
 
   // library
   'library.lang.group': 'Фильтр по языку',
-  'library.lang.all': 'Все',
 
   // reader
   'reader.select.share': 'Поделиться',
@@ -1745,6 +1744,10 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'Очистить поиск',
   'reader.voiceMark.margin': 'Метка на полях рядом со строкой, которая сейчас читается',
   'reader.voiceMark.wash': 'Предложение, которое сейчас читается, выделенное цветом',
+  // library
+  'library.lang.allLanguages': 'Все языки',
+  'library.lang.button': 'Язык: {name}',
+  'library.lang.menuTitle': 'Книги на языке',
 };
 
 export default messages;

@@ -1,63 +1,238 @@
-/* Languages: the filter chips in the library toolbar and the flag beside a
-   language's name. A flag is a hint for the eye - the name beside it is the
-   truth - so it sits small, in a soft pill, and never carries meaning alone.
-   Imported by the library page and the sidebar's Browse groups. */
+/* Languages: the language picker in the library toolbar and the flag beside
+   a language's name. A flag is a hint for the eye - the name beside it is
+   the truth - so it sits small and never carries meaning alone. Imported by
+   the library page and the sidebar's Browse groups. */
 
-/* The chip row. Beside the format control when the toolbar has room for
-   the whole row, on the next line when it does not - never squeezed until a
-   chip is cut in half - and scrolling sideways on a phone, where the row is
-   wider than the screen, rather than wrapping into a wall of pills. */
-.lang-chips {
+/* The format control beside it keeps whole words at every width. A phone
+   rule further down trims every segmented control's padding so four labels
+   fit on the Notes page, and it left "All" three letters wide between two
+   padded neighbours here. */
+.toolbar .kind-seg > button {
+  padding-inline: 12px;
+}
+.toolbar .kind-seg > button:first-child {
+  min-width: 56px;
+}
+
+/* One language at a time: a button that reads like the control beside it,
+   stretched to the height of the row it is in, and a card of languages
+   that opens under it. */
+.langpick {
+  position: relative;
+  flex: 0 0 auto;
+  align-self: stretch;
   display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  flex: 0 0 auto;
-  max-width: 100%;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scrollbar-width: none;
-  padding-block: 2px;
 }
-.lang-chips::-webkit-scrollbar {
-  display: none;
-}
-
-/* One language. The base `.chip` gives the pill, the border and the primary
-   fill when pressed; this only sets the three things inside it apart. */
-.lang-chip {
-  flex: 0 0 auto;
-  gap: 7px;
-  padding-inline: 8px var(--sp-3);
-  font-weight: 500;
-}
-.lang-chip--all {
-  padding-inline: var(--sp-3);
-}
-.lang-chip__flag {
+.langpick__btn {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: var(--radius-pill);
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--rp-border);
+  border-radius: var(--radius-control);
   background: var(--rp-surface);
-  font-size: 15px;
-  line-height: 1;
+  color: var(--rp-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    border-color var(--rp-duration-quick) var(--rp-ease),
+    background-color var(--rp-duration-quick) var(--rp-ease);
+}
+.langpick__btn > svg {
+  flex: none;
+  color: var(--rp-text-soft);
+}
+@media (hover: hover) {
+  .langpick__btn:hover {
+    border-color: var(--rp-border-strong);
+  }
+}
+.langpick__btn[aria-expanded='true'] {
+  border-color: var(--rp-border-strong);
+  background: var(--rp-surface-raised);
+}
+/* A language is chosen: the button says so in the accent, so a shelf that
+   looks short never looks broken. */
+.langpick__btn.is-on {
+  border-color: color-mix(in srgb, var(--rp-primary) 55%, var(--rp-border));
+  background: color-mix(in srgb, var(--rp-primary) 10%, var(--rp-surface-raised));
+}
+.langpick__btn.is-on > svg {
+  color: var(--rp-interactive);
+}
+.langpick__btn:focus-visible {
+  outline: 2px solid var(--rp-primary);
+  outline-offset: 2px;
+}
+.langpick__flag,
+.langpick__bubble {
   font-family:
     'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Twemoji Mozilla', sans-serif;
+  line-height: 1;
 }
-.lang-chip[aria-pressed='true'] .lang-chip__flag {
-  background: rgb(255 255 255 / 0.22);
+.langpick__flag {
+  font-size: 16px;
 }
-.lang-chip__count {
-  color: var(--rp-text-soft);
+.langpick__code {
+  display: none;
   font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.langpick__chev {
+  margin-inline-start: -1px;
+}
+
+.langpick__pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  inset-inline-start: 0;
+  z-index: 30;
+  width: max-content;
+  min-width: 236px;
+  max-width: min(320px, calc(100vw - 32px));
+  max-height: min(60vh, 440px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px;
+  border: 1px solid var(--rp-border);
+  border-radius: 14px;
+  background: var(--rp-surface-raised);
+  box-shadow: var(--rp-shadow-2);
+  animation: langpick-in var(--rp-duration-quick) var(--rp-ease);
+}
+.langpick__pop.is-end {
+  inset-inline-start: auto;
+  inset-inline-end: 0;
+}
+.langpick__title {
+  margin: 6px 10px 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rp-text-soft);
+}
+.langpick__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--rp-text);
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 500;
+  text-align: start;
+  cursor: pointer;
+}
+.langpick__item:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--rp-primary);
+}
+@media (hover: hover) {
+  .langpick__item:hover {
+    background: var(--rp-surface);
+  }
+}
+.langpick__item[aria-checked='true'] {
+  background: color-mix(in srgb, var(--rp-primary) 10%, transparent);
+  font-weight: 650;
+}
+.langpick__bubble {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--rp-surface);
+  font-size: 16px;
+  color: var(--rp-text-soft);
+}
+.langpick__item[aria-checked='true'] .langpick__bubble {
+  background: color-mix(in srgb, var(--rp-primary) 16%, var(--rp-surface));
+  color: var(--rp-interactive);
+}
+.langpick__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.langpick__count {
+  color: var(--rp-text-soft);
+  font-size: 12.5px;
   font-weight: 400;
   font-variant-numeric: tabular-nums;
 }
-.lang-chip[aria-pressed='true'] .lang-chip__count {
-  color: inherit;
-  opacity: 0.8;
+.langpick__tick {
+  flex: none;
+  color: var(--rp-interactive);
+  visibility: hidden;
+}
+.langpick__item[aria-checked='true'] .langpick__tick {
+  visibility: visible;
+}
+@keyframes langpick-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .langpick__pop {
+    animation: none;
+  }
+}
+@media (forced-colors: active) {
+  .langpick__item[aria-checked='true'] {
+    outline: 1px solid Highlight;
+  }
+}
+
+/* A phone: the format control fills the row, words only, and the language
+   button sits at its end as a glyph - the globe, or the chosen language's
+   flag and code. Its name stays its accessible label. */
+@media (max-width: 480px) {
+  .toolbar .kind-seg {
+    flex: 1 1 auto;
+  }
+  .toolbar .kind-seg > button {
+    padding-inline: 8px;
+  }
+  .toolbar .kind-seg > button > svg {
+    display: none;
+  }
+  .toolbar .kind-seg > button:first-child {
+    min-width: 48px;
+  }
+  .langpick__btn {
+    gap: 5px;
+    padding: 0 10px;
+  }
+  .langpick__name {
+    display: none;
+  }
+  .langpick__btn.is-on .langpick__code {
+    display: inline;
+  }
+}
+/* The narrowest phones: the chosen language's flag alone, or the row
+   would not hold the button beside the format control. */
+@media (max-width: 374px) {
+  .langpick__btn.is-on .langpick__code {
+    display: none;
+  }
 }
 
 /* The flag before a language's name in the sidebar's Languages group. */
@@ -67,10 +242,4 @@
   line-height: 1;
   font-family:
     'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Twemoji Mozilla', sans-serif;
-}
-
-@media (pointer: coarse) {
-  .lang-chip {
-    min-height: 44px;
-  }
 }

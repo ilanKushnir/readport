@@ -1618,7 +1618,6 @@ const messages: Record<string, string> = {
 
   // library
   'library.lang.group': 'Filtrovat podle jazyka',
-  'library.lang.all': 'Vše',
 
   // reader
   'reader.select.share': 'Sdílet',
@@ -1736,5 +1735,9 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'Vymazat vyhledávání',
   'reader.voiceMark.margin': 'Značka na okraji vedle právě čteného řádku',
   'reader.voiceMark.wash': 'Zvýraznění právě čtené věty',
+  // library
+  'library.lang.allLanguages': 'Všechny jazyky',
+  'library.lang.button': 'Jazyk: {name}',
+  'library.lang.menuTitle': 'Zobrazit knihy podle jazyka',
 };
 export default messages;

@@ -9,7 +9,6 @@ import {
   UNKNOWN_LANGUAGE,
   formatFacet,
   isFacetKind,
-  languageFlag,
 } from '@readport/shared';
 import { api, ApiError } from '../api/client';
 import { useShelves } from '../state/shelves';
@@ -21,6 +20,7 @@ import { type MessageKey } from '../i18n/messages/en';
 import { ReadingNow } from './ReadingNow';
 import { AddToSheet } from '../components/AddToSheet';
 import { Cover, EmptyState } from '../components/ui';
+import { LanguagePicker } from '../components/LanguagePicker';
 import {
   IconAlert,
   IconBookOpen,
@@ -112,10 +112,11 @@ export function LibraryPage() {
   const params = useParams();
   const { overview, refresh, refreshDownloads } = useShelves();
   const { setScope, groups, scopedCounts } = useFacets();
-  // The language chips' selection lives in the address - `?lang=he,en` -
-  // so it survives a reload and Back undoes a tap, like any other move.
+  // The language lives in the address - `?lang=he` - so it survives a
+  // reload and Back undoes a choice, like any other move. One language at a
+  // time: an older address that names several keeps only the first.
   const [searchParams, setSearchParams] = useSearchParams();
-  const langs = useMemo(() => parseLangParam(searchParams.get('lang')), [searchParams]);
+  const langs = useMemo(() => parseLangParam(searchParams.get('lang')).slice(0, 1), [searchParams]);
   const langKey = langs.join(',');
   const setLangs = useCallback(
     (next: string[]) => {
@@ -429,15 +430,17 @@ export function LibraryPage() {
   }, [languageGroup]);
   const showLanguages =
     languageValues.length > 0 && !(showing.kind === 'facet' && showing.facet === 'language');
-  const toggleLang = (value: string) => {
-    const key = value.toLowerCase();
-    const next = new Set(langs);
-    if (next.has(key)) next.delete(key);
-    else next.add(key);
-    // In the sidebar's own order, so the address reads the same whichever
-    // chip was tapped first.
-    setLangs(languageValues.map((v) => v.value.toLowerCase()).filter((v) => next.has(v)));
-  };
+  const languageOptions = useMemo(
+    () =>
+      languageValues.map((v) => {
+        const key = v.value.toLowerCase();
+        return {
+          value: key,
+          count: scopedCounts ? (scopedCounts.get(`language:${key}`) ?? 0) : v.count,
+        };
+      }),
+    [languageValues, scopedCounts],
+  );
   const chips = [
     { to: '/', label: t('nav.library'), end: true },
     { to: '/reading-list', label: t('shelves.readingList'), end: false },
@@ -553,7 +556,7 @@ export function LibraryPage() {
               />
             </div>
             <div
-              className="segmented segmented--inline"
+              className="segmented segmented--inline kind-seg"
               role="group"
               aria-label={t('library.kindGroup')}
             >
@@ -568,42 +571,11 @@ export function LibraryPage() {
               </button>
             </div>
             {showLanguages && (
-              <div className="lang-chips" role="group" aria-label={t('library.lang.group')}>
-                <button
-                  type="button"
-                  className="chip lang-chip lang-chip--all"
-                  aria-pressed={langs.length === 0}
-                  onClick={() => setLangs([])}
-                >
-                  {t('library.lang.all')}
-                </button>
-                {languageValues.map((v) => {
-                  const key = v.value.toLowerCase();
-                  const on = langs.includes(key);
-                  const count = scopedCounts ? (scopedCounts.get(`language:${key}`) ?? 0) : v.count;
-                  const flag = languageFlag(v.value);
-                  return (
-                    <button
-                      key={v.value}
-                      type="button"
-                      className="chip lang-chip"
-                      aria-pressed={on}
-                      onClick={() => toggleLang(v.value)}
-                    >
-                      {flag && (
-                        <span className="lang-chip__flag" aria-hidden="true">
-                          {flag}
-                        </span>
-                      )}
-                      <span className="lang-chip__name">{f.languageName(v.value)}</span>
-                      <span className="lang-chip__count" aria-hidden="true">
-                        {f.number(count)}
-                      </span>
-                      <span className="visually-hidden">{t('common.books', { n: count })}</span>
-                    </button>
-                  );
-                })}
-              </div>
+              <LanguagePicker
+                options={languageOptions}
+                selected={langs[0] ?? null}
+                onSelect={(value) => setLangs(value ? [value] : [])}
+              />
             )}
             <label className="visually-hidden" htmlFor="lib-sort">
               {t('library.sortBy')}

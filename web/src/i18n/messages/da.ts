@@ -1594,7 +1594,6 @@ const messages: Record<string, string> = {
 
   // library
   'library.lang.group': 'Filtrer efter sprog',
-  'library.lang.all': 'Alle',
 
   // reader
   'reader.select.share': 'Del',
@@ -1714,5 +1713,9 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'Ryd søgningen',
   'reader.voiceMark.margin': 'Et mærke i margenen ved siden af den oplæste linje',
   'reader.voiceMark.wash': 'Den oplæste sætning, fremhævet',
+  // library
+  'library.lang.allLanguages': 'Alle sprog',
+  'library.lang.button': 'Sprog: {name}',
+  'library.lang.menuTitle': 'Vis bøger efter sprog',
 };
 export default messages;

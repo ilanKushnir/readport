@@ -1633,7 +1633,6 @@ const messages: Record<string, string> = {
 
   // library
   'library.lang.group': 'סינון לפי שפה',
-  'library.lang.all': 'הכול',
 
   // reader
   'reader.select.share': 'שיתוף',
@@ -1748,5 +1747,9 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'ניקוי החיפוש',
   'reader.voiceMark.margin': 'סימון בשוליים לצד השורה הנקראת',
   'reader.voiceMark.wash': 'המשפט הנקרא, מודגש',
+  // library
+  'library.lang.allLanguages': 'כל השפות',
+  'library.lang.button': 'שפה: {name}',
+  'library.lang.menuTitle': 'הצגת ספרים לפי שפה',
 };
 export default messages;

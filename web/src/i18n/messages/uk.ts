@@ -1629,7 +1629,6 @@ const messages: Record<string, string> = {
 
   // library
   'library.lang.group': 'Фільтр за мовою',
-  'library.lang.all': 'Усі',
 
   // reader
   'reader.select.share': 'Поділитися',
@@ -1749,6 +1748,10 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'Очистити пошук',
   'reader.voiceMark.margin': 'Відмітка на полях біля рядка, який читає голос',
   'reader.voiceMark.wash': 'Речення, яке читає голос, виділене',
+  // library
+  'library.lang.allLanguages': 'Усі мови',
+  'library.lang.button': 'Мова: {name}',
+  'library.lang.menuTitle': 'Показати книги мовою',
 };
 
 export default messages;

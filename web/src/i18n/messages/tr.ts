@@ -1610,7 +1610,6 @@ const messages: Record<string, string> = {
 
   // library
   'library.lang.group': 'Dile göre filtrele',
-  'library.lang.all': 'Tümü',
 
   // reader
   'reader.select.share': 'Paylaş',
@@ -1731,6 +1730,10 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'Aramayı temizle',
   'reader.voiceMark.margin': 'Okunan satırın yanında, kenar boşluğunda bir işaret',
   'reader.voiceMark.wash': 'Okunan cümle, vurgulanmış',
+  // library
+  'library.lang.allLanguages': 'Tüm diller',
+  'library.lang.button': 'Dil: {name}',
+  'library.lang.menuTitle': 'Dile göre göster',
 };
 
 export default messages;

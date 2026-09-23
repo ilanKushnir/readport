@@ -1628,7 +1628,6 @@ const messages: Record<string, string> = {
 
   // library
   'library.lang.group': 'Filtrar por idioma',
-  'library.lang.all': 'Todo',
 
   // reader
   'reader.select.share': 'Compartir',
@@ -1747,6 +1746,10 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'Borrar la búsqueda',
   'reader.voiceMark.margin': 'Una marca en el margen, junto a la línea leída por la voz',
   'reader.voiceMark.wash': 'La frase leída por la voz, subrayada',
+  // library
+  'library.lang.allLanguages': 'Todos los idiomas',
+  'library.lang.button': 'Idioma: {name}',
+  'library.lang.menuTitle': 'Mostrar libros en',
 };
 
 export default messages;

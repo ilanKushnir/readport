@@ -26,7 +26,9 @@ export const library = {
   'library.kind.audiobooks': 'Audiobooks',
   // The language chips beside the format control
   'library.lang.group': 'Filter by language',
-  'library.lang.all': 'All',
+  'library.lang.allLanguages': 'All languages',
+  'library.lang.button': 'Language: {name}',
+  'library.lang.menuTitle': 'Show books in',
   'library.sortBy': 'Sort by',
   'library.sort.title': 'By title',
   'library.sort.author': 'By author',
@@ -143,14 +145,14 @@ export const library = {
   'library.book.open': '{kind, select, ebook {Read} other {Listen}}',
   'library.book.openOther': '{kind, select, ebook {Listen} other {Read}}',
   'library.book.fromHere': '{kind, select, ebook {Listen from here} other {Read from here}}',
-  'library.book.opening': 'Opening…',
-  'library.book.saveCopy': 'Save a copy',
   // The third way to open a paired book, beside Read and Listen: the page
   // with the voice on it. "From here" once there is a position to carry.
   'library.book.readAlong': 'Read along',
   'library.book.readAlongFromHere': 'Read along from here',
   'library.book.readAlongHint': 'The page, with the narration playing over it',
   'library.book.readAlongNotReady': 'Read along unlocks once the pair is aligned',
+  'library.book.opening': 'Opening…',
+  'library.book.saveCopy': 'Save a copy',
   'library.book.saveFiles': 'Save files…',
   'library.book.saveFilesHint':
     '{n, plural, one {# file.} other {# files.}} Saving them is one at a time.',

@@ -1517,7 +1517,6 @@ const messages: Record<string, string> = {
 
   // library
   'library.lang.group': '按语言筛选',
-  'library.lang.all': '全部',
 
   // reader
   'reader.select.share': '分享',
@@ -1629,5 +1628,9 @@ const messages: Record<string, string> = {
   'reader.search.clear': '清除搜索',
   'reader.voiceMark.margin': '正在朗读的那一行旁，页边距上的标记',
   'reader.voiceMark.wash': '正在朗读的句子，高亮显示',
+  // library
+  'library.lang.allLanguages': '全部语言',
+  'library.lang.button': '语言：{name}',
+  'library.lang.menuTitle': '书籍语言',
 };
 export default messages;

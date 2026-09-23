@@ -1606,7 +1606,6 @@ const messages: Record<string, string> = {
 
   // library
   'library.lang.group': 'Suodata kielen mukaan',
-  'library.lang.all': 'Kaikki',
 
   // reader
   'reader.select.share': 'Jaa',
@@ -1724,5 +1723,9 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'Tyhjennä haku',
   'reader.voiceMark.margin': 'Merkki marginaalissa sen rivin vieressä, jota luetaan',
   'reader.voiceMark.wash': 'Lause, jota luetaan, korostettuna',
+  // library
+  'library.lang.allLanguages': 'Kaikki kielet',
+  'library.lang.button': 'Kieli: {name}',
+  'library.lang.menuTitle': 'Kirjat kielen mukaan',
 };
 export default messages;

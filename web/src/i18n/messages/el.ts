@@ -1638,7 +1638,6 @@ const messages: Record<string, string> = {
 
   // library
   'library.lang.group': 'Φιλτράρισμα κατά γλώσσα',
-  'library.lang.all': 'Όλα',
 
   // reader
   'reader.select.share': 'Κοινή χρήση',
@@ -1757,5 +1756,9 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'Απαλοιφή αναζήτησης',
   'reader.voiceMark.margin': 'Ένδειξη στο περιθώριο δίπλα στη γραμμή που διαβάζεται',
   'reader.voiceMark.wash': 'Η πρόταση που διαβάζεται, επισημασμένη',
+  // library
+  'library.lang.allLanguages': 'Όλες οι γλώσσες',
+  'library.lang.button': 'Γλώσσα: {name}',
+  'library.lang.menuTitle': 'Εμφάνιση κατά γλώσσα',
 };
 export default messages;

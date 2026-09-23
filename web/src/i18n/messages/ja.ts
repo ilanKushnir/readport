@@ -1610,7 +1610,6 @@ const messages: Record<string, string> = {
 
   // library
   'library.lang.group': '言語で絞り込み',
-  'library.lang.all': 'すべて',
 
   // reader
   'reader.select.share': '共有',
@@ -1729,6 +1728,10 @@ const messages: Record<string, string> = {
   'reader.search.clear': '検索をクリア',
   'reader.voiceMark.margin': '読んでいる行の横の余白に印を付けます',
   'reader.voiceMark.wash': '読んでいる文をハイライト表示します',
+  // library
+  'library.lang.allLanguages': 'すべての言語',
+  'library.lang.button': '言語: {name}',
+  'library.lang.menuTitle': '表示する言語',
 };
 
 export default messages;

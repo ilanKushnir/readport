@@ -1572,7 +1572,6 @@ const messages: Record<string, string> = {
 
   // library
   'library.lang.group': '언어로 필터링',
-  'library.lang.all': '전체',
 
   // reader
   'reader.select.share': '공유',
@@ -1689,5 +1688,9 @@ const messages: Record<string, string> = {
   'reader.search.clear': '검색어 지우기',
   'reader.voiceMark.margin': '낭독 중인 줄 옆 여백의 표시',
   'reader.voiceMark.wash': '낭독 중인 문장의 하이라이트',
+  // library
+  'library.lang.allLanguages': '전체 언어',
+  'library.lang.button': '언어: {name}',
+  'library.lang.menuTitle': '언어별 보기',
 };
 export default messages;

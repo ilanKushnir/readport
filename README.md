@@ -77,7 +77,8 @@ read-along only works inside ReadPort.
   narrators, publishers, years, ratings, authors and languages, each built from
   the metadata your files already carry, each one click from the grid. A
   book's language is read from its own text, so a tag a tool defaulted does
-  not file a Hebrew novel under English, and a row of flags filters by it.
+  not file a Hebrew novel under English, and one button beside Ebooks and
+  Audiobooks shows the books in any one of them.
 - **Marks you can find again** - highlights in five colours, notes on a dashed
   underline, bookmarks, and one page that searches every mark in every book.
 - **Progress that survives** - IndexedDB-first, offline-tolerant, append-only on

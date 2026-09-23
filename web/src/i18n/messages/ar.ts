@@ -1668,7 +1668,6 @@ const messages: Record<string, string> = {
 
   // library
   'library.lang.group': 'التصفية حسب اللغة',
-  'library.lang.all': 'الكل',
 
   // reader
   'reader.select.share': 'مشاركة',
@@ -1784,5 +1783,9 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'مسح البحث',
   'reader.voiceMark.margin': 'علامة في الهامش بجانب السطر قيد القراءة',
   'reader.voiceMark.wash': 'الجملة قيد القراءة، مظللة',
+  // library
+  'library.lang.allLanguages': 'كل اللغات',
+  'library.lang.button': 'اللغة: {name}',
+  'library.lang.menuTitle': 'عرض الكتب حسب اللغة',
 };
 export default messages;

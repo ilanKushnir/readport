@@ -1631,7 +1631,6 @@ const messages: Record<string, string> = {
 
   // library
   'library.lang.group': 'Filtrează după limbă',
-  'library.lang.all': 'Toate',
 
   // reader
   'reader.select.share': 'Distribuie',
@@ -1750,5 +1749,9 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'Șterge căutarea',
   'reader.voiceMark.margin': 'Un semn pe margine, lângă rândul citit de voce',
   'reader.voiceMark.wash': 'Propoziția citită de voce, evidențiată',
+  // library
+  'library.lang.allLanguages': 'Toate limbile',
+  'library.lang.button': 'Limbă: {name}',
+  'library.lang.menuTitle': 'Arată cărțile în',
 };
 export default messages;

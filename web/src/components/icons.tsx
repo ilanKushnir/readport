@@ -267,6 +267,14 @@ export const IconTrash = (p: P) => (
     <path d="M5 7h14M9.5 7V4.8h5V7M7 7l.8 12.2h8.4L17 7" />
   </I>
 );
+/** A globe: the language a book is in. */
+export const IconGlobe = (p: P) => (
+  <I {...p}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M3.8 9.2h16.4M3.8 14.8h16.4" />
+    <path d="M12 3.5c-2.3 2.4-3.4 5.2-3.4 8.5s1.1 6.1 3.4 8.5c2.3-2.4 3.4-5.2 3.4-8.5S14.3 5.9 12 3.5Z" />
+  </I>
+);
 export const IconCheck = (p: P) => (
   <I {...p}>
     <path d="m5 12.5 4.5 4.5L19 7.5" />

@@ -1637,7 +1637,6 @@ const messages: Record<string, string> = {
 
   // library
   'library.lang.group': 'Filteren op taal',
-  'library.lang.all': 'Alle',
 
   // reader
   'reader.select.share': 'Delen',
@@ -1758,5 +1757,9 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'Zoeken wissen',
   'reader.voiceMark.margin': 'Een teken in de marge naast de regel die de stem voorleest',
   'reader.voiceMark.wash': 'De zin die de stem voorleest, gemarkeerd',
+  // library
+  'library.lang.allLanguages': 'Alle talen',
+  'library.lang.button': 'Taal: {name}',
+  'library.lang.menuTitle': 'Boeken tonen in',
 } as const;
 export default messages;

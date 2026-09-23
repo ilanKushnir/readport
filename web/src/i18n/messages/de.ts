@@ -1645,7 +1645,6 @@ const messages: Record<string, string> = {
 
   // library
   'library.lang.group': 'Nach Sprache filtern',
-  'library.lang.all': 'Alle',
 
   // reader
   'reader.select.share': 'Teilen',
@@ -1766,5 +1765,9 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'Suche leeren',
   'reader.voiceMark.margin': 'Ein Zeichen am Rand neben der aktuell gelesenen Zeile',
   'reader.voiceMark.wash': 'Der aktuell gelesene Satz, markiert',
+  // library
+  'library.lang.allLanguages': 'Alle Sprachen',
+  'library.lang.button': 'Sprache: {name}',
+  'library.lang.menuTitle': 'Bücher nach Sprache',
 } as const;
 export default messages;
