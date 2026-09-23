@@ -319,7 +319,16 @@ it, which hands the book's own file to the device to keep or open elsewhere.
 Per-title downloads verify every entry (byte size + SHA-256 from the
 server's offline manifest) before caching, include every referenced derived
 asset (illustrations), and only mark the package complete after everything
-verified. With the server unreachable the library shows a **Downloaded**
+verified. Every request is tried again after a failure - up to six times,
+further apart each time, once the connection is back and the app is in
+front - and a response that goes quiet for 30 seconds is abandoned and asked
+for again, so a gigabyte on a phone survives the dropped request that used to
+end it. A big audiobook is prepared by the server first (its chunk hashes,
+worked out once and kept), and the download says so while it waits. A pill
+above the tab bar shows what is being saved, and how far it has got, anywhere
+in the app; a download the app was closed during is reported as stopped and
+picked up again the next time the app opens. With the server unreachable the
+library shows a **Downloaded**
 shelf built entirely from local storage, so airplane mode starts from
 something useful; the book detail JSON is served network-first so pairing
 and progress state never freeze at download time. Audio tracks download and store in bounded 8 MB chunks (no

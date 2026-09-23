@@ -33,6 +33,15 @@ export interface ChangelogRelease {
 
 export const CHANGELOG: ChangelogRelease[] = [
   {
+    version: '0.22.0',
+    items: [
+      { emoji: '📶', key: 'offlineSurvives' },
+      { emoji: '🗜️', key: 'audiobookZip' },
+      { emoji: '📜', key: 'scrollByPassage' },
+      { emoji: '🙈', key: 'hiddenBooks' },
+    ],
+  },
+  {
     version: '0.21.0',
     items: [
       { emoji: '⚓', key: 'prints' },

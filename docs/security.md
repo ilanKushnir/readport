@@ -362,6 +362,35 @@ trusting a folder the operator chose. Decompression itself is capped at 64 MiB
 (`ALIGNMENT_DECOMPRESSED_LIMIT`), so a file crafted to expand enormously is
 refused rather than allowed to exhaust the container.
 
+## Hidden books
+
+An admin can hide a book (the book page's Hide). Visibility is decided in
+one module, `server/src/library/visibility.ts`: only a request from an admin
+signed in to ReadPort itself - a session or a proxy identity, never an API
+key, even an admin's - may see a hidden book.
+
+- Every route that names a book or a pair in its path is checked once, in
+  the global request hook, before its handler runs (`namesHiddenBook` in
+  `api/guards.ts`), and a hidden book answers the same 404 as an id that
+  does not exist. Book ids are derived from file paths and can be guessed;
+  the guard is why that does not matter. A route added later that takes a
+  book id is covered without remembering to be.
+- Lists and counts filter it in SQL (`visibleSql`, `visiblePairSql`): the
+  library and its facet counts, shelves, the reading list, notes, stats,
+  friends' activity, recommendations and their inbox dot, jobs, the pairing
+  page, the settings dashboard, offline switch tables and the agent API.
+- Share links to a hidden book stop resolving for everybody, including
+  people who are not signed in; no link or recommendation is made for one.
+- A pair is only as visible as its less visible half, so a reader never
+  meets the hidden edition through the shown one.
+- A copy a reader saved offline before the book was hidden is removed from
+  their device when the book page, the reader or the player next gets the
+  404 from the server.
+
+Hiding is not deletion and not a security boundary against the admins: it
+decides what everyone else is shown. Nothing a reader attached to the book is
+touched.
+
 ## Agent API keys
 
 A read-only key (Settings → Agent access) lets an assistant or script see one

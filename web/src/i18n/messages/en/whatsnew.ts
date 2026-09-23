@@ -16,6 +16,16 @@ export const whatsnew = {
   'whatsnew.olderHeading': 'Version {version}',
   'whatsnew.done': 'Start reading',
 
+  // ---------------------------------------------------------------- 0.22.0
+  'whatsnew.release.offlineSurvives':
+    'Saving a big audiobook offline carries on through a dropped connection, and shows its progress wherever you are in the app.',
+  'whatsnew.release.audiobookZip':
+    'Download files gives you the ebook and the whole audiobook, all its files in one ZIP.',
+  'whatsnew.release.scrollByPassage':
+    'Scroll with the voice holds the page still while a passage is read, and moves once for the next.',
+  'whatsnew.release.hiddenBooks':
+    'Admins can hide a book from everyone else, and show it again without anyone losing their place.',
+
   // ---------------------------------------------------------------- 0.21.0
   'whatsnew.release.prints':
     "Empty shelves, notes and friends have small harbour prints, the sign-in page has the harbour, and every chapter ends with a printer's flower.",

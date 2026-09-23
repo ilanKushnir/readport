@@ -128,28 +128,60 @@ step.
 
 ## Library & books
 
-| Method | Path                                  | Notes                                           |
-| ------ | ------------------------------------- | ----------------------------------------------- |
-| GET    | `/api/library?query&kind&filter&sort` | `{books, continueRail, scanActive}`             |
-| GET    | `/api/library?collapse=none`          | both halves of every pair, for the device shelf |
-| POST   | `/api/books/:id/language`             | curator; `{language}` or `{language: null}`     |
-| GET    | `/api/library?filter=both-formats`    | one row per paired title (see Shelves)          |
-| GET    | `/api/library?filter=recently-added`  | arrivals of the last 30 days, capped at 60      |
-| GET    | `/api/library?facet=kind:value`       | one grouping the library itself carries         |
-| GET    | `/api/library?lang=he,en`             | only these languages; `unknown` for none        |
-| GET    | `/api/facets`                         | every grouping this library supports, counted   |
-| POST   | `/api/library/rescan`                 | admin                                           |
-| GET    | `/api/library/roots`                  | admin; the configured read-only roots           |
-| GET    | `/api/books/:id`                      | detail: chapters, tracks, pair, progress        |
-| GET    | `/api/books/:id/cover`                | image                                           |
-| GET    | `/api/books/:id/manifest`             | ebook derived manifest (spine/toc/pct math)     |
-| GET    | `/api/books/:id/chapter/:idx`         | sanitized chapter HTML fragment                 |
-| GET    | `/api/books/:id/sentences/:idx`       | sentence index (ids + char offsets)             |
-| GET    | `/api/books/:id/asset/*`              | sanitized-referenced images only                |
-| GET    | `/api/books/:id/search?q`             | in-book text search                             |
-| GET    | `/api/books/:id/track/:idx`           | audio stream, HTTP Range                        |
-| GET    | `/api/books/:id/offline-manifest`     | URLs + sizes + integrity for the PWA download   |
-| GET    | `/api/books/:id/offline-switch`       | precomputed switch answers for that download    |
+| Method | Path                                  | Notes                                            |
+| ------ | ------------------------------------- | ------------------------------------------------ |
+| GET    | `/api/library?query&kind&filter&sort` | `{books, continueRail, scanActive}`              |
+| GET    | `/api/library?collapse=none`          | both halves of every pair, for the device shelf  |
+| POST   | `/api/books/:id/language`             | curator; `{language}` or `{language: null}`      |
+| GET    | `/api/library?filter=both-formats`    | one row per paired title (see Shelves)           |
+| GET    | `/api/library?filter=recently-added`  | arrivals of the last 30 days, capped at 60       |
+| GET    | `/api/library?facet=kind:value`       | one grouping the library itself carries          |
+| GET    | `/api/library?lang=he,en`             | only these languages; `unknown` for none         |
+| GET    | `/api/library?filter=hidden`          | admin; the books hidden from everyone else       |
+| POST   | `/api/books/:id/hidden`               | admin; `{hidden}` → `{book, ids}` (see below)    |
+| GET    | `/api/facets`                         | every grouping this library supports, counted    |
+| POST   | `/api/library/rescan`                 | admin                                            |
+| GET    | `/api/library/roots`                  | admin; the configured read-only roots            |
+| GET    | `/api/books/:id`                      | detail: chapters, tracks, pair, progress         |
+| GET    | `/api/books/:id/cover`                | image                                            |
+| GET    | `/api/books/:id/manifest`             | ebook derived manifest (spine/toc/pct math)      |
+| GET    | `/api/books/:id/chapter/:idx`         | sanitized chapter HTML fragment                  |
+| GET    | `/api/books/:id/sentences/:idx`       | sentence index (ids + char offsets)              |
+| GET    | `/api/books/:id/asset/*`              | sanitized-referenced images only                 |
+| GET    | `/api/books/:id/search?q`             | in-book text search                              |
+| GET    | `/api/books/:id/track/:idx`           | audio stream, HTTP Range                         |
+| GET    | `/api/books/:id/offline-manifest`     | URLs + sizes + integrity for the PWA download    |
+| GET    | `/api/books/:id/offline-switch`       | precomputed switch answers for that download     |
+| GET    | `/api/books/:id/export?track`         | export permission; the book's own file           |
+| GET    | `/api/books/:id/archive`              | export permission; an audiobook's files, one ZIP |
+
+**Hidden books.** An admin can hide a book from everyone but the admins
+signed in to ReadPort: not curators, and not API keys, even an admin's. To
+anybody else a hidden book is on no list and in no count - library, facets,
+shelves, the reading list, notes, stats (as a book that left), friends'
+activity, recommendations, jobs, the pairing page - and every route that
+names it (`/api/books/:id…`, `…/:bookId…`, `/api/pairs/:id…`, the agent
+API's `books/:id…`) answers the same 404 as an unknown id, before the handler
+runs. Its share links stop opening for everybody. Hiding a book in a settled
+pair hides both editions, and the answer's `ids` names every book that
+changed; a pair with one hidden edition is no pair at all to a reader. A
+summary carries `hidden: {at, by}` for an admin, and nothing is deleted:
+readers' progress, marks, shelves and recommendations are all there again
+when it is shown again. `/api/shelves` adds `hidden` (a count, per title) for
+admins.
+
+**The audiobook ZIP** is written as it is sent: stored rather than
+compressed, one pass over each file with its CRC in a data descriptor, the
+exact `Content-Length` known up front, ZIP64 only past 4 GiB, UTF-8 names in
+a folder named for the book, in play order.
+
+**Preparing an audiobook.** The first request for an audiobook's offline
+manifest starts working out its per-chunk hashes and answers `202`
+`{status: 'preparing', done, total}` with `Retry-After`; the client asks
+again until it gets the manifest. The work belongs to the book, not the
+request - it carries on if the request goes away, a second request joins it,
+and the result is kept by source version, so every later download of the same
+file is answered at once.
 
 A book summary carries `pair`, and a pair carries both `switchable` and
 `handoff`. They are not the same claim: `switchable` means a handoff is

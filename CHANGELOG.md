@@ -4,6 +4,60 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.22.0 - 2026-09-23
+
+### Added
+
+- **Hidden books.** An admin can hide a book from everyone but the admins:
+  Hide, on the book page, asks first and says what it does. A hidden book
+  leaves everyone else's library, search, shelves, reading lists, notes,
+  stats and friends' activity, its share links stop opening, and every
+  address that names it answers as if it did not exist - to curators and to
+  API keys too, an admin's included. Nothing is deleted: readers' progress,
+  notes and shelves are all there again when it is shown again. The ebook
+  and the audiobook of a title owned twice are hidden together. For admins
+  a hidden book's cover fades back and wears an eye struck through, its page
+  says who hid it and when, with Show to everyone beside it, and a Hidden
+  shelf lists them.
+- **The whole audiobook as one ZIP.** Download files, on a book owned in
+  both formats or an audiobook in many files, offers each edition once: the
+  ebook's file, and every audio file in one ZIP, in play order, in a folder
+  named for the book. The ZIP is streamed as it is built, with its exact
+  size known up front so the browser can show the progress. The files one
+  at a time are still there beneath.
+
+### Changed
+
+- **Scroll with the voice moves a passage at a time.** The page used to
+  drift up continuously at the narrator's pace; now it holds still while an
+  aligned passage is read and glides once when the voice reaches the next.
+- **Save offline shows its progress anywhere.** A pill above the tab bar,
+  in the corner on a desk, shows what is being saved and how far it has got
+  wherever you are in the app; the book page and the device shelf follow it
+  live, and the bar counts bytes rather than files.
+
+### Fixed
+
+- **Saving a big audiobook offline no longer fails part way.** A gigabyte is
+  some 120 requests, and the first one to fail used to end the download.
+  Every request is now tried again, up to six times, once the connection is
+  back and the app is in front; a response that goes quiet is abandoned and
+  asked for again; the screen stays on while it runs. A download the app
+  was closed during is reported as stopped, rather than frozen at its last
+  percent, and carries on the next time the app opens.
+- **An audiobook is prepared for offline once.** The server used to read and
+  hash the whole audiobook inside the request for its offline manifest, and
+  again on every retry, long enough for a phone or a tunnel to give up. It
+  now does that once, in the background, saying how far along it is, and
+  keeps the result.
+- A copy saved offline of a book that has since left the library, or been
+  hidden, is removed from the device when it is next opened.
+
+### Upgrading
+
+- Two migrations: `books.hidden_at`/`hidden_by` (22) and `track_hashes`
+  (23). Both are additive.
+
 ## 0.21.1 - 2026-09-23
 
 ### Added
