@@ -4,6 +4,40 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.21.1 - 2026-09-23
+
+### Added
+
+- **Your account at the top of Settings.** Your initial, and your name
+  where there is room, at the end of the page's title, opening a short
+  menu: who is signed in, the account settings, and Sign out. Signing out
+  was a button near the foot of a long page.
+
+### Changed
+
+- **Save offline and Download file.** The book page's two download buttons
+  said "Download" and "Save a copy", which read as the same thing twice.
+  Save offline keeps the book inside ReadPort to open without a connection,
+  under the cloud the On this device shelf wears, with a tick in it once
+  saved. Download file hands the book's own file to the device. Save
+  offline has no border now, like the other tools in its row, and on a
+  phone the row's icons line up.
+- **Read, Read along, Listen** stay those three words once a book is
+  started. "Continue reading", "Read along from here" and "Listen from
+  here" made the buttons long, and the progress bar above them already
+  says where they continue from.
+- **The pairing note** under a paired book shows only when switching will
+  not do what the buttons promise: the pair is not timed yet, or the other
+  edition is not on this device. It was on every paired book.
+- **A book's language shows by itself.** Where it came from, such as "read
+  from the text", is the chip's tooltip.
+
+### Fixed
+
+- **Auto-scroll draws no margin mark.** The page moves under a fixed line
+  for the voice, and the mark in the margin said nothing the moving page
+  did not.
+
 ## 0.21.0 - 2026-09-23
 
 ### Added
