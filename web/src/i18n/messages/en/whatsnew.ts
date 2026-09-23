@@ -16,6 +16,14 @@ export const whatsnew = {
   'whatsnew.olderHeading': 'Version {version}',
   'whatsnew.done': 'Start reading',
 
+  // ---------------------------------------------------------------- 0.21.0
+  'whatsnew.release.prints':
+    "Empty shelves, notes and friends have small harbour prints, the sign-in page has the harbour, and every chapter ends with a printer's flower.",
+  'whatsnew.release.clothCovers':
+    'A book with no cover of its own is bound in cloth, with its title on a paper label.',
+  'whatsnew.release.languagePicker':
+    'Languages are one button beside Ebooks and Audiobooks: pick one from the list, or All languages.',
+
   // ---------------------------------------------------------------- 0.20.0
   'whatsnew.release.readAlongFromBook':
     "A paired book's page offers Read, Read along and Listen as three buttons; Read along opens the page with the voice already on it.",

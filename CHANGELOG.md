@@ -4,6 +4,40 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.21.0 - 2026-09-23
+
+### Added
+
+- **Prints.** Small linocut vignettes of a harbour town that keeps books:
+  an empty bookcase on a pier for an empty library, a boat of books while
+  the first scan runs, a bare shelf, a stack tied with string for the
+  reading list, a ship's log for notes, two deck chairs for friends, a sea
+  chest for this device's downloads, and a telescope for a search that
+  finds nothing. The harbour itself runs along the foot of the sign-in
+  page, and a printer's flower closes every chapter. Each is printed in the
+  theme's own ink, so it is terracotta on paper and a lighter terracotta on
+  the dark ground.
+- **Clothbound covers.** A book with no cover of its own is bound in one of
+  six bookcloths (waves, gulls, lighthouses, anchors, shells, stars) with
+  its title and author on a paper label, instead of a plain block of
+  colour.
+
+### Changed
+
+- **One language at a time.** The row of language chips is one button
+  beside Ebooks and Audiobooks, "All languages" until a language is
+  chosen. It opens a card of the library's languages with their counts;
+  choosing one closes it, and the button shows the language in the accent.
+  On a phone it sits at the end of the format control's row, as the globe
+  or the chosen language's flag.
+
+### Fixed
+
+- **"All" is as wide as its neighbours** in the library's format control on
+  a phone. A rule meant for four labels on the Notes page trimmed every
+  segmented control to four pixels of padding, and "All" shrank to its
+  three letters.
+
 ## 0.20.0 - 2026-09-23
 
 ### Added
