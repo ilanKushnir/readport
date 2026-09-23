@@ -1819,5 +1819,8 @@ const messages: Record<string, string> = {
     'Nur Administratoren sehen diese Bücher. Eins öffnen und Allen zeigen wählen, um es zurückzuholen.',
   'library.empty.auto.hidden': 'Nichts ist verborgen. Jedes Buch ist bei allen im Regal.',
   'library.book.gone': 'Dieses Buch ist nicht in der Mediathek.',
+  // reader
+  'reader.readAlong.turnPrev': 'Vorherige Seite, von dort lesen',
+  'reader.readAlong.turnNext': 'Nächste Seite, von dort lesen',
 } as const;
 export default messages;

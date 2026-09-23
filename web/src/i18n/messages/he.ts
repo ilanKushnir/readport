@@ -1799,5 +1799,8 @@ const messages: Record<string, string> = {
     'רק מנהלים רואים את הספרים האלה. יש לפתוח אחד ולבחור ב„הצג לכולם” כדי להחזיר אותו.',
   'library.empty.auto.hidden': 'שום דבר לא מוסתר. כל ספר נמצא על המדפים של כולם.',
   'library.book.gone': 'הספר הזה לא נמצא בספרייה.',
+  // reader
+  'reader.readAlong.turnPrev': 'העמוד הקודם, קריאה משם',
+  'reader.readAlong.turnNext': 'העמוד הבא, קריאה משם',
 };
 export default messages;

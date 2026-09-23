@@ -1790,5 +1790,8 @@ const messages: Record<string, string> = {
     'Tyto knihy vidí jen administrátoři. Otevřete některou a zvolte Zobrazit všem, abyste ji vrátili zpět.',
   'library.empty.auto.hidden': 'Nic není skryté. Každá kniha je na policích všech.',
   'library.book.gone': 'Tato kniha není v knihovně.',
+  // reader
+  'reader.readAlong.turnPrev': 'Předchozí stránka, číst odtamtud',
+  'reader.readAlong.turnNext': 'Další stránka, číst odtamtud',
 };
 export default messages;

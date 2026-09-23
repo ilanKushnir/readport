@@ -1778,6 +1778,9 @@ const messages: Record<string, string> = {
     'これらの本は管理者だけが見られます。本を開いて「全員に表示」を選ぶと元に戻ります。',
   'library.empty.auto.hidden': '非表示の本はありません。すべての本が全員のシェルフにあります。',
   'library.book.gone': 'この本はライブラリにありません。',
+  // reader
+  'reader.readAlong.turnPrev': '前のページ、そこから読む',
+  'reader.readAlong.turnNext': '次のページ、そこから読む',
 };
 
 export default messages;

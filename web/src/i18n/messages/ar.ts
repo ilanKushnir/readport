@@ -1834,5 +1834,8 @@ const messages: Record<string, string> = {
     'المسؤولون فقط يرون هذه الكتب. افتح أحدها واختر «إظهار للجميع» لإعادته.',
   'library.empty.auto.hidden': 'لا يوجد شيء مخفي. كل كتاب موجود على رفوف الجميع.',
   'library.book.gone': 'هذا الكتاب غير موجود في المكتبة.',
+  // reader
+  'reader.readAlong.turnPrev': 'الصفحة السابقة، القراءة من هناك',
+  'reader.readAlong.turnNext': 'الصفحة التالية، القراءة من هناك',
 };
 export default messages;

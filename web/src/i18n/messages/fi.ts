@@ -1777,5 +1777,8 @@ const messages: Record<string, string> = {
     'Vain ylläpitäjät näkevät nämä kirjat. Avaa yksi ja valitse ”Näytä kaikille” tuodaksesi sen takaisin.',
   'library.empty.auto.hidden': 'Mikään ei ole piilotettu. Jokainen kirja on kaikkien hyllyillä.',
   'library.book.gone': 'Tätä kirjaa ei ole kirjastossa.',
+  // reader
+  'reader.readAlong.turnPrev': 'Edellinen sivu, lue siitä',
+  'reader.readAlong.turnNext': 'Seuraava sivu, lue siitä',
 };
 export default messages;

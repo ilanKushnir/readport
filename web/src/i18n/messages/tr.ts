@@ -1782,6 +1782,9 @@ const messages: Record<string, string> = {
     'Bu kitapları yalnızca yöneticiler görür. Birini açın ve geri getirmek için “Herkese göster” seçeneğini seçin.',
   'library.empty.auto.hidden': 'Hiçbir şey gizli değil. Her kitap herkesin raflarında.',
   'library.book.gone': 'Bu kitap kitaplıkta yok.',
+  // reader
+  'reader.readAlong.turnPrev': 'Önceki sayfa, oradan oku',
+  'reader.readAlong.turnNext': 'Sonraki sayfa, oradan oku',
 };
 
 export default messages;

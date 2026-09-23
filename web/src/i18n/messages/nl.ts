@@ -1811,5 +1811,8 @@ const messages: Record<string, string> = {
     'Alleen beheerders zien deze boeken. Open er een en kies Aan iedereen tonen om het terug te zetten.',
   'library.empty.auto.hidden': 'Niets is verborgen. Elk boek staat bij iedereen op de plank.',
   'library.book.gone': 'Dit boek staat niet in de mediatheek.',
+  // reader
+  'reader.readAlong.turnPrev': 'Vorige pagina, vanaf daar lezen',
+  'reader.readAlong.turnNext': 'Volgende pagina, vanaf daar lezen',
 } as const;
 export default messages;

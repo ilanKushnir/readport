@@ -1813,6 +1813,9 @@ const messages: Record<string, string> = {
   'library.empty.auto.hidden':
     "Rien n'est masqué. Tous les livres sont sur les étagères de tout le monde.",
   'library.book.gone': "Ce livre n'est pas dans la bibliothèque.",
+  // reader
+  'reader.readAlong.turnPrev': 'Page précédente, lire à partir de là',
+  'reader.readAlong.turnNext': 'Page suivante, lire à partir de là',
 };
 
 export default messages;

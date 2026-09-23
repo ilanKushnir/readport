@@ -1671,5 +1671,8 @@ const messages: Record<string, string> = {
   'library.hidden.shelfLede': '这些书只有管理员能看到。打开一本书并选择“向所有人显示”即可恢复。',
   'library.empty.auto.hidden': '没有隐藏的书籍。每本书都在所有人的书架上。',
   'library.book.gone': '这本书不在书库中。',
+  // reader
+  'reader.readAlong.turnPrev': '上一页，从那里开始阅读',
+  'reader.readAlong.turnNext': '下一页，从那里开始阅读',
 };
 export default messages;

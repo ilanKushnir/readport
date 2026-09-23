@@ -1797,6 +1797,9 @@ const messages: Record<string, string> = {
     'Эти книги видят только администраторы. Откройте книгу и выберите «Показать всем», чтобы вернуть её обратно.',
   'library.empty.auto.hidden': 'Ничего не скрыто. Каждая книга есть на полках у всех.',
   'library.book.gone': 'Этой книги нет в библиотеке.',
+  // reader
+  'reader.readAlong.turnPrev': 'Предыдущая страница, читать оттуда',
+  'reader.readAlong.turnNext': 'Следующая страница, читать оттуда',
 };
 
 export default messages;

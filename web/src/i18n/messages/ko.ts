@@ -1740,5 +1740,8 @@ const messages: Record<string, string> = {
     '이 책들은 관리자만 볼 수 있습니다. 책을 열고 “모두에게 표시”를 선택하면 되돌릴 수 있습니다.',
   'library.empty.auto.hidden': '숨겨진 책이 없습니다. 모든 책이 모두의 서가에 있습니다.',
   'library.book.gone': '이 책은 라이브러리에 없습니다.',
+  // reader
+  'reader.readAlong.turnPrev': '이전 페이지, 거기서부터 읽기',
+  'reader.readAlong.turnNext': '다음 페이지, 거기서부터 읽기',
 };
 export default messages;

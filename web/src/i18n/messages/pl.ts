@@ -1805,5 +1805,8 @@ const messages: Record<string, string> = {
     'Te książki widzą tylko administratorzy. Otwórz książkę i wybierz „Pokaż wszystkim”, aby ją przywrócić.',
   'library.empty.auto.hidden': 'Nic nie jest ukryte. Każda książka jest na półkach wszystkich.',
   'library.book.gone': 'Tej książki nie ma w bibliotece.',
+  // reader
+  'reader.readAlong.turnPrev': 'Poprzednia strona, czytaj od tamtego miejsca',
+  'reader.readAlong.turnNext': 'Następna strona, czytaj od tamtego miejsca',
 };
 export default messages;

@@ -1765,5 +1765,8 @@ const messages: Record<string, string> = {
     'Kun admins ser disse bøger. Åbn en, og vælg Vis for alle for at få den tilbage.',
   'library.empty.auto.hidden': 'Intet er skjult. Alle bøger står på alles hylder.',
   'library.book.gone': 'Denne bog er ikke i biblioteket.',
+  // reader
+  'reader.readAlong.turnPrev': 'Forrige side, læs derfra',
+  'reader.readAlong.turnNext': 'Næste side, læs derfra',
 };
 export default messages;

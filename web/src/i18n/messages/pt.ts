@@ -1800,6 +1800,9 @@ const messages: Record<string, string> = {
     'Só os administradores veem estes livros. Abre um e escolhe Mostrar a todos para o repor.',
   'library.empty.auto.hidden': 'Nada está oculto. Todos os livros estão nas estantes de todos.',
   'library.book.gone': 'Este livro não está na biblioteca.',
+  // reader
+  'reader.readAlong.turnPrev': 'Página anterior, ler a partir daí',
+  'reader.readAlong.turnNext': 'Página seguinte, ler a partir daí',
 };
 
 export default messages;

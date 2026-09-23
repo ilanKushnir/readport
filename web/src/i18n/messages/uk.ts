@@ -1800,6 +1800,9 @@ const messages: Record<string, string> = {
     'Ці книги бачать лише адміністратори. Відкрийте книгу і виберіть «Показати всім», щоб повернути її.',
   'library.empty.auto.hidden': 'Нічого не приховано. Кожна книга є на полицях у всіх.',
   'library.book.gone': 'Цієї книги немає в бібліотеці.',
+  // reader
+  'reader.readAlong.turnPrev': 'Попередня сторінка, читати звідти',
+  'reader.readAlong.turnNext': 'Наступна сторінка, читати звідти',
 };
 
 export default messages;

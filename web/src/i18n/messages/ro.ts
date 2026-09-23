@@ -1803,5 +1803,8 @@ const messages: Record<string, string> = {
     'Doar administratorii văd aceste cărți. Deschide una și alege Afișează tuturor ca s-o pui la loc.',
   'library.empty.auto.hidden': 'Nimic nu este ascuns. Fiecare carte este pe rafturile tuturor.',
   'library.book.gone': 'Această carte nu este în bibliotecă.',
+  // reader
+  'reader.readAlong.turnPrev': 'Pagina anterioară, citește de acolo',
+  'reader.readAlong.turnNext': 'Pagina următoare, citește de acolo',
 };
 export default messages;

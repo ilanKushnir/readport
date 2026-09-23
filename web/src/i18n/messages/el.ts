@@ -1812,5 +1812,8 @@ const messages: Record<string, string> = {
     'Μόνο οι διαχειριστές βλέπουν αυτά τα βιβλία. Άνοιξε ένα και επίλεξε «Εμφάνιση σε όλους» για να το επαναφέρεις.',
   'library.empty.auto.hidden': 'Τίποτα δεν είναι κρυμμένο. Κάθε βιβλίο βρίσκεται στα ράφια όλων.',
   'library.book.gone': 'Αυτό το βιβλίο δεν υπάρχει στη βιβλιοθήκη.',
+  // reader
+  'reader.readAlong.turnPrev': 'Προηγούμενη σελίδα, ανάγνωση από εκεί',
+  'reader.readAlong.turnNext': 'Επόμενη σελίδα, ανάγνωση από εκεί',
 };
 export default messages;

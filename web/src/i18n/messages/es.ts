@@ -1802,6 +1802,9 @@ const messages: Record<string, string> = {
   'library.empty.auto.hidden':
     'No hay nada oculto. Todos los libros están en las estanterías de todos.',
   'library.book.gone': 'Este libro no está en la biblioteca.',
+  // reader
+  'reader.readAlong.turnPrev': 'Página anterior, leer desde ahí',
+  'reader.readAlong.turnNext': 'Página siguiente, leer desde ahí',
 };
 
 export default messages;
