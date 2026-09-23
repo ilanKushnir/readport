@@ -361,3 +361,50 @@ export function nearestChapter(bounds: ChapterBound[], bookMs: number): number |
   }
   return best?.spineIdx ?? null;
 }
+
+/**
+ * How long the voice may read of the page before, after a turn with the
+ * voice, to give the sentence the new page begins in the middle of whole.
+ * Longer than this and it starts at the first sentence that begins on the
+ * new page instead: a page is turned to read it, not to wait for it.
+ */
+export const TURN_LEAD_IN_MAX_MS = 6000;
+
+/**
+ * Where the voice starts when a page is turned with it (the side arrows in
+ * page view): the first sentence that begins on the page - unless the page
+ * begins in the middle of a sentence whose part on the page before is
+ * short, in which case that sentence, heard whole, with `hold` set so the
+ * page waits for the voice instead of flipping back to it. A page that no
+ * sentence begins on at all - one very long sentence - is that sentence,
+ * held the same way. Null when nothing from the page on is timed.
+ *
+ * @param onPage whether a character offset is on the page turned to.
+ */
+export function cueForTurn(
+  cues: Cue[],
+  pageStart: number,
+  onPage: (charOffset: number) => boolean,
+  maxLeadInMs = TURN_LEAD_IN_MAX_MS,
+): { cue: Cue; hold: boolean } | null {
+  let split: Cue | null = null;
+  let first: Cue | null = null;
+  for (const c of cues) {
+    if (
+      c.charStart < pageStart &&
+      c.charEnd > pageStart &&
+      (!split || c.charStart > split.charStart)
+    )
+      split = c;
+    if (c.charStart >= pageStart && (!first || c.charStart < first.charStart)) first = c;
+  }
+  const firstHere = first !== null && onPage(first.charStart) ? first : null;
+  if (split) {
+    const share = (pageStart - split.charStart) / Math.max(1, split.charEnd - split.charStart);
+    const leadIn = share * Math.max(0, split.endMs - split.startMs);
+    if (!firstHere || leadIn <= maxLeadInMs) return { cue: split, hold: true };
+  }
+  // Nothing timed on the page itself: the next thing that is.
+  const next = firstHere ?? first;
+  return next ? { cue: next, hold: false } : null;
+}

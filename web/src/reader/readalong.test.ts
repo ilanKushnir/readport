@@ -6,6 +6,7 @@ import {
   buildCues,
   cueAt,
   cueForOffset,
+  cueForTurn,
   leadInFor,
   locateInTracks,
   nearestChapter,
@@ -226,5 +227,37 @@ describe('nearestChapter', () => {
   });
   it('has no answer for a book with no timed chapters', () => {
     expect(nearestChapter([], 5)).toBeNull();
+  });
+});
+
+describe('cueForTurn (a page turned with the voice)', () => {
+  // Three 10-second sentences of 100 characters each.
+  const c = (i: number) => ({
+    id: `s${i}`,
+    charStart: i * 100,
+    charEnd: i * 100 + 100,
+    startMs: i * 10000,
+    endMs: i * 10000 + 10000,
+    uncertaintyMs: 200,
+  });
+  const cues = [c(0), c(1), c(2)];
+  const onPage = (from: number, to: number) => (off: number) => off >= from && off < to;
+
+  it('starts at the first sentence on a page that begins with one', () => {
+    expect(cueForTurn(cues, 100, onPage(100, 300))).toEqual({ cue: cues[1], hold: false });
+  });
+  it('gives a sentence the page begins in the middle of whole, when little of it is behind', () => {
+    // 30 of its 100 characters on the page before: about three seconds.
+    expect(cueForTurn(cues, 130, onPage(130, 300))).toEqual({ cue: cues[1], hold: true });
+  });
+  it('skips it for the next sentence when most of it is behind', () => {
+    // 80 characters behind: about eight seconds, past the six allowed.
+    expect(cueForTurn(cues, 180, onPage(180, 300))).toEqual({ cue: cues[2], hold: false });
+  });
+  it('holds on a page no sentence begins on', () => {
+    expect(cueForTurn(cues, 180, onPage(180, 195))).toEqual({ cue: cues[1], hold: true });
+  });
+  it('has nothing to start after the last timed sentence', () => {
+    expect(cueForTurn(cues, 320, onPage(320, 400))).toBeNull();
   });
 });

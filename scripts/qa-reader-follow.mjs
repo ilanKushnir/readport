@@ -56,6 +56,9 @@ async function open(
   reducedMotion = 'no-preference',
   viewport = { width: 1180, height: 820 },
   extraPrefs = {},
+  // A narration stand-in whose playFrom really moves the voice, for the
+  // checks that follow what a seek does to the page.
+  { seeking = false } = {},
 ) {
   const context = await browser.newContext({
     viewport,
@@ -94,7 +97,21 @@ async function open(
     // hook does here, since this fixture serves no /api/pairs/:id/chapters -
     // and ReaderPage calls it whenever the voice is before or after this
     // chapter's timings.
-    body += `\nexport function useNarration() {
+    body += seeking
+      ? `\nexport function useNarration() {
+      const [n, setN] = useState({ ready: true, playing: true, cue: null, cues: [], bookMs: 0, seekNonce: 0, state: 'gap', speed: 1, backSeconds: 15, element: null, chapterAt: () => null, toggle() {}, back() {}, setSpeed() {} });
+      window.readerClock = patch => setN(prev => ({ ...prev, ...patch }));
+      window.__plays = window.__plays || [];
+      const playFrom = (offset) => {
+        window.__plays.push(offset);
+        setN(prev => {
+          const cue = prev.cues.find(c => c.charStart <= offset && offset < c.charEnd) || null;
+          return { ...prev, cue, state: cue ? 'on' : prev.state, bookMs: cue ? cue.startMs : prev.bookMs, seekNonce: prev.seekNonce + 1 };
+        });
+      };
+      return { ...n, playFrom };
+    }\n`
+      : `\nexport function useNarration() {
       const [n, setN] = useState({ ready: true, playing: true, cue: null, cues: [], bookMs: 0, seekNonce: 0, state: 'gap', speed: 1, backSeconds: 15, element: null, chapterAt: () => null, toggle() {}, back() {}, setSpeed() {}, playFrom() {} });
       window.readerClock = patch => setN(prev => ({ ...prev, ...patch }));
       return n;
@@ -478,6 +495,149 @@ try {
           `card starts at ${g.card.left}, bar at ${g.bar.left}`,
         );
         assert(Math.abs((g.bar.left + g.bar.right) / 2 - 590) <= 2, 'the bar is not centred');
+      },
+    );
+    await context.close();
+  }
+  {
+    // Reading along in page view a tap on the text moves the voice, so the
+    // pages turn with the side arrows - and the voice comes along. One cue
+    // per paragraph, ten seconds each, so page breaks fall inside them.
+    const plen = paragraph.length + 1;
+    const paraCues = Array.from({ length: 220 }, (_, i) => ({
+      id: `c${i}`,
+      charStart: i * plen,
+      charEnd: i * plen + paragraph.length,
+      startMs: i * 10000,
+      endMs: i * 10000 + 10000,
+      uncertaintyMs: 200,
+    }));
+    const at = (ms) => {
+      const cue = paraCues.find((c) => c.startMs <= ms && ms < c.endMs) ?? null;
+      return { cues: paraCues, cue, bookMs: ms, state: cue ? 'on' : 'gap', playing: true };
+    };
+    const tx = (page) =>
+      page.evaluate(() => {
+        const m = /translateX\((-?[\d.]+)px\)/.exec(
+          document.querySelector('.reader-content--paginated').style.transform,
+        );
+        return m ? Math.round(Number(m[1])) : 0;
+      });
+    for (const [label, viewport] of [
+      ['spread', { width: 1180, height: 820 }],
+      ['phone', { width: 390, height: 844 }],
+    ]) {
+      const { page, context } = await open(
+        'paginated',
+        false,
+        'no-preference',
+        viewport,
+        { progressBar: 'compact' },
+        { seeking: true },
+      );
+      await page.getByRole('button', { name: 'Read along', exact: true }).click();
+      await page.evaluate((p) => window.readerClock(p), at(3000));
+      await page.waitForTimeout(400);
+      await check(`${label}: page arrows while reading along`, async () =>
+        assert.equal(await page.locator('.page-arrow').count(), 2),
+      );
+      const tx0 = await tx(page);
+      await page.locator('.page-arrow--next').click();
+      await page.waitForTimeout(700);
+      const tx1 = await tx(page);
+      const sent = await page.evaluate(() => window.__plays.at(-1));
+      await check(
+        `${label}: the next arrow turns the page and moves the voice onto it`,
+        async () => {
+          assert.notEqual(tx1, tx0, 'the page did not turn');
+          assert.equal(typeof sent, 'number', 'the voice was not moved');
+        },
+      );
+      const cue = paraCues.find((c) => c.charStart <= sent && sent < c.charEnd);
+      for (const dt of [300, 1500, 3000]) {
+        await page.evaluate((p) => window.readerClock(p), at(cue.startMs + dt));
+        await page.waitForTimeout(250);
+      }
+      await check(`${label}: the page waits for the voice instead of flipping back`, async () =>
+        assert.equal(await tx(page), tx1),
+      );
+      await page.evaluate((p) => window.readerClock(p), at(cue.startMs + 30000));
+      await page.waitForTimeout(500);
+      const before = await tx(page);
+      const n0 = await page.evaluate(() => window.__plays.length);
+      await page.locator('.page-arrow--prev').click();
+      await page.waitForTimeout(700);
+      await check(`${label}: the previous arrow turns back and moves the voice there`, async () => {
+        assert.notEqual(await tx(page), before, 'the page did not turn back');
+        assert.equal(await page.evaluate(() => window.__plays.length), n0 + 1);
+      });
+      if (label === 'spread') {
+        await page.evaluate((p) => window.readerClock(p), at(219 * 10000 + 5000));
+        await page.waitForTimeout(700);
+        const n1 = await page.evaluate(() => window.__plays.length);
+        await page.locator('.page-arrow--next').click();
+        await page.waitForTimeout(900);
+        // The narration hook loads the new chapter's timings: a new array.
+        await page.evaluate(
+          (cues) =>
+            window.readerClock({
+              cues: cues.map((c) => ({ ...c })),
+              cue: null,
+              state: 'before',
+              bookMs: 219 * 10000 + 9000,
+            }),
+          paraCues,
+        );
+        await page.waitForTimeout(800);
+        await check(
+          'the next arrow on a last page takes the voice into the next chapter',
+          async () => {
+            assert.equal(await page.locator('.reader-title').innerText(), 'Chapter 1');
+            assert.equal(await page.evaluate(() => window.__plays.length), n1 + 1);
+            assert.equal(await page.evaluate(() => window.__plays.at(-1)), 0);
+          },
+        );
+      }
+      await context.close();
+    }
+    const { page, context } = await open(
+      'paginated',
+      true,
+      'no-preference',
+      { width: 1180, height: 820 },
+      { progressBar: 'compact' },
+      { seeking: true },
+    );
+    await page.getByRole('button', { name: 'Read along', exact: true }).click();
+    await page.evaluate((p) => window.readerClock(p), at(3000));
+    await page.waitForTimeout(400);
+    await check(
+      'in a right-to-left book the next page is the left arrow, and turns forward',
+      async () => {
+        const g = await page.evaluate(() => ({
+          prev: document.querySelector('.page-arrow--prev').getBoundingClientRect().left,
+          next: document.querySelector('.page-arrow--next').getBoundingClientRect().left,
+        }));
+        assert(g.next < g.prev, JSON.stringify(g));
+        // And each chevron points at its own edge: the next one to the left.
+        const points = await page.evaluate(() =>
+          [...document.querySelectorAll('.page-arrow')].map((b) => {
+            const svg = b.querySelector('svg');
+            const d = svg.querySelector('path').getAttribute('d');
+            const flipped = getComputedStyle(svg).transform !== 'none';
+            const left = d.startsWith('M14.5') !== flipped;
+            return { cls: b.className, left };
+          }),
+        );
+        assert.deepEqual(
+          points.map((p) => p.left),
+          [false, true],
+          `chevrons ${JSON.stringify(points)}`,
+        );
+        const t0 = await tx(page);
+        await page.locator('.page-arrow--next').click();
+        await page.waitForTimeout(700);
+        assert.notEqual(await tx(page), t0);
       },
     );
     await context.close();

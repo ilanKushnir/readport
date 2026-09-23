@@ -849,6 +849,76 @@
 .tapzone--next {
   inset-inline-end: 0;
 }
+/* Reading along in page view a tap on the text moves the voice, so the
+   pages turn here: a slim tab against each edge of the screen, in the
+   margin beside the text, in the read-along card's tint - it belongs to the
+   voice, and turns the page with the voice (turnWithVoice). The tab is
+   drawn narrow, to keep off the words; the touch area reaches further, up
+   and down the margin, where a finger lands. */
+.page-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 76px;
+  margin-top: -38px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--rd-link) 30%, transparent);
+  background: color-mix(in srgb, var(--rd-link) 9%, var(--rd-bg));
+  color: var(--rd-link);
+  box-shadow: var(--rp-shadow-1);
+  cursor: pointer;
+  opacity: 0.78;
+  transition:
+    opacity var(--rp-duration-quick) var(--rp-ease),
+    background-color var(--rp-duration-quick) var(--rp-ease),
+    transform var(--rp-duration-quick) var(--rp-ease);
+}
+.page-arrow::before {
+  content: '';
+  position: absolute;
+  inset: -16px -8px;
+}
+.page-arrow--prev {
+  inset-inline-start: 0;
+  border-inline-start: 0;
+  border-start-end-radius: 14px;
+  border-end-end-radius: 14px;
+}
+.page-arrow--next {
+  inset-inline-end: 0;
+  border-inline-end: 0;
+  border-start-start-radius: 14px;
+  border-end-start-radius: 14px;
+}
+.page-arrow:hover:not(:disabled),
+.page-arrow:focus-visible {
+  opacity: 1;
+  background: color-mix(in srgb, var(--rd-link) 18%, var(--rd-bg));
+}
+.page-arrow:active:not(:disabled) {
+  transform: scale(0.94);
+}
+.page-arrow:focus-visible {
+  outline: 2px solid var(--rd-link);
+  outline-offset: 2px;
+}
+.page-arrow:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+/* With the bars put away the page is for reading: the tabs step back,
+   and stay where the thumb expects them. */
+.chrome-hidden .page-arrow:not(:hover, :focus-visible) {
+  opacity: 0.4;
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-arrow {
+    transition: none;
+  }
+}
 /* Nothing may sit on top of the words, whatever the pointer.
 
    A button over the text swallows the drag that would otherwise be a

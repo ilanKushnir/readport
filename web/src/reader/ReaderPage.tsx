@@ -22,6 +22,7 @@ import {
   IconBack,
   IconBookmark,
   IconChevronLeft,
+  IconChevronRight,
   IconCheck,
   IconClose,
   IconHighlighter,
@@ -58,7 +59,14 @@ import {
   type HighlightColor,
 } from './marks';
 import { NarrationBar, useNarration } from './Narration';
-import { cueForOffset, isConfident, nearestCue, paceOffset, type Cue } from './readalong';
+import {
+  cueForOffset,
+  cueForTurn,
+  isConfident,
+  nearestCue,
+  paceOffset,
+  type Cue,
+} from './readalong';
 import {
   AUTO_SCROLL_STEP_MS,
   autoScrollTarget,
@@ -253,6 +261,23 @@ export function ReaderPage() {
   const autoScrollTargetRef = useRef<number | null>(null);
   /** Which aligned chunk that resting place is for; a new one moves the page. */
   const autoScrollChunkRef = useRef<string | null>(null);
+  /**
+   * A page turned with the voice (see turnWithVoice), held while the voice
+   * reads the start of a sentence the page begins in the middle of - the
+   * few words of it on the page before - so the page does not flip back to
+   * them and forward again. `to` is the page's first character: once the
+   * voice gets there the hold has done its job. `fromMs` is where the voice
+   * was sent, less its lead-in: a voice further back than that was moved by
+   * something else, and the page goes to it as it always has.
+   */
+  const pageHoldRef = useRef<{ spineIdx: number; to: number; fromMs: number } | null>(null);
+  /**
+   * A turn with the voice that crossed into another chapter, waiting for
+   * that chapter to land and its timings to arrive: `loadSeq` and `cues`
+   * are what they were at the turn, so neither can be mistaken for the new
+   * chapter's.
+   */
+  const pendingVoiceRef = useRef<{ spineIdx: number; loadSeq: number; cues: unknown } | null>(null);
 
   /**
    * This chapter would not divide into pages, so it scrolls instead.
@@ -370,7 +395,29 @@ export function ReaderPage() {
     });
     autoScrollTargetRef.current = null;
     autoScrollChunkRef.current = null;
+    // The reader took the page somewhere themselves: no turn with the
+    // voice is holding it, or waiting to.
+    pageHoldRef.current = null;
+    pendingVoiceRef.current = null;
   }, []);
+  /**
+   * Whether a page turned with the voice is still holding (see
+   * pageHoldRef): the voice has not reached the page's first character,
+   * and nothing else has sent it further back. The hold lets go the moment
+   * either stops being true.
+   */
+  const holdingPage = useCallback(
+    (spoken: number, bookMs: number): boolean => {
+      const hold = pageHoldRef.current;
+      if (!hold) return false;
+      if (hold.spineIdx !== spineIdx || spoken >= hold.to || bookMs < hold.fromMs) {
+        pageHoldRef.current = null;
+        return false;
+      }
+      return true;
+    },
+    [spineIdx],
+  );
   /**
    * Move a scrolling box so a line comes into view: eased, so the eye can
    * follow the text to where it lands, unless the reader asked the system
@@ -1707,6 +1754,15 @@ export function ReaderPage() {
       // the one the sentence starts on.
       const spoken =
         narration.cue === cue ? spokenOffset(narration.cues, cue, narration.bookMs) : cue.charStart;
+      // Sent to the start of a sentence the page begins in the middle of:
+      // the page the reader turned to is where the voice is going, so it
+      // stays (see turnWithVoice).
+      if (paged && holdingPage(spoken, at)) {
+        followingRef.current = true;
+        cueLeftSinceTakeoverRef.current = true;
+        setFollowing(true);
+        return true;
+      }
       if (paged) {
         if (!layoutRef.current) return false;
         const target = pageForOffset(spoken);
@@ -1761,6 +1817,7 @@ export function ReaderPage() {
       glideTo,
       onLeaveChapter,
       spineIdx,
+      holdingPage,
     ],
   );
 
@@ -1778,6 +1835,116 @@ export function ReaderPage() {
           : t('reader.readAlong.noTimedText'),
     );
   }, [resumeFollowing, narration.ready, narration.state, toast, t]);
+
+  /** The first character of page `n`, measured against the page as it is drawn right now. */
+  const pageStartOffset = useCallback(
+    (n: number): number | null => {
+      const map = textMapRef.current;
+      const pages = pagesRef.current;
+      const content = contentRef.current;
+      const layout = layoutRef.current;
+      if (!map || !pages || !content || !layout) return null;
+      // Mid-slide the text is somewhere between two pages: measured where
+      // page n will be, the same shift goToPage records a turn with.
+      const rect = pages.getBoundingClientRect();
+      const shift = currentTx(content) - dirFactor * n * layout.stride;
+      return firstVisibleOffset(
+        map,
+        { left: rect.left + shift, right: rect.right + shift, top: rect.top, bottom: rect.bottom },
+        hintForOffset(map, currentOffsetRef.current),
+      );
+    },
+    [dirFactor],
+  );
+
+  /**
+   * Start the voice on page `n` of this chapter.
+   *
+   * At the first sentence that begins on the page - unless the page begins
+   * in the middle of a sentence and the part of it on the page before is
+   * short (TURN_LEAD_IN_MAX_MS). Then the voice starts at that sentence, so
+   * it is heard whole, and the page holds (pageHoldRef) while the voice
+   * reads the few words the reader cannot see, rather than flipping back to
+   * them and forward again. Where nothing begins on the page at all - one
+   * very long sentence - that sentence it is, held the same way.
+   */
+  const voiceToPage = useCallback(
+    (n: number): boolean => {
+      if (!readAlong || !narration.ready) return false;
+      const start = pageStartOffset(n);
+      if (start === null || narration.cues.length === 0) return false;
+      const turn = cueForTurn(narration.cues, start, (off) => pageForOffset(off) === n);
+      if (!turn) return false;
+      const { cue, hold } = turn;
+      pageHoldRef.current = hold ? { spineIdx, to: start, fromMs: cue.startMs - 5000 } : null;
+      followingRef.current = true;
+      cueLeftSinceTakeoverRef.current = true;
+      setFollowing(true);
+      narration.playFrom(cue.charStart);
+      // Where on this page the voice comes in, blinked like a tapped line.
+      setBlink({ start: Math.max(start, cue.charStart), end: cue.charEnd, nonce: Date.now() });
+      return true;
+    },
+    [readAlong, narration, pageStartOffset, pageForOffset, spineIdx],
+  );
+
+  /**
+   * Turn the page and take the voice along: the side arrows while reading
+   * along in page view, where a tap on the text moves the voice and so
+   * cannot also turn the page. A swipe still turns it without the voice,
+   * to look ahead while it reads on.
+   */
+  const turnWithVoice = useCallback(
+    (dir: 'next' | 'prev') => {
+      if (chapterLoadingRef.current || !manifest) return;
+      pageHoldRef.current = null;
+      pendingVoiceRef.current = null;
+      const n = page + (dir === 'next' ? 1 : -1);
+      if (n >= 0 && n < pageCount) {
+        goToPage(n);
+        voiceToPage(n);
+        return;
+      }
+      // Across a chapter: it lands (its last page, going back) and its
+      // timings arrive, and then the voice is moved - see the effect below.
+      const to = spineIdx + (dir === 'next' ? 1 : -1);
+      if (dir === 'next') nextPage();
+      else prevPage();
+      if (to >= 0 && to < manifest.chapters.length)
+        pendingVoiceRef.current = { spineIdx: to, loadSeq, cues: narration.cues };
+    },
+    [
+      manifest,
+      page,
+      pageCount,
+      spineIdx,
+      goToPage,
+      voiceToPage,
+      nextPage,
+      prevPage,
+      loadSeq,
+      narration.cues,
+    ],
+  );
+
+  // The other half of a turn with the voice into another chapter.
+  useEffect(() => {
+    const want = pendingVoiceRef.current;
+    if (!want || !readAlong || want.spineIdx !== spineIdx) return;
+    if (loadSeq === want.loadSeq || chapterLoadingRef.current || !narration.ready) return;
+    if (narration.cues === want.cues) return;
+    if (narration.cues.length === 0) {
+      // A chapter the narrator skipped: nothing to start, nothing to wait for.
+      pendingVoiceRef.current = null;
+      return;
+    }
+    const raf = requestAnimationFrame(() => {
+      if (pendingVoiceRef.current !== want) return;
+      pendingVoiceRef.current = null;
+      voiceToPage(pageForOffset(currentOffsetRef.current) ?? 0);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [readAlong, spineIdx, loadSeq, narration.ready, narration.cues, voiceToPage, pageForOffset]);
 
   /**
    * Bring the page to the sentence being spoken.
@@ -1813,6 +1980,8 @@ export function ReaderPage() {
       }
       return;
     }
+    // A page turned with the voice holds while the voice reads its way to it.
+    if (paged && holdingPage(spoken, narration.bookMs)) return;
     if (onScreen) return;
     if (paged) {
       const target = pageForOffset(spoken);
@@ -1857,6 +2026,7 @@ export function ReaderPage() {
     glideTo,
     pageForOffset,
     chromeInset.bottom,
+    holdingPage,
   ]);
 
   /**
@@ -3472,6 +3642,47 @@ export function ReaderPage() {
               onClick={nextPage}
               tabIndex={-1}
             />
+            {readAlong && !paginationFailed && (
+              // Reading along, a tap on the text moves the voice, so the
+              // page turns here: a slim tab at each edge, in the margin,
+              // that turns the page and starts the voice on it. Drawn for
+              // the book's own direction - in a right-to-left book the next
+              // page is to the left.
+              <>
+                <button
+                  type="button"
+                  className="page-arrow page-arrow--prev"
+                  aria-label={t('reader.readAlong.turnPrev')}
+                  title={t('reader.readAlong.turnPrev')}
+                  disabled={page === 0 && spineIdx === 0}
+                  onClick={() => turnWithVoice('prev')}
+                >
+                  {/* Pointed by the book's direction, chosen here - so not
+                      mirrored again by the interface's. */}
+                  {rtl ? (
+                    <IconChevronRight size={16} data-mirror={undefined} />
+                  ) : (
+                    <IconChevronLeft size={16} data-mirror={undefined} />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  className="page-arrow page-arrow--next"
+                  aria-label={t('reader.readAlong.turnNext')}
+                  title={t('reader.readAlong.turnNext')}
+                  disabled={
+                    !!manifest && page >= pageCount - 1 && spineIdx >= manifest.chapters.length - 1
+                  }
+                  onClick={() => turnWithVoice('next')}
+                >
+                  {rtl ? (
+                    <IconChevronLeft size={16} data-mirror={undefined} />
+                  ) : (
+                    <IconChevronRight size={16} data-mirror={undefined} />
+                  )}
+                </button>
+              </>
+            )}
             <div
               className={`reader-pages ${paginationFailed ? 'is-unpaginated' : ''}`}
               ref={pagesRef}

@@ -108,6 +108,9 @@ export const reader = {
   'reader.readAlong.playFailed': 'This audio could not be played.',
   'reader.readAlong.formatFailed': 'This audio format could not be played by your browser.',
   'reader.readAlong.hint': 'Reading along - tap any line to move the voice there',
+  // The side arrows while reading along in page view
+  'reader.readAlong.turnPrev': 'Previous page, read from there',
+  'reader.readAlong.turnNext': 'Next page, read from there',
   'reader.readAlong.stillLoading': 'The narration is still loading.',
   'reader.readAlong.voiceElsewhere':
     'The voice is in another chapter. Press play and the page will find it.',
