@@ -1279,6 +1279,115 @@ body:has(.app-body) {
     padding-block-end: calc(150px + var(--rp-safe-bottom));
   }
 }
+/* A newer version is on the server (UpdateCard): a card at the bottom of
+   the screen with Refresh at its foot. Above the tab bar on a phone and in
+   the corner on a desk, like the downloads pill - and above the pill when
+   both are there. */
+:root {
+  --rp-update-bottom: calc(78px + var(--rp-safe-bottom));
+}
+.has-downloads-pill {
+  --rp-update-bottom: calc(134px + var(--rp-safe-bottom));
+}
+@media (min-width: 744px) {
+  :root {
+    --rp-update-bottom: max(var(--sp-5), var(--rp-safe-bottom));
+  }
+  .has-downloads-pill {
+    --rp-update-bottom: calc(max(var(--sp-5), var(--rp-safe-bottom)) + 58px);
+  }
+}
+.update-card {
+  position: fixed;
+  z-index: 25;
+  inset-inline: max(var(--sp-3), var(--rp-safe-left)) max(var(--sp-3), var(--rp-safe-right));
+  bottom: var(--rp-update-bottom);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'mark text later'
+    'refresh refresh refresh';
+  align-items: start;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border: 1px solid var(--rp-border);
+  border-radius: var(--radius-card);
+  background: var(--rp-surface-raised);
+  box-shadow: var(--rp-shadow-2);
+  color: var(--rp-text);
+  animation: rp-slide-up var(--rp-duration-slow) var(--rp-ease);
+}
+@media (min-width: 744px) {
+  .update-card {
+    inset-inline: auto var(--sp-5);
+    width: 22rem;
+  }
+}
+.update-card__mark {
+  grid-area: mark;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--rp-primary) 14%, transparent);
+  color: var(--rp-interactive);
+}
+.update-card__text {
+  grid-area: text;
+  display: grid;
+  gap: 2px;
+  padding-block-start: 1px;
+}
+.update-card__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+.update-card__detail {
+  margin: 0;
+  color: var(--rp-text-soft);
+  font-size: 13.5px;
+  line-height: 1.4;
+}
+.update-card__later {
+  grid-area: later;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-block-start: -6px;
+  margin-inline-end: -6px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--rp-text-soft);
+  cursor: pointer;
+}
+.update-card__later:hover {
+  background: var(--rp-surface);
+  color: var(--rp-text);
+}
+.update-card__later:focus-visible,
+.update-card__refresh:focus-visible {
+  outline: 2px solid var(--rp-focus);
+  outline-offset: 2px;
+}
+.update-card__refresh {
+  grid-area: refresh;
+  width: 100%;
+}
+/* The toasts rise above it, and a page's last rows can be scrolled clear of it. */
+.has-update-card .toast {
+  bottom: calc(var(--rp-update-bottom) + var(--rp-update-card-h, 140px) + var(--sp-3));
+}
+@media (max-width: 743px) {
+  .has-update-card .app-main {
+    padding-block-end: calc(var(--rp-update-bottom) + var(--rp-update-card-h, 140px) + var(--sp-4));
+  }
+}
 /* A download under way, in the sheet: the numbers under the bar. */
 .dl-progress {
   margin: var(--sp-2) 0 0;

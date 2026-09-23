@@ -262,6 +262,13 @@ export const IconReset = (p: P) => (
     <path d="M2.7 5.2v5.1h5.1" />
   </I>
 );
+/** Load it again: the same turn of the arrow as Reset, going forwards. */
+export const IconRefresh = (p: P) => (
+  <I {...p}>
+    <path d="M19.2 14.5A7.65 7.65 0 1 1 17.4 6.6" />
+    <path d="M21.3 5.2v5.1h-5.1" />
+  </I>
+);
 export const IconTrash = (p: P) => (
   <I {...p}>
     <path d="M5 7h14M9.5 7V4.8h5V7M7 7l.8 12.2h8.4L17 7" />

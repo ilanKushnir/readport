@@ -18,6 +18,8 @@
  *   interruption and then get out of the way.
  */
 
+import { olderThan } from '../lib/version';
+
 export interface ChangelogItem {
   /** Carried verbatim into the list; decorative, so it is aria-hidden. */
   emoji: string;
@@ -145,19 +147,6 @@ export const CHANGELOG: ChangelogRelease[] = [
 
 /** What a reader has to have seen for the dialog to stay shut. */
 export const LATEST_RELEASE_VERSION = CHANGELOG[0]!.version;
-
-/** `0.9.7` sorts below `0.13.0`: numerically, per part, never as strings. */
-function olderThan(a: string, b: string): boolean {
-  const pa = a.split('.').map((n) => Number.parseInt(n, 10));
-  const pb = b.split('.').map((n) => Number.parseInt(n, 10));
-  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-    const x = pa[i] ?? 0;
-    const y = pb[i] ?? 0;
-    if (Number.isNaN(x) || Number.isNaN(y)) return false; // unparseable: say nothing
-    if (x !== y) return x < y;
-  }
-  return false;
-}
 
 /**
  * Whether this person should be told about the newest release.

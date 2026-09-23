@@ -1,5 +1,5 @@
 /**
- * The "What's new" dialog.
+ * The "What's new" dialog, and the card that says a newer version is ready.
  *
  * Two kinds of key live here. The CHROME - title, controls, the eyebrow -
  * is ordinary interface text and every language is expected to carry it.
@@ -15,6 +15,13 @@ export const whatsnew = {
   'whatsnew.hideOlder': 'Hide older versions',
   'whatsnew.olderHeading': 'Version {version}',
   'whatsnew.done': 'Start reading',
+
+  // The card at the bottom of the screen when the server runs a newer version
+  'whatsnew.update.title': 'A new version of ReadPort is ready',
+  'whatsnew.update.detail': 'Refresh to start using version {version}.',
+  'whatsnew.update.refresh': 'Refresh',
+  'whatsnew.update.refreshing': 'Refreshing…',
+  'whatsnew.update.later': 'Not now',
 
   // ---------------------------------------------------------------- 0.23.0
   'whatsnew.release.turnWithVoice':

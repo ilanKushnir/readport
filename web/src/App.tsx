@@ -12,6 +12,7 @@ import { SessionProvider, useSession } from './state/session';
 import { I18nProvider, useT } from './i18n';
 import { WhatsNew } from './whatsnew/WhatsNew';
 import { DownloadsPill } from './components/DownloadsPill';
+import { UpdateCard } from './components/UpdateCard';
 import { resumeInterruptedDownloads } from './offline/downloads';
 import { FriendsPage } from './pages/FriendsPage';
 import { ShelvesProvider, useShelves } from './state/shelves';
@@ -341,6 +342,7 @@ function Shell() {
           not at all once somebody is reading or listening. */}
       {!immersive && <WhatsNew />}
       {!immersive && <DownloadsPill />}
+      {!immersive && <UpdateCard />}
       {!immersive && (
         <nav className="tabbar" aria-label={t('nav.primary')}>
           {/* Shelves is a button rather than a link because it opens the same
