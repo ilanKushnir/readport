@@ -171,6 +171,10 @@ const DETAIL_RE = /^\/api\/books\/[^/]+(\/annotations)?$/;
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
+  // A download for offline stores what it fetches itself (offline/
+  // downloads.ts): the worker stays out of the way, rather than being one
+  // more thing a phone can stop half way through a long transfer.
+  if (req.headers.get('x-rp-direct') === '1') return;
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
 

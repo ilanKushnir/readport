@@ -24,6 +24,7 @@ vi.mock('../api/client', () => ({
   api: vi.fn(),
   isOffline: () => false,
   isUnauthorized: () => false,
+  notifyUnauthorized: vi.fn(async () => {}),
 }));
 
 import {
@@ -31,7 +32,9 @@ import {
   cachedSwitch,
   chunkKey,
   downloadEntry,
+  downloadTiming,
   downloadTrackChunked,
+  getDownloadState,
   metaKey,
   partialMetaKey,
   removeDownload,
@@ -69,6 +72,12 @@ const signal = new AbortController().signal;
 beforeEach(() => {
   cache = new FakeCache();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+  // Nothing tried again unless a test asks: the older tests are about what
+  // one attempt does, and must not sit through the real back-off.
+  downloadTiming.retryDelaysMs = [];
+  downloadTiming.stallMs = 30_000;
+  downloadTiming.preparePollMs = 0;
 });
 
 describe('downloadEntry integrity verification', () => {
@@ -805,5 +814,175 @@ describe('cachedSwitch (the handoff with no network)', () => {
     vi.stubGlobal('caches', { open: vi.fn(async () => cache) });
     const from: EbookLocator = { medium: 'ebook', spineIdx: 0, sentenceId: 's1', pct: 0 };
     expect(await cachedSwitch('missing', from)).toBeNull();
+  });
+});
+
+describe('a long download on a real connection', () => {
+  const URL_ = '/api/books/net/track/0';
+  const SIZE = Math.floor(AUDIO_CHUNK_BYTES * 1.5); // 2 chunks
+  const version = 'vn'.padEnd(64, 'e');
+  const bytes = new Uint8Array(SIZE).map((_, i) => (i * 7) % 251);
+  const entry = async (): Promise<OfflineManifestEntry> => ({
+    url: URL_,
+    kind: 'track',
+    sizeBytes: SIZE,
+    sourceVersion: version,
+    chunkSize: AUDIO_CHUNK_BYTES,
+    chunkHashes: [
+      await sha256(bytes.slice(0, AUDIO_CHUNK_BYTES)),
+      await sha256(bytes.slice(AUDIO_CHUNK_BYTES)),
+    ],
+  });
+  const part = (init?: RequestInit) => {
+    const m = /^bytes=(\d+)-(\d+)$/.exec((init?.headers as Record<string, string>).range);
+    const start = Number(m![1]);
+    const end = Math.min(Number(m![2]), SIZE - 1);
+    return new Response(bytes.slice(start, end + 1), {
+      status: 206,
+      headers: { 'content-range': `bytes ${start}-${end}/${SIZE}`, etag: `"${version}"` },
+    });
+  };
+
+  it('tries a part that fails again, and finishes', async () => {
+    downloadTiming.retryDelaysMs = [0, 0, 0];
+    let calls = 0;
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
+      calls += 1;
+      if (calls === 2) throw new TypeError('Load failed');
+      if (calls === 3) return new Response('busy', { status: 503 });
+      return part(init);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const retried: unknown[] = [];
+    await downloadTrackChunked(cache as unknown as Cache, await entry(), signal, async () => {}, {
+      onRetry: (err) => retried.push(err),
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+    expect(retried).toHaveLength(2);
+    expect(cache.store.has(metaKey(URL_))).toBe(true);
+  });
+
+  it('does not ask again of a server that ignores Range', async () => {
+    downloadTiming.retryDelaysMs = [0, 0, 0];
+    const fetchMock = vi.fn(async () => new Response(new Uint8Array(10), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(
+      downloadTrackChunked(cache as unknown as Cache, await entry(), signal, async () => {}),
+    ).rejects.toThrow(/did not honor Range/);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('gives up on a response that goes quiet, and asks again', async () => {
+    downloadTiming.retryDelaysMs = [0];
+    downloadTiming.stallMs = 40;
+    let calls = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init?: RequestInit) => {
+        calls += 1;
+        // The first answer starts and then sends nothing more.
+        if (calls === 1)
+          return new Response(new ReadableStream({ start() {} }), {
+            status: 206,
+            headers: part(init).headers,
+          });
+        return part(init);
+      }),
+    );
+    const received: number[] = [];
+    await downloadTrackChunked(cache as unknown as Cache, await entry(), signal, async () => {}, {
+      onReceiving: (n) => received.push(n),
+    });
+    expect(calls).toBe(3);
+    expect(cache.store.has(metaKey(URL_))).toBe(true);
+    // The bar moved inside a part, and went back to zero once it was stored.
+    expect(received.some((n) => n > 0)).toBe(true);
+    expect(received.at(-1)).toBe(0);
+  });
+
+  it('waits while the server prepares a big book, saying how far along it is', async () => {
+    const { startDownload } = await import('./downloads');
+    const { api } = await import('../api/client');
+    const e = await entry();
+    vi.mocked(api).mockReset();
+    vi.mocked(api)
+      .mockResolvedValueOnce({ status: 'preparing', done: 10, total: 100 } as never)
+      .mockResolvedValueOnce({ status: 'preparing', done: 60, total: 100 } as never)
+      .mockResolvedValue({ urls: [e], totalBytes: SIZE } as never);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init?: RequestInit) => part(init)),
+    );
+    vi.stubGlobal('window', { caches: {} });
+    vi.stubGlobal('caches', { open: vi.fn(async () => cache), delete: vi.fn(async () => true) });
+    vi.stubGlobal('navigator', { storage: { estimate: async () => ({ usage: 0, quota: 1e12 }) } });
+    const seen: { phase?: string; prepared?: { done: number } }[] = [];
+    await startDownload('prep', (s) => seen.push({ phase: s.phase, prepared: s.prepared }), {
+      title: 'A Big Book',
+    });
+    expect(seen.some((s) => s.phase === 'preparing' && s.prepared?.done === 60)).toBe(true);
+    const state = await getDownloadState('prep');
+    expect(state).toMatchObject({ status: 'done', title: 'A Big Book' });
+  });
+
+  it('follows a download already under way instead of starting another beside it', async () => {
+    const { startDownload } = await import('./downloads');
+    const { api } = await import('../api/client');
+    vi.mocked(api).mockReset();
+    vi.mocked(api).mockResolvedValue({ urls: [await entry()], totalBytes: SIZE } as never);
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => part(init));
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('window', { caches: {} });
+    vi.stubGlobal('caches', { open: vi.fn(async () => cache), delete: vi.fn(async () => true) });
+    vi.stubGlobal('navigator', { storage: { estimate: async () => ({ usage: 0, quota: 1e12 }) } });
+    await Promise.all([startDownload('twice', () => {}), startDownload('twice', () => {})]);
+    expect(api).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('calls a download nothing is running any more stopped, so it can be tried again', async () => {
+    const idb = await import('../progress/idb');
+    vi.stubGlobal('navigator', {});
+    await idb.idbPut(idb.STORES.downloads, 'gone', {
+      bookId: 'gone',
+      status: 'downloading',
+      totalUrls: 1,
+      doneUrls: 0,
+      estimatedBytes: 100,
+      storedBytes: 40,
+      updatedAt: new Date(Date.now() - 10 * 60_000).toISOString(),
+      urls: [],
+    });
+    expect(await getDownloadState('gone')).toMatchObject({
+      status: 'error',
+      errorCode: 'interrupted',
+    });
+    // With Web Locks, a lock nobody holds says the same, however recent.
+    await idb.idbPut(idb.STORES.downloads, 'gone2', {
+      bookId: 'gone2',
+      status: 'downloading',
+      totalUrls: 1,
+      doneUrls: 0,
+      estimatedBytes: 100,
+      storedBytes: 40,
+      updatedAt: new Date().toISOString(),
+      urls: [],
+    });
+    vi.stubGlobal('navigator', { locks: { request: vi.fn(), query: async () => ({ held: [] }) } });
+    expect(await getDownloadState('gone2')).toMatchObject({ errorCode: 'interrupted' });
+    vi.stubGlobal('navigator', {
+      locks: { request: vi.fn(), query: async () => ({ held: [{ name: 'rp-download:gone3' }] }) },
+    });
+    await idb.idbPut(idb.STORES.downloads, 'gone3', {
+      bookId: 'gone3',
+      status: 'downloading',
+      totalUrls: 1,
+      doneUrls: 0,
+      estimatedBytes: 100,
+      storedBytes: 40,
+      updatedAt: new Date().toISOString(),
+      urls: [],
+    });
+    expect(await getDownloadState('gone3')).toMatchObject({ status: 'downloading' });
   });
 });

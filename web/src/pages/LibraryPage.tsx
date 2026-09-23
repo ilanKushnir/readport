@@ -46,7 +46,9 @@ import {
   downloadFraction,
   downloadPercent,
   listDownloads,
+  preparedFraction,
   startDownload,
+  subscribeDownloads,
   type DownloadState,
 } from '../offline/downloads';
 import '../styles/languages.css';
@@ -313,15 +315,24 @@ export function LibraryPage() {
     void loadDownloads();
   }, [loadDownloads]);
 
-  // A download writes its progress to IndexedDB as each chunk lands, but it is
-  // usually started from another page (or another tab), so nothing here is
-  // told about it. Poll while any download is running - and once after it
-  // stops, to pick up the finished state - then go quiet.
+  // A download is usually started from another page (or another tab), and
+  // is heard here as it goes (subscribeDownloads) - the list read again at
+  // most twice a second, rather than polled for as long as one ran and
+  // missed when one began after this page opened.
   useEffect(() => {
-    if (active.length === 0) return;
-    const t = setInterval(() => void loadDownloads(), 1000);
-    return () => clearInterval(t);
-  }, [active.length, loadDownloads]);
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const off = subscribeDownloads(() => {
+      if (timer) return;
+      timer = setTimeout(() => {
+        timer = null;
+        void loadDownloads();
+      }, 500);
+    });
+    return () => {
+      off();
+      if (timer) clearTimeout(timer);
+    };
+  }, [loadDownloads]);
 
   // Poll while a scan is active so states progress live.
   useEffect(() => {
@@ -940,18 +951,25 @@ function DownloadsInProgress({
               <div className="dls__meta">
                 <Link className="dls__title" to={`/book/${d.bookId}`}>
                   {titleFor(d.bookId) ??
+                    d.title ??
                     (failed ? t('library.download.interrupted') : t('library.download.starting'))}
                 </Link>
                 <span className="dls__sub">
                   {failed
                     ? t(downloadErrorKey(d.errorCode))
-                    : d.estimatedBytes > 0
-                      ? t('library.download.progress', {
-                          stored: f.bytes(d.storedBytes),
-                          total: f.bytes(d.estimatedBytes),
-                          pct: f.percent(downloadFraction(d)),
-                        })
-                      : t('library.download.starting')}
+                    : d.phase === 'preparing'
+                      ? `${t('library.offline.preparing')} ${f.percent(preparedFraction(d))}`
+                      : d.phase === 'waiting'
+                        ? t('library.offline.waiting')
+                        : d.phase === 'retrying'
+                          ? t('library.offline.retrying')
+                          : d.estimatedBytes > 0
+                            ? t('library.download.progress', {
+                                stored: f.bytes(d.storedBytes + (d.receivingBytes ?? 0)),
+                                total: f.bytes(d.estimatedBytes),
+                                pct: f.percent(downloadFraction(d)),
+                              })
+                            : t('library.download.starting')}
                 </span>
                 {!failed && (
                   <div
@@ -968,7 +986,10 @@ function DownloadsInProgress({
               <button
                 className="btn btn--ghost dls__act"
                 onClick={() => {
-                  if (failed) void startDownload(d.bookId, () => onChanged()).then(onChanged);
+                  if (failed)
+                    void startDownload(d.bookId, () => onChanged(), { title: d.title }).then(
+                      onChanged,
+                    );
                   else {
                     cancelDownload(d.bookId);
                     onChanged();

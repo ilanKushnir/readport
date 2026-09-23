@@ -11,6 +11,8 @@ import { AUTO_SHELVES } from '@readport/shared';
 import { SessionProvider, useSession } from './state/session';
 import { I18nProvider, useT } from './i18n';
 import { WhatsNew } from './whatsnew/WhatsNew';
+import { DownloadsPill } from './components/DownloadsPill';
+import { resumeInterruptedDownloads } from './offline/downloads';
 import { FriendsPage } from './pages/FriendsPage';
 import { ShelvesProvider, useShelves } from './state/shelves';
 import { FacetsProvider } from './state/facets';
@@ -217,6 +219,12 @@ function Shell() {
 
   useEffect(() => startProgressLifecycle(), []);
 
+  // What was being saved offline when the app was last closed carries on,
+  // once there is a signed-in reader for it to belong to.
+  useEffect(() => {
+    if (phase === 'ready') void resumeInterruptedDownloads();
+  }, [phase]);
+
   // `[` toggles the rail, which is why the collapse button says so.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -332,6 +340,7 @@ function Shell() {
       {/* Never over a book: an interruption is tolerable on the way in, and
           not at all once somebody is reading or listening. */}
       {!immersive && <WhatsNew />}
+      {!immersive && <DownloadsPill />}
       {!immersive && (
         <nav className="tabbar" aria-label={t('nav.primary')}>
           {/* Shelves is a button rather than a link because it opens the same

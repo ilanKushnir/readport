@@ -1,4 +1,4 @@
-import { api } from '../api/client';
+import { api, notifyUnauthorized } from '../api/client';
 import { idbAll, idbClear, idbDelete, idbGet, idbPut, STORES } from '../progress/idb';
 import { type BookSummary, type Locator, type SwitchResolution } from '@readport/shared';
 import { type MessageKey } from '../i18n/messages/en';
@@ -60,12 +60,24 @@ export type DownloadErrorCode =
   | 'missing-integrity'
   | 'no-range'
   | 'wrong-range'
-  | 'source-changed';
+  | 'source-changed'
+  /** The connection kept failing, however many times it was tried. */
+  | 'network'
+  /** The server kept answering with an error. */
+  | 'server'
+  /** Data stopped arriving, and kept stopping. */
+  | 'stalled'
+  /** The app was closed, or the phone put it to sleep, part way through. */
+  | 'interrupted'
+  /** Signed out part way through. */
+  | 'unauthorized';
 
 export class DownloadError extends Error {
   constructor(
     public code: DownloadErrorCode,
     detail: string,
+    /** Worth trying again: the same request may well work in a moment. */
+    public transient = false,
   ) {
     super(detail);
     this.name = 'DownloadError';
@@ -79,7 +91,21 @@ export function downloadErrorKey(code: DownloadErrorCode | undefined): MessageKe
 
 export interface DownloadState {
   bookId: string;
+  /** The book's title, so anywhere in the app can say what is downloading. */
+  title?: string;
   status: 'idle' | 'downloading' | 'done' | 'error' | 'cancelled';
+  /**
+   * What a running download is doing: `preparing` - the server is readying
+   * the files; `checking` - parts an earlier attempt saved are being checked;
+   * `saving` - bytes are arriving; `waiting` - for a connection, or for the
+   * app to be in front again; `retrying` - something failed and it is about
+   * to try again.
+   */
+  phase?: 'preparing' | 'checking' | 'saving' | 'waiting' | 'retrying';
+  /** While preparing: how much of the book the server has read so far. */
+  prepared?: { done: number; total: number };
+  /** Bytes of the part arriving right now, not stored yet. */
+  receivingBytes?: number;
   totalUrls: number;
   doneUrls: number;
   estimatedBytes: number;
@@ -102,18 +128,34 @@ export interface DownloadState {
  * before the manifest's size is known.
  */
 export function downloadFraction(
-  dl: Pick<DownloadState, 'storedBytes' | 'estimatedBytes' | 'doneUrls' | 'totalUrls'>,
+  dl: Pick<
+    DownloadState,
+    'storedBytes' | 'estimatedBytes' | 'doneUrls' | 'totalUrls' | 'receivingBytes'
+  >,
 ): number {
-  if (dl.estimatedBytes > 0) return Math.min(1, dl.storedBytes / dl.estimatedBytes);
+  // The part arriving counts as it arrives: a part is 8 MB, and on a slow
+  // connection a bar that only moves when one is finished moves every half
+  // minute.
+  if (dl.estimatedBytes > 0)
+    return Math.min(1, (dl.storedBytes + (dl.receivingBytes ?? 0)) / dl.estimatedBytes);
   if (dl.totalUrls > 0) return Math.min(1, dl.doneUrls / dl.totalUrls);
   return 0;
 }
 
 /** The same thing as a whole percent, which is what every caller displays. */
 export function downloadPercent(
-  dl: Pick<DownloadState, 'storedBytes' | 'estimatedBytes' | 'doneUrls' | 'totalUrls'>,
+  dl: Pick<
+    DownloadState,
+    'storedBytes' | 'estimatedBytes' | 'doneUrls' | 'totalUrls' | 'receivingBytes'
+  >,
 ): number {
   return Math.round(downloadFraction(dl) * 100);
+}
+
+/** How far the server has got preparing the files, 0-1, while it is. */
+export function preparedFraction(dl: Pick<DownloadState, 'prepared'>): number {
+  const p = dl.prepared;
+  return p && p.total > 0 ? Math.min(1, p.done / p.total) : 0;
 }
 
 /** Downloads this device is working on right now, newest first. */
@@ -124,16 +166,119 @@ export async function listActiveDownloads(): Promise<DownloadState[]> {
 }
 
 export async function getDownloadState(bookId: string): Promise<DownloadState | null> {
-  return (await idbGet<DownloadState>(STORES.downloads, bookId)) ?? null;
+  const stored = (await idbGet<DownloadState>(STORES.downloads, bookId)) ?? null;
+  return stored ? reconcile(stored) : null;
 }
 
 /** Every download this browser knows about (any status). */
 export async function listDownloads(): Promise<DownloadState[]> {
   try {
-    return (await idbAll<DownloadState>(STORES.downloads)).map((d) => d.value);
+    const all = (await idbAll<DownloadState>(STORES.downloads)).map((d) => d.value);
+    return await Promise.all(all.map(reconcile));
   } catch {
     return [];
   }
+}
+
+/* ------------------------------------------------------------ liveness */
+
+const lockName = (bookId: string) => `rp-download:${bookId}`;
+
+type LockManagerLike = {
+  request: (
+    name: string,
+    opts: { ifAvailable: boolean },
+    cb: (lock: unknown) => Promise<void>,
+  ) => Promise<void>;
+  query?: () => Promise<{ held?: { name?: string }[] }>;
+};
+const lockManager = (): LockManagerLike | null =>
+  typeof navigator !== 'undefined'
+    ? ((navigator as unknown as { locks?: LockManagerLike }).locks ?? null)
+    : null;
+
+/**
+ * A download recorded as running that nothing is running - the app was
+ * closed, or the phone put it to sleep - is said to have stopped, so it can
+ * be tried again or removed. It used to sit at its last percent for ever,
+ * with a Cancel that had nothing to cancel.
+ *
+ * Every running download holds a Web Lock named for its book, in whichever
+ * tab runs it, and a closed tab lets go of its locks. Where there are no
+ * Web Locks, a record left untouched for five minutes is taken as stopped.
+ */
+async function reconcile(d: DownloadState): Promise<DownloadState> {
+  if (d.status !== 'downloading' || activeDownloads.has(d.bookId)) return d;
+  const locks = lockManager();
+  let running: boolean;
+  if (locks?.query) {
+    try {
+      const { held = [] } = await locks.query();
+      running = held.some((l) => l.name === lockName(d.bookId));
+    } catch {
+      running = true;
+    }
+  } else {
+    running = Date.now() - Date.parse(d.updatedAt) < 5 * 60_000;
+  }
+  if (running) return d;
+  const stopped: DownloadState = {
+    ...d,
+    status: 'error',
+    errorCode: 'interrupted',
+    phase: undefined,
+    receivingBytes: 0,
+  };
+  try {
+    await idbPut(STORES.downloads, d.bookId, stopped);
+  } catch {
+    /* told as stopped either way */
+  }
+  return stopped;
+}
+
+/* ------------------------------------------------------------- telling */
+
+/** Hears every change to any download: a state, or null when it was removed. */
+export type DownloadListener = (bookId: string, state: DownloadState | null) => void;
+const listeners = new Set<DownloadListener>();
+let channel: BroadcastChannel | null | undefined;
+
+/**
+ * Downloads are told to whoever is listening in this tab, and through a
+ * BroadcastChannel to every other tab of the app: a download started on the
+ * book page is watched from the library, the sidebar and the other tab
+ * alike, instead of each of them reading a snapshot once.
+ */
+function bus(): BroadcastChannel | null {
+  if (channel === undefined) {
+    channel =
+      typeof window !== 'undefined' && typeof window.BroadcastChannel === 'function'
+        ? new window.BroadcastChannel('rp-downloads')
+        : null;
+    channel?.addEventListener('message', (e: MessageEvent) => {
+      const data = e.data as { bookId?: unknown; state?: DownloadState | null } | null;
+      if (typeof data?.bookId !== 'string') return;
+      for (const l of listeners) l(data.bookId, data.state ?? null);
+    });
+  }
+  return channel;
+}
+
+function publish(bookId: string, state: DownloadState | null): void {
+  for (const l of listeners) l(bookId, state);
+  try {
+    bus()?.postMessage({ bookId, state });
+  } catch {
+    /* a closed channel: this tab is going away */
+  }
+}
+
+/** Listen to every download. `bookId` is `*` when everything changed at once (a purge). */
+export function subscribeDownloads(listener: DownloadListener): () => void {
+  bus();
+  listeners.add(listener);
+  return () => listeners.delete(listener);
 }
 
 /**
@@ -222,12 +367,286 @@ async function sha256Hex(buf: ArrayBuffer): Promise<string | null> {
   }
 }
 
-function fetchOpts(signal: AbortSignal, range?: string): RequestInit {
+/**
+ * Sent on every request a download makes, so the service worker stays out
+ * of the way (web/public/sw.js): the page stores what it fetches itself,
+ * and a worker in the middle of a long transfer is one more thing a phone
+ * can stop half way.
+ */
+export const DIRECT_HEADER = 'x-rp-direct';
+
+function fetchOpts(range?: string): RequestInit {
   return {
     credentials: 'same-origin',
-    headers: { 'x-rp-csrf': '1', ...(range ? { range } : {}) },
-    signal,
+    headers: { 'x-rp-csrf': '1', [DIRECT_HEADER]: '1', ...(range ? { range } : {}) },
   };
+}
+
+/* ------------------------------------------------------------ retrying */
+
+/**
+ * How a failed request is tried again.
+ *
+ * A gigabyte of audio is some 120 requests in a row, and on a phone one of
+ * them failing is not bad luck but a certainty: with nothing tried again, a
+ * one-in-two-hundred failure rate ended almost half of all such downloads,
+ * and the reader had to tap Try again. Now each request gets several more
+ * goes, further apart each time, after waiting for the network - and for
+ * the app to be in front again - before each one. A request that goes
+ * quiet (`stallMs` with no bytes) is given up on and tried again too.
+ *
+ * Mutable only so tests can take the waiting out.
+ */
+export const downloadTiming = {
+  retryDelaysMs: [1000, 2000, 4000, 8000, 16000, 30000],
+  stallMs: 30_000,
+  preparePollMs: 1500,
+};
+
+const abortError = () => new DOMException('aborted', 'AbortError');
+
+function sleep(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) return reject(abortError());
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(abortError());
+    };
+    const timer = setTimeout(() => {
+      signal.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    signal.addEventListener('abort', onAbort, { once: true });
+  });
+}
+
+/** Online, and in front: a request made from a hidden page or with no network only fails again. */
+function canTry(): boolean {
+  const online = typeof navigator === 'undefined' || navigator.onLine !== false;
+  const shown = typeof document === 'undefined' || document.visibilityState !== 'hidden';
+  return online && shown;
+}
+
+async function untilCanTry(signal: AbortSignal, onWait: () => void): Promise<void> {
+  if (canTry()) return;
+  onWait();
+  await new Promise<void>((resolve, reject) => {
+    const check = () => {
+      if (!canTry()) return;
+      cleanup();
+      resolve();
+    };
+    const onAbort = () => {
+      cleanup();
+      reject(abortError());
+    };
+    // The events are the signal; the poll is for a browser that misses one.
+    const poll = setInterval(check, 5000);
+    const cleanup = () => {
+      clearInterval(poll);
+      window.removeEventListener('online', check);
+      document.removeEventListener('visibilitychange', check);
+      signal.removeEventListener('abort', onAbort);
+    };
+    window.addEventListener('online', check);
+    document.addEventListener('visibilitychange', check);
+    signal.addEventListener('abort', onAbort, { once: true });
+  });
+}
+
+/** Whether a failure is worth another try: a dropped connection or a busy server, not a refusal. */
+function isTransient(err: unknown): boolean {
+  if (err instanceof DownloadError) return err.transient;
+  if (isQuotaError(err)) return false;
+  if (err instanceof DOMException) return err.name === 'NetworkError';
+  // The api() wrapper's errors: status 0 is the network, 5xx and friends a
+  // server that may answer in a moment.
+  const status = (err as { name?: string; status?: number }).status;
+  if ((err as { name?: string }).name === 'ApiError' && typeof status === 'number')
+    return status === 0 || status === 408 || status === 425 || status === 429 || status >= 500;
+  // fetch() rejects with a TypeError when the connection fails ("Load
+  // failed", "Failed to fetch", "NetworkError when attempting..."), and a
+  // body cut off half way rejects much the same.
+  return err instanceof Error;
+}
+
+interface RetryHooks {
+  /** An attempt is starting. */
+  onAttempt?: () => void;
+  /** Waiting for a connection, or for the app to be in front again. */
+  onWait?: () => void;
+  /** An attempt failed and another is coming. */
+  onRetry?: (err: unknown) => void;
+}
+
+async function withRetry<T>(
+  signal: AbortSignal,
+  attempt: () => Promise<T>,
+  hooks: RetryHooks = {},
+): Promise<T> {
+  const delays = downloadTiming.retryDelaysMs;
+  for (let i = 0; ; i++) {
+    if (signal.aborted) throw abortError();
+    await untilCanTry(signal, () => hooks.onWait?.());
+    hooks.onAttempt?.();
+    try {
+      return await attempt();
+    } catch (err) {
+      if (signal.aborted || !isTransient(err) || i >= delays.length) throw err;
+      hooks.onRetry?.(err);
+      // Jittered, so two tabs or two devices do not retry in step.
+      await sleep(delays[i]! * (0.8 + Math.random() * 0.4), signal);
+    }
+  }
+}
+
+/**
+ * One request, watched: `signal` is the download's own (cancel, sign-out),
+ * and a request that sends nothing for `stallMs` - no answer, or no more of
+ * its body - is abandoned as stalled, which is tried again.
+ */
+async function watchedFetch<T>(
+  url: string,
+  init: RequestInit,
+  signal: AbortSignal,
+  read: (res: Response, alive: () => void, attempt: AbortSignal) => Promise<T>,
+): Promise<T> {
+  if (signal.aborted) throw abortError();
+  const ctl = new AbortController();
+  let stalled = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const alive = () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      stalled = true;
+      ctl.abort();
+    }, downloadTiming.stallMs);
+  };
+  const forward = () => ctl.abort();
+  signal.addEventListener('abort', forward, { once: true });
+  alive();
+  try {
+    const res = await fetch(url, { ...init, signal: ctl.signal });
+    alive();
+    return await read(res, alive, ctl.signal);
+  } catch (err) {
+    if (stalled && !signal.aborted) {
+      throw new DownloadError(
+        'stalled',
+        `Nothing arrived for ${downloadTiming.stallMs / 1000}s from ${url}`,
+        true,
+      );
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+    signal.removeEventListener('abort', forward);
+  }
+}
+
+/** A refusal or a failure, by status: which of them are worth another try. */
+function statusError(url: string, status: number): DownloadError {
+  if (status === 401) {
+    // Signed out: the app finds out and clears what it holds. Not awaited -
+    // that clearing waits for this download to stop, which it is about to.
+    void notifyUnauthorized(url);
+    return new DownloadError('unauthorized', `Signed out while downloading ${url}`);
+  }
+  if (status === 408 || status === 425 || status === 429 || status >= 500)
+    return new DownloadError('server', `The server answered ${status} for ${url}`, true);
+  return new DownloadError('http', `Download failed (${status}) for ${url}`);
+}
+
+/**
+ * A response body, read as it arrives: `alive` is told of every piece, so a
+ * body that stops arriving is caught as a stall, and `onBytes` hears the
+ * running total, so a bar can move inside one 8 MB part. With `expected`,
+ * the bytes go straight into a buffer of that size and anything else is a
+ * size mismatch.
+ */
+async function readBody(
+  res: Response,
+  url: string,
+  expected: number | null,
+  alive: () => void,
+  attempt: AbortSignal,
+  onBytes?: (received: number) => void,
+): Promise<ArrayBuffer> {
+  const reader = res.body?.getReader();
+  /**
+   * The next piece, or the attempt's end: a body is supposed to fail when
+   * its request is aborted, and not every one does, so a stall must not
+   * depend on it.
+   */
+  const next = () =>
+    new Promise<ReadableStreamReadResult<Uint8Array>>((resolve, reject) => {
+      const onAbort = () => {
+        void reader?.cancel().catch(() => {});
+        reject(abortError());
+      };
+      if (attempt.aborted) return onAbort();
+      attempt.addEventListener('abort', onAbort, { once: true });
+      reader!.read().then(
+        (r) => {
+          attempt.removeEventListener('abort', onAbort);
+          resolve(r);
+        },
+        (err: unknown) => {
+          attempt.removeEventListener('abort', onAbort);
+          reject(err as Error);
+        },
+      );
+    });
+  if (!reader) {
+    const buf = await res.arrayBuffer();
+    onBytes?.(buf.byteLength);
+    if (expected !== null && buf.byteLength !== expected) {
+      throw new DownloadError(
+        'size-mismatch',
+        `Size mismatch for ${url}: got ${buf.byteLength}, expected ${expected}`,
+        true,
+      );
+    }
+    return buf;
+  }
+  const out = expected !== null ? new Uint8Array(expected) : null;
+  const parts: Uint8Array[] = [];
+  let got = 0;
+  for (;;) {
+    const { done, value } = await next();
+    if (done) break;
+    alive();
+    if (out) {
+      if (got + value.byteLength > out.byteLength) {
+        await reader.cancel().catch(() => {});
+        throw new DownloadError(
+          'size-mismatch',
+          `Size mismatch for ${url}: more than the expected ${expected} bytes`,
+          true,
+        );
+      }
+      out.set(value, got);
+    } else parts.push(value);
+    got += value.byteLength;
+    onBytes?.(got);
+  }
+  if (out) {
+    if (got !== out.byteLength) {
+      throw new DownloadError(
+        'size-mismatch',
+        `Size mismatch for ${url}: got ${got}, expected ${expected}`,
+        true,
+      );
+    }
+    return out.buffer;
+  }
+  const whole = new Uint8Array(got);
+  let at = 0;
+  for (const p of parts) {
+    whole.set(p, at);
+    at += p.byteLength;
+  }
+  return whole.buffer;
 }
 
 /** Download + verify one non-chunked entry; returns stored byte count. */
@@ -235,45 +654,48 @@ export async function downloadEntry(
   cache: Cache,
   entry: OfflineManifestEntry,
   signal: AbortSignal,
+  hooks: RetryHooks = {},
 ): Promise<number> {
   const existing = await cache.match(entry.url);
   if (existing) return Number(existing.headers.get('content-length') ?? 0);
-  const res = await fetch(entry.url, fetchOpts(signal));
-  if (!res.ok) {
-    throw new DownloadError('http', `Download failed (${res.status}) for ${entry.url}`);
-  }
-  const buf = await res.arrayBuffer();
-  if (entry.dynamic) {
-    // Dynamic JSON has no stable hash; validate structure instead.
-    try {
-      JSON.parse(new TextDecoder().decode(buf));
-    } catch {
-      throw new DownloadError('invalid-response', `Invalid response for ${entry.url}`);
-    }
-  } else {
-    if (buf.byteLength !== entry.sizeBytes) {
-      throw new DownloadError(
-        'size-mismatch',
-        `Size mismatch for ${entry.url}: got ${buf.byteLength}, expected ${entry.sizeBytes}`,
-      );
-    }
-    if (entry.sha256) {
-      const digest = await sha256Hex(buf);
-      if (digest !== null && digest !== entry.sha256) {
-        throw new DownloadError('integrity', `Integrity check failed for ${entry.url}`);
-      }
-    }
-  }
-  await cache.put(
-    entry.url,
-    new Response(buf, {
-      headers: {
-        'content-type': res.headers.get('content-type') ?? 'application/octet-stream',
-        'content-length': String(buf.byteLength),
-      },
-    }),
+  return withRetry(
+    signal,
+    () =>
+      watchedFetch(entry.url, fetchOpts(), signal, async (res, alive, attempt) => {
+        if (!res.ok) throw statusError(entry.url, res.status);
+        const buf = await readBody(
+          res,
+          entry.url,
+          entry.dynamic ? null : entry.sizeBytes,
+          alive,
+          attempt,
+        );
+        if (entry.dynamic) {
+          // Dynamic JSON has no stable hash; validate structure instead.
+          try {
+            JSON.parse(new TextDecoder().decode(buf));
+          } catch {
+            throw new DownloadError('invalid-response', `Invalid response for ${entry.url}`);
+          }
+        } else if (entry.sha256) {
+          const digest = await sha256Hex(buf);
+          if (digest !== null && digest !== entry.sha256) {
+            throw new DownloadError('integrity', `Integrity check failed for ${entry.url}`, true);
+          }
+        }
+        await cache.put(
+          entry.url,
+          new Response(buf, {
+            headers: {
+              'content-type': res.headers.get('content-type') ?? 'application/octet-stream',
+              'content-length': String(buf.byteLength),
+            },
+          }),
+        );
+        return buf.byteLength;
+      }),
+    hooks,
   );
-  return buf.byteLength;
 }
 
 /**
@@ -339,6 +761,12 @@ export async function downloadTrackChunked(
   entry: OfflineManifestEntry,
   signal: AbortSignal,
   onChunk: (bytes: number) => Promise<void>,
+  hooks: RetryHooks & {
+    /** Bytes of the part arriving now, as they arrive; 0 when it is stored or given up. */
+    onReceiving?: (bytes: number) => void;
+    /** Parts an earlier attempt saved are being checked before anything is fetched. */
+    onChecking?: () => void;
+  } = {},
 ): Promise<void> {
   const version = entry.sourceVersion;
   const hashes = entry.chunkHashes;
@@ -379,6 +807,7 @@ export async function downloadTrackChunked(
   );
 
   let contentType = 'audio/mpeg';
+  let checking = false;
   for (let i = 0; i < chunks; i++) {
     if (signal.aborted) throw new DOMException('aborted', 'AbortError');
     const start = i * chunkSize;
@@ -389,6 +818,10 @@ export async function downloadTrackChunked(
     if (existing) {
       // Same-version leftover from an interrupted attempt: re-verify its
       // bytes before counting it.
+      if (!checking) {
+        checking = true;
+        hooks.onChecking?.();
+      }
       const buf = await existing.arrayBuffer();
       const digest = await sha256Hex(buf);
       if (buf.byteLength === expectedLen && (digest === null || digest === hashes[i])) {
@@ -397,45 +830,81 @@ export async function downloadTrackChunked(
       }
       await cache.delete(chunkKey(entry.url, i));
     }
+    checking = false;
 
-    const res = await fetch(entry.url, fetchOpts(signal, `bytes=${start}-${end}`));
-    if (res.status !== 206) {
-      throw new DownloadError(
-        'no-range',
-        `Server did not honor Range for ${entry.url} (status ${res.status})`,
-      );
-    }
-    const contentRange = res.headers.get('content-range');
-    if (contentRange !== `bytes ${start}-${end}/${total}`) {
-      throw new DownloadError(
-        'wrong-range',
-        `Wrong Content-Range for ${entry.url}: got "${contentRange ?? ''}", expected "bytes ${start}-${end}/${total}"`,
-      );
-    }
-    const etag = res.headers.get('etag');
-    if (etag && etag.replace(/^(W\/)?"|"$/g, '') !== version) {
-      // The source file changed under us mid-download: nothing stored so
-      // far may be combined with the new bytes.
-      await deleteTrackChunks(cache, entry.url);
-      throw new DownloadError(
-        'source-changed',
-        `Source changed during download of ${entry.url}; download restarted`,
-      );
-    }
-    const buf = await res.arrayBuffer();
-    if (buf.byteLength !== expectedLen) {
-      throw new DownloadError('size-mismatch', `Chunk size mismatch for ${entry.url} at ${start}`);
-    }
-    const digest = await sha256Hex(buf);
-    if (digest !== null && digest !== hashes[i]) {
-      throw new DownloadError('integrity', `Integrity check failed for ${entry.url} (chunk ${i})`);
-    }
-    contentType = res.headers.get('content-type') ?? contentType;
+    // One part, tried again as often as it takes (see withRetry). The
+    // bytes of an attempt that fails are not counted: the bar goes back to
+    // what is actually stored.
+    const part = await withRetry(
+      signal,
+      () =>
+        watchedFetch(
+          entry.url,
+          fetchOpts(`bytes=${start}-${end}`),
+          signal,
+          async (res, alive, attempt) => {
+            if (res.status !== 206) {
+              // A 200 is a server that ignores Range: asking again will not
+              // change its mind, and buffering the whole file is not an option.
+              if (res.status === 200 || res.status === 416) {
+                throw new DownloadError(
+                  'no-range',
+                  `Server did not honor Range for ${entry.url} (status ${res.status})`,
+                );
+              }
+              throw statusError(entry.url, res.status);
+            }
+            const contentRange = res.headers.get('content-range');
+            if (contentRange !== `bytes ${start}-${end}/${total}`) {
+              throw new DownloadError(
+                'wrong-range',
+                `Wrong Content-Range for ${entry.url}: got "${contentRange ?? ''}", expected "bytes ${start}-${end}/${total}"`,
+                true,
+              );
+            }
+            const etag = res.headers.get('etag');
+            if (etag && etag.replace(/^(W\/)?"|"$/g, '') !== version) {
+              // The source file changed under us mid-download: nothing stored
+              // so far may be combined with the new bytes.
+              await deleteTrackChunks(cache, entry.url);
+              throw new DownloadError(
+                'source-changed',
+                `Source changed during download of ${entry.url}; download restarted`,
+              );
+            }
+            try {
+              const buf = await readBody(
+                res,
+                entry.url,
+                expectedLen,
+                alive,
+                attempt,
+                hooks.onReceiving,
+              );
+              const digest = await sha256Hex(buf);
+              if (digest !== null && digest !== hashes[i]) {
+                throw new DownloadError(
+                  'integrity',
+                  `Integrity check failed for ${entry.url} (chunk ${i})`,
+                  true,
+                );
+              }
+              return { buf, type: res.headers.get('content-type') };
+            } catch (err) {
+              hooks.onReceiving?.(0);
+              throw err;
+            }
+          },
+        ),
+      hooks,
+    );
+    contentType = part.type ?? contentType;
     await cache.put(
       chunkKey(entry.url, i),
-      new Response(buf, { headers: { 'content-length': String(buf.byteLength) } }),
+      new Response(part.buf, { headers: { 'content-length': String(part.buf.byteLength) } }),
     );
-    await onChunk(buf.byteLength);
+    hooks.onReceiving?.(0);
+    await onChunk(part.buf.byteLength);
   }
   // Completion marker: only now does the service worker serve this track.
   await cache.put(
@@ -522,12 +991,90 @@ async function requestPersistentStorage(): Promise<void> {
   }
 }
 
+/**
+ * Keep the screen on while a download runs. A phone that locks itself
+ * stops the page and the download with it - a web app has no background
+ * downloads on iOS - and a gigabyte takes longer than the screen stays on.
+ * Taken again whenever the page comes back to the front, because the
+ * browser lets go of it whenever the page leaves.
+ */
+function holdAwake(): () => void {
+  type Sentinel = { release: () => Promise<void> };
+  const wl =
+    typeof navigator !== 'undefined'
+      ? (navigator as unknown as { wakeLock?: { request: (t: 'screen') => Promise<Sentinel> } })
+          .wakeLock
+      : undefined;
+  if (!wl || typeof document === 'undefined') return () => {};
+  let sentinel: Sentinel | null = null;
+  let stopped = false;
+  const take = () => {
+    if (stopped || document.visibilityState !== 'visible') return;
+    wl.request('screen').then(
+      (s) => {
+        if (stopped) void s.release().catch(() => {});
+        else sentinel = s;
+      },
+      () => {},
+    );
+  };
+  document.addEventListener('visibilitychange', take);
+  take();
+  return () => {
+    stopped = true;
+    document.removeEventListener('visibilitychange', take);
+    void sentinel?.release().catch(() => {});
+  };
+}
+
+/** What a failure is called where a reader will see it. */
+function errorCodeOf(err: unknown): DownloadErrorCode | undefined {
+  if (isQuotaError(err)) return 'out-of-space';
+  if (err instanceof DownloadError) return err.code;
+  const status = (err as { name?: string; status?: number }).status;
+  if ((err as { name?: string }).name === 'ApiError' && typeof status === 'number') {
+    if (status === 0) return 'network';
+    if (status === 401) return 'unauthorized';
+    if (status >= 500 || status === 408 || status === 429) return 'server';
+    return 'http';
+  }
+  return err instanceof Error ? 'network' : undefined;
+}
+
+type Manifest = { urls: OfflineManifestEntry[]; totalBytes: number };
+type Preparing = { status: 'preparing'; done: number; total: number };
+
+/**
+ * Save a book for reading or listening offline.
+ *
+ * One download per book: a second call while one runs follows it rather
+ * than starting another beside it - a big audiobook shows nothing for a
+ * while as the server prepares it, and a second tap used to start a second
+ * loop that fought the first over the same record.
+ *
+ * The record is written from the first moment, `preparing`, so every
+ * surface can show the download at once, and any failure leaves an `error`
+ * the reader can try again from.
+ */
 export async function startDownload(
   bookId: string,
   onUpdate: (s: DownloadState) => void,
+  opts: { title?: string } = {},
 ): Promise<void> {
   if (!('caches' in window)) {
     throw new DownloadError('no-cache-storage', 'Cache Storage is not available in this browser.');
+  }
+  const running = activeDownloads.get(bookId);
+  if (running) {
+    const off = subscribeDownloads((id, s) => {
+      if (id === bookId && s) onUpdate(s);
+    });
+    try {
+      await running;
+    } finally {
+      off();
+    }
+    return;
   }
   void requestPersistentStorage();
   // Register the controller and in-flight marker BEFORE the first await: a
@@ -545,119 +1092,262 @@ export async function startDownload(
     }),
   );
   const invalidated = () => generation !== purgeGeneration;
+  const letSleep = holdAwake();
   try {
-    let manifest: { urls: OfflineManifestEntry[]; totalBytes: number };
-    try {
-      manifest = await raceAbort(
-        api<{ urls: OfflineManifestEntry[]; totalBytes: number }>(
-          `/api/books/${bookId}/offline-manifest`,
-          { signal: controller.signal },
-        ),
-        controller.signal,
-      );
-    } catch (err) {
-      // Aborted (logout or cancel) before anything was stored: settle
-      // silently and store NOTHING - nothing may outlive the purge.
-      if (controller.signal.aborted || invalidated()) return;
-      throw err;
-    }
-    if (controller.signal.aborted || invalidated()) return;
-    const resumed = await getDownloadState(bookId);
-    const state: DownloadState = {
-      bookId,
-      status: 'downloading',
-      totalUrls: manifest.urls.length,
-      doneUrls: 0,
-      estimatedBytes: manifest.totalBytes,
-      storedBytes: 0,
-      updatedAt: new Date().toISOString(),
-      urls: manifest.urls.map((u) => u.url),
-    };
-    const save = async () => {
-      // A continuation running after a completed purge must not repopulate
-      // the download registry the purge just cleared.
-      if (invalidated()) return;
-      state.updatedAt = new Date().toISOString();
-      await idbPut(STORES.downloads, bookId, { ...state });
-      onUpdate({ ...state });
-    };
-    // Ask before writing, not after: a package that cannot fit fails here
-    // with something the reader can act on, instead of a raw quota
-    // exception hundreds of megabytes into an audiobook. Bytes an earlier
-    // attempt already stored are part of the reported usage, so they are
-    // credited back or every resume would look too big to finish.
-    const estimate = await storageEstimate();
-    const stillNeeded = Math.max(0, manifest.totalBytes - (resumed?.storedBytes ?? 0));
-    if (
-      estimate &&
-      estimate.quota > 0 &&
-      estimate.quota - estimate.usage < stillNeeded * QUOTA_HEADROOM
-    ) {
-      state.status = 'error';
-      state.errorCode = 'out-of-space';
-      await save();
-      return;
-    }
-    // Register the attempt BEFORE the first byte is written. Nothing else
-    // records which URLs this package owns, so a tab killed mid-download
-    // would otherwise leave chunks on the device that "Remove offline copy"
-    // could never find.
-    await save();
-    const cache = await caches.open(OFFLINE_CACHE);
-    try {
-      for (const entry of manifest.urls) {
-        if (controller.signal.aborted) {
-          state.status = 'cancelled';
-          await save();
-          return;
-        }
-        if (entry.kind === 'track') {
-          await downloadTrackChunked(cache, entry, controller.signal, async (bytes) => {
-            state.storedBytes += bytes;
-            await save();
-          });
-        } else {
-          state.storedBytes += await downloadEntry(cache, entry, controller.signal);
-        }
-        state.doneUrls += 1;
-        await save();
-      }
-      // Atomic completion: 'done' is written only after every entry verified.
-      state.status = 'done';
-      await save();
-    } catch (err) {
-      if (controller.signal.aborted) {
-        state.status = 'cancelled';
-      } else {
-        state.status = 'error';
-        state.error = (err as Error).message;
-        state.errorCode = isQuotaError(err)
-          ? 'out-of-space'
-          : err instanceof DownloadError
-            ? err.code
-            : undefined;
-      }
-      await save();
-    }
+    const locks = lockManager();
+    const body = () => runDownload(bookId, controller, invalidated, onUpdate, opts.title);
+    if (!locks) await body();
+    else
+      await locks.request(lockName(bookId), { ifAvailable: true }, async (lock) => {
+        // Another tab is downloading this book already; it carries on, and
+        // this one hears about it through the channel.
+        if (lock) await body();
+      });
   } finally {
-    controllers.delete(bookId);
+    letSleep();
+    if (controllers.get(bookId) === controller) controllers.delete(bookId);
     activeDownloads.delete(bookId);
     release();
   }
 }
 
+async function runDownload(
+  bookId: string,
+  controller: AbortController,
+  invalidated: () => boolean,
+  onUpdate: (s: DownloadState) => void,
+  title: string | undefined,
+): Promise<void> {
+  const signal = controller.signal;
+  // Read before anything is written: what an earlier attempt stored is
+  // credited against the quota below, and its URLs stay removable.
+  const resumed = (await idbGet<DownloadState>(STORES.downloads, bookId)) ?? null;
+  const state: DownloadState = {
+    bookId,
+    title: title ?? resumed?.title,
+    status: 'downloading',
+    phase: 'preparing',
+    totalUrls: resumed?.totalUrls ?? 0,
+    doneUrls: 0,
+    estimatedBytes: resumed?.estimatedBytes ?? 0,
+    storedBytes: 0,
+    updatedAt: new Date().toISOString(),
+    urls: resumed?.urls ?? [],
+  };
+  // Told often, written seldom: the bar moves several times a second, the
+  // record is written at most once a second, and on every real step.
+  let lastTold = 0;
+  let lastWritten = 0;
+  const tell = () => {
+    if (invalidated()) return;
+    lastTold = Date.now();
+    const copy = { ...state };
+    onUpdate(copy);
+    publish(bookId, copy);
+  };
+  const save = async (force = true) => {
+    // A continuation running after a completed purge must not repopulate
+    // the download registry the purge just cleared.
+    if (invalidated()) return;
+    state.updatedAt = new Date().toISOString();
+    if (force || Date.now() - lastWritten > 1000) {
+      lastWritten = Date.now();
+      await idbPut(STORES.downloads, bookId, { ...state });
+    }
+    tell();
+  };
+  const moved = () => {
+    if (Date.now() - lastTold > 200) void save(false);
+  };
+  const phase = (p: DownloadState['phase']) => {
+    if (state.phase === p) return;
+    state.phase = p;
+    void save(false);
+  };
+  const hooks = (attempt: DownloadState['phase']): RetryHooks => ({
+    onAttempt: () => phase(attempt),
+    onWait: () => phase('waiting'),
+    onRetry: () => phase('retrying'),
+  });
+
+  if (signal.aborted || invalidated()) return;
+  await save();
+
+  let manifest: Manifest;
+  try {
+    manifest = await withRetry(
+      signal,
+      async () => {
+        // An audiobook is prepared by the server first (see the manifest
+        // route): asked again until it is ready, saying how far along it is.
+        for (;;) {
+          const m = await raceAbort(
+            api<Manifest | Preparing>(`/api/books/${bookId}/offline-manifest`, {
+              signal,
+              headers: { [DIRECT_HEADER]: '1' },
+            }),
+            signal,
+          );
+          if (!('status' in m && m.status === 'preparing')) return m as Manifest;
+          state.prepared = { done: m.done, total: m.total };
+          state.phase = 'preparing';
+          void save(false);
+          await sleep(downloadTiming.preparePollMs, signal);
+        }
+      },
+      hooks('preparing'),
+    );
+  } catch (err) {
+    // Aborted (logout or cancel) before anything was stored: settle
+    // silently and store NOTHING - nothing may outlive the purge.
+    if (signal.aborted || invalidated()) {
+      if (!invalidated()) {
+        state.status = 'cancelled';
+        state.phase = undefined;
+        await save();
+      }
+      return;
+    }
+    state.status = 'error';
+    state.phase = undefined;
+    state.error = (err as Error).message;
+    state.errorCode = errorCodeOf(err);
+    await save();
+    return;
+  }
+  if (signal.aborted || invalidated()) return;
+  state.totalUrls = manifest.urls.length;
+  state.estimatedBytes = manifest.totalBytes;
+  state.urls = manifest.urls.map((u) => u.url);
+  state.prepared = undefined;
+  state.phase = 'saving';
+  // Ask before writing, not after: a package that cannot fit fails here
+  // with something the reader can act on, instead of a raw quota
+  // exception hundreds of megabytes into an audiobook. Bytes an earlier
+  // attempt already stored are part of the reported usage, so they are
+  // credited back or every resume would look too big to finish.
+  const estimate = await storageEstimate();
+  const stillNeeded = Math.max(0, manifest.totalBytes - (resumed?.storedBytes ?? 0));
+  if (
+    estimate &&
+    estimate.quota > 0 &&
+    estimate.quota - estimate.usage < stillNeeded * QUOTA_HEADROOM
+  ) {
+    state.status = 'error';
+    state.phase = undefined;
+    state.errorCode = 'out-of-space';
+    await save();
+    return;
+  }
+  // Register the attempt BEFORE the first byte is written. Nothing else
+  // records which URLs this package owns, so a tab killed mid-download
+  // would otherwise leave chunks on the device that "Remove offline copy"
+  // could never find.
+  await save();
+  const cache = await caches.open(OFFLINE_CACHE);
+  try {
+    for (const entry of manifest.urls) {
+      if (signal.aborted) {
+        state.status = 'cancelled';
+        state.phase = undefined;
+        await save();
+        return;
+      }
+      if (entry.kind === 'track') {
+        await downloadTrackChunked(
+          cache,
+          entry,
+          signal,
+          async (bytes) => {
+            state.storedBytes += bytes;
+            state.receivingBytes = 0;
+            await save(false);
+          },
+          {
+            ...hooks('saving'),
+            onChecking: () => phase('checking'),
+            onReceiving: (bytes) => {
+              state.receivingBytes = bytes;
+              moved();
+            },
+          },
+        );
+      } else {
+        state.storedBytes += await downloadEntry(cache, entry, signal, hooks('saving'));
+      }
+      state.doneUrls += 1;
+      await save();
+    }
+    // Atomic completion: 'done' is written only after every entry verified.
+    state.status = 'done';
+    state.phase = undefined;
+    state.receivingBytes = 0;
+    await save();
+  } catch (err) {
+    state.phase = undefined;
+    state.receivingBytes = 0;
+    if (signal.aborted) {
+      state.status = 'cancelled';
+    } else {
+      state.status = 'error';
+      state.error = (err as Error).message;
+      state.errorCode = errorCodeOf(err);
+    }
+    await save();
+  }
+}
+
+/**
+ * Stop a download. One this tab is not running - left behind by a closed
+ * app - has nothing to abort, so it is marked stopped here and can be
+ * tried again or removed.
+ */
 export function cancelDownload(bookId: string): void {
-  controllers.get(bookId)?.abort();
+  const controller = controllers.get(bookId);
+  if (controller) {
+    controller.abort();
+    return;
+  }
+  void (async () => {
+    const stored = await idbGet<DownloadState>(STORES.downloads, bookId);
+    if (!stored || stored.status !== 'downloading') return;
+    const stopped: DownloadState = {
+      ...stored,
+      status: 'cancelled',
+      phase: undefined,
+      receivingBytes: 0,
+      updatedAt: new Date().toISOString(),
+    };
+    await idbPut(STORES.downloads, bookId, stopped);
+    publish(bookId, stopped);
+  })();
+}
+
+/**
+ * Carry on with what the app was downloading when it was closed or put to
+ * sleep, one book after another. Called once the session is known, so a
+ * download never runs for somebody who has signed out.
+ */
+export async function resumeInterruptedDownloads(): Promise<void> {
+  for (const d of await listDownloads()) {
+    if (d.status !== 'error' || d.errorCode !== 'interrupted') continue;
+    try {
+      await startDownload(d.bookId, () => {}, { title: d.title });
+    } catch {
+      /* told through its record */
+    }
+  }
 }
 
 export async function removeDownload(bookId: string): Promise<void> {
-  const state = await getDownloadState(bookId);
+  const state = (await idbGet<DownloadState>(STORES.downloads, bookId)) ?? null;
   if (state) {
     const cache = await caches.open(OFFLINE_CACHE);
     const paths = await cacheKeyPaths(cache);
     for (const url of state.urls) await deleteEntry(cache, url, paths);
   }
   await idbDelete(STORES.downloads, bookId);
+  publish(bookId, null);
 }
 
 async function deleteEntry(cache: Cache, url: string, paths?: string[]): Promise<void> {
@@ -714,6 +1404,7 @@ export async function purgeOfflineData(): Promise<void> {
   } catch {
     /* indexeddb unavailable */
   }
+  publish('*', null);
 }
 
 export async function storageEstimate(): Promise<{ usage: number; quota: number } | null> {

@@ -271,6 +271,28 @@ export const library = {
   'library.download.error.wrong-range': 'The server sent the wrong part of an audio file.',
   'library.download.error.source-changed':
     'The book changed on the server during the download. Start again to fetch the new version.',
+  'library.download.error.network':
+    'The connection kept dropping. Try again when it is steadier; what is saved so far is kept.',
+  'library.download.error.server':
+    'The server kept answering with an error. Try again in a while; what is saved so far is kept.',
+  'library.download.error.stalled':
+    'The download kept stalling. Try again; what is saved so far is kept.',
+  'library.download.error.interrupted':
+    'The download stopped when the app was closed. Try again to carry on from where it got to.',
+  'library.download.error.unauthorized': 'You were signed out, so the download stopped.',
+  // A download under way, wherever it is shown
+  'library.offline.preparing': 'Preparing…',
+  'library.offline.preparingLede':
+    'The server is getting {title} ready to save: {pct} read so far. It only has to do this once.',
+  'library.offline.checking': 'Checking what is already saved…',
+  'library.offline.waiting': 'Waiting for a connection…',
+  'library.offline.retrying': 'The connection dropped. Trying again…',
+  'library.offline.progress': '{stored} of {total} · {pct}',
+  'library.offline.keepOpen':
+    '{app} keeps the screen on while it saves. On a phone, stay in the app until it finishes.',
+  'library.offline.pill': 'Saving offline',
+  'library.offline.pillLabel': 'Saving {title} offline, {pct}. Open the book.',
+  'library.offline.pillMore': '+{n} more',
   // Hidden books: an admin takes one off everyone else's shelves
   'library.hidden.tool': 'Hide',
   'library.hidden.toolHint': 'Hide this book from everyone but admins',

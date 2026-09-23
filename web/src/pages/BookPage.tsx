@@ -45,6 +45,7 @@ import {
   downloadFraction,
   downloadPercent,
   getDownloadState,
+  preparedFraction,
   removeDownload,
   startDownload,
   type DownloadState,
@@ -52,6 +53,7 @@ import {
 import { bookAudioSupport } from '../lib/audioSupport';
 import { ambientColorFromImage } from '../lib/ambient';
 import { recordCheckpoint } from '../progress/engine';
+import { useDownloadState } from '../offline/useDownloads';
 
 /** The paired edition, as far as the offline sheet needs to describe it. */
 interface Companion {
@@ -70,10 +72,12 @@ export function BookPage() {
   const [detail, setDetail] = useState<BookDetail | null>(null);
   const [error, setError] = useState<MessageKey | null>(null);
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
-  const [dl, setDl] = useState<DownloadState | null>(null);
+  // Live: a download started here, in another tab or before a reload is
+  // heard as it goes (offline/useDownloads.ts), not read once on arrival.
+  const dl = useDownloadState(id) ?? null;
   const [companion, setCompanion] = useState<Companion | null>(null);
   // `undefined` until this device has been asked; null means never downloaded.
-  const [companionDl, setCompanionDl] = useState<DownloadState | null | undefined>(undefined);
+
   const [ambient, setAmbient] = useState<string | null>(null);
   const [switching, setSwitching] = useState(false);
   const [offlineSheet, setOfflineSheet] = useState(false);
@@ -114,7 +118,6 @@ export function BookPage() {
         setError('library.book.loadFailed');
       }
     }
-    setDl(await getDownloadState(id));
   }, [id]);
 
   const loadMembership = useCallback(async () => {
@@ -142,17 +145,7 @@ export function BookPage() {
   // Whether the paired edition is on this device decides what the tandem
   // card may promise, so it is read (from local storage only) up front.
   const otherBookId = detail?.book.pair?.otherBookId ?? null;
-  useEffect(() => {
-    setCompanionDl(undefined);
-    if (!otherBookId) return;
-    let cancelled = false;
-    void getDownloadState(otherBookId).then((s) => {
-      if (!cancelled) setCompanionDl(s);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [otherBookId]);
+  const companionDl = useDownloadState(otherBookId);
 
   useEffect(() => {
     if (!detail?.book.hasCover) return;
@@ -314,21 +307,18 @@ export function BookPage() {
    * stops a large audiobook from starving the small ebook beside it.
    */
   const download = async (withCompanion: boolean) => {
-    const wanted: { id: string; onUpdate: (s: DownloadState) => void }[] = [
-      { id, onUpdate: setDl },
-    ];
-    if (withCompanion && companion) wanted.push({ id: companion.id, onUpdate: setCompanionDl });
-    const targets: typeof wanted = [];
+    const wanted = [id, ...(withCompanion && companion ? [companion.id] : [])];
+    const targets: string[] = [];
     for (const target of wanted) {
-      if ((await getDownloadState(target.id))?.status !== 'done') targets.push(target);
+      if ((await getDownloadState(target))?.status !== 'done') targets.push(target);
     }
     try {
       toast.show(
         targets.length > 1 ? t('library.offline.startingBoth') : t('library.offline.starting'),
       );
       for (const target of targets) {
-        await startDownload(target.id, target.onUpdate);
-        const state = await getDownloadState(target.id);
+        await startDownload(target, () => {}, { title: book.title });
+        const state = await getDownloadState(target);
         if (state?.status === 'done') continue;
         if (state?.status === 'cancelled') toast.show(t('library.download.stopped'));
         else toast.show(t(downloadErrorKey(state?.errorCode)));
@@ -343,9 +333,6 @@ export function BookPage() {
           ? t('library.download.needsHttps', { app: t('common.appName') })
           : failureMessage(err, t('library.download.failed'), t),
       );
-    } finally {
-      setDl(await getDownloadState(id));
-      if (companion) setCompanionDl(await getDownloadState(companion.id));
     }
   };
 
@@ -359,7 +346,6 @@ export function BookPage() {
     setOfflineSheet(true);
     const other = book.pair?.otherBookId;
     if (!other || companion?.id === other) return;
-    setCompanionDl(await getDownloadState(other));
     try {
       const d = await api<BookDetail>(`/api/books/${other}`);
       setCompanion({ id: other, kind: d.book.kind, sizeBytes: d.book.sizeBytes });
@@ -768,7 +754,6 @@ export function BookPage() {
           }}
           onRemove={async () => {
             await removeDownload(id);
-            setDl(await getDownloadState(id));
             setOfflineSheet(false);
             toast.show(t('library.download.removed'));
           }}
@@ -971,7 +956,15 @@ function OfflineButton({ dl, onClick }: { dl: DownloadState | null; onClick: () 
   const downloading = dl?.status === 'downloading';
   const done = dl?.status === 'done';
   const failed = dl?.status === 'error';
-  const pctDone = downloading ? downloadPercent(dl) : 0;
+  // While the server prepares a big audiobook the ring shows that instead:
+  // the one stretch where nothing arrives, and it used to look like nothing
+  // was happening at all.
+  const preparing = downloading && dl.phase === 'preparing';
+  const pctDone = !downloading
+    ? 0
+    : preparing
+      ? Math.round(preparedFraction(dl) * 100)
+      : downloadPercent(dl);
   return (
     <button
       className={`btn btn--ghost book-tool offline-btn ${done ? 'is-done' : ''} ${downloading ? 'is-busy' : ''}`}
@@ -980,7 +973,7 @@ function OfflineButton({ dl, onClick }: { dl: DownloadState | null; onClick: () 
         done
           ? t('library.offline.savedManage')
           : downloading
-            ? t('library.offline.savingPct', { pct: f.percent(downloadFraction(dl)) })
+            ? t('library.offline.savingPct', { pct: f.percent(pctDone / 100) })
             : failed
               ? t('library.offline.retryLabel')
               : t('library.offline.saveLabel')
@@ -999,11 +992,11 @@ function OfflineButton({ dl, onClick }: { dl: DownloadState | null; onClick: () 
       )}
       {downloading ? (
         <span className="offline-btn__label">
-          {t('library.offline.saving')}
-          {dl.estimatedBytes > 0 && (
+          {preparing ? t('library.offline.preparing') : t('library.offline.saving')}
+          {!preparing && dl.estimatedBytes > 0 && (
             <span className="offline-btn__bytes">
               {t('library.download.bytesOf', {
-                stored: f.bytes(dl.storedBytes),
+                stored: f.bytes(dl.storedBytes + (dl.receivingBytes ?? 0)),
                 total: f.bytes(dl.estimatedBytes),
               })}
             </span>
@@ -1057,6 +1050,36 @@ function OfflineSheet({
   // Bytes a stopped or failed attempt left on the device. They are reused by
   // the next attempt, but until then they are silent occupied space.
   const partialBytes = dl && !done && !downloading ? dl.storedBytes : 0;
+  // A download under way: what it is doing, when there is more to say than
+  // the numbers, and the numbers.
+  const preparing = downloading && dl.phase === 'preparing';
+  const progressFraction = !downloading
+    ? 0
+    : preparing
+      ? preparedFraction(dl)
+      : downloadFraction(dl);
+  const progressStatus = !downloading
+    ? null
+    : preparing
+      ? t('library.offline.preparingLede', {
+          title: book.title,
+          pct: f.percent(progressFraction),
+        })
+      : dl.phase === 'checking'
+        ? t('library.offline.checking')
+        : dl.phase === 'waiting'
+          ? t('library.offline.waiting')
+          : dl.phase === 'retrying'
+            ? t('library.offline.retrying')
+            : null;
+  const progressNumbers =
+    downloading && !preparing && dl.estimatedBytes > 0
+      ? t('library.offline.progress', {
+          stored: f.bytes(dl.storedBytes + (dl.receivingBytes ?? 0)),
+          total: f.bytes(dl.estimatedBytes),
+          pct: f.percent(progressFraction),
+        })
+      : null;
   return (
     <Sheet
       title={
@@ -1101,16 +1124,18 @@ function OfflineSheet({
         </>
       ) : downloading ? (
         <>
-          <p className="sheet__lede">
-            {t('library.download.progressLede', {
-              done: dl.doneUrls,
-              total: dl.totalUrls,
-              bytes: f.bytes(dl.storedBytes),
-            })}
-          </p>
+          {progressStatus && <p className="sheet__lede">{progressStatus}</p>}
+          {/* Bytes, not files: a single-file audiobook sat at a quarter for
+              the whole download and then jumped to the end. */}
           <span className="progressbar" aria-hidden="true" style={{ height: 6 }}>
-            <span style={{ width: `${dl.totalUrls ? (dl.doneUrls / dl.totalUrls) * 100 : 0}%` }} />
+            <span style={{ width: `${progressFraction * 100}%` }} />
           </span>
+          {progressNumbers && (
+            <p className="dl-progress" role="status">
+              {progressNumbers}
+            </p>
+          )}
+          <p className="hint">{t('library.offline.keepOpen', { app: t('common.appName') })}</p>
           <div className="sheet__actions">
             <button className="btn btn--secondary" onClick={onCancel}>
               {t('library.download.cancel')}

@@ -1177,6 +1177,102 @@ body:has(.app-body) {
 .hidden-note__show {
   flex: none;
 }
+/* What is being saved offline, wherever the reader is (DownloadsPill):
+   above the tab bar on a phone, in the corner on a desk. */
+.downloads-pill {
+  position: fixed;
+  z-index: 25;
+  inset-inline-end: max(var(--sp-3), var(--rp-safe-right));
+  bottom: calc(78px + var(--rp-safe-bottom));
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  max-width: min(22rem, calc(100vw - 2 * var(--sp-3)));
+  padding-block: 6px;
+  padding-inline: 6px var(--sp-3);
+  border: 1px solid var(--rp-border);
+  border-radius: var(--radius-pill);
+  background: var(--rp-surface-raised);
+  box-shadow: var(--rp-shadow-2);
+  color: var(--rp-text);
+  text-decoration: none;
+}
+.downloads-pill:focus-visible {
+  outline: 2px solid var(--rp-focus);
+  outline-offset: 2px;
+}
+.downloads-pill__ring {
+  --pct: 0;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--rp-interactive) calc(var(--pct) * 1%),
+    color-mix(in srgb, var(--rp-interactive) 20%, transparent) 0
+  );
+  transition: --pct var(--rp-duration-quick) var(--rp-ease);
+}
+.downloads-pill__pct {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--rp-surface-raised);
+  font-size: 9.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.downloads-pill__text {
+  display: grid;
+  min-width: 0;
+  line-height: 1.25;
+}
+.downloads-pill__what {
+  color: var(--rp-text-soft);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.downloads-pill__title {
+  overflow: hidden;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.downloads-pill__more {
+  flex: none;
+  color: var(--rp-text-soft);
+  font-size: 12px;
+}
+@media (min-width: 744px) {
+  .downloads-pill {
+    bottom: max(var(--sp-5), var(--rp-safe-bottom));
+    inset-inline-end: var(--sp-5);
+  }
+}
+@media (max-width: 743px) {
+  /* The toasts and the last row of a page make room for it. */
+  .has-downloads-pill .toast {
+    bottom: calc(var(--rp-toast-bottom, 96px) + 52px + var(--rp-safe-bottom));
+  }
+  .has-downloads-pill .app-main {
+    padding-block-end: calc(150px + var(--rp-safe-bottom));
+  }
+}
+/* A download under way, in the sheet: the numbers under the bar. */
+.dl-progress {
+  margin: var(--sp-2) 0 0;
+  color: var(--rp-text-soft);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Download files: each edition one row - what it is, what arrives and how
    big - the ebook first; an audiobook's single files folded away below. */
 .dl-list {
