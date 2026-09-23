@@ -465,16 +465,10 @@ const messages: Record<string, string> = {
   'library.book.stillIndexedTitle': 'Всё ещё индексируется',
   'library.book.open': '{kind, select, ebook {Читать} other {Слушать}}',
   'library.book.openOther': '{kind, select, ebook {Слушать} other {Читать}}',
-  'library.book.fromHere': '{kind, select, ebook {Слушать отсюда} other {Читать отсюда}}',
   'library.book.readAlong': 'Чтение с голосом',
-  'library.book.readAlongFromHere': 'Чтение с голосом отсюда',
   'library.book.readAlongHint': 'Страница, поверх которой звучит начитка',
   'library.book.readAlongNotReady': 'Чтение с голосом станет доступно, когда пара будет выровнена',
   'library.book.opening': 'Открывается…',
-  'library.book.saveCopy': 'Сохранить копию',
-  'library.book.saveFiles': 'Сохранить файлы…',
-  'library.book.saveFilesHint':
-    '{n, plural, one {# файл.} few {# файла.} many {# файлов.} other {# файла.}} Сохраняются по одному.',
   'library.book.part': 'Часть {n}',
   'library.book.otherNotOnDevice':
     '{kind, select, ebook {Аудиокниги} other {Электронной книги}} нет на этом устройстве, поэтому для переключения нужно подключение.',
@@ -504,8 +498,6 @@ const messages: Record<string, string> = {
   'library.book.languageUnknown': 'Язык неизвестен',
   'library.book.languageTitle':
     'Язык {source, select, manual {задан вручную} metadata {из файла} pair {из парного издания} detected {определён по тексту} other {}}',
-  'library.book.languageWithSource':
-    '{name} · {source, select, manual {задан вручную} metadata {из файла} pair {из парного издания} detected {определён по тексту} other {}}',
   'library.book.languageAutoOption': 'Авто',
   'library.book.languageUnknownSet': 'Неизвестен · задать вручную?',
   'library.book.languageSet': 'Язык установлен: {name}',
@@ -522,10 +514,6 @@ const messages: Record<string, string> = {
     'Выберите электронную и аудиокнигу одного произведения. Выравнивание запускается после связывания; переключение между изданиями недоступно, пока оно не завершится.',
   'library.pair.switchUnaligned':
     'У вас есть и {kind, select, ebook {аудиокнига} other {электронная книга}}. Синхронизация их между собой ещё не завершена, поэтому пока переключение будет начинаться с начала.',
-  'library.pair.switchExact':
-    'У вас есть и {kind, select, ebook {аудиокнига} other {электронная книга}}, и переключение между ними попадает на то же предложение.',
-  'library.pair.switchClose':
-    'У вас есть и {kind, select, ebook {аудиокнига} other {электронная книга}}. Переключение попадает близко к тому месту, где вы сейчас, хотя не всегда точно на нужное предложение.',
   'library.download.inProgress': 'Загрузки в процессе',
   'library.download.title': 'Загрузки',
   'library.download.downloadingN': 'Загружается {n}',
@@ -534,23 +522,13 @@ const messages: Record<string, string> = {
   'library.download.progress': '{stored} из {total} · {pct}',
   'library.download.stop': 'Остановить',
   'library.download.failed': 'Загрузка не удалась',
-  'library.download.download': 'Загрузить',
-  'library.download.downloaded': 'Загружено',
-  'library.download.downloading': 'Загружается',
   'library.download.bytesOf': '{stored} из {total}',
-  'library.download.forOffline': 'Загрузить для офлайна',
-  'library.download.retryLabel': 'Загрузить для офлайна — последняя попытка не удалась',
-  'library.download.downloadingPct': 'Загружается для офлайна, {pct}',
-  'library.download.availableManage': 'Доступно офлайн — управлять загрузкой',
-  'library.download.startingOne': 'Загружаем для офлайна…',
-  'library.download.startingBoth': 'Загружаем оба издания…',
   'library.download.stopped': 'Загрузка остановлена',
   'library.download.available': 'Доступно офлайн',
   'library.download.doneBoth': 'Оба издания доступны офлайн',
   'library.download.removed': 'Офлайн-копия удалена',
   'library.download.needsHttps':
     'Офлайн-загрузкам нужен HTTPS (или localhost). См. руководство по самостоятельному размещению в README {app}.',
-  'library.download.askTitle': 'Загрузить для офлайна?',
   'library.download.askLede':
     'Сохранить «{title}» на этом устройстве для перелётов и мест без связи — около {bytes}{kind, select, ebook { с изображениями} other { аудио}}. {kind, select, ebook {Чтение} other {Прослушивание}} полностью работает офлайн, а ваша позиция синхронизируется при повторном подключении. При выходе из аккаунта офлайн-копии удаляются.',
   'library.download.companionSeparate':
@@ -559,7 +537,6 @@ const messages: Record<string, string> = {
     '{bytes} с прошлой попытки уже на этом устройстве. Новая попытка продолжит с этого места; удаление освобождает место сейчас же.',
   'library.download.interruptedLede':
     'Загрузка была прервана — новая попытка продолжит с того места, где она остановилась.',
-  'library.download.both': 'Загрузить оба{hasSize, select, true { ({size})} other {}}',
   'library.download.onlyThis':
     'Только {kind, select, ebook {электронная книга} other {аудиокнига}} ({size})',
   'library.download.retry': 'Повторить загрузку',
@@ -1748,6 +1725,28 @@ const messages: Record<string, string> = {
   'library.lang.allLanguages': 'Все языки',
   'library.lang.button': 'Язык: {name}',
   'library.lang.menuTitle': 'Книги на языке',
+  // settings
+  'settings.account.menuLabel': 'Аккаунт: {name}',
+  'settings.account.goTo': 'Настройки аккаунта',
+
+  // library
+  'library.book.downloadFile': 'Скачать файл',
+  'library.book.downloadFiles': 'Скачать файлы…',
+  'library.book.downloadFilesTitle': 'Скачать файлы',
+  'library.book.downloadFileHint': 'Собственный файл книги хранится на этом устройстве',
+  'library.book.downloadFilesHint':
+    '{n, plural, one {# файл.} few {# файла.} many {# файлов.} other {# файла.}} Каждый скачивается отдельно.',
+  'library.offline.save': 'Сохранить офлайн',
+  'library.offline.saving': 'Сохранение офлайн',
+  'library.offline.saved': 'Сохранено офлайн',
+  'library.offline.saveLabel': 'Сохранить офлайн, чтобы открывать без подключения',
+  'library.offline.retryLabel': 'Сохранить офлайн - последняя попытка не удалась',
+  'library.offline.savingPct': 'Сохранение офлайн, {pct}',
+  'library.offline.savedManage': 'Сохранено офлайн - управлять офлайн-копией',
+  'library.offline.askTitle': 'Сохранить офлайн?',
+  'library.offline.starting': 'Сохранение офлайн…',
+  'library.offline.startingBoth': 'Сохранение обоих изданий офлайн…',
+  'library.offline.saveBoth': 'Сохранить оба офлайн{hasSize, select, true { ({size})} other {}}',
 };
 
 export default messages;

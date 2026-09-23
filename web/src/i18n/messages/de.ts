@@ -481,17 +481,11 @@ const messages: Record<string, string> = {
   'library.book.stillIndexedTitle': 'Wird noch indiziert',
   'library.book.open': '{kind, select, ebook {Lesen} other {Hören}}',
   'library.book.openOther': '{kind, select, ebook {Hören} other {Lesen}}',
-  'library.book.fromHere': '{kind, select, ebook {Von hier hören} other {Von hier lesen}}',
   'library.book.readAlong': 'Mitlesen',
-  'library.book.readAlongFromHere': 'Von hier mitlesen',
   'library.book.readAlongHint': 'Die Seite, mit der Erzählung darüber',
   'library.book.readAlongNotReady':
     'Mitlesen wird freigeschaltet, sobald das Paar ausgerichtet ist',
   'library.book.opening': 'Wird geöffnet…',
-  'library.book.saveCopy': 'Kopie sichern',
-  'library.book.saveFiles': 'Dateien sichern…',
-  'library.book.saveFilesHint':
-    '{n, plural, one {# Datei.} other {# Dateien.}} Sie werden nacheinander gesichert.',
   'library.book.part': 'Teil {n}',
   'library.book.otherNotOnDevice':
     'Das {kind, select, ebook {Hörbuch} other {E-Book}} liegt nicht auf diesem Gerät, daher braucht der Wechsel eine Verbindung.',
@@ -523,8 +517,6 @@ const messages: Record<string, string> = {
   'library.book.languageUnknown': 'Sprache unbekannt',
   'library.book.languageTitle':
     'Sprache {source, select, manual {von Hand festgelegt} metadata {aus der Datei} pair {aus der zugeordneten Ausgabe} detected {aus dem Text erkannt} other {}}',
-  'library.book.languageWithSource':
-    '{name} · {source, select, manual {von Hand festgelegt} metadata {aus der Datei} pair {aus der zugeordneten Ausgabe} detected {aus dem Text erkannt} other {}}',
   'library.book.languageAutoOption': 'Automatisch',
   'library.book.languageUnknownSet': 'Unbekannt · von Hand festlegen?',
   'library.book.languageSet': 'Sprache auf {name} gesetzt',
@@ -542,10 +534,6 @@ const messages: Record<string, string> = {
     'Ein E-Book und ein Hörbuch desselben Werks wählen. Die Synchronisierung läuft nach der Verknüpfung; der Wechsel zwischen den Ausgaben ist erst danach möglich.',
   'library.pair.switchUnaligned':
     'Es liegt auch {kind, select, ebook {das Hörbuch} other {das E-Book}} vor. Die gemeinsame Vermessung ist noch nicht fertig, daher beginnt der Wechsel vorerst von vorn.',
-  'library.pair.switchExact':
-    'Es liegt auch {kind, select, ebook {das Hörbuch} other {das E-Book}} vor, und der Wechsel setzt am selben Satz fort.',
-  'library.pair.switchClose':
-    'Es liegt auch {kind, select, ebook {das Hörbuch} other {das E-Book}} vor. Der Wechsel landet in der Nähe, wenn auch nicht immer am exakten Satz.',
   'library.download.inProgress': 'Downloads laufen',
   'library.download.title': 'Downloads',
   'library.download.downloadingN': '{n} wird geladen',
@@ -554,23 +542,13 @@ const messages: Record<string, string> = {
   'library.download.progress': '{stored} von {total} · {pct}',
   'library.download.stop': 'Stopp',
   'library.download.failed': 'Download fehlgeschlagen',
-  'library.download.download': 'Laden',
-  'library.download.downloaded': 'Geladen',
-  'library.download.downloading': 'Wird geladen',
   'library.download.bytesOf': '{stored} von {total}',
-  'library.download.forOffline': 'Für offline laden',
-  'library.download.retryLabel': 'Für offline laden – letzter Versuch fehlgeschlagen',
-  'library.download.downloadingPct': 'Wird für offline geladen, {pct}',
-  'library.download.availableManage': 'Offline verfügbar – Download verwalten',
-  'library.download.startingOne': 'Wird für offline geladen…',
-  'library.download.startingBoth': 'Beide Ausgaben werden geladen…',
   'library.download.stopped': 'Download gestoppt',
   'library.download.available': 'Offline verfügbar',
   'library.download.doneBoth': 'Beide Ausgaben sind offline verfügbar',
   'library.download.removed': 'Offline-Kopie entfernt',
   'library.download.needsHttps':
     'Offline-Downloads benötigen HTTPS (oder localhost). Siehe die Selbsthosting-Anleitung in der {app}-README.',
-  'library.download.askTitle': 'Für offline laden?',
   'library.download.askLede':
     '{title} für Flüge und Funklöcher auf diesem Gerät behalten – etwa {bytes}{kind, select, ebook { inklusive Bilder} other { Audio}}. {kind, select, ebook {Lesen} other {Hören}} funktioniert vollständig offline, die Position synchronisiert sich bei der nächsten Verbindung. Beim Abmelden werden Offline-Kopien entfernt.',
   'library.download.companionSeparate':
@@ -579,7 +557,6 @@ const messages: Record<string, string> = {
     '{bytes} vom letzten Versuch liegen noch auf diesem Gerät. Ein neuer Start setzt dort fort; Entfernen gibt den Speicherplatz sofort frei.',
   'library.download.interruptedLede':
     'Der Download wurde unterbrochen – ein neuer Start setzt an der Unterbrechung fort.',
-  'library.download.both': 'Beide laden{hasSize, select, true { ({size})} other {}}',
   'library.download.onlyThis': 'Nur {kind, select, ebook {E-Book} other {Hörbuch}} ({size})',
   'library.download.retry': 'Download erneut versuchen',
   'library.download.removePartial': 'Unvollständigen Download entfernen',
@@ -1769,5 +1746,27 @@ const messages: Record<string, string> = {
   'library.lang.allLanguages': 'Alle Sprachen',
   'library.lang.button': 'Sprache: {name}',
   'library.lang.menuTitle': 'Bücher nach Sprache',
+  // settings
+  'settings.account.menuLabel': 'Konto: {name}',
+  'settings.account.goTo': 'Kontoeinstellungen',
+
+  // library
+  'library.book.downloadFile': 'Datei herunterladen',
+  'library.book.downloadFiles': 'Dateien herunterladen…',
+  'library.book.downloadFilesTitle': 'Dateien herunterladen',
+  'library.book.downloadFileHint': 'Die Datei des Buchs, gespeichert auf diesem Gerät',
+  'library.book.downloadFilesHint':
+    '{n, plural, one {# Datei.} other {# Dateien.}} Jede lädt einzeln herunter.',
+  'library.offline.save': 'Offline speichern',
+  'library.offline.saving': 'Wird offline gespeichert',
+  'library.offline.saved': 'Offline gespeichert',
+  'library.offline.saveLabel': 'Offline speichern, um ohne Verbindung zu öffnen',
+  'library.offline.retryLabel': 'Offline speichern - der letzte Versuch ist fehlgeschlagen',
+  'library.offline.savingPct': 'Wird offline gespeichert · {pct}',
+  'library.offline.savedManage': 'Offline gespeichert - Offline-Kopie verwalten',
+  'library.offline.askTitle': 'Offline speichern?',
+  'library.offline.starting': 'Wird offline gespeichert…',
+  'library.offline.startingBoth': 'Beide Ausgaben werden offline gespeichert…',
+  'library.offline.saveBoth': 'Beide offline speichern{hasSize, select, true { ({size})} other {}}',
 } as const;
 export default messages;

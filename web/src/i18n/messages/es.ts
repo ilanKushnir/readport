@@ -472,16 +472,10 @@ const messages: Record<string, string> = {
   'library.book.stillIndexedTitle': 'Todavía se está indexando',
   'library.book.open': '{kind, select, ebook {Leer} other {Escuchar}}',
   'library.book.openOther': '{kind, select, ebook {Escuchar} other {Leer}}',
-  'library.book.fromHere': '{kind, select, ebook {Escuchar desde aquí} other {Leer desde aquí}}',
   'library.book.readAlong': 'Leer con la voz',
-  'library.book.readAlongFromHere': 'Leer con la voz desde aquí',
   'library.book.readAlongHint': 'La página, con la narración sonando encima',
   'library.book.readAlongNotReady': 'Leer con la voz se desbloquea cuando el par esté alineado',
   'library.book.opening': 'Abriendo…',
-  'library.book.saveCopy': 'Guardar una copia',
-  'library.book.saveFiles': 'Guardar archivos…',
-  'library.book.saveFilesHint':
-    '{n, plural, one {# archivo.} other {# archivos.}} Se guardan de uno en uno.',
   'library.book.part': 'Parte {n}',
   'library.book.otherNotOnDevice':
     'El {kind, select, ebook {audiolibro} other {ebook}} no está en este dispositivo, así que cambiar necesita conexión.',
@@ -511,8 +505,6 @@ const messages: Record<string, string> = {
   'library.book.languageUnknown': 'Idioma desconocido',
   'library.book.languageTitle':
     'Idioma {source, select, manual {definido a mano} metadata {del archivo} pair {de la edición emparejada} detected {leído del texto} other {}}',
-  'library.book.languageWithSource':
-    '{name} · {source, select, manual {definido a mano} metadata {del archivo} pair {de la edición emparejada} detected {leído del texto} other {}}',
   'library.book.languageAutoOption': 'Auto',
   'library.book.languageUnknownSet': 'Desconocido · ¿definir a mano?',
   'library.book.languageSet': 'Idioma definido en {name}',
@@ -530,10 +522,6 @@ const messages: Record<string, string> = {
     'Elige un ebook y un audiolibro de la misma obra. La alineación se ejecuta después de vincularlos; cambiar entre ediciones no está disponible hasta que termine.',
   'library.pair.switchUnaligned':
     'También tienes {kind, select, ebook {el audiolibro} other {el ebook}}. Aún no se ha terminado de temporizarlos juntos, así que moverte entre ellos empezará desde el principio por ahora.',
-  'library.pair.switchExact':
-    'También tienes {kind, select, ebook {el audiolibro} other {el ebook}}, y cambiar entre ellos retoma en la misma frase.',
-  'library.pair.switchClose':
-    'También tienes {kind, select, ebook {el audiolibro} other {el ebook}}. Cambiar te deja cerca de donde estás, aunque no siempre en la frase exacta.',
   'library.download.inProgress': 'Descargas en curso',
   'library.download.title': 'Descargas',
   'library.download.downloadingN': 'Descargando {n}',
@@ -542,23 +530,13 @@ const messages: Record<string, string> = {
   'library.download.progress': '{stored} de {total} · {pct}',
   'library.download.stop': 'Detener',
   'library.download.failed': 'Error en la descarga',
-  'library.download.download': 'Descargar',
-  'library.download.downloaded': 'Descargado',
-  'library.download.downloading': 'Descargando',
   'library.download.bytesOf': '{stored} de {total}',
-  'library.download.forOffline': 'Descargar para sin conexión',
-  'library.download.retryLabel': 'Descargar para sin conexión: el último intento falló',
-  'library.download.downloadingPct': 'Descargando para sin conexión, {pct}',
-  'library.download.availableManage': 'Disponible sin conexión: gestionar la descarga',
-  'library.download.startingOne': 'Descargando para sin conexión…',
-  'library.download.startingBoth': 'Descargando ambas ediciones…',
   'library.download.stopped': 'Descarga detenida',
   'library.download.available': 'Disponible sin conexión',
   'library.download.doneBoth': 'Ambas ediciones están disponibles sin conexión',
   'library.download.removed': 'Copia sin conexión eliminada',
   'library.download.needsHttps':
     'Las descargas sin conexión necesitan HTTPS (o localhost). Consulta la guía de autoalojamiento en el README de {app}.',
-  'library.download.askTitle': '¿Descargar para sin conexión?',
   'library.download.askLede':
     'Guarda {title} en este dispositivo para vuelos y zonas sin cobertura: unos {bytes}{kind, select, ebook { con las imágenes incluidas} other { de audio}}. {kind, select, ebook {La lectura} other {La escucha}} funciona totalmente sin conexión y tu posición se sincroniza al reconectar. Cerrar sesión elimina las copias sin conexión.',
   'library.download.companionSeparate':
@@ -567,7 +545,6 @@ const messages: Record<string, string> = {
     '{bytes} del último intento siguen en este dispositivo. Volver a empezar continúa desde ahí; eliminarlos libera el espacio ahora.',
   'library.download.interruptedLede':
     'La descarga se interrumpió: volver a empezar continúa desde donde se detuvo.',
-  'library.download.both': 'Descargar ambas{hasSize, select, true { ({size})} other {}}',
   'library.download.onlyThis':
     'Solo {kind, select, ebook {el ebook} other {el audiolibro}} ({size})',
   'library.download.retry': 'Reintentar descarga',
@@ -1750,6 +1727,29 @@ const messages: Record<string, string> = {
   'library.lang.allLanguages': 'Todos los idiomas',
   'library.lang.button': 'Idioma: {name}',
   'library.lang.menuTitle': 'Mostrar libros en',
+  // settings
+  'settings.account.menuLabel': 'Cuenta: {name}',
+  'settings.account.goTo': 'Ajustes de la cuenta',
+
+  // library
+  'library.book.downloadFile': 'Descargar archivo',
+  'library.book.downloadFiles': 'Descargar archivos…',
+  'library.book.downloadFilesTitle': 'Descargar archivos',
+  'library.book.downloadFileHint': 'El propio archivo del libro, guardado en este dispositivo',
+  'library.book.downloadFilesHint':
+    '{n, plural, one {# archivo.} other {# archivos.}} Cada uno se descarga por separado.',
+  'library.offline.save': 'Guardar sin conexión',
+  'library.offline.saving': 'Guardando sin conexión',
+  'library.offline.saved': 'Guardado sin conexión',
+  'library.offline.saveLabel': 'Guardar para abrirlo sin conexión',
+  'library.offline.retryLabel': 'Guardar sin conexión - el último intento falló',
+  'library.offline.savingPct': 'Guardando sin conexión, {pct}',
+  'library.offline.savedManage': 'Guardado sin conexión - gestionar la copia sin conexión',
+  'library.offline.askTitle': '¿Guardar sin conexión?',
+  'library.offline.starting': 'Guardando sin conexión…',
+  'library.offline.startingBoth': 'Guardando ambas ediciones sin conexión…',
+  'library.offline.saveBoth':
+    'Guardar ambas sin conexión{hasSize, select, true { ({size})} other {}}',
 };
 
 export default messages;

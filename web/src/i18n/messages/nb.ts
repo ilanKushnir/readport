@@ -461,16 +461,10 @@ const messages: Record<string, string> = {
   'library.book.stillIndexedTitle': 'Indekseres fortsatt',
   'library.book.open': '{kind, select, ebook {Les} other {Lytt}}',
   'library.book.openOther': '{kind, select, ebook {Lytt} other {Les}}',
-  'library.book.fromHere': '{kind, select, ebook {Lytt herfra} other {Les herfra}}',
   'library.book.readAlong': 'Les med',
-  'library.book.readAlongFromHere': 'Les med herfra',
   'library.book.readAlongHint': 'Siden, med opplesningen spilt over den',
   'library.book.readAlongNotReady': 'Les med låses opp når paret er justert',
   'library.book.opening': 'Åpner…',
-  'library.book.saveCopy': 'Lagre en kopi',
-  'library.book.saveFiles': 'Lagre filer…',
-  'library.book.saveFilesHint':
-    '{n, plural, one {# fil.} other {# filer.}} Lagring skjer én om gangen.',
   'library.book.part': 'Del {n}',
   'library.book.otherNotOnDevice':
     '{kind, select, ebook {Lydboken} other {E-boken}} er ikke på denne enheten, så bytte krever en tilkobling.',
@@ -500,8 +494,6 @@ const messages: Record<string, string> = {
   'library.book.languageUnknown': 'Ukjent språk',
   'library.book.languageTitle':
     'Språk {source, select, manual {satt manuelt} metadata {fra filen} pair {fra den parede utgaven} detected {lest fra teksten} other {}}',
-  'library.book.languageWithSource':
-    '{name} · {source, select, manual {satt manuelt} metadata {fra filen} pair {fra den parede utgaven} detected {lest fra teksten} other {}}',
   'library.book.languageAutoOption': 'Auto',
   'library.book.languageUnknownSet': 'Ukjent · sette manuelt?',
   'library.book.languageSet': 'Språk satt til {name}',
@@ -518,10 +510,6 @@ const messages: Record<string, string> = {
     'Velg en e-bok og en lydbok av samme verk. Synkronisering kjører etter sammenkobling; bytte mellom utgaver er utilgjengelig til synkroniseringen er fullført.',
   'library.pair.switchUnaligned':
     'Du eier {kind, select, ebook {lydboken} other {e-boken}} også. Tidfestingen av de to sammen er ikke fullført, så det å bytte mellom dem starter fra begynnelsen inntil videre.',
-  'library.pair.switchExact':
-    'Du eier {kind, select, ebook {lydboken} other {e-boken}} også, og bytte mellom dem fortsetter på nøyaktig samme setning.',
-  'library.pair.switchClose':
-    'Du eier {kind, select, ebook {lydboken} other {e-boken}} også. Bytte lander nær der du er, men ikke alltid på nøyaktig samme setning.',
   'library.download.inProgress': 'Nedlastinger pågår',
   'library.download.title': 'Nedlastinger',
   'library.download.downloadingN': 'Laster ned {n}',
@@ -530,23 +518,13 @@ const messages: Record<string, string> = {
   'library.download.progress': '{stored} av {total} · {pct}',
   'library.download.stop': 'Stopp',
   'library.download.failed': 'Nedlasting mislyktes',
-  'library.download.download': 'Last ned',
-  'library.download.downloaded': 'Lastet ned',
-  'library.download.downloading': 'Laster ned',
   'library.download.bytesOf': '{stored} av {total}',
-  'library.download.forOffline': 'Last ned for frakoblet bruk',
-  'library.download.retryLabel': 'Last ned for frakoblet bruk - forrige forsøk mislyktes',
-  'library.download.downloadingPct': 'Laster ned for frakoblet bruk, {pct}',
-  'library.download.availableManage': 'Tilgjengelig offline - administrer nedlastingen',
-  'library.download.startingOne': 'Laster ned for frakoblet bruk…',
-  'library.download.startingBoth': 'Laster ned begge utgavene…',
   'library.download.stopped': 'Nedlasting stoppet',
   'library.download.available': 'Tilgjengelig offline',
   'library.download.doneBoth': 'Begge utgavene er tilgjengelige offline',
   'library.download.removed': 'Frakoblet kopi fjernet',
   'library.download.needsHttps':
     'Frakoblede nedlastinger krever HTTPS (eller localhost). Se selvhostingguiden i {app}-README-en.',
-  'library.download.askTitle': 'Laste ned for frakoblet bruk?',
   'library.download.askLede':
     'Behold {title} på denne enheten for flyturer og døde soner - omtrent {bytes}{kind, select, ebook { inkludert bilder} other { med lyd}}. {kind, select, ebook {Lesing} other {Lytting}} fungerer helt offline, og posisjonen din synkroniseres tilbake når du kobler til igjen. Utlogging fjerner frakoblede kopier.',
   'library.download.companionSeparate':
@@ -555,7 +533,6 @@ const messages: Record<string, string> = {
     '{bytes} fra forrige forsøk er fortsatt på denne enheten. Å starte på nytt fortsetter derfra; å fjerne den frigjør plassen nå.',
   'library.download.interruptedLede':
     'Nedlastingen ble avbrutt - å starte på nytt fortsetter fra der den stoppet.',
-  'library.download.both': 'Last ned begge{hasSize, select, true { ({size})} other {}}',
   'library.download.onlyThis': '{kind, select, ebook {Kun e-bok} other {Kun lydbok}} ({size})',
   'library.download.retry': 'Prøv nedlasting igjen',
   'library.download.removePartial': 'Fjern delvis nedlasting',
@@ -1714,5 +1691,27 @@ const messages: Record<string, string> = {
   'library.lang.allLanguages': 'Alle språk',
   'library.lang.button': 'Språk: {name}',
   'library.lang.menuTitle': 'Bøker etter språk',
+  // settings
+  'settings.account.menuLabel': 'Konto: {name}',
+  'settings.account.goTo': 'Kontoinnstillinger',
+
+  // library
+  'library.book.downloadFile': 'Last ned fil',
+  'library.book.downloadFiles': 'Last ned filer…',
+  'library.book.downloadFilesTitle': 'Last ned filer',
+  'library.book.downloadFileHint': 'Bokens egen fil, lagret på denne enheten',
+  'library.book.downloadFilesHint':
+    '{n, plural, one {# fil.} other {# filer.}} Hver lastes ned for seg.',
+  'library.offline.save': 'Lagre offline',
+  'library.offline.saving': 'Lagrer offline',
+  'library.offline.saved': 'Lagret offline',
+  'library.offline.saveLabel': 'Lagre offline, for å åpne uten tilkobling',
+  'library.offline.retryLabel': 'Lagre offline - forrige forsøk mislyktes',
+  'library.offline.savingPct': 'Lagrer offline · {pct}',
+  'library.offline.savedManage': 'Lagret offline - administrer den frakoblede kopien',
+  'library.offline.askTitle': 'Lagre offline?',
+  'library.offline.starting': 'Lagrer offline…',
+  'library.offline.startingBoth': 'Lagrer begge utgavene offline…',
+  'library.offline.saveBoth': 'Lagre begge offline{hasSize, select, true { ({size})} other {}}',
 };
 export default messages;

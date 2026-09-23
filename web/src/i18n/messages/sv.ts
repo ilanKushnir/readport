@@ -458,15 +458,10 @@ const messages: Record<string, string> = {
   'library.book.stillIndexedTitle': 'Indexeras fortfarande',
   'library.book.open': '{kind, select, ebook {Läs} other {Lyssna}}',
   'library.book.openOther': '{kind, select, ebook {Lyssna} other {Läs}}',
-  'library.book.fromHere': '{kind, select, ebook {Lyssna härifrån} other {Läs härifrån}}',
   'library.book.readAlong': 'Läs med',
-  'library.book.readAlongFromHere': 'Läs med härifrån',
   'library.book.readAlongHint': 'Sidan, med uppläsningen spelad över den',
   'library.book.readAlongNotReady': 'Läs med låses upp när paret är justerat',
   'library.book.opening': 'Öppnar…',
-  'library.book.saveCopy': 'Spara en kopia',
-  'library.book.saveFiles': 'Spara filer…',
-  'library.book.saveFilesHint': '{n, plural, one {# fil.} other {# filer.}} De sparas en i taget.',
   'library.book.part': 'Del {n}',
   'library.book.otherNotOnDevice':
     '{kind, select, ebook {Ljudboken} other {E-boken}} finns inte på den här enheten, så växling kräver en anslutning.',
@@ -496,8 +491,6 @@ const messages: Record<string, string> = {
   'library.book.languageUnknown': 'Okänt språk',
   'library.book.languageTitle':
     'Språk {source, select, manual {inställt för hand} metadata {från filen} pair {från den parade utgåvan} detected {läst från texten} other {}}',
-  'library.book.languageWithSource':
-    '{name} · {source, select, manual {inställt för hand} metadata {från filen} pair {från den parade utgåvan} detected {läst från texten} other {}}',
   'library.book.languageAutoOption': 'Auto',
   'library.book.languageUnknownSet': 'Okänt · inställt för hand?',
   'library.book.languageSet': 'Språk inställt till {name}',
@@ -514,10 +507,6 @@ const messages: Record<string, string> = {
     'Välj en e-bok och en ljudbok av samma verk. Synkroniseringen körs efter länkning; växling mellan utgåvor är inte tillgänglig förrän synkroniseringen är klar.',
   'library.pair.switchUnaligned':
     'Du äger även {kind, select, ebook {ljudboken} other {e-boken}}. Tidsättningen av de två tillsammans är inte klar än, så att flytta mellan dem börjar från början för nu.',
-  'library.pair.switchExact':
-    'Du äger även {kind, select, ebook {ljudboken} other {e-boken}}, och växling mellan dem tar vid på samma mening.',
-  'library.pair.switchClose':
-    'Du äger även {kind, select, ebook {ljudboken} other {e-boken}}. Växling landar nära där du är, men inte alltid på exakt rätt mening.',
   'library.download.inProgress': 'Pågående nedladdningar',
   'library.download.title': 'Nedladdningar',
   'library.download.downloadingN': 'Laddar ner {n}',
@@ -526,23 +515,13 @@ const messages: Record<string, string> = {
   'library.download.progress': '{stored} av {total} · {pct}',
   'library.download.stop': 'Stoppa',
   'library.download.failed': 'Nedladdningen misslyckades',
-  'library.download.download': 'Ladda ner',
-  'library.download.downloaded': 'Nedladdad',
-  'library.download.downloading': 'Laddar ner',
   'library.download.bytesOf': '{stored} av {total}',
-  'library.download.forOffline': 'Ladda ner för offline',
-  'library.download.retryLabel': 'Ladda ner för offline – det senaste försöket misslyckades',
-  'library.download.downloadingPct': 'Laddar ner för offline, {pct}',
-  'library.download.availableManage': 'Tillgänglig offline – hantera nedladdningen',
-  'library.download.startingOne': 'Laddar ner för offline…',
-  'library.download.startingBoth': 'Laddar ner båda utgåvorna…',
   'library.download.stopped': 'Nedladdningen stoppad',
   'library.download.available': 'Tillgänglig offline',
   'library.download.doneBoth': 'Båda utgåvorna är tillgängliga offline',
   'library.download.removed': 'Offlinekopian borttagen',
   'library.download.needsHttps':
     'Offlinenedladdningar kräver HTTPS (eller localhost). Se självhostningsguiden i {app}s README.',
-  'library.download.askTitle': 'Ladda ner för offline?',
   'library.download.askLede':
     'Behåll {title} på den här enheten för flygresor och döda zoner – cirka {bytes}{kind, select, ebook { inklusive bilder} other { ljud}}. {kind, select, ebook {Läsning} other {Lyssning}} fungerar helt offline och din position synkas tillbaka när du ansluter igen. Att logga ut tar bort offlinekopior.',
   'library.download.companionSeparate':
@@ -551,7 +530,6 @@ const messages: Record<string, string> = {
     '{bytes} från det senaste försöket finns kvar på den här enheten. Att starta om fortsätter därifrån; att ta bort det frigör utrymmet nu.',
   'library.download.interruptedLede':
     'Nedladdningen avbröts – att starta om fortsätter där den slutade.',
-  'library.download.both': 'Ladda ner båda{hasSize, select, true { ({size})} other {}}',
   'library.download.onlyThis': 'Endast {kind, select, ebook {e-bok} other {ljudbok}} ({size})',
   'library.download.retry': 'Försök ladda ner igen',
   'library.download.removePartial': 'Ta bort delvis nedladdning',
@@ -1712,5 +1690,28 @@ const messages: Record<string, string> = {
   'library.lang.allLanguages': 'Alla språk',
   'library.lang.button': 'Språk: {name}',
   'library.lang.menuTitle': 'Visa böcker efter språk',
+  // settings
+  'settings.account.menuLabel': 'Konto: {name}',
+  'settings.account.goTo': 'Kontoinställningar',
+
+  // library
+  'library.book.downloadFile': 'Ladda ner fil',
+  'library.book.downloadFiles': 'Ladda ner filer…',
+  'library.book.downloadFilesTitle': 'Ladda ner filer',
+  'library.book.downloadFileHint': 'Bokens egen fil, sparad på den här enheten',
+  'library.book.downloadFilesHint':
+    '{n, plural, one {# fil.} other {# filer.}} Varje fil laddas ner separat.',
+  'library.offline.save': 'Spara offline',
+  'library.offline.saving': 'Sparar offline',
+  'library.offline.saved': 'Sparad offline',
+  'library.offline.saveLabel': 'Spara offline för att öppna utan anslutning',
+  'library.offline.retryLabel': 'Spara offline - senaste försöket misslyckades',
+  'library.offline.savingPct': 'Sparar offline, {pct}',
+  'library.offline.savedManage': 'Sparad offline - hantera offlinekopian',
+  'library.offline.askTitle': 'Spara offline?',
+  'library.offline.starting': 'Sparar offline…',
+  'library.offline.startingBoth': 'Sparar båda utgåvorna offline…',
+  'library.offline.saveBoth':
+    'Spara båda utgåvorna offline{hasSize, select, true { ({size})} other {}}',
 };
 export default messages;

@@ -453,15 +453,10 @@ const messages: Record<string, string> = {
   'library.book.stillIndexedTitle': '아직 색인 중',
   'library.book.open': '{kind, select, ebook {읽기} other {듣기}}',
   'library.book.openOther': '{kind, select, ebook {듣기} other {읽기}}',
-  'library.book.fromHere': '{kind, select, ebook {여기서부터 듣기} other {여기서부터 읽기}}',
   'library.book.readAlong': '읽으며 듣기',
-  'library.book.readAlongFromHere': '여기서부터 읽으며 듣기',
   'library.book.readAlongHint': '페이지 위에서 낭독을 재생합니다',
   'library.book.readAlongNotReady': '쌍이 정렬되면 읽으며 듣기를 사용할 수 있습니다',
   'library.book.opening': '여는 중…',
-  'library.book.saveCopy': '사본 저장',
-  'library.book.saveFiles': '파일 저장…',
-  'library.book.saveFilesHint': '{n, plural, other {파일 #개.}} 한 번에 하나씩 저장됩니다.',
   'library.book.part': '파트 {n}',
   'library.book.otherNotOnDevice':
     '{kind, select, ebook {오디오북} other {전자책}}이(가) 이 기기에 없어, 전환하려면 연결이 필요합니다.',
@@ -491,8 +486,6 @@ const messages: Record<string, string> = {
   'library.book.languageUnknown': '언어 알 수 없음',
   'library.book.languageTitle':
     '언어 {source, select, manual {직접 설정} metadata {파일에서 가져옴} pair {페어링된 판에서 가져옴} detected {텍스트에서 읽음} other {}}',
-  'library.book.languageWithSource':
-    '{name} · {source, select, manual {직접 설정} metadata {파일에서 가져옴} pair {페어링된 판에서 가져옴} detected {텍스트에서 읽음} other {}}',
   'library.book.languageAutoOption': '자동',
   'library.book.languageUnknownSet': '알 수 없음 · 직접 설정할까요?',
   'library.book.languageSet': '언어가 {name}(으)로 설정됨',
@@ -509,10 +502,6 @@ const messages: Record<string, string> = {
     '같은 작품의 전자책과 오디오북을 선택하세요. 연결 후 정렬이 진행되며, 정렬이 완료될 때까지 판 간 전환은 사용할 수 없습니다.',
   'library.pair.switchUnaligned':
     '{kind, select, ebook {오디오북} other {전자책}}도 가지고 계십니다. 둘을 맞추는 작업이 아직 끝나지 않아, 지금은 전환하면 처음부터 시작됩니다.',
-  'library.pair.switchExact':
-    '{kind, select, ebook {오디오북} other {전자책}}도 가지고 계시며, 전환하면 같은 문장에서 이어집니다.',
-  'library.pair.switchClose':
-    '{kind, select, ebook {오디오북} other {전자책}}도 가지고 계십니다. 전환하면 현재 위치와 가까운 곳으로 이동하지만, 항상 정확한 문장은 아닙니다.',
   'library.download.inProgress': '진행 중인 다운로드',
   'library.download.title': '다운로드',
   'library.download.downloadingN': '{n} 다운로드 중',
@@ -521,23 +510,13 @@ const messages: Record<string, string> = {
   'library.download.progress': '{total} 중 {stored} · {pct}',
   'library.download.stop': '중지',
   'library.download.failed': '다운로드 실패',
-  'library.download.download': '다운로드',
-  'library.download.downloaded': '다운로드됨',
-  'library.download.downloading': '다운로드 중',
   'library.download.bytesOf': '{total} 중 {stored}',
-  'library.download.forOffline': '오프라인용 다운로드',
-  'library.download.retryLabel': '오프라인용 다운로드 - 마지막 시도 실패',
-  'library.download.downloadingPct': '오프라인용 다운로드 중, {pct}',
-  'library.download.availableManage': '오프라인에서 사용 가능 - 다운로드 관리',
-  'library.download.startingOne': '오프라인용으로 다운로드하는 중…',
-  'library.download.startingBoth': '두 판 모두 다운로드하는 중…',
   'library.download.stopped': '다운로드 중지됨',
   'library.download.available': '오프라인에서 사용 가능',
   'library.download.doneBoth': '두 판 모두 오프라인에서 사용할 수 있습니다',
   'library.download.removed': '오프라인 사본이 제거됨',
   'library.download.needsHttps':
     '오프라인 다운로드는 HTTPS(또는 localhost)가 필요합니다. {app} README의 셀프 호스팅 안내를 참고하세요.',
-  'library.download.askTitle': '오프라인용으로 다운로드할까요?',
   'library.download.askLede':
     '비행 중이나 통신이 안 되는 곳을 위해 {title}을(를) 이 기기에 보관합니다 - 약 {bytes}{kind, select, ebook {(이미지 포함)} other {의 오디오}}. {kind, select, ebook {읽기} other {듣기}}는 오프라인에서도 완전히 동작하며, 다시 연결되면 위치가 동기화됩니다. 로그아웃하면 오프라인 사본이 제거됩니다.',
   'library.download.companionSeparate':
@@ -546,7 +525,6 @@ const messages: Record<string, string> = {
     '지난번 시도에서 받은 {bytes}가 아직 이 기기에 있습니다. 다시 시작하면 이어서 받으며, 제거하면 지금 바로 공간이 확보됩니다.',
   'library.download.interruptedLede':
     '다운로드가 중단되었습니다. 다시 시작하면 중단된 지점부터 이어집니다.',
-  'library.download.both': '둘 다 다운로드{hasSize, select, true { ({size})} other {}}',
   'library.download.onlyThis': '{kind, select, ebook {전자책} other {오디오북}}만 ({size})',
   'library.download.retry': '다운로드 다시 시도',
   'library.download.removePartial': '부분 다운로드 제거',
@@ -1692,5 +1670,27 @@ const messages: Record<string, string> = {
   'library.lang.allLanguages': '전체 언어',
   'library.lang.button': '언어: {name}',
   'library.lang.menuTitle': '언어별 보기',
+  // settings
+  'settings.account.menuLabel': '계정: {name}',
+  'settings.account.goTo': '계정 설정',
+
+  // library
+  'library.book.downloadFile': '파일 다운로드',
+  'library.book.downloadFiles': '파일 다운로드…',
+  'library.book.downloadFilesTitle': '파일 다운로드',
+  'library.book.downloadFileHint': '책의 원본 파일을 이 기기에 보관',
+  'library.book.downloadFilesHint': '{n, plural, other {파일 #개.}} 각각 따로 다운로드됩니다.',
+  'library.offline.save': '오프라인 저장',
+  'library.offline.saving': '오프라인 저장 중',
+  'library.offline.saved': '오프라인 저장됨',
+  'library.offline.saveLabel': '오프라인 저장, 연결 없이도 열 수 있도록',
+  'library.offline.retryLabel': '오프라인 저장 - 마지막 시도 실패',
+  'library.offline.savingPct': '오프라인 저장 중, {pct}',
+  'library.offline.savedManage': '오프라인 저장됨 - 오프라인 사본 관리',
+  'library.offline.askTitle': '오프라인으로 저장할까요?',
+  'library.offline.starting': '오프라인 저장 중…',
+  'library.offline.startingBoth': '두 판 모두 오프라인 저장 중…',
+  'library.offline.saveBoth':
+    '두 판 모두 오프라인 저장{hasSize, select, true { ({size})} other {}}',
 };
 export default messages;

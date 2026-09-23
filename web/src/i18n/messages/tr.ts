@@ -466,16 +466,10 @@ const messages: Record<string, string> = {
   'library.book.stillIndexedTitle': 'Hâlâ dizinleniyor',
   'library.book.open': '{kind, select, ebook {Oku} other {Dinle}}',
   'library.book.openOther': '{kind, select, ebook {Dinle} other {Oku}}',
-  'library.book.fromHere': '{kind, select, ebook {Buradan dinle} other {Buradan oku}}',
   'library.book.readAlong': 'Birlikte oku',
-  'library.book.readAlongFromHere': 'Buradan birlikte oku',
   'library.book.readAlongHint': 'Sayfa, üzerinde anlatı çalarken',
   'library.book.readAlongNotReady': 'Çift hizalandığında birlikte okuma açılır',
   'library.book.opening': 'Açılıyor…',
-  'library.book.saveCopy': 'Bir kopya kaydet',
-  'library.book.saveFiles': 'Dosyaları kaydet…',
-  'library.book.saveFilesHint':
-    '{n, plural, one {# dosya.} other {# dosya.}} Kaydetme işlemi teker teker yapılır.',
   'library.book.part': '{n}. Bölüm',
   'library.book.otherNotOnDevice':
     '{kind, select, ebook {Sesli kitap} other {E-kitap}} bu cihazda değil, bu yüzden geçiş için bağlantı gerekir.',
@@ -505,8 +499,6 @@ const messages: Record<string, string> = {
   'library.book.languageUnknown': 'Dil bilinmiyor',
   'library.book.languageTitle':
     'Dil {source, select, manual {elle ayarlandı} metadata {dosyadan} pair {eşleştirilmiş baskıdan} detected {metinden okundu} other {}}',
-  'library.book.languageWithSource':
-    '{name} · {source, select, manual {elle ayarlandı} metadata {dosyadan} pair {eşleştirilmiş baskıdan} detected {metinden okundu} other {}}',
   'library.book.languageAutoOption': 'Otomatik',
   'library.book.languageUnknownSet': 'Bilinmiyor · elle mi ayarlansın?',
   'library.book.languageSet': 'Dil {name} olarak ayarlandı',
@@ -523,10 +515,6 @@ const messages: Record<string, string> = {
     'Aynı esere ait bir e-kitap ve bir sesli kitap seçin. Hizalama, bağlantı kurulduktan sonra çalışır; hizalama tamamlanana kadar baskılar arasında geçiş yapılamaz.',
   'library.pair.switchUnaligned':
     '{kind, select, ebook {sesli kitabı} other {e-kitabı}} da sizde. İkisini birlikte zamanlama henüz bitmedi, bu yüzden aralarında geçiş yapmak şimdilik baştan başlayacak.',
-  'library.pair.switchExact':
-    '{kind, select, ebook {sesli kitabı} other {e-kitabı}} da sizde ve aralarında geçiş yapmak aynı cümleden devam eder.',
-  'library.pair.switchClose':
-    '{kind, select, ebook {sesli kitabı} other {e-kitabı}} da sizde. Geçiş, bulunduğunuz yere yakın iner, ancak her zaman tam cümlede olmayabilir.',
   'library.download.inProgress': 'İndirmeler sürüyor',
   'library.download.title': 'İndirmeler',
   'library.download.downloadingN': '{n} indiriliyor',
@@ -535,23 +523,13 @@ const messages: Record<string, string> = {
   'library.download.progress': '{total} üzerinden {stored} · {pct}',
   'library.download.stop': 'Durdur',
   'library.download.failed': 'İndirme başarısız',
-  'library.download.download': 'İndir',
-  'library.download.downloaded': 'İndirildi',
-  'library.download.downloading': 'İndiriliyor',
   'library.download.bytesOf': '{total} üzerinden {stored}',
-  'library.download.forOffline': 'Çevrimdışı için indir',
-  'library.download.retryLabel': 'Çevrimdışı için indir - son deneme başarısız oldu',
-  'library.download.downloadingPct': 'Çevrimdışı için indiriliyor, {pct}',
-  'library.download.availableManage': 'Çevrimdışı kullanılabilir - indirmeyi yönet',
-  'library.download.startingOne': 'Çevrimdışı için indiriliyor…',
-  'library.download.startingBoth': 'Her iki baskı da indiriliyor…',
   'library.download.stopped': 'İndirme durduruldu',
   'library.download.available': 'Çevrimdışı kullanılabilir',
   'library.download.doneBoth': 'Her iki baskı da çevrimdışı kullanılabilir',
   'library.download.removed': 'Çevrimdışı kopya kaldırıldı',
   'library.download.needsHttps':
     'Çevrimdışı indirmeler HTTPS (veya localhost) gerektirir. {app} README’sindeki kendi kendine barındırma kılavuzuna bakın.',
-  'library.download.askTitle': 'Çevrimdışı için indirilsin mi?',
   'library.download.askLede':
     'Uçuşlar ve çekim alanı olmayan yerler için {title} öğesini bu cihazda tutun - yaklaşık {bytes}{kind, select, ebook { (görseller dahil)} other { ses}}. {kind, select, ebook {Okuma} other {Dinleme}} tamamen çevrimdışı çalışır ve yeniden bağlandığınızda konumunuz eşitlenir. Oturumu kapatmak çevrimdışı kopyaları kaldırır.',
   'library.download.companionSeparate':
@@ -560,7 +538,6 @@ const messages: Record<string, string> = {
     'Son denemeden kalan {bytes} hâlâ bu cihazda. Yeniden başlatmak oradan devam eder; kaldırmak şimdi yer açar.',
   'library.download.interruptedLede':
     'İndirme yarıda kesildi - yeniden başlatmak kaldığı yerden devam eder.',
-  'library.download.both': 'İkisini de indir{hasSize, select, true { ({size})} other {}}',
   'library.download.onlyThis':
     'Yalnızca {kind, select, ebook {e-kitap} other {sesli kitap}} ({size})',
   'library.download.retry': 'İndirmeyi yeniden dene',
@@ -1734,6 +1711,29 @@ const messages: Record<string, string> = {
   'library.lang.allLanguages': 'Tüm diller',
   'library.lang.button': 'Dil: {name}',
   'library.lang.menuTitle': 'Dile göre göster',
+  // settings
+  'settings.account.menuLabel': 'Hesap: {name}',
+  'settings.account.goTo': 'Hesap ayarları',
+
+  // library
+  'library.book.downloadFile': 'Dosyayı indir',
+  'library.book.downloadFiles': 'Dosyaları indir…',
+  'library.book.downloadFilesTitle': 'Dosyaları indir',
+  'library.book.downloadFileHint': 'Kitabın kendi dosyası, bu cihazda saklanır',
+  'library.book.downloadFilesHint':
+    '{n, plural, one {# dosya.} other {# dosya.}} Her biri ayrı ayrı indirilir.',
+  'library.offline.save': 'Çevrimdışı kaydet',
+  'library.offline.saving': 'Çevrimdışı kaydediliyor',
+  'library.offline.saved': 'Çevrimdışı kaydedildi',
+  'library.offline.saveLabel': 'Çevrimdışı kaydet, bağlantı olmadan açmak için',
+  'library.offline.retryLabel': 'Çevrimdışı kaydet - son deneme başarısız oldu',
+  'library.offline.savingPct': 'Çevrimdışı kaydediliyor, {pct}',
+  'library.offline.savedManage': 'Çevrimdışı kaydedildi - çevrimdışı kopyayı yönet',
+  'library.offline.askTitle': 'Çevrimdışı kaydedilsin mi?',
+  'library.offline.starting': 'Çevrimdışı kaydediliyor…',
+  'library.offline.startingBoth': 'Her iki baskı da çevrimdışı kaydediliyor…',
+  'library.offline.saveBoth':
+    'Her ikisini de çevrimdışı kaydet{hasSize, select, true { ({size})} other {}}',
 };
 
 export default messages;

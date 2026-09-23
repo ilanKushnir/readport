@@ -470,17 +470,11 @@ const messages: Record<string, string> = {
   'library.book.stillIndexedTitle': 'Încă se indexează',
   'library.book.open': '{kind, select, ebook {Citește} other {Ascultă}}',
   'library.book.openOther': '{kind, select, ebook {Ascultă} other {Citește}}',
-  'library.book.fromHere': '{kind, select, ebook {Ascultă de aici} other {Citește de aici}}',
   'library.book.readAlong': 'Citește pe măsură',
-  'library.book.readAlongFromHere': 'Citește pe măsură de aici',
   'library.book.readAlongHint': 'Pagina, cu narațiunea redată peste ea',
   'library.book.readAlongNotReady':
     'Citește pe măsură se deblochează odată ce perechea este aliniată',
   'library.book.opening': 'Se deschide…',
-  'library.book.saveCopy': 'Salvează o copie',
-  'library.book.saveFiles': 'Salvează fișierele…',
-  'library.book.saveFilesHint':
-    '{n, plural, one {# fișier.} few {# fișiere.} other {# de fișiere.}} Se salvează unul câte unul.',
   'library.book.part': 'Partea {n}',
   'library.book.otherNotOnDevice':
     '{kind, select, ebook {Cartea audio} other {Cartea electronică}} nu este pe acest dispozitiv, așa că trecerea necesită o conexiune.',
@@ -510,8 +504,6 @@ const messages: Record<string, string> = {
   'library.book.languageUnknown': 'Limbă necunoscută',
   'library.book.languageTitle':
     'Limbă {source, select, manual {setată manual} metadata {din fișier} pair {din ediția asociată} detected {detectată din text} other {}}',
-  'library.book.languageWithSource':
-    '{name} · {source, select, manual {setată manual} metadata {din fișier} pair {din ediția asociată} detected {detectată din text} other {}}',
   'library.book.languageAutoOption': 'Automat',
   'library.book.languageUnknownSet': 'Necunoscută · setezi manual?',
   'library.book.languageSet': 'Limba a fost setată la {name}',
@@ -529,10 +521,6 @@ const messages: Record<string, string> = {
     'Alege o carte electronică și o carte audio ale aceleiași opere. Alinierea rulează după legare; comutarea între ediții nu este disponibilă până la finalizarea alinierii.',
   'library.pair.switchUnaligned':
     'Deții și {kind, select, ebook {cartea audio} other {cartea electronică}}. Cronometrarea celor două împreună nu s-a terminat, așa că trecerea între ele va porni de la început deocamdată.',
-  'library.pair.switchExact':
-    'Deții și {kind, select, ebook {cartea audio} other {cartea electronică}}, iar comutarea între ele reia din aceeași propoziție.',
-  'library.pair.switchClose':
-    'Deții și {kind, select, ebook {cartea audio} other {cartea electronică}}. Comutarea ajunge aproape de locul unde ești, dar nu întotdeauna la propoziția exactă.',
   'library.download.inProgress': 'Descărcări în curs',
   'library.download.title': 'Descărcări',
   'library.download.downloadingN': 'Se descarcă {n}',
@@ -541,23 +529,13 @@ const messages: Record<string, string> = {
   'library.download.progress': '{stored} din {total} · {pct}',
   'library.download.stop': 'Oprește',
   'library.download.failed': 'Descărcarea a eșuat',
-  'library.download.download': 'Descarcă',
-  'library.download.downloaded': 'Descărcat',
-  'library.download.downloading': 'Se descarcă',
   'library.download.bytesOf': '{stored} din {total}',
-  'library.download.forOffline': 'Descarcă pentru offline',
-  'library.download.retryLabel': 'Descarcă pentru offline - ultima încercare a eșuat',
-  'library.download.downloadingPct': 'Se descarcă pentru offline, {pct}',
-  'library.download.availableManage': 'Disponibil offline - gestionează descărcarea',
-  'library.download.startingOne': 'Se descarcă pentru offline…',
-  'library.download.startingBoth': 'Se descarcă ambele ediții…',
   'library.download.stopped': 'Descărcare oprită',
   'library.download.available': 'Disponibil offline',
   'library.download.doneBoth': 'Ambele ediții sunt disponibile offline',
   'library.download.removed': 'Copia offline a fost eliminată',
   'library.download.needsHttps':
     'Descărcările offline necesită HTTPS (sau localhost). Consultă ghidul de auto-găzduire din README-ul {app}.',
-  'library.download.askTitle': 'Descarci pentru offline?',
   'library.download.askLede':
     'Păstrează {title} pe acest dispozitiv pentru zboruri și zone fără semnal - circa {bytes}{kind, select, ebook { inclusiv imagini} other { de audio}}. {kind, select, ebook {Citirea} other {Ascultarea}} funcționează complet offline, iar poziția ta se sincronizează la reconectare. Deconectarea elimină copiile offline.',
   'library.download.companionSeparate':
@@ -566,7 +544,6 @@ const messages: Record<string, string> = {
     '{bytes} din ultima încercare se află încă pe acest dispozitiv. Pornirea din nou continuă de acolo; eliminarea eliberează spațiul acum.',
   'library.download.interruptedLede':
     'Descărcarea a fost întreruptă - repornirea continuă de unde s-a oprit.',
-  'library.download.both': 'Descarcă ambele{hasSize, select, true { ({size})} other {}}',
   'library.download.onlyThis':
     'Doar {kind, select, ebook {cartea electronică} other {cartea audio}} ({size})',
   'library.download.retry': 'Reîncearcă descărcarea',
@@ -1753,5 +1730,27 @@ const messages: Record<string, string> = {
   'library.lang.allLanguages': 'Toate limbile',
   'library.lang.button': 'Limbă: {name}',
   'library.lang.menuTitle': 'Arată cărțile în',
+  // settings
+  'settings.account.menuLabel': 'Cont: {name}',
+  'settings.account.goTo': 'Setări cont',
+
+  // library
+  'library.book.downloadFile': 'Descarcă fișierul',
+  'library.book.downloadFiles': 'Descarcă fișierele…',
+  'library.book.downloadFilesTitle': 'Descarcă fișierele',
+  'library.book.downloadFileHint': 'Fișierul propriu-zis al cărții, salvat pe acest dispozitiv',
+  'library.book.downloadFilesHint':
+    '{n, plural, one {# fișier.} few {# fișiere.} other {# de fișiere.}} Fiecare se descarcă separat.',
+  'library.offline.save': 'Salvează offline',
+  'library.offline.saving': 'Se salvează offline',
+  'library.offline.saved': 'Salvat offline',
+  'library.offline.saveLabel': 'Salvează offline, ca să poți deschide fără conexiune',
+  'library.offline.retryLabel': 'Salvează offline - ultima încercare a eșuat',
+  'library.offline.savingPct': 'Se salvează offline, {pct}',
+  'library.offline.savedManage': 'Salvat offline - gestionează copia offline',
+  'library.offline.askTitle': 'Salvezi offline?',
+  'library.offline.starting': 'Se salvează offline…',
+  'library.offline.startingBoth': 'Se salvează ambele ediții offline…',
+  'library.offline.saveBoth': 'Salvează ambele offline{hasSize, select, true { ({size})} other {}}',
 };
 export default messages;

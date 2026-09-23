@@ -463,16 +463,10 @@ const messages: Record<string, string> = {
   'library.book.stillIndexedTitle': 'Indeksoidaan vielä',
   'library.book.open': '{kind, select, ebook {Lue} other {Kuuntele}}',
   'library.book.openOther': '{kind, select, ebook {Kuuntele} other {Lue}}',
-  'library.book.fromHere': '{kind, select, ebook {Kuuntele tästä} other {Lue tästä}}',
   'library.book.readAlong': 'Lue mukana',
-  'library.book.readAlongFromHere': 'Lue mukana tästä',
   'library.book.readAlongHint': 'Sivu, jonka päällä lukeminen soi',
   'library.book.readAlongNotReady': 'Lue mukana avautuu, kun pari on kohdistettu',
   'library.book.opening': 'Avataan…',
-  'library.book.saveCopy': 'Tallenna kopio',
-  'library.book.saveFiles': 'Tallenna tiedostot…',
-  'library.book.saveFilesHint':
-    '{n, plural, one {# tiedosto.} other {# tiedostoa.}} Tallennus tapahtuu yksi kerrallaan.',
   'library.book.part': 'Osa {n}',
   'library.book.otherNotOnDevice':
     '{kind, select, ebook {Äänikirja} other {E-kirja}} ei ole tällä laitteella, joten vaihtaminen vaatii yhteyden.',
@@ -502,8 +496,6 @@ const messages: Record<string, string> = {
   'library.book.languageUnknown': 'Kieli tuntematon',
   'library.book.languageTitle':
     'Kieli {source, select, manual {asetettu käsin} metadata {tiedostosta} pair {parina olevasta painoksesta} detected {luettu tekstistä} other {}}',
-  'library.book.languageWithSource':
-    '{name} · {source, select, manual {asetettu käsin} metadata {tiedostosta} pair {parina olevasta painoksesta} detected {luettu tekstistä} other {}}',
   'library.book.languageAutoOption': 'Auto',
   'library.book.languageUnknownSet': 'Tuntematon · asetetaanko käsin?',
   'library.book.languageSet': 'Kieleksi asetettu {name}',
@@ -520,10 +512,6 @@ const messages: Record<string, string> = {
     'Valitse saman teoksen e-kirja ja äänikirja. Synkronointi käynnistyy yhdistämisen jälkeen; painosten välillä vaihtaminen ei ole mahdollista ennen kuin synkronointi on valmis.',
   'library.pair.switchUnaligned':
     'Omistat myös {kind, select, ebook {äänikirjan} other {e-kirjan}}. Näiden kahden yhteinen ajoitus ei ole vielä valmis, joten niiden välillä siirtyminen alkaa toistaiseksi alusta.',
-  'library.pair.switchExact':
-    'Omistat myös {kind, select, ebook {äänikirjan} other {e-kirjan}}, ja niiden välillä vaihtaminen jatkuu samasta lauseesta.',
-  'library.pair.switchClose':
-    'Omistat myös {kind, select, ebook {äänikirjan} other {e-kirjan}}. Vaihto osuu lähelle sitä kohtaa, jossa olet, mutta ei aina täsmälleen samaan lauseeseen.',
   'library.download.inProgress': 'Lataukset käynnissä',
   'library.download.title': 'Lataukset',
   'library.download.downloadingN': 'Ladataan {n}',
@@ -532,23 +520,13 @@ const messages: Record<string, string> = {
   'library.download.progress': '{stored}/{total} · {pct}',
   'library.download.stop': 'Pysäytä',
   'library.download.failed': 'Lataus epäonnistui',
-  'library.download.download': 'Lataa',
-  'library.download.downloaded': 'Ladattu',
-  'library.download.downloading': 'Ladataan',
   'library.download.bytesOf': '{stored}/{total}',
-  'library.download.forOffline': 'Lataa offline-käyttöön',
-  'library.download.retryLabel': 'Lataa offline-käyttöön - edellinen yritys epäonnistui',
-  'library.download.downloadingPct': 'Ladataan offline-käyttöön, {pct}',
-  'library.download.availableManage': 'Saatavilla offline - hallitse latausta',
-  'library.download.startingOne': 'Ladataan offline-käyttöön…',
-  'library.download.startingBoth': 'Ladataan molempia painoksia…',
   'library.download.stopped': 'Lataus pysäytetty',
   'library.download.available': 'Saatavilla offline',
   'library.download.doneBoth': 'Molemmat painokset ovat saatavilla offline',
   'library.download.removed': 'Offline-kopio poistettu',
   'library.download.needsHttps':
     'Offline-lataukset vaativat HTTPS:n (tai localhostin). Katso itseisännöintioppaasta {app}:n README-tiedostossa.',
-  'library.download.askTitle': 'Ladataanko offline-käyttöön?',
   'library.download.askLede':
     'Säilytä {title} tällä laitteella lentoja ja kuolleita alueita varten - noin {bytes}{kind, select, ebook { kuvat mukaan lukien} other { ääntä}}. {kind, select, ebook {Lukeminen} other {Kuuntelu}} toimii täysin offline, ja sijaintisi synkronoituu takaisin, kun olet taas yhteydessä. Uloskirjautuminen poistaa offline-kopiot.',
   'library.download.companionSeparate':
@@ -557,7 +535,6 @@ const messages: Record<string, string> = {
     '{bytes} edellisestä yrityksestä on yhä tällä laitteella. Uudelleen aloittaminen jatkaa siitä; poistaminen vapauttaa tilan nyt.',
   'library.download.interruptedLede':
     'Lataus keskeytyi - uudelleen aloittaminen jatkaa siitä, mihin se pysähtyi.',
-  'library.download.both': 'Lataa molemmat{hasSize, select, true { ({size})} other {}}',
   'library.download.onlyThis':
     '{kind, select, ebook {Vain e-kirja} other {Vain äänikirja}} ({size})',
   'library.download.retry': 'Yritä latausta uudelleen',
@@ -1727,5 +1704,28 @@ const messages: Record<string, string> = {
   'library.lang.allLanguages': 'Kaikki kielet',
   'library.lang.button': 'Kieli: {name}',
   'library.lang.menuTitle': 'Kirjat kielen mukaan',
+  // settings
+  'settings.account.menuLabel': 'Tili: {name}',
+  'settings.account.goTo': 'Tilin asetukset',
+
+  // library
+  'library.book.downloadFile': 'Lataa tiedosto',
+  'library.book.downloadFiles': 'Lataa tiedostot…',
+  'library.book.downloadFilesTitle': 'Lataa tiedostot',
+  'library.book.downloadFileHint': 'Kirjan oma tiedosto, tallennettuna tälle laitteelle',
+  'library.book.downloadFilesHint':
+    '{n, plural, one {# tiedosto.} other {# tiedostoa.}} Jokainen ladataan erikseen.',
+  'library.offline.save': 'Tallenna offline',
+  'library.offline.saving': 'Tallennetaan offline',
+  'library.offline.saved': 'Tallennettu offline',
+  'library.offline.saveLabel': 'Tallenna offline, jotta sen voi avata ilman yhteyttä',
+  'library.offline.retryLabel': 'Tallenna offline - viimeisin yritys epäonnistui',
+  'library.offline.savingPct': 'Tallennetaan offline · {pct}',
+  'library.offline.savedManage': 'Tallennettu offline - hallitse offline-kopiota',
+  'library.offline.askTitle': 'Tallennetaanko offline?',
+  'library.offline.starting': 'Tallennetaan offline…',
+  'library.offline.startingBoth': 'Tallennetaan molemmat painokset offline…',
+  'library.offline.saveBoth':
+    'Tallenna molemmat offline{hasSize, select, true { ({size})} other {}}',
 };
 export default messages;

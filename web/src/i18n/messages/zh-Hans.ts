@@ -436,15 +436,10 @@ const messages: Record<string, string> = {
   'library.book.stillIndexedTitle': '仍在索引中',
   'library.book.open': '{kind, select, ebook {阅读} other {收听}}',
   'library.book.openOther': '{kind, select, ebook {收听} other {阅读}}',
-  'library.book.fromHere': '{kind, select, ebook {从此处开始收听} other {从此处开始阅读}}',
   'library.book.readAlong': '跟读',
-  'library.book.readAlongFromHere': '从此处开始跟读',
   'library.book.readAlongHint': '在页面上同步播放朗读',
   'library.book.readAlongNotReady': '配对完成对齐后即可跟读',
   'library.book.opening': '打开中…',
-  'library.book.saveCopy': '保存副本',
-  'library.book.saveFiles': '保存文件…',
-  'library.book.saveFilesHint': '{n, plural, other {#个文件。}}将逐个保存。',
   'library.book.part': '第{n}部分',
   'library.book.otherNotOnDevice':
     '{kind, select, ebook {有声书} other {电子书}}未保存在此设备上，因此切换需要联网。',
@@ -472,8 +467,6 @@ const messages: Record<string, string> = {
   'library.book.languageUnknown': '语言未知',
   'library.book.languageTitle':
     '语言{source, select, manual {手动设置} metadata {来自文件} pair {来自配对版本} detected {从文本中识别} other {}}',
-  'library.book.languageWithSource':
-    '{name} · {source, select, manual {手动设置} metadata {来自文件} pair {来自配对版本} detected {从文本中识别} other {}}',
   'library.book.languageAutoOption': '自动',
   'library.book.languageUnknownSet': '未知 · 要手动设置吗？',
   'library.book.languageSet': '语言已设置为{name}',
@@ -487,10 +480,6 @@ const messages: Record<string, string> = {
     '请选择同一作品的电子书和有声书。链接后将开始对齐；在对齐完成之前，无法在版本之间切换。',
   'library.pair.switchUnaligned':
     '你也拥有{kind, select, ebook {有声书} other {电子书}}。两者的时间对齐尚未完成，因此目前切换会从头开始。',
-  'library.pair.switchExact':
-    '你也拥有{kind, select, ebook {有声书} other {电子书}}，切换后会在同一句子处继续。',
-  'library.pair.switchClose':
-    '你也拥有{kind, select, ebook {有声书} other {电子书}}。切换后会落在接近当前位置的地方，但不一定是精确的句子。',
   'library.download.inProgress': '下载进行中',
   'library.download.title': '下载',
   'library.download.downloadingN': '正在下载{n}',
@@ -499,23 +488,13 @@ const messages: Record<string, string> = {
   'library.download.progress': '{total}中的{stored} · {pct}',
   'library.download.stop': '停止',
   'library.download.failed': '下载失败',
-  'library.download.download': '下载',
-  'library.download.downloaded': '已下载',
-  'library.download.downloading': '下载中',
   'library.download.bytesOf': '{total}中的{stored}',
-  'library.download.forOffline': '下载以供离线使用',
-  'library.download.retryLabel': '下载以供离线使用——上次尝试失败',
-  'library.download.downloadingPct': '正在下载以供离线使用，{pct}',
-  'library.download.availableManage': '离线可用——管理下载',
-  'library.download.startingOne': '正在下载以供离线使用…',
-  'library.download.startingBoth': '正在下载两个版本…',
   'library.download.stopped': '下载已停止',
   'library.download.available': '离线可用',
   'library.download.doneBoth': '两个版本均可离线使用',
   'library.download.removed': '离线副本已移除',
   'library.download.needsHttps':
     '离线下载需要 HTTPS（或 localhost）。请参阅 {app} README 中的自托管指南。',
-  'library.download.askTitle': '要下载以供离线使用吗？',
   'library.download.askLede':
     '将{title}保留在此设备上，以便在飞行或无信号区域使用——约{bytes}{kind, select, ebook {（含图片）} other {音频}}。{kind, select, ebook {阅读} other {收听}}在离线状态下完全可用，重新联网后你的位置会同步回来。退出登录会移除离线副本。',
   'library.download.companionSeparate':
@@ -523,7 +502,6 @@ const messages: Record<string, string> = {
   'library.download.partialLede':
     '上次尝试下载的{bytes}仍保留在此设备上。重新开始会从那里继续；移除它可立即释放空间。',
   'library.download.interruptedLede': '下载已中断——重新开始会从中断处继续。',
-  'library.download.both': '两者都下载{hasSize, select, true {（{size}）} other {}}',
   'library.download.onlyThis': '仅{kind, select, ebook {电子书} other {有声书}}（{size}）',
   'library.download.retry': '重试下载',
   'library.download.removePartial': '移除未完成的下载',
@@ -1632,5 +1610,26 @@ const messages: Record<string, string> = {
   'library.lang.allLanguages': '全部语言',
   'library.lang.button': '语言：{name}',
   'library.lang.menuTitle': '书籍语言',
+  // settings
+  'settings.account.menuLabel': '账户：{name}',
+  'settings.account.goTo': '账户设置',
+
+  // library
+  'library.book.downloadFile': '下载文件',
+  'library.book.downloadFiles': '下载文件…',
+  'library.book.downloadFilesTitle': '下载文件',
+  'library.book.downloadFileHint': '本书的原始文件，保留在此设备上',
+  'library.book.downloadFilesHint': '{n, plural, other {#个文件。}}每个单独下载。',
+  'library.offline.save': '离线保存',
+  'library.offline.saving': '正在离线保存',
+  'library.offline.saved': '已离线保存',
+  'library.offline.saveLabel': '离线保存，以便无网络时也能打开',
+  'library.offline.retryLabel': '离线保存 - 上次尝试失败',
+  'library.offline.savingPct': '正在离线保存，{pct}',
+  'library.offline.savedManage': '已离线保存 - 管理离线副本',
+  'library.offline.askTitle': '离线保存？',
+  'library.offline.starting': '正在离线保存…',
+  'library.offline.startingBoth': '正在离线保存两个版本…',
+  'library.offline.saveBoth': '离线保存两者{hasSize, select, true {（{size}）} other {}}',
 };
 export default messages;

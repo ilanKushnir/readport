@@ -472,16 +472,10 @@ const messages: Record<string, string> = {
   'library.book.stillIndexedTitle': 'עדיין באינדוקס',
   'library.book.open': '{kind, select, ebook {קריאה} other {האזנה}}',
   'library.book.openOther': '{kind, select, ebook {האזנה} other {קריאה}}',
-  'library.book.fromHere': '{kind, select, ebook {האזנה מכאן} other {קריאה מכאן}}',
   'library.book.readAlong': 'קריאה מלווה',
-  'library.book.readAlongFromHere': 'קריאה מלווה מכאן',
   'library.book.readAlongHint': 'העמוד, והקריינות מתנגנת מעליו',
   'library.book.readAlongNotReady': 'קריאה מלווה תיפתח ברגע שהצמד יהיה מיושר',
   'library.book.opening': 'פותח…',
-  'library.book.saveCopy': 'שמירת עותק',
-  'library.book.saveFiles': 'שמירת קבצים…',
-  'library.book.saveFilesHint':
-    '{n, plural, one {# קובץ.} two {# קבצים.} other {# קבצים.}} השמירה שלהם היא אחד בכל פעם.',
   'library.book.part': 'חלק {n}',
   'library.book.otherNotOnDevice':
     'ה{kind, select, ebook {ספר קול} other {ספר אלקטרוני}} לא נמצא במכשיר הזה, כך שמעבר דורש חיבור.',
@@ -510,8 +504,6 @@ const messages: Record<string, string> = {
   'library.book.languageUnknown': 'שפה לא ידועה',
   'library.book.languageTitle':
     'שפה {source, select, manual {נקבעה ידנית} metadata {מהקובץ} pair {מהמהדורה המזווגת} detected {נקראה מהטקסט} other {}}',
-  'library.book.languageWithSource':
-    '{name} · {source, select, manual {נקבעה ידנית} metadata {מהקובץ} pair {מהמהדורה המזווגת} detected {נקראה מהטקסט} other {}}',
   'library.book.languageAutoOption': 'אוטומטי',
   'library.book.languageUnknownSet': 'לא ידועה · לקבוע ידנית?',
   'library.book.languageSet': 'השפה נקבעה ל-{name}',
@@ -528,11 +520,6 @@ const messages: Record<string, string> = {
     'יש לבחור ספר אלקטרוני וספר קול של אותה יצירה. הסנכרון פועל אחרי הקישור; מעבר בין מהדורות לא זמין עד שהוא יושלם.',
   'library.pair.switchUnaligned':
     'יש לך גם את {kind, select, ebook {ספר הקול} other {הספר האלקטרוני}}. תזמון השניים יחד עדיין לא הושלם, כך שמעבר ביניהם יתחיל מההתחלה לעת עתה.',
-  'library.pair.switchExact':
-    'יש לך גם את {kind, select, ebook {ספר הקול} other {הספר האלקטרוני}}, ומעבר ביניהם ממשיך מאותו משפט.',
-  'library.pair.switchClose':
-    'יש לך גם את {kind, select, ebook {ספר הקול} other {הספר האלקטרוני}}. מעבר נוחת קרוב למקום שבו אתה נמצא, אך לא תמיד במשפט המדויק.',
-
   'library.download.inProgress': 'הורדות בתהליך',
   'library.download.title': 'הורדות',
   'library.download.downloadingN': 'מוריד {n}',
@@ -541,23 +528,13 @@ const messages: Record<string, string> = {
   'library.download.progress': '{stored} מתוך {total} · {pct}',
   'library.download.stop': 'עצירה',
   'library.download.failed': 'ההורדה נכשלה',
-  'library.download.download': 'הורדה',
-  'library.download.downloaded': 'הורד',
-  'library.download.downloading': 'מוריד',
   'library.download.bytesOf': '{stored} מתוך {total}',
-  'library.download.forOffline': 'הורדה לשימוש לא מקוון',
-  'library.download.retryLabel': 'הורדה לשימוש לא מקוון - הניסיון האחרון נכשל',
-  'library.download.downloadingPct': 'מוריד לשימוש לא מקוון, {pct}',
-  'library.download.availableManage': 'זמין לא מקוון - ניהול ההורדה',
-  'library.download.startingOne': 'מוריד לשימוש לא מקוון…',
-  'library.download.startingBoth': 'מוריד את שתי המהדורות…',
   'library.download.stopped': 'ההורדה נעצרה',
   'library.download.available': 'זמין לא מקוון',
   'library.download.doneBoth': 'שתי המהדורות זמינות לא מקוון',
   'library.download.removed': 'העותק הלא מקוון הוסר',
   'library.download.needsHttps':
     'הורדות לא מקוונות דורשות HTTPS (או localhost). יש לעיין במדריך האירוח העצמי בקובץ ה-README של {app}.',
-  'library.download.askTitle': 'להוריד לשימוש לא מקוון?',
   'library.download.askLede':
     'שמירת {title} במכשיר הזה לטיסות ואזורים ללא קליטה - כ-{bytes}{kind, select, ebook { כולל תמונות} other { של שמע}}. {kind, select, ebook {הקריאה} other {ההאזנה}} עובדת לגמרי לא מקוון, והמיקום שלך מסתנכרן בחזרה עם החזרה לחיבור. התנתקות מוחקת עותקים לא מקוונים.',
   'library.download.companionSeparate':
@@ -565,7 +542,6 @@ const messages: Record<string, string> = {
   'library.download.partialLede':
     '{bytes} מהניסיון האחרון עדיין נמצאים במכשיר הזה. התחלה מחדש ממשיכה משם; הסרתם מפנה את השטח כעת.',
   'library.download.interruptedLede': 'ההורדה נקטעה - התחלה מחדש ממשיכה מהמקום שבו היא נעצרה.',
-  'library.download.both': 'הורדת שתיהן{hasSize, select, true { ({size})} other {}}',
   'library.download.onlyThis': '{kind, select, ebook {ספר אלקטרוני} other {ספר קול}} בלבד ({size})',
   'library.download.retry': 'ניסיון הורדה חוזר',
   'library.download.removePartial': 'הסרת ההורדה החלקית',
@@ -1751,5 +1727,28 @@ const messages: Record<string, string> = {
   'library.lang.allLanguages': 'כל השפות',
   'library.lang.button': 'שפה: {name}',
   'library.lang.menuTitle': 'הצגת ספרים לפי שפה',
+  // settings
+  'settings.account.menuLabel': 'חשבון: {name}',
+  'settings.account.goTo': 'הגדרות חשבון',
+
+  // library
+  'library.book.downloadFile': 'הורדת קובץ',
+  'library.book.downloadFiles': 'הורדת קבצים…',
+  'library.book.downloadFilesTitle': 'הורדת קבצים',
+  'library.book.downloadFileHint': 'קובץ הספר עצמו, נשמר במכשיר הזה',
+  'library.book.downloadFilesHint':
+    '{n, plural, one {# קובץ.} two {# קבצים.} other {# קבצים.}} כל קובץ יורד בנפרד.',
+  'library.offline.save': 'שמור לא מקוון',
+  'library.offline.saving': 'שומר לא מקוון',
+  'library.offline.saved': 'נשמר לא מקוון',
+  'library.offline.saveLabel': 'שמור לא מקוון כדי לפתוח בלי חיבור',
+  'library.offline.retryLabel': 'שמור לא מקוון - הניסיון האחרון נכשל',
+  'library.offline.savingPct': 'שומר לא מקוון, {pct}',
+  'library.offline.savedManage': 'נשמר לא מקוון - ניהול העותק הלא מקוון',
+  'library.offline.askTitle': 'לשמור לא מקוון?',
+  'library.offline.starting': 'שומר לא מקוון…',
+  'library.offline.startingBoth': 'שומר את שתי המהדורות לא מקוון…',
+  'library.offline.saveBoth':
+    'שמור את שתי המהדורות לא מקוון{hasSize, select, true { ({size})} other {}}',
 };
 export default messages;

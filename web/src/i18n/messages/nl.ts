@@ -478,16 +478,10 @@ const messages: Record<string, string> = {
   'library.book.stillIndexedTitle': 'Wordt nog geïndexeerd',
   'library.book.open': '{kind, select, ebook {Lezen} other {Luisteren}}',
   'library.book.openOther': '{kind, select, ebook {Luisteren} other {Lezen}}',
-  'library.book.fromHere': '{kind, select, ebook {Vanaf hier luisteren} other {Vanaf hier lezen}}',
   'library.book.readAlong': 'Meelezen',
-  'library.book.readAlongFromHere': 'Vanaf hier meelezen',
   'library.book.readAlongHint': 'De pagina, met de vertelling erover afgespeeld',
   'library.book.readAlongNotReady': 'Meelezen komt beschikbaar zodra het paar is uitgelijnd',
   'library.book.opening': 'Wordt geopend…',
-  'library.book.saveCopy': 'Kopie bewaren',
-  'library.book.saveFiles': 'Bestanden bewaren…',
-  'library.book.saveFilesHint':
-    '{n, plural, one {# bestand.} other {# bestanden.}} Ze worden één voor één bewaard.',
   'library.book.part': 'Deel {n}',
   'library.book.otherNotOnDevice':
     'Het {kind, select, ebook {luisterboek} other {e-book}} staat niet op dit apparaat, dus is voor wisselen een verbinding nodig.',
@@ -519,8 +513,6 @@ const messages: Record<string, string> = {
   'library.book.languageUnknown': 'Taal onbekend',
   'library.book.languageTitle':
     'Taal {source, select, manual {handmatig ingesteld} metadata {uit het bestand} pair {uit de gekoppelde editie} detected {herkend uit de tekst} other {}}',
-  'library.book.languageWithSource':
-    '{name} · {source, select, manual {handmatig ingesteld} metadata {uit het bestand} pair {uit de gekoppelde editie} detected {herkend uit de tekst} other {}}',
   'library.book.languageAutoOption': 'Automatisch',
   'library.book.languageUnknownSet': 'Onbekend · handmatig instellen?',
   'library.book.languageSet': 'Taal ingesteld op {name}',
@@ -538,10 +530,6 @@ const messages: Record<string, string> = {
     'Kies een e-book en een luisterboek van hetzelfde werk. De synchronisatie loopt na het koppelen; wisselen tussen edities is pas daarna mogelijk.',
   'library.pair.switchUnaligned':
     'Je hebt ook {kind, select, ebook {het luisterboek} other {het e-book}}. Het gezamenlijk timen is nog niet klaar, dus wisselen begint voorlopig bij het begin.',
-  'library.pair.switchExact':
-    'Je hebt ook {kind, select, ebook {het luisterboek} other {het e-book}}, en wisselen komt uit bij dezelfde zin.',
-  'library.pair.switchClose':
-    'Je hebt ook {kind, select, ebook {het luisterboek} other {het e-book}}. Wisselen komt dichtbij uit, al is dat niet altijd precies dezelfde zin.',
   'library.download.inProgress': 'Downloads bezig',
   'library.download.title': 'Downloads',
   'library.download.downloadingN': '{n} wordt gedownload',
@@ -550,23 +538,13 @@ const messages: Record<string, string> = {
   'library.download.progress': '{stored} van {total} · {pct}',
   'library.download.stop': 'Stoppen',
   'library.download.failed': 'Download mislukt',
-  'library.download.download': 'Downloaden',
-  'library.download.downloaded': 'Gedownload',
-  'library.download.downloading': 'Wordt gedownload',
   'library.download.bytesOf': '{stored} van {total}',
-  'library.download.forOffline': 'Downloaden voor offline',
-  'library.download.retryLabel': 'Downloaden voor offline – laatste poging mislukt',
-  'library.download.downloadingPct': 'Wordt gedownload voor offline, {pct}',
-  'library.download.availableManage': 'Offline beschikbaar – download beheren',
-  'library.download.startingOne': 'Wordt gedownload voor offline…',
-  'library.download.startingBoth': 'Beide edities worden gedownload…',
   'library.download.stopped': 'Download gestopt',
   'library.download.available': 'Offline beschikbaar',
   'library.download.doneBoth': 'Beide edities zijn offline beschikbaar',
   'library.download.removed': 'Offline kopie verwijderd',
   'library.download.needsHttps':
     'Offline downloads vereisen HTTPS (of localhost). Zie de zelfhostinggids in de README van {app}.',
-  'library.download.askTitle': 'Downloaden voor offline?',
   'library.download.askLede':
     '{title} op dit apparaat bewaren voor vluchten en dode zones – ongeveer {bytes}{kind, select, ebook { inclusief afbeeldingen} other { audio}}. {kind, select, ebook {Lezen} other {Luisteren}} werkt volledig offline en je positie synchroniseert zodra je weer verbinding hebt. Afmelden verwijdert offline kopieën.',
   'library.download.companionSeparate':
@@ -575,7 +553,6 @@ const messages: Record<string, string> = {
     '{bytes} van de laatste poging staat nog op dit apparaat. Opnieuw beginnen gaat daar verder; verwijderen maakt nu ruimte vrij.',
   'library.download.interruptedLede':
     'De download is onderbroken – opnieuw beginnen gaat verder waar hij stopte.',
-  'library.download.both': 'Beide downloaden{hasSize, select, true { ({size})} other {}}',
   'library.download.onlyThis': 'Alleen {kind, select, ebook {e-book} other {luisterboek}} ({size})',
   'library.download.retry': 'Download opnieuw proberen',
   'library.download.removePartial': 'Onvolledige download verwijderen',
@@ -1761,5 +1738,27 @@ const messages: Record<string, string> = {
   'library.lang.allLanguages': 'Alle talen',
   'library.lang.button': 'Taal: {name}',
   'library.lang.menuTitle': 'Boeken tonen in',
+  // settings
+  'settings.account.menuLabel': 'Account: {name}',
+  'settings.account.goTo': 'Accountinstellingen',
+
+  // library
+  'library.book.downloadFile': 'Bestand downloaden',
+  'library.book.downloadFiles': 'Bestanden downloaden…',
+  'library.book.downloadFilesTitle': 'Bestanden downloaden',
+  'library.book.downloadFileHint': 'Het eigen bestand van het boek, opgeslagen op dit apparaat',
+  'library.book.downloadFilesHint':
+    '{n, plural, one {# bestand.} other {# bestanden.}} Elk bestand wordt apart gedownload.',
+  'library.offline.save': 'Offline bewaren',
+  'library.offline.saving': 'Wordt offline bewaard',
+  'library.offline.saved': 'Offline bewaard',
+  'library.offline.saveLabel': 'Offline bewaren, om zonder verbinding te openen',
+  'library.offline.retryLabel': 'Offline bewaren - laatste poging mislukt',
+  'library.offline.savingPct': 'Wordt offline bewaard, {pct}',
+  'library.offline.savedManage': 'Offline bewaard - offline kopie beheren',
+  'library.offline.askTitle': 'Offline bewaren?',
+  'library.offline.starting': 'Wordt offline bewaard…',
+  'library.offline.startingBoth': 'Beide edities worden offline bewaard…',
+  'library.offline.saveBoth': 'Beide offline bewaren{hasSize, select, true { ({size})} other {}}',
 } as const;
 export default messages;

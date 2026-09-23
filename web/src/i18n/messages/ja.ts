@@ -468,15 +468,10 @@ const messages: Record<string, string> = {
   'library.book.stillIndexedTitle': 'インデックス作成中',
   'library.book.open': '{kind, select, ebook {読む} other {聴く}}',
   'library.book.openOther': '{kind, select, ebook {聴く} other {読む}}',
-  'library.book.fromHere': '{kind, select, ebook {ここから聴く} other {ここから読む}}',
   'library.book.readAlong': '一緒に読む',
-  'library.book.readAlongFromHere': 'ここから一緒に読む',
   'library.book.readAlongHint': 'ページの上でナレーションを再生します',
   'library.book.readAlongNotReady': 'ペアの整列が完了すると「一緒に読む」が使えます',
   'library.book.opening': '開いています…',
-  'library.book.saveCopy': 'コピーを保存',
-  'library.book.saveFiles': 'ファイルを保存…',
-  'library.book.saveFilesHint': '{n, plural, other {#個のファイル。}}1つずつ保存されます。',
   'library.book.part': '第{n}部',
   'library.book.otherNotOnDevice':
     '{kind, select, ebook {オーディオブック} other {電子書籍}}はこの端末にないため、切り替えには接続が必要です。',
@@ -506,8 +501,6 @@ const messages: Record<string, string> = {
   'library.book.languageUnknown': '言語不明',
   'library.book.languageTitle':
     '言語 {source, select, manual {手動で設定} metadata {ファイルから} pair {ペアの版から} detected {テキストから検出} other {}}',
-  'library.book.languageWithSource':
-    '{name} · {source, select, manual {手動で設定} metadata {ファイルから} pair {ペアの版から} detected {テキストから検出} other {}}',
   'library.book.languageAutoOption': '自動',
   'library.book.languageUnknownSet': '不明 · 手動で設定しますか?',
   'library.book.languageSet': '言語を{name}に設定しました',
@@ -525,10 +518,6 @@ const messages: Record<string, string> = {
     '同じ作品の電子書籍とオーディオブックを選んでください。リンク後に整合が実行されます。整合が完了するまで版の切り替えは利用できません。',
   'library.pair.switchUnaligned':
     '{kind, select, ebook {オーディオブック} other {電子書籍}}もお持ちです。両者のタイミング処理がまだ完了していないため、今のところ切り替えると最初から始まります。',
-  'library.pair.switchExact':
-    '{kind, select, ebook {オーディオブック} other {電子書籍}}もお持ちです。切り替えると同じ文から続きを利用できます。',
-  'library.pair.switchClose':
-    '{kind, select, ebook {オーディオブック} other {電子書籍}}もお持ちです。切り替えると近い位置に移動しますが、必ずしも正確な文とは限りません。',
   'library.download.inProgress': 'ダウンロード中',
   'library.download.title': 'ダウンロード',
   'library.download.downloadingN': '{n}件をダウンロード中',
@@ -537,23 +526,13 @@ const messages: Record<string, string> = {
   'library.download.progress': '{total}中{stored} · {pct}',
   'library.download.stop': '停止',
   'library.download.failed': 'ダウンロードに失敗しました',
-  'library.download.download': 'ダウンロード',
-  'library.download.downloaded': 'ダウンロード済み',
-  'library.download.downloading': 'ダウンロード中',
   'library.download.bytesOf': '{total}中{stored}',
-  'library.download.forOffline': 'オフライン用にダウンロード',
-  'library.download.retryLabel': 'オフライン用にダウンロード - 前回の試行は失敗しました',
-  'library.download.downloadingPct': 'オフライン用にダウンロード中、{pct}',
-  'library.download.availableManage': 'オフラインで利用可能 - ダウンロードを管理',
-  'library.download.startingOne': 'オフライン用にダウンロード中…',
-  'library.download.startingBoth': '両方の版をダウンロード中…',
   'library.download.stopped': 'ダウンロードを停止しました',
   'library.download.available': 'オフラインで利用可能',
   'library.download.doneBoth': '両方の版がオフラインで利用可能です',
   'library.download.removed': 'オフラインコピーを削除しました',
   'library.download.needsHttps':
     'オフラインダウンロードにはHTTPS(またはlocalhost)が必要です。詳しくは{app}のREADMEにあるセルフホスティングガイドをご覧ください。',
-  'library.download.askTitle': 'オフライン用にダウンロードしますか?',
   'library.download.askLede':
     '飛行機の中や電波の届かない場所のために、{title}をこの端末に保存します。容量は約{bytes}{kind, select, ebook {(画像を含む)} other {(音声)}}です。{kind, select, ebook {読書} other {リスニング}}は完全にオフラインで動作し、再接続すると位置が同期されます。サインアウトするとオフラインコピーは削除されます。',
   'library.download.companionSeparate':
@@ -562,7 +541,6 @@ const messages: Record<string, string> = {
     '前回の試行分の{bytes}がこの端末に残っています。再開するとそこから続行されます。削除するとその分の容量が今すぐ解放されます。',
   'library.download.interruptedLede':
     'ダウンロードが中断されました。再開すると中断した箇所から続行されます。',
-  'library.download.both': '両方をダウンロード{hasSize, select, true {({size})} other {}}',
   'library.download.onlyThis':
     '{kind, select, ebook {電子書籍} other {オーディオブック}}のみ({size})',
   'library.download.retry': 'ダウンロードを再試行',
@@ -1732,6 +1710,28 @@ const messages: Record<string, string> = {
   'library.lang.allLanguages': 'すべての言語',
   'library.lang.button': '言語: {name}',
   'library.lang.menuTitle': '表示する言語',
+  // settings
+  'settings.account.menuLabel': 'アカウント: {name}',
+  'settings.account.goTo': 'アカウント設定',
+
+  // library
+  'library.book.downloadFile': 'ファイルをダウンロード',
+  'library.book.downloadFiles': 'ファイルをダウンロード…',
+  'library.book.downloadFilesTitle': 'ダウンロードするファイル',
+  'library.book.downloadFileHint': '本自体のファイルを、この端末に保存します',
+  'library.book.downloadFilesHint':
+    '{n, plural, other {#件のファイル。それぞれ個別にダウンロードされます。}}',
+  'library.offline.save': 'オフライン保存',
+  'library.offline.saving': 'オフライン保存中',
+  'library.offline.saved': 'オフライン保存済み',
+  'library.offline.saveLabel': 'オフラインに保存して、接続なしで開く',
+  'library.offline.retryLabel': 'オフライン保存 - 前回の試行は失敗しました',
+  'library.offline.savingPct': 'オフライン保存中 · {pct}',
+  'library.offline.savedManage': 'オフライン保存済み - オフラインコピーを管理',
+  'library.offline.askTitle': 'オフラインで保存しますか?',
+  'library.offline.starting': 'オフライン保存中…',
+  'library.offline.startingBoth': '両方の版をオフライン保存中…',
+  'library.offline.saveBoth': '両方をオフライン保存{hasSize, select, true {({size})} other {}}',
 };
 
 export default messages;

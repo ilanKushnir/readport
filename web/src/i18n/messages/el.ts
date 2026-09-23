@@ -478,17 +478,11 @@ const messages: Record<string, string> = {
   'library.book.stillIndexedTitle': 'Ακόμα ευρετηριάζεται',
   'library.book.open': '{kind, select, ebook {Ανάγνωση} other {Ακρόαση}}',
   'library.book.openOther': '{kind, select, ebook {Ακρόαση} other {Ανάγνωση}}',
-  'library.book.fromHere': '{kind, select, ebook {Ακρόαση από εδώ} other {Ανάγνωση από εδώ}}',
   'library.book.readAlong': 'Ανάγνωση με τον ήχο',
-  'library.book.readAlongFromHere': 'Ανάγνωση με τον ήχο από εδώ',
   'library.book.readAlongHint': 'Η σελίδα, με την αφήγηση να παίζει από πάνω της',
   'library.book.readAlongNotReady':
     'Η ανάγνωση με τον ήχο ξεκλειδώνει μόλις ευθυγραμμιστεί το ζεύγος',
   'library.book.opening': 'Άνοιγμα…',
-  'library.book.saveCopy': 'Αποθήκευση αντιγράφου',
-  'library.book.saveFiles': 'Αποθήκευση αρχείων…',
-  'library.book.saveFilesHint':
-    '{n, plural, one {# αρχείο.} other {# αρχεία.}} Αποθηκεύονται ένα-ένα.',
   'library.book.part': 'Μέρος {n}',
   'library.book.otherNotOnDevice':
     '{kind, select, ebook {Το ηχητικό βιβλίο} other {Το ηλεκτρονικό βιβλίο}} δεν βρίσκεται σε αυτή τη συσκευή, οπότε η εναλλαγή χρειάζεται σύνδεση.',
@@ -519,8 +513,6 @@ const messages: Record<string, string> = {
   'library.book.languageUnknown': 'Άγνωστη γλώσσα',
   'library.book.languageTitle':
     'Γλώσσα {source, select, manual {ορίστηκε χειροκίνητα} metadata {από το αρχείο} pair {από την αντιστοιχισμένη έκδοση} detected {εντοπίστηκε από το κείμενο} other {}}',
-  'library.book.languageWithSource':
-    '{name} · {source, select, manual {ορίστηκε χειροκίνητα} metadata {από το αρχείο} pair {από την αντιστοιχισμένη έκδοση} detected {εντοπίστηκε από το κείμενο} other {}}',
   'library.book.languageAutoOption': 'Αυτόματο',
   'library.book.languageUnknownSet': 'Άγνωστη · ορισμός χειροκίνητα;',
   'library.book.languageSet': 'Η γλώσσα ορίστηκε σε {name}',
@@ -537,10 +529,6 @@ const messages: Record<string, string> = {
     'Επίλεξε ένα ηλεκτρονικό βιβλίο και ένα ηχητικό βιβλίο του ίδιου έργου. Η ευθυγράμμιση εκτελείται μετά τη σύνδεση· η εναλλαγή ανάμεσα σε εκδόσεις δεν είναι διαθέσιμη μέχρι να ολοκληρωθεί η ευθυγράμμιση.',
   'library.pair.switchUnaligned':
     'Έχεις και {kind, select, ebook {το ηχητικό βιβλίο} other {το ηλεκτρονικό βιβλίο}}. Η χρονομέτρηση των δύο μαζί δεν έχει ολοκληρωθεί, οπότε η μετάβαση ανάμεσά τους θα ξεκινά προς το παρόν από την αρχή.',
-  'library.pair.switchExact':
-    'Έχεις και {kind, select, ebook {το ηχητικό βιβλίο} other {το ηλεκτρονικό βιβλίο}}, και η εναλλαγή ανάμεσά τους συνεχίζει από την ίδια πρόταση.',
-  'library.pair.switchClose':
-    'Έχεις και {kind, select, ebook {το ηχητικό βιβλίο} other {το ηλεκτρονικό βιβλίο}}. Η εναλλαγή καταλήγει κοντά στο σημείο όπου βρίσκεσαι, αν και όχι πάντα στην ακριβή πρόταση.',
   'library.download.inProgress': 'Λήψεις σε εξέλιξη',
   'library.download.title': 'Λήψεις',
   'library.download.downloadingN': 'Λήψη {n}',
@@ -549,23 +537,13 @@ const messages: Record<string, string> = {
   'library.download.progress': '{stored} από {total} · {pct}',
   'library.download.stop': 'Διακοπή',
   'library.download.failed': 'Η λήψη απέτυχε',
-  'library.download.download': 'Λήψη',
-  'library.download.downloaded': 'Λήφθηκε',
-  'library.download.downloading': 'Λήψη σε εξέλιξη',
   'library.download.bytesOf': '{stored} από {total}',
-  'library.download.forOffline': 'Λήψη για εκτός σύνδεσης',
-  'library.download.retryLabel': 'Λήψη για εκτός σύνδεσης - η τελευταία προσπάθεια απέτυχε',
-  'library.download.downloadingPct': 'Λήψη για εκτός σύνδεσης, {pct}',
-  'library.download.availableManage': 'Διαθέσιμο εκτός σύνδεσης - διαχείριση λήψης',
-  'library.download.startingOne': 'Λήψη για εκτός σύνδεσης…',
-  'library.download.startingBoth': 'Λήψη και των δύο εκδόσεων…',
   'library.download.stopped': 'Η λήψη διακόπηκε',
   'library.download.available': 'Διαθέσιμο εκτός σύνδεσης',
   'library.download.doneBoth': 'Και οι δύο εκδόσεις είναι διαθέσιμες εκτός σύνδεσης',
   'library.download.removed': 'Το αντίγραφο εκτός σύνδεσης αφαιρέθηκε',
   'library.download.needsHttps':
     'Οι λήψεις εκτός σύνδεσης χρειάζονται HTTPS (ή localhost). Δες τον οδηγό αυτοφιλοξενίας στο README του {app}.',
-  'library.download.askTitle': 'Λήψη για εκτός σύνδεσης;',
   'library.download.askLede':
     'Κράτησε το {title} σε αυτή τη συσκευή για πτήσεις και περιοχές χωρίς σήμα - περίπου {bytes}{kind, select, ebook { συμπεριλαμβανομένων εικόνων} other { ήχου}}. {kind, select, ebook {Η ανάγνωση} other {Η ακρόαση}} λειτουργεί πλήρως εκτός σύνδεσης και η θέση σου συγχρονίζεται ξανά όταν επανασυνδεθείς. Η αποσύνδεση αφαιρεί τα αντίγραφα εκτός σύνδεσης.',
   'library.download.companionSeparate':
@@ -574,7 +552,6 @@ const messages: Record<string, string> = {
     '{bytes} από την τελευταία προσπάθεια βρίσκονται ακόμα σε αυτή τη συσκευή. Η επανεκκίνηση συνεχίζει από εκεί· η αφαίρεση ελευθερώνει τον χώρο τώρα.',
   'library.download.interruptedLede':
     'Η λήψη διακόπηκε - η επανεκκίνηση συνεχίζει από εκεί που σταμάτησε.',
-  'library.download.both': 'Λήψη και των δύο{hasSize, select, true { ({size})} other {}}',
   'library.download.onlyThis':
     'Μόνο {kind, select, ebook {το ηλεκτρονικό βιβλίο} other {το ηχητικό βιβλίο}} ({size})',
   'library.download.retry': 'Επανάληψη λήψης',
@@ -1760,5 +1737,29 @@ const messages: Record<string, string> = {
   'library.lang.allLanguages': 'Όλες οι γλώσσες',
   'library.lang.button': 'Γλώσσα: {name}',
   'library.lang.menuTitle': 'Εμφάνιση κατά γλώσσα',
+  // settings
+  'settings.account.menuLabel': 'Λογαριασμός: {name}',
+  'settings.account.goTo': 'Ρυθμίσεις λογαριασμού',
+
+  // library
+  'library.book.downloadFile': 'Λήψη αρχείου',
+  'library.book.downloadFiles': 'Λήψη αρχείων…',
+  'library.book.downloadFilesTitle': 'Λήψη αρχείων',
+  'library.book.downloadFileHint': 'Το δικό του αρχείο, διατηρημένο σε αυτή τη συσκευή',
+  'library.book.downloadFilesHint':
+    '{n, plural, one {# αρχείο.} other {# αρχεία.}} Καθένα κατεβαίνει ξεχωριστά.',
+  'library.offline.save': 'Αποθήκευση εκτός σύνδεσης',
+  'library.offline.saving': 'Γίνεται αποθήκευση εκτός σύνδεσης',
+  'library.offline.saved': 'Αποθηκεύτηκε εκτός σύνδεσης',
+  'library.offline.saveLabel': 'Αποθήκευση εκτός σύνδεσης, για άνοιγμα χωρίς σύνδεση',
+  'library.offline.retryLabel': 'Αποθήκευση εκτός σύνδεσης - η τελευταία προσπάθεια απέτυχε',
+  'library.offline.savingPct': 'Γίνεται αποθήκευση εκτός σύνδεσης, {pct}',
+  'library.offline.savedManage':
+    'Αποθηκεύτηκε εκτός σύνδεσης - διαχείριση του αντιγράφου εκτός σύνδεσης',
+  'library.offline.askTitle': 'Αποθήκευση εκτός σύνδεσης;',
+  'library.offline.starting': 'Γίνεται αποθήκευση εκτός σύνδεσης…',
+  'library.offline.startingBoth': 'Γίνεται αποθήκευση και των δύο εκδόσεων εκτός σύνδεσης…',
+  'library.offline.saveBoth':
+    'Αποθήκευση και των δύο εκτός σύνδεσης{hasSize, select, true { ({size})} other {}}',
 };
 export default messages;

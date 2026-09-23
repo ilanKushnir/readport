@@ -471,17 +471,10 @@ const messages: Record<string, string> = {
   'library.book.stillIndexedTitle': 'Ainda a ser indexado',
   'library.book.open': '{kind, select, ebook {Ler} other {Ouvir}}',
   'library.book.openOther': '{kind, select, ebook {Ouvir} other {Ler}}',
-  'library.book.fromHere':
-    '{kind, select, ebook {Ouvir a partir daqui} other {Ler a partir daqui}}',
   'library.book.readAlong': 'Ler com a voz',
-  'library.book.readAlongFromHere': 'Ler com a voz a partir daqui',
   'library.book.readAlongHint': 'A página, com a narração a tocar por cima',
   'library.book.readAlongNotReady': 'Ler com a voz fica disponível quando o par estiver alinhado',
   'library.book.opening': 'A abrir…',
-  'library.book.saveCopy': 'Guardar uma cópia',
-  'library.book.saveFiles': 'Guardar ficheiros…',
-  'library.book.saveFilesHint':
-    '{n, plural, one {# ficheiro.} other {# ficheiros.}} Guardam-se um de cada vez.',
   'library.book.part': 'Parte {n}',
   'library.book.otherNotOnDevice':
     'O {kind, select, ebook {audiolivro} other {ebook}} não está neste dispositivo, por isso mudar precisa de ligação.',
@@ -511,8 +504,6 @@ const messages: Record<string, string> = {
   'library.book.languageUnknown': 'Idioma desconhecido',
   'library.book.languageTitle':
     'Idioma {source, select, manual {definido à mão} metadata {do ficheiro} pair {da edição emparelhada} detected {lido do texto} other {}}',
-  'library.book.languageWithSource':
-    '{name} · {source, select, manual {definido à mão} metadata {do ficheiro} pair {da edição emparelhada} detected {lido do texto} other {}}',
   'library.book.languageAutoOption': 'Auto',
   'library.book.languageUnknownSet': 'Desconhecido · definir à mão?',
   'library.book.languageSet': 'Idioma definido para {name}',
@@ -530,10 +521,6 @@ const messages: Record<string, string> = {
     'Escolhe um ebook e um audiolivro da mesma obra. O alinhamento corre depois de os associares; mudar entre edições não está disponível até terminar.',
   'library.pair.switchUnaligned':
     'Também tens {kind, select, ebook {o audiolivro} other {o ebook}}. Ainda não terminou a temporização dos dois juntos, por isso mudar entre eles vai começar do início por agora.',
-  'library.pair.switchExact':
-    'Também tens {kind, select, ebook {o audiolivro} other {o ebook}}, e mudar entre eles retoma na mesma frase.',
-  'library.pair.switchClose':
-    'Também tens {kind, select, ebook {o audiolivro} other {o ebook}}. Mudar deixa-te perto de onde estás, embora nem sempre na frase exata.',
   'library.download.inProgress': 'Transferências em curso',
   'library.download.title': 'Transferências',
   'library.download.downloadingN': 'A transferir {n}',
@@ -542,23 +529,13 @@ const messages: Record<string, string> = {
   'library.download.progress': '{stored} de {total} · {pct}',
   'library.download.stop': 'Parar',
   'library.download.failed': 'Falha na transferência',
-  'library.download.download': 'Transferir',
-  'library.download.downloaded': 'Transferido',
-  'library.download.downloading': 'A transferir',
   'library.download.bytesOf': '{stored} de {total}',
-  'library.download.forOffline': 'Transferir para sem ligação',
-  'library.download.retryLabel': 'Transferir para sem ligação: a última tentativa falhou',
-  'library.download.downloadingPct': 'A transferir para sem ligação, {pct}',
-  'library.download.availableManage': 'Disponível sem ligação: gerir a transferência',
-  'library.download.startingOne': 'A transferir para sem ligação…',
-  'library.download.startingBoth': 'A transferir ambas as edições…',
   'library.download.stopped': 'Transferência parada',
   'library.download.available': 'Disponível sem ligação',
   'library.download.doneBoth': 'Ambas as edições estão disponíveis sem ligação',
   'library.download.removed': 'Cópia sem ligação removida',
   'library.download.needsHttps':
     'As transferências sem ligação precisam de HTTPS (ou localhost). Consulta o guia de autoalojamento no README do {app}.',
-  'library.download.askTitle': 'Transferir para sem ligação?',
   'library.download.askLede':
     'Guarda {title} neste dispositivo para voos e zonas sem cobertura: cerca de {bytes}{kind, select, ebook { incluindo as imagens} other { de áudio}}. {kind, select, ebook {A leitura} other {A audição}} funciona totalmente sem ligação e a tua posição sincroniza ao reconectares. Terminar sessão remove as cópias sem ligação.',
   'library.download.companionSeparate':
@@ -567,7 +544,6 @@ const messages: Record<string, string> = {
     '{bytes} da última tentativa continuam neste dispositivo. Recomeçar continua a partir daí; removê-los liberta o espaço agora.',
   'library.download.interruptedLede':
     'A transferência foi interrompida: recomeçar continua a partir de onde parou.',
-  'library.download.both': 'Transferir ambas{hasSize, select, true { ({size})} other {}}',
   'library.download.onlyThis': 'Só {kind, select, ebook {o ebook} other {o audiolivro}} ({size})',
   'library.download.retry': 'Repetir transferência',
   'library.download.removePartial': 'Remover transferência parcial',
@@ -1751,6 +1727,29 @@ const messages: Record<string, string> = {
   'library.lang.allLanguages': 'Todos os idiomas',
   'library.lang.button': 'Idioma: {name}',
   'library.lang.menuTitle': 'Mostrar livros em',
+  // settings
+  'settings.account.menuLabel': 'Conta: {name}',
+  'settings.account.goTo': 'Definições da conta',
+
+  // library
+  'library.book.downloadFile': 'Transferir ficheiro',
+  'library.book.downloadFiles': 'Transferir ficheiros…',
+  'library.book.downloadFilesTitle': 'Transferir ficheiros',
+  'library.book.downloadFileHint': 'O próprio ficheiro do livro, guardado neste dispositivo',
+  'library.book.downloadFilesHint':
+    '{n, plural, one {# ficheiro.} other {# ficheiros.}} Cada um é transferido em separado.',
+  'library.offline.save': 'Guardar sem ligação',
+  'library.offline.saving': 'A guardar sem ligação',
+  'library.offline.saved': 'Guardado sem ligação',
+  'library.offline.saveLabel': 'Guardar para abrir sem ligação',
+  'library.offline.retryLabel': 'Guardar sem ligação - a última tentativa falhou',
+  'library.offline.savingPct': 'A guardar sem ligação, {pct}',
+  'library.offline.savedManage': 'Guardado sem ligação - gerir a cópia sem ligação',
+  'library.offline.askTitle': 'Guardar sem ligação?',
+  'library.offline.starting': 'A guardar sem ligação…',
+  'library.offline.startingBoth': 'A guardar ambas as edições sem ligação…',
+  'library.offline.saveBoth':
+    'Guardar ambas sem ligação{hasSize, select, true { ({size})} other {}}',
 };
 
 export default messages;

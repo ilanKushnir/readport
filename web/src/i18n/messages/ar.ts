@@ -483,16 +483,10 @@ const messages: Record<string, string> = {
   'library.book.stillIndexedTitle': 'لا تزال قيد الفهرسة',
   'library.book.open': '{kind, select, ebook {قراءة} other {استماع}}',
   'library.book.openOther': '{kind, select, ebook {استماع} other {قراءة}}',
-  'library.book.fromHere': '{kind, select, ebook {الاستماع من هنا} other {القراءة من هنا}}',
   'library.book.readAlong': 'القراءة مع السرد',
-  'library.book.readAlongFromHere': 'القراءة مع السرد من هنا',
   'library.book.readAlongHint': 'الصفحة، مع تشغيل السرد فوقها',
   'library.book.readAlongNotReady': 'تُتاح القراءة مع السرد بعد محاذاة الزوج',
   'library.book.opening': 'جارٍ الفتح…',
-  'library.book.saveCopy': 'حفظ نسخة',
-  'library.book.saveFiles': 'حفظ الملفات…',
-  'library.book.saveFilesHint':
-    '{n, plural, zero {لا ملفات.} one {ملف واحد.} two {ملفان.} few {# ملفات.} many {# ملفًا.} other {# ملف.}} حفظها يتم واحدًا تلو الآخر.',
   'library.book.part': 'الجزء {n}',
   'library.book.otherNotOnDevice':
     '{kind, select, ebook {الكتاب الصوتي} other {الكتاب الإلكتروني}} غير موجود على هذا الجهاز، لذا يحتاج التبديل إلى اتصال.',
@@ -521,8 +515,6 @@ const messages: Record<string, string> = {
   'library.book.languageUnknown': 'اللغة غير معروفة',
   'library.book.languageTitle':
     'اللغة {source, select, manual {مُعيَّنة يدويًا} metadata {من الملف} pair {من النسخة المقترنة} detected {مُستخرَجة من النص} other {}}',
-  'library.book.languageWithSource':
-    '{name} · {source, select, manual {مُعيَّنة يدويًا} metadata {من الملف} pair {من النسخة المقترنة} detected {مُستخرَجة من النص} other {}}',
   'library.book.languageAutoOption': 'تلقائي',
   'library.book.languageUnknownSet': 'غير معروفة · تعيينها يدويًا؟',
   'library.book.languageSet': 'تم ضبط اللغة على {name}',
@@ -540,11 +532,6 @@ const messages: Record<string, string> = {
     'اختر كتابًا إلكترونيًا وكتابًا صوتيًا لنفس العمل. تعمل المزامنة بعد الربط؛ التبديل بين النسختين غير متاح حتى تكتمل.',
   'library.pair.switchUnaligned':
     'تمتلك أيضًا {kind, select, ebook {الكتاب الصوتي} other {الكتاب الإلكتروني}}. لم ينتهِ توقيت الاثنين معًا بعد، لذا سينتقل التبديل بينهما إلى البداية في الوقت الحالي.',
-  'library.pair.switchExact':
-    'تمتلك أيضًا {kind, select, ebook {الكتاب الصوتي} other {الكتاب الإلكتروني}}، والتبديل بينهما يتابع عند نفس الجملة.',
-  'library.pair.switchClose':
-    'تمتلك أيضًا {kind, select, ebook {الكتاب الصوتي} other {الكتاب الإلكتروني}}. يهبط التبديل قريبًا من موضعك، وإن لم يكن دائمًا عند الجملة الدقيقة.',
-
   'library.download.inProgress': 'تنزيلات قيد التقدم',
   'library.download.title': 'التنزيلات',
   'library.download.downloadingN': 'جارٍ تنزيل {n}',
@@ -553,23 +540,13 @@ const messages: Record<string, string> = {
   'library.download.progress': '{stored} من {total} · {pct}',
   'library.download.stop': 'إيقاف',
   'library.download.failed': 'فشل التنزيل',
-  'library.download.download': 'تنزيل',
-  'library.download.downloaded': 'مُنزَّل',
-  'library.download.downloading': 'جارٍ التنزيل',
   'library.download.bytesOf': '{stored} من {total}',
-  'library.download.forOffline': 'تنزيل للاستخدام دون اتصال',
-  'library.download.retryLabel': 'تنزيل للاستخدام دون اتصال - فشلت المحاولة الأخيرة',
-  'library.download.downloadingPct': 'جارٍ التنزيل للاستخدام دون اتصال، {pct}',
-  'library.download.availableManage': 'متاح دون اتصال - إدارة التنزيل',
-  'library.download.startingOne': 'جارٍ التنزيل للاستخدام دون اتصال…',
-  'library.download.startingBoth': 'جارٍ تنزيل كلتا النسختين…',
   'library.download.stopped': 'توقّف التنزيل',
   'library.download.available': 'متاح دون اتصال',
   'library.download.doneBoth': 'كلتا النسختين متاحتان دون اتصال',
   'library.download.removed': 'أُزيلت النسخة غير المتصلة',
   'library.download.needsHttps':
     'تحتاج التنزيلات دون اتصال إلى HTTPS (أو localhost). راجع دليل الاستضافة الذاتية في ملف README الخاص بـ {app}.',
-  'library.download.askTitle': 'تنزيل للاستخدام دون اتصال؟',
   'library.download.askLede':
     'احتفظ بـ{title} على هذا الجهاز للرحلات والمناطق منعدمة التغطية - نحو {bytes}{kind, select, ebook { شاملة الصور} other { من الصوت}}. يعمل {kind, select, ebook {القراءة} other {الاستماع}} بشكل كامل دون اتصال، ويُزامَن موضعك عند إعادة الاتصال. يؤدي تسجيل الخروج إلى إزالة النسخ غير المتصلة.',
   'library.download.companionSeparate':
@@ -577,7 +554,6 @@ const messages: Record<string, string> = {
   'library.download.partialLede':
     'لا يزال {bytes} من المحاولة الأخيرة على هذا الجهاز. البدء من جديد يتابع من هناك؛ إزالته يُحرّر المساحة الآن.',
   'library.download.interruptedLede': 'انقطع التنزيل - البدء من جديد يتابع من حيث توقف.',
-  'library.download.both': 'تنزيل كلتيهما{hasSize, select, true { ({size})} other {}}',
   'library.download.onlyThis':
     '{kind, select, ebook {الكتاب الإلكتروني} other {الكتاب الصوتي}} فقط ({size})',
   'library.download.retry': 'إعادة محاولة التنزيل',
@@ -1787,5 +1763,28 @@ const messages: Record<string, string> = {
   'library.lang.allLanguages': 'كل اللغات',
   'library.lang.button': 'اللغة: {name}',
   'library.lang.menuTitle': 'عرض الكتب حسب اللغة',
+  // settings
+  'settings.account.menuLabel': 'الحساب: {name}',
+  'settings.account.goTo': 'إعدادات الحساب',
+
+  // library
+  'library.book.downloadFile': 'تنزيل الملف',
+  'library.book.downloadFiles': 'تنزيل الملفات…',
+  'library.book.downloadFilesTitle': 'تنزيل الملفات',
+  'library.book.downloadFileHint': 'ملف الكتاب الأصلي، محفوظ على هذا الجهاز',
+  'library.book.downloadFilesHint':
+    '{n, plural, zero {لا ملفات.} one {ملف واحد.} two {ملفان.} few {# ملفات.} many {# ملفًا.} other {# ملف.}} يتم تنزيل كل ملف على حدة.',
+  'library.offline.save': 'حفظ دون اتصال',
+  'library.offline.saving': 'جارٍ الحفظ دون اتصال',
+  'library.offline.saved': 'محفوظ دون اتصال',
+  'library.offline.saveLabel': 'حفظ دون اتصال، لفتحه بلا اتصال بالإنترنت',
+  'library.offline.retryLabel': 'حفظ دون اتصال - فشلت المحاولة الأخيرة',
+  'library.offline.savingPct': 'جارٍ الحفظ دون اتصال، {pct}',
+  'library.offline.savedManage': 'محفوظ دون اتصال - إدارة النسخة غير المتصلة',
+  'library.offline.askTitle': 'حفظ دون اتصال؟',
+  'library.offline.starting': 'جارٍ الحفظ دون اتصال…',
+  'library.offline.startingBoth': 'جارٍ حفظ كلتا النسختين دون اتصال…',
+  'library.offline.saveBoth':
+    'حفظ كلتا النسختين دون اتصال{hasSize, select, true { ({size})} other {}}',
 };
 export default messages;

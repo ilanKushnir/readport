@@ -464,16 +464,10 @@ const messages: Record<string, string> = {
   'library.book.stillIndexedTitle': 'Indekseres stadig',
   'library.book.open': '{kind, select, ebook {Læs} other {Lyt}}',
   'library.book.openOther': '{kind, select, ebook {Lyt} other {Læs}}',
-  'library.book.fromHere': '{kind, select, ebook {Lyt herfra} other {Læs herfra}}',
   'library.book.readAlong': 'Læs med',
-  'library.book.readAlongFromHere': 'Læs med herfra',
   'library.book.readAlongHint': 'Siden, med oplæsningen afspillet over den',
   'library.book.readAlongNotReady': 'Læs med låses op, når parret er justeret',
   'library.book.opening': 'Åbner…',
-  'library.book.saveCopy': 'Gem en kopi',
-  'library.book.saveFiles': 'Gem filer…',
-  'library.book.saveFilesHint':
-    '{n, plural, one {# fil.} other {# filer.}} De gemmes én ad gangen.',
   'library.book.part': 'Del {n}',
   'library.book.otherNotOnDevice':
     '{kind, select, ebook {Lydbogen} other {E-bogen}} er ikke på denne enhed, så skift kræver en forbindelse.',
@@ -503,8 +497,6 @@ const messages: Record<string, string> = {
   'library.book.languageUnknown': 'Ukendt sprog',
   'library.book.languageTitle':
     'Sprog {source, select, manual {sat manuelt} metadata {fra filen} pair {fra den parrede udgave} detected {læst fra teksten} other {}}',
-  'library.book.languageWithSource':
-    '{name} · {source, select, manual {sat manuelt} metadata {fra filen} pair {fra den parrede udgave} detected {læst fra teksten} other {}}',
   'library.book.languageAutoOption': 'Auto',
   'library.book.languageUnknownSet': 'Ukendt · sat manuelt?',
   'library.book.languageSet': 'Sprog sat til {name}',
@@ -521,10 +513,6 @@ const messages: Record<string, string> = {
     'Vælg en e-bog og en lydbog af samme værk. Synkroniseringen kører efter sammenkædning; skift mellem udgaver er ikke tilgængeligt, før synkroniseringen er færdig.',
   'library.pair.switchUnaligned':
     'Du ejer også {kind, select, ebook {lydbogen} other {e-bogen}}. Tidsbestemmelsen af de to sammen er ikke færdig endnu, så at flytte mellem dem starter fra begyndelsen for nu.',
-  'library.pair.switchExact':
-    'Du ejer også {kind, select, ebook {lydbogen} other {e-bogen}}, og skift mellem dem fortsætter ved samme sætning.',
-  'library.pair.switchClose':
-    'Du ejer også {kind, select, ebook {lydbogen} other {e-bogen}}. Skift lander tæt på, hvor du er, dog ikke altid på den præcise sætning.',
   'library.download.inProgress': 'Igangværende downloads',
   'library.download.title': 'Downloads',
   'library.download.downloadingN': 'Downloader {n}',
@@ -533,23 +521,13 @@ const messages: Record<string, string> = {
   'library.download.progress': '{stored} af {total} · {pct}',
   'library.download.stop': 'Stop',
   'library.download.failed': 'Download mislykkedes',
-  'library.download.download': 'Download',
-  'library.download.downloaded': 'Downloadet',
-  'library.download.downloading': 'Downloader',
   'library.download.bytesOf': '{stored} af {total}',
-  'library.download.forOffline': 'Download til offline',
-  'library.download.retryLabel': 'Download til offline – det seneste forsøg mislykkedes',
-  'library.download.downloadingPct': 'Downloader til offline, {pct}',
-  'library.download.availableManage': 'Tilgængelig offline – administrer downloadet',
-  'library.download.startingOne': 'Downloader til offline…',
-  'library.download.startingBoth': 'Downloader begge udgaver…',
   'library.download.stopped': 'Download stoppet',
   'library.download.available': 'Tilgængelig offline',
   'library.download.doneBoth': 'Begge udgaver er tilgængelige offline',
   'library.download.removed': 'Offlinekopi fjernet',
   'library.download.needsHttps':
     'Offline-downloads kræver HTTPS (eller localhost). Se selvhostingguiden i {app}s README.',
-  'library.download.askTitle': 'Download til offline?',
   'library.download.askLede':
     'Behold {title} på denne enhed til flyveture og døde zoner – cirka {bytes}{kind, select, ebook { inklusive billeder} other { lyd}}. {kind, select, ebook {Læsning} other {Lytning}} virker helt offline, og din position synkroniseres tilbage, når du genopretter forbindelsen. Log ud fjerner offlinekopier.',
   'library.download.companionSeparate':
@@ -558,7 +536,6 @@ const messages: Record<string, string> = {
     '{bytes} fra det seneste forsøg er stadig på denne enhed. At starte igen fortsætter derfra; at fjerne det frigør pladsen nu.',
   'library.download.interruptedLede':
     'Downloadet blev afbrudt – at starte igen fortsætter, hvor det stoppede.',
-  'library.download.both': 'Download begge{hasSize, select, true { ({size})} other {}}',
   'library.download.onlyThis': 'Kun {kind, select, ebook {e-bog} other {lydbog}} ({size})',
   'library.download.retry': 'Prøv download igen',
   'library.download.removePartial': 'Fjern delvist download',
@@ -1717,5 +1694,28 @@ const messages: Record<string, string> = {
   'library.lang.allLanguages': 'Alle sprog',
   'library.lang.button': 'Sprog: {name}',
   'library.lang.menuTitle': 'Vis bøger efter sprog',
+  // settings
+  'settings.account.menuLabel': 'Konto: {name}',
+  'settings.account.goTo': 'Kontoindstillinger',
+
+  // library
+  'library.book.downloadFile': 'Download fil',
+  'library.book.downloadFiles': 'Download filer…',
+  'library.book.downloadFilesTitle': 'Download filer',
+  'library.book.downloadFileHint': 'Bogens egen fil, gemt på denne enhed',
+  'library.book.downloadFilesHint':
+    '{n, plural, one {# fil.} other {# filer.}} Hver fil downloades separat.',
+  'library.offline.save': 'Gem offline',
+  'library.offline.saving': 'Gemmer offline',
+  'library.offline.saved': 'Gemt offline',
+  'library.offline.saveLabel': 'Gem offline for at åbne uden forbindelse',
+  'library.offline.retryLabel': 'Gem offline - sidste forsøg mislykkedes',
+  'library.offline.savingPct': 'Gemmer offline, {pct}',
+  'library.offline.savedManage': 'Gemt offline - administrer offlinekopien',
+  'library.offline.askTitle': 'Gem offline?',
+  'library.offline.starting': 'Gemmer offline…',
+  'library.offline.startingBoth': 'Gemmer begge udgaver offline…',
+  'library.offline.saveBoth':
+    'Gem begge udgaver offline{hasSize, select, true { ({size})} other {}}',
 };
 export default messages;

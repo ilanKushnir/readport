@@ -475,17 +475,10 @@ const messages: Record<string, string> = {
   'library.book.stillIndexedTitle': 'Indexation en cours',
   'library.book.open': '{kind, select, ebook {Lire} other {Écouter}}',
   'library.book.openOther': '{kind, select, ebook {Écouter} other {Lire}}',
-  'library.book.fromHere':
-    "{kind, select, ebook {Écouter à partir d'ici} other {Lire à partir d'ici}}",
   'library.book.readAlong': 'Lecture accompagnée',
-  'library.book.readAlongFromHere': 'Lecture accompagnée d’ici',
   'library.book.readAlongHint': 'La page, avec la narration jouée par-dessus',
   'library.book.readAlongNotReady': 'La lecture accompagnée se débloque une fois la paire alignée',
   'library.book.opening': 'Ouverture…',
-  'library.book.saveCopy': 'Enregistrer une copie',
-  'library.book.saveFiles': 'Enregistrer les fichiers…',
-  'library.book.saveFilesHint':
-    '{n, plural, one {# fichier.} other {# fichiers.}} Ils sont enregistrés un par un.',
   'library.book.part': 'Partie {n}',
   'library.book.otherNotOnDevice':
     "Le {kind, select, ebook {livre audio} other {livre numérique}} n'est pas sur cet appareil, la bascule nécessite donc une connexion.",
@@ -515,8 +508,6 @@ const messages: Record<string, string> = {
   'library.book.languageUnknown': 'Langue inconnue',
   'library.book.languageTitle':
     "Langue {source, select, manual {définie manuellement} metadata {issue du fichier} pair {issue de l'édition associée} detected {détectée dans le texte} other {}}",
-  'library.book.languageWithSource':
-    "{name} · {source, select, manual {définie manuellement} metadata {issue du fichier} pair {issue de l'édition associée} detected {détectée dans le texte} other {}}",
   'library.book.languageAutoOption': 'Auto',
   'library.book.languageUnknownSet': 'Inconnue · définir manuellement ?',
   'library.book.languageSet': 'Langue définie sur {name}',
@@ -534,10 +525,6 @@ const messages: Record<string, string> = {
     "Choisissez un livre numérique et un livre audio de la même œuvre. L'alignement se lance après la liaison ; la bascule entre éditions est indisponible tant que l'alignement n'est pas terminé.",
   'library.pair.switchUnaligned':
     "Vous possédez aussi {kind, select, ebook {le livre audio} other {le livre numérique}}. La synchronisation des deux n'est pas terminée, donc passer de l'un à l'autre repart du début pour le moment.",
-  'library.pair.switchExact':
-    'Vous possédez aussi {kind, select, ebook {le livre audio} other {le livre numérique}}, et la bascule entre les deux reprend à la même phrase.',
-  'library.pair.switchClose':
-    "Vous possédez aussi {kind, select, ebook {le livre audio} other {le livre numérique}}. La bascule atterrit près de l'endroit où vous êtes, mais pas toujours sur la phrase exacte.",
   'library.download.inProgress': 'Téléchargements en cours',
   'library.download.title': 'Téléchargements',
   'library.download.downloadingN': 'Téléchargement de {n}',
@@ -546,24 +533,13 @@ const messages: Record<string, string> = {
   'library.download.progress': '{stored} sur {total} · {pct}',
   'library.download.stop': 'Arrêter',
   'library.download.failed': 'Échec du téléchargement',
-  'library.download.download': 'Télécharger',
-  'library.download.downloaded': 'Téléchargé',
-  'library.download.downloading': 'Téléchargement',
   'library.download.bytesOf': '{stored} sur {total}',
-  'library.download.forOffline': 'Télécharger pour un usage hors ligne',
-  'library.download.retryLabel':
-    'Télécharger pour un usage hors ligne - la dernière tentative a échoué',
-  'library.download.downloadingPct': 'Téléchargement pour un usage hors ligne, {pct}',
-  'library.download.availableManage': 'Disponible hors ligne - gérer le téléchargement',
-  'library.download.startingOne': 'Téléchargement pour un usage hors ligne…',
-  'library.download.startingBoth': 'Téléchargement des deux éditions…',
   'library.download.stopped': 'Téléchargement arrêté',
   'library.download.available': 'Disponible hors ligne',
   'library.download.doneBoth': 'Les deux éditions sont disponibles hors ligne',
   'library.download.removed': 'Copie hors ligne supprimée',
   'library.download.needsHttps':
     "Les téléchargements hors ligne nécessitent HTTPS (ou localhost). Consultez le guide d'auto-hébergement dans le README de {app}.",
-  'library.download.askTitle': 'Télécharger pour un usage hors ligne ?',
   'library.download.askLede':
     "Gardez {title} sur cet appareil pour les vols et les zones blanches - environ {bytes}{kind, select, ebook { images comprises} other { d'audio}}. {kind, select, ebook {La lecture} other {L'écoute}} fonctionne entièrement hors ligne et votre position se resynchronise dès que vous vous reconnectez. La déconnexion supprime les copies hors ligne.",
   'library.download.companionSeparate':
@@ -572,7 +548,6 @@ const messages: Record<string, string> = {
     "{bytes} de la dernière tentative sont encore sur cet appareil. Recommencer reprend à partir de là ; les supprimer libère de l'espace dès maintenant.",
   'library.download.interruptedLede':
     "Le téléchargement a été interrompu - recommencer reprend là où il s'est arrêté.",
-  'library.download.both': 'Télécharger les deux{hasSize, select, true { ({size})} other {}}',
   'library.download.onlyThis':
     '{kind, select, ebook {Livre numérique} other {Livre audio}} seulement ({size})',
   'library.download.retry': 'Réessayer le téléchargement',
@@ -1762,6 +1737,29 @@ const messages: Record<string, string> = {
   'library.lang.allLanguages': 'Toutes les langues',
   'library.lang.button': 'Langue : {name}',
   'library.lang.menuTitle': 'Livres par langue',
+  // settings
+  'settings.account.menuLabel': 'Compte : {name}',
+  'settings.account.goTo': 'Réglages du compte',
+
+  // library
+  'library.book.downloadFile': 'Télécharger le fichier',
+  'library.book.downloadFiles': 'Télécharger les fichiers…',
+  'library.book.downloadFilesTitle': 'Télécharger les fichiers',
+  'library.book.downloadFileHint': 'Le fichier du livre, enregistré sur cet appareil',
+  'library.book.downloadFilesHint':
+    '{n, plural, one {# fichier.} other {# fichiers.}} Chacun se télécharge séparément.',
+  'library.offline.save': 'Enregistrer hors ligne',
+  'library.offline.saving': 'Enregistrement hors ligne',
+  'library.offline.saved': 'Enregistré hors ligne',
+  'library.offline.saveLabel': 'Enregistrer hors ligne, pour ouvrir sans connexion',
+  'library.offline.retryLabel': 'Enregistrer hors ligne - la dernière tentative a échoué',
+  'library.offline.savingPct': 'Enregistrement hors ligne · {pct}',
+  'library.offline.savedManage': 'Enregistré hors ligne - gérer la copie hors ligne',
+  'library.offline.askTitle': 'Enregistrer hors ligne ?',
+  'library.offline.starting': 'Enregistrement hors ligne…',
+  'library.offline.startingBoth': 'Enregistrement des deux éditions hors ligne…',
+  'library.offline.saveBoth':
+    'Enregistrer les deux hors ligne{hasSize, select, true { ({size})} other {}}',
 };
 
 export default messages;

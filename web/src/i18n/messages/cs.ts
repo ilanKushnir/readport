@@ -462,16 +462,10 @@ const messages: Record<string, string> = {
   'library.book.stillIndexedTitle': 'Stále se indexuje',
   'library.book.open': '{kind, select, ebook {Číst} other {Poslouchat}}',
   'library.book.openOther': '{kind, select, ebook {Poslouchat} other {Číst}}',
-  'library.book.fromHere': '{kind, select, ebook {Poslouchat odtud} other {Číst odtud}}',
   'library.book.readAlong': 'Číst s vyprávěním',
-  'library.book.readAlongFromHere': 'Číst s vyprávěním odtud',
   'library.book.readAlongHint': 'Stránka s vyprávěním přehrávaným nad ní',
   'library.book.readAlongNotReady': 'Čtení s vyprávěním se odemkne, jakmile bude dvojice zarovnána',
   'library.book.opening': 'Otevírání…',
-  'library.book.saveCopy': 'Uložit kopii',
-  'library.book.saveFiles': 'Uložit soubory…',
-  'library.book.saveFilesHint':
-    '{n, plural, one {# soubor.} few {# soubory.} many {# souboru.} other {# souborů.}} Ukládají se postupně, jeden po druhém.',
   'library.book.part': 'Část {n}',
   'library.book.otherNotOnDevice':
     '{kind, select, ebook {Audiokniha} other {E-kniha}} není v tomto zařízení, takže přepnutí vyžaduje připojení.',
@@ -501,8 +495,6 @@ const messages: Record<string, string> = {
   'library.book.languageUnknown': 'Neznámý jazyk',
   'library.book.languageTitle':
     'Jazyk {source, select, manual {nastaven ručně} metadata {ze souboru} pair {ze spárovaného vydání} detected {rozpoznán z textu} other {}}',
-  'library.book.languageWithSource':
-    '{name} · {source, select, manual {nastaven ručně} metadata {ze souboru} pair {ze spárovaného vydání} detected {rozpoznán z textu} other {}}',
   'library.book.languageAutoOption': 'Automaticky',
   'library.book.languageUnknownSet': 'Neznámý · nastavit ručně?',
   'library.book.languageSet': 'Jazyk nastaven na {name}',
@@ -520,10 +512,6 @@ const messages: Record<string, string> = {
     'Vyberte e-knihu a audioknihu stejného díla. Zarovnání se spustí po propojení; přepínání mezi vydáními není dostupné, dokud se nedokončí zarovnání.',
   'library.pair.switchUnaligned':
     'Vlastníte i {kind, select, ebook {audioknihu} other {e-knihu}}. Jejich vzájemné časování ještě neskončilo, takže přechod mezi nimi zatím začne od začátku.',
-  'library.pair.switchExact':
-    'Vlastníte i {kind, select, ebook {audioknihu} other {e-knihu}} a přepínání mezi nimi vás vrátí na stejnou větu.',
-  'library.pair.switchClose':
-    'Vlastníte i {kind, select, ebook {audioknihu} other {e-knihu}}. Přepnutí vás dostane blízko místa, kde jste, i když ne vždy přesně na tu větu.',
   'library.download.inProgress': 'Probíhající stahování',
   'library.download.title': 'Stažené',
   'library.download.downloadingN': 'Stahování {n}',
@@ -532,23 +520,13 @@ const messages: Record<string, string> = {
   'library.download.progress': '{stored} z {total} · {pct}',
   'library.download.stop': 'Zastavit',
   'library.download.failed': 'Stahování se nezdařilo',
-  'library.download.download': 'Stáhnout',
-  'library.download.downloaded': 'Staženo',
-  'library.download.downloading': 'Stahování',
   'library.download.bytesOf': '{stored} z {total}',
-  'library.download.forOffline': 'Stáhnout pro offline použití',
-  'library.download.retryLabel': 'Stáhnout pro offline použití – poslední pokus se nezdařil',
-  'library.download.downloadingPct': 'Stahování pro offline použití, {pct}',
-  'library.download.availableManage': 'Dostupné offline – spravovat stahování',
-  'library.download.startingOne': 'Stahování pro offline použití…',
-  'library.download.startingBoth': 'Stahování obou vydání…',
   'library.download.stopped': 'Stahování zastaveno',
   'library.download.available': 'Dostupné offline',
   'library.download.doneBoth': 'Obě vydání jsou dostupná offline',
   'library.download.removed': 'Kopie pro offline použití odstraněna',
   'library.download.needsHttps':
     'Stahování pro offline použití vyžaduje HTTPS (nebo localhost). Podívejte se do průvodce vlastním hostováním v souboru README {app}.',
-  'library.download.askTitle': 'Stáhnout pro offline použití?',
   'library.download.askLede':
     'Ponechte si knihu „{title}“ v tomto zařízení na lety a místa bez signálu – asi {bytes}{kind, select, ebook { včetně obrázků} other { zvuku}}. {kind, select, ebook {Čtení} other {Poslech}} funguje plně offline a vaše pozice se po opětovném připojení synchronizuje zpět. Odhlášení odstraní kopie pro offline použití.',
   'library.download.companionSeparate':
@@ -557,7 +535,6 @@ const messages: Record<string, string> = {
     '{bytes} z posledního pokusu je stále v tomto zařízení. Nové spuštění bude pokračovat odtud; odstraněním uvolníte místo hned.',
   'library.download.interruptedLede':
     'Stahování bylo přerušeno – nové spuštění bude pokračovat od místa přerušení.',
-  'library.download.both': 'Stáhnout obě{hasSize, select, true { ({size})} other {}}',
   'library.download.onlyThis': 'Jen {kind, select, ebook {e-kniha} other {audiokniha}} ({size})',
   'library.download.retry': 'Zkusit stažení znovu',
   'library.download.removePartial': 'Odstranit částečné stažení',
@@ -1739,5 +1716,28 @@ const messages: Record<string, string> = {
   'library.lang.allLanguages': 'Všechny jazyky',
   'library.lang.button': 'Jazyk: {name}',
   'library.lang.menuTitle': 'Zobrazit knihy podle jazyka',
+  // settings
+  'settings.account.menuLabel': 'Účet: {name}',
+  'settings.account.goTo': 'Nastavení účtu',
+
+  // library
+  'library.book.downloadFile': 'Stáhnout soubor',
+  'library.book.downloadFiles': 'Stáhnout soubory…',
+  'library.book.downloadFilesTitle': 'Stáhnout soubory',
+  'library.book.downloadFileHint': 'Vlastní soubor knihy, uložený v tomto zařízení',
+  'library.book.downloadFilesHint':
+    '{n, plural, one {# soubor.} few {# soubory.} many {# souboru.} other {# souborů.}} Každý se stahuje zvlášť.',
+  'library.offline.save': 'Uložit offline',
+  'library.offline.saving': 'Ukládání offline',
+  'library.offline.saved': 'Uloženo offline',
+  'library.offline.saveLabel': 'Uložit offline pro otevření bez připojení',
+  'library.offline.retryLabel': 'Uložit offline - poslední pokus se nezdařil',
+  'library.offline.savingPct': 'Ukládání offline, {pct}',
+  'library.offline.savedManage': 'Uloženo offline - spravovat kopii pro offline použití',
+  'library.offline.askTitle': 'Uložit offline?',
+  'library.offline.starting': 'Ukládání offline…',
+  'library.offline.startingBoth': 'Ukládání obou vydání offline…',
+  'library.offline.saveBoth':
+    'Uložit obě vydání offline{hasSize, select, true { ({size})} other {}}',
 };
 export default messages;
