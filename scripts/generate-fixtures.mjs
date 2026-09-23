@@ -18,7 +18,14 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { zipSync } from 'fflate';
 import text2wav from 'text2wav';
-import { boulevard, clockmaker, coverSvg, fieldNotes, lantern } from './fixture-content.mjs';
+import {
+  boulevard,
+  clockmaker,
+  coverSvg,
+  fieldNotes,
+  lantern,
+  lanternRu,
+} from './fixture-content.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const outRoot = path.resolve(process.argv[2] ?? path.join(here, '..', 'fixtures', 'library'));
@@ -367,6 +374,50 @@ async function main() {
         accent: '#C9A227',
       }),
     );
+  }
+
+  // --- Book A in Russian: the same story's translation, ebook only - a
+  // second language to link the Lantern to.
+  {
+    const b = lanternRu;
+    const chaptersXhtml = b.chapters.map((ch, i) => {
+      const paras = ch.paragraphs.map((p) => `  <p>${p.join(' ')}</p>`).join('\n');
+      const illustration =
+        i === 0
+          ? `  <figure><img src="img/lantern.svg" alt="${b.figureAlt}"/><figcaption>${b.figureCaption}</figcaption></figure>\n`
+          : '';
+      return {
+        title: ch.title,
+        content: xhtml(
+          ch.title,
+          `<section epub:type="chapter">\n  <h1>${ch.title}</h1>\n${illustration}${paras}\n</section>`,
+          b.language,
+        ),
+      };
+    });
+    buildEpub({
+      slug: b.slug,
+      title: b.title,
+      author: b.author,
+      language: b.language,
+      isbn: b.isbn,
+      subjects: b.subjects,
+      series: b.series,
+      seriesIdx: b.seriesIdx,
+      year: b.year,
+      rating: b.rating,
+      chaptersXhtml,
+      extraFiles: {
+        'img/lantern.svg': `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200" viewBox="0 0 320 200"><rect width="320" height="200" fill="#F1EBE1"/><rect x="140" y="40" width="40" height="110" fill="#2F5D48"/><circle cx="160" cy="52" r="26" fill="#C9A227"/><rect x="120" y="150" width="80" height="12" fill="#1F2620"/></svg>`,
+      },
+      coverContent: coverSvg({
+        title: b.title,
+        author: b.author,
+        bg: '#1D2F45',
+        fg: '#F4EFE4',
+        accent: '#C9A227',
+      }),
+    });
   }
 
   // --- Book B: Hebrew RTL ebook only
