@@ -52,6 +52,13 @@ anything that does is called out under **Upgrading**.
   keeps the result.
 - A copy saved offline of a book that has since left the library, or been
   hidden, is removed from the device when it is next opened.
+- The week's figures on the home page keep their words together on a
+  phone.
+- **On an iPad on its side, the bar and the read-along card stay together.**
+  With two pages on screen the progress bar sat under the left-hand page
+  and the read-along card under the right, pointing at nothing. They are
+  one centred unit now, the card over its own button, in a right-to-left
+  interface too.
 
 ### Upgrading
 
