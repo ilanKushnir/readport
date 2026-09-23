@@ -12,6 +12,13 @@ import { createPortal } from 'react-dom';
 import { type BookSummary } from '@readport/shared';
 import { useT } from '../i18n';
 import { IconClose } from './icons';
+import { Art, type ArtName } from './Art';
+import clothOchre from '../assets/art/cloth-ochre.webp';
+import clothOlive from '../assets/art/cloth-olive.webp';
+import clothPlum from '../assets/art/cloth-plum.webp';
+import clothSlate from '../assets/art/cloth-slate.webp';
+import clothTerracotta from '../assets/art/cloth-terracotta.webp';
+import clothWine from '../assets/art/cloth-wine.webp';
 
 /* ----------------------------------------------------------------- Sheet */
 
@@ -291,6 +298,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 /* ----------------------------------------------------------------- Cover */
 
 const COVER_TINTS = ['#8C3F1F', '#5E4A8A', '#2F4A5C', '#6B3A44', '#4E5A2E', '#8A6A2F'];
+/**
+ * The bookcloth a book with no cover of its own is bound in, one for each
+ * tint and in the same order: terracotta with waves, plum with gulls, slate
+ * with lighthouses, wine with anchors, olive with shells, ochre with stars.
+ */
+const COVER_CLOTHS = [clothTerracotta, clothPlum, clothSlate, clothWine, clothOlive, clothOchre];
 
 export function Cover({
   book,
@@ -303,7 +316,8 @@ export function Cover({
   const [loaded, setLoaded] = useState(false);
   let hash = 0;
   for (const c of book.id) hash = (hash * 31 + c.charCodeAt(0)) >>> 0;
-  const tint = COVER_TINTS[hash % COVER_TINTS.length];
+  const binding = hash % COVER_TINTS.length;
+  const tint = COVER_TINTS[binding];
 
   if (book.hasCover && !failed) {
     return (
@@ -328,14 +342,23 @@ export function Cover({
       />
     );
   }
+  // Bound in cloth, with the title on a paper label, the way a book with no
+  // printed jacket has always carried its name.
   return (
     <span
       className={`book-card__fallback ${className ?? ''}`}
-      style={{ background: tint, color: '#F8F2E8' }}
+      style={
+        {
+          '--cover-tint': tint,
+          '--cover-cloth': `url("${COVER_CLOTHS[binding]}")`,
+        } as React.CSSProperties
+      }
       aria-hidden="true"
     >
-      <span style={{ fontSize: 13, fontWeight: 650, lineHeight: 1.25 }}>{book.title}</span>
-      <span style={{ fontSize: 11, opacity: 0.85 }}>{book.author ?? ''}</span>
+      <span className="book-card__label">
+        <span className="book-card__label-title">{book.title}</span>
+        {book.author && <span className="book-card__label-author">{book.author}</span>}
+      </span>
     </span>
   );
 }
@@ -344,18 +367,21 @@ export function Cover({
 
 export function EmptyState({
   icon,
+  art,
   title,
   children,
   action,
 }: {
   icon?: ReactNode;
+  /** A print from the house set, in place of the icon. */
+  art?: ArtName;
   title: string;
   children?: ReactNode;
   action?: ReactNode;
 }) {
   return (
-    <div className="empty-state">
-      {icon}
+    <div className={`empty-state${art ? ' empty-state--art' : ''}`}>
+      {art ? <Art name={art} /> : icon}
       <h2>{title}</h2>
       {children && <p>{children}</p>}
       {action}

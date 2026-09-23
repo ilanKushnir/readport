@@ -698,7 +698,7 @@ function ShelfEmpty({
     // the folders they configured thirty seconds ago reads as though the
     // wizard did not work.
     return (
-      <EmptyState icon={<IconLibrary size={44} />} title={t('library.empty.scanningTitle')}>
+      <EmptyState art="library-arriving" title={t('library.empty.scanningTitle')}>
         {t('library.empty.scanningBody', { app })}
       </EmptyState>
     );
@@ -720,14 +720,14 @@ function ShelfEmpty({
   }
   if (filtered) {
     return (
-      <EmptyState icon={<IconSearch size={40} />} title={t('library.empty.noMatchesTitle')}>
+      <EmptyState art="no-matches" title={t('library.empty.noMatchesTitle')}>
         {t('library.empty.noMatchesBody')}
       </EmptyState>
     );
   }
   if (showing.kind === 'device') {
     return (
-      <EmptyState icon={<IconOffline size={40} />} title={t('library.empty.deviceTitle')}>
+      <EmptyState art="device-empty" title={t('library.empty.deviceTitle')}>
         {t('library.empty.deviceBody')}
       </EmptyState>
     );
@@ -735,7 +735,7 @@ function ShelfEmpty({
   if (showing.kind === 'user') {
     return (
       <EmptyState
-        icon={<IconShelf size={40} />}
+        art="shelf-empty"
         title={t('library.empty.shelfTitle')}
         action={
           <Link className="btn" to="/">
@@ -775,7 +775,7 @@ function ShelfEmpty({
     );
   }
   return (
-    <EmptyState icon={<IconLibrary size={44} />} title={t('library.empty.libraryTitle')}>
+    <EmptyState art="library-empty" title={t('library.empty.libraryTitle')}>
       {t('library.empty.libraryBody', { app })}
     </EmptyState>
   );

@@ -440,10 +440,46 @@
 }
 .reader-chapter-end {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-4);
   /* Clears the bottom bar, whose height depends on the progress-bar
      setting and on whether the read-along transport is mounted. */
   padding: var(--sp-5) var(--sp-4) calc(var(--rd-chrome-bottom, 120px) + 32px);
+  break-inside: avoid;
+}
+/* A printer's flower closes the chapter, in the page's own soft ink. */
+.reader-chapter-end::before {
+  content: '';
+  width: 84px;
+  aspect-ratio: 360 / 116;
+  background-color: var(--rd-soft);
+  opacity: 0.7;
+  -webkit-mask: url('../assets/art/fleuron.webp') center / contain no-repeat;
+  mask: url('../assets/art/fleuron.webp') center / contain no-repeat;
+}
+/* In page mode there is no chapter-end block - the last page turns into the
+   next chapter - so the flower is set after the last line instead, where a
+   book sets it. A pseudo-element, so it is no part of the text the reader
+   measures, selects, searches or reads aloud. */
+.reader-content--paginated::after {
+  content: '';
+  display: block;
+  width: 84px;
+  aspect-ratio: 360 / 116;
+  margin: 2.2em auto 0;
+  background-color: var(--rd-soft);
+  opacity: 0.7;
+  -webkit-mask: url('../assets/art/fleuron.webp') center / contain no-repeat;
+  mask: url('../assets/art/fleuron.webp') center / contain no-repeat;
+  break-inside: avoid;
+}
+@media (forced-colors: active) {
+  .reader-chapter-end::before,
+  .reader-content--paginated::after {
+    forced-color-adjust: none;
+    background-color: CanvasText;
+  }
 }
 .reader-chapter-end .btn {
   color: var(--rd-link);

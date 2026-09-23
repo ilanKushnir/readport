@@ -836,21 +836,60 @@ body:has(.app-body) {
   inset: 0;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding: 10cqw;
+  align-items: center;
+  /* A clothbound book carries its label a little above the middle. Every
+     length here is bounded in pixels as well: where no ancestor is a size
+     container, a cqw is a hundredth of the screen, not of the cover. */
+  justify-content: flex-start;
+  padding: clamp(6px, 17cqw, 44px) clamp(4px, 9cqw, 22px) clamp(4px, 9cqw, 22px);
+  background:
+    var(--cover-cloth, none) center / cover,
+    var(--cover-tint, #8c3f1f);
   font-family: var(--rp-font-reading);
   overflow: hidden;
 }
-.book-card__fallback > span:first-child {
-  font-size: clamp(8px, 10cqw, 15px) !important;
-  line-height: 1.2 !important;
+/* The label: cream paper with a printed rule inside its edge in the
+   cloth's own colour, and the title and author set on it like a book's. */
+.book-card__label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(2px, 3.5cqw, 8px);
+  width: 100%;
+  max-height: 100%;
+  padding: clamp(4px, 7cqw, 16px) clamp(3px, 6cqw, 14px);
+  border-radius: clamp(1px, 1.2cqw, 3px);
+  background: #f3ead9;
+  color: #2b2119;
+  text-align: center;
+  box-shadow:
+    inset 0 0 0 clamp(1px, 1.4cqw, 3px) #f3ead9,
+    inset 0 0 0 clamp(1.5px, 1.9cqw, 4px)
+      color-mix(in srgb, var(--cover-tint, #8c3f1f) 70%, transparent),
+    0 clamp(0.5px, 0.6cqw, 1.5px) clamp(1px, 1.6cqw, 4px) rgb(0 0 0 / 0.28);
   overflow: hidden;
+}
+.book-card__label-title {
+  max-width: 100%;
+  font-size: clamp(8px, 9.5cqw, 17px);
+  font-weight: 600;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
   display: -webkit-box;
   -webkit-line-clamp: 4;
+  line-clamp: 4;
   -webkit-box-orient: vertical;
+  overflow: hidden;
 }
-.book-card__fallback > span:last-child {
-  font-size: clamp(7px, 7.5cqw, 12px) !important;
+.book-card__label-author {
+  max-width: 100%;
+  font-size: clamp(6.5px, 6cqw, 12px);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.78;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .book-card__coverwrap,
 .continue-card__cover,
@@ -1026,6 +1065,39 @@ body:has(.app-body) {
 .empty-state p {
   max-width: 44ch;
   margin: 0;
+}
+/* The house prints: small linocut vignettes, one ink, the page's own. Each
+   file is a mask, so the colour is the theme's - terracotta on paper, a
+   lighter terracotta on the dark ground - and each is fitted inside one box
+   that suits the wide ones and the tall ones alike. */
+.art {
+  --art-box-w: 220px;
+  --art-box-h: 172px;
+  display: block;
+  flex: none;
+  width: min(100%, var(--art-box-w), calc(var(--art-box-h) * var(--art-ratio, 1)));
+  aspect-ratio: var(--art-ratio, 1);
+  background-color: color-mix(in srgb, var(--rp-primary) 86%, var(--rp-text));
+  -webkit-mask: var(--art) center / contain no-repeat;
+  mask: var(--art) center / contain no-repeat;
+}
+@media (max-width: 480px) {
+  .art {
+    --art-box-w: 196px;
+    --art-box-h: 150px;
+  }
+}
+@media (forced-colors: active) {
+  .art {
+    forced-color-adjust: none;
+    background-color: CanvasText;
+  }
+}
+.empty-state--art {
+  padding-block-start: var(--sp-6);
+}
+.empty-state--art .art {
+  margin-block-end: var(--sp-2);
 }
 
 .banner {
@@ -1869,6 +1941,26 @@ body:has(.app-body) {
      `hidden` first, as a fallback for browsers without `clip`. */
   overflow: hidden;
   overflow: clip;
+}
+/* The harbour the app is named for, printed faintly along the foot of the
+   page the card stands on. `::before`, so the card paints over it. */
+.auth-page::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  margin-inline: auto;
+  width: min(100%, 1180px);
+  aspect-ratio: 1229 / 466;
+  background-color: color-mix(in srgb, var(--rp-primary) 30%, transparent);
+  -webkit-mask: url('../assets/art/harbour.webp') center bottom / contain no-repeat;
+  mask: url('../assets/art/harbour.webp') center bottom / contain no-repeat;
+  pointer-events: none;
+}
+@media (forced-colors: active) {
+  .auth-page::before {
+    display: none;
+  }
 }
 .auth-page__glow {
   position: absolute;
@@ -3927,7 +4019,8 @@ body[data-rp-dragging] * {
 .queue-row__cover .book-card__fallback {
   padding: 5px;
 }
-.queue-row__cover .book-card__fallback > span:last-child {
+.queue-row__cover .book-card__label {
+  /* A thumbnail beside the title it would repeat: the cloth alone. */
   display: none;
 }
 .queue-row__img {

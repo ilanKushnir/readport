@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 import { Cover, useToast } from '../components/ui';
-import { IconBookmark, IconSearch } from '../components/icons';
+import { Art } from '../components/Art';
+import { IconSearch } from '../components/icons';
 import { HIGHLIGHT_COLORS, type HighlightColor } from '../reader/marks';
 import { useT } from '../i18n';
 import { useFormat } from '../i18n/useFormat';
@@ -141,8 +142,8 @@ export function NotesPage() {
       )}
 
       {all !== null && all.length === 0 && (
-        <div className="empty-state">
-          <IconBookmark size={28} />
+        <div className="empty-state empty-state--art">
+          <Art name="notes-empty" />
           <h2>{t('notes.emptyTitle')}</h2>
           <p>{t('notes.emptyBody')}</p>
           <Link className="btn" to="/">

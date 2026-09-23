@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { type Annotation } from '@readport/shared';
 import { api } from '../api/client';
 import { Cover, EmptyState, useToast } from '../components/ui';
-import { IconAlert, IconBack, IconBookmark, IconDownload } from '../components/icons';
+import { IconAlert, IconBack, IconDownload } from '../components/icons';
 import { HIGHLIGHT_COLORS } from '../reader/marks';
 import { useT } from '../i18n';
 import { useFormat } from '../i18n/useFormat';
@@ -172,7 +172,7 @@ export function NotesBookPage() {
 
       {marks.length === 0 ? (
         <EmptyState
-          icon={<IconBookmark size={28} />}
+          art="notes-empty"
           title={t('notes.bookEmptyTitle')}
           action={
             <Link className="btn" to={openHref}>

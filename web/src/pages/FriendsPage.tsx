@@ -13,7 +13,7 @@ import { api, ApiError, failureMessage } from '../api/client';
 import { useSession } from '../state/session';
 import { useShelves } from '../state/shelves';
 import { Cover, EmptyState, Sheet, useToast } from '../components/ui';
-import { IconAlert, IconClose, IconPeople, IconSearch } from '../components/icons';
+import { IconAlert, IconClose, IconSearch } from '../components/icons';
 import { useT } from '../i18n';
 import { type MessageValues } from '../i18n/format';
 import { useFormat } from '../i18n/useFormat';
@@ -334,7 +334,7 @@ export function FriendsPage() {
 
       {!failed && nobody && (
         <EmptyState
-          icon={<IconPeople size={28} />}
+          art="friends-empty"
           title={t('friends.empty.title')}
           action={
             me?.role === 'admin' ? (

@@ -10,7 +10,6 @@ import {
   IconBookOpen,
   IconGrip,
   IconHeadphones,
-  IconList,
   IconMore,
   IconOffline,
   IconTrash,
@@ -239,7 +238,7 @@ export function ReadingListPage() {
         </EmptyState>
       ) : items.length === 0 ? (
         <EmptyState
-          icon={<IconList size={40} />}
+          art="reading-list"
           title={t('library.queue.emptyTitle')}
           action={
             <Link className="btn" to="/">

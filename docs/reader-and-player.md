@@ -45,6 +45,8 @@ Implemented:
   stepper, variable weight, line height, margins, ragged/justified,
   hyphenation toggle. The chapter is tagged with the book's language so
   hyphenation and RTL fallback are language-aware.
+- Every chapter closes with a printer's flower above the button to the
+  next, drawn in the reading theme's own soft ink.
 - In page mode a figure taller than the page is scaled to fit it, so a
   chapter with a full-page picture still pages. A chapter with something
   the columns cannot break at all scrolls instead, and says so in the
