@@ -326,29 +326,35 @@ Everyone on a server already shares one library; a friendship is consent to
 see each other's place in it, and to have a book put in front of you. All of
 this is per account and behind `requireUser`; an admin has no extra reach.
 
-| Method | Path                                | Notes                                                                   |
-| ------ | ----------------------------------- | ----------------------------------------------------------------------- |
-| GET    | `/api/friends`                      | `{friends, incoming, outgoing, people}`                                 |
-| POST   | `/api/friends/requests`             | `{userId}`; 201 pending, or 200 accepted when they had already asked    |
-| POST   | `/api/friends/requests/:id/accept`  | the person asked                                                        |
-| POST   | `/api/friends/requests/:id/decline` | the person asked declines, or the asker takes it back                   |
-| DELETE | `/api/friends/:userId`              | either side                                                             |
-| GET    | `/api/friends/progress?bookId=`     | friends with a place in this book (or a linked edition of it)           |
-| POST   | `/api/friends/recommend`            | `{toUserId, bookId, note?}` to a friend; 409 while one is still waiting |
-| GET    | `/api/friends/inbox`                | recommendations to you, undismissed, newest first                       |
-| POST   | `/api/friends/inbox/:id/seen`       | and `/dismiss`, which also marks seen                                   |
-| GET    | `/api/friends/sent`                 | what you recommended, and whether it was seen                           |
-| GET    | `/api/prefs/friends`                | `{friends: {shareProgress, colours, shown}}`; `PUT` the whole document  |
+| Method | Path                                | Notes                                                                    |
+| ------ | ----------------------------------- | ------------------------------------------------------------------------ |
+| GET    | `/api/friends`                      | `{friends, incoming, outgoing, people}`                                  |
+| POST   | `/api/friends/requests`             | `{userId}`; 201 pending, or 200 accepted when they had already asked     |
+| POST   | `/api/friends/requests/:id/accept`  | the person asked                                                         |
+| POST   | `/api/friends/requests/:id/decline` | the person asked declines, or the asker takes it back                    |
+| DELETE | `/api/friends/:userId`              | either side                                                              |
+| GET    | `/api/friends/progress?bookId=`     | friends with a place in this book, its other format, or its translations |
+| POST   | `/api/friends/recommend`            | `{toUserId, bookId, note?}` to a friend; 409 while one is still waiting  |
+| GET    | `/api/friends/inbox`                | recommendations to you, undismissed, newest first                        |
+| POST   | `/api/friends/inbox/:id/seen`       | and `/dismiss`, which also marks seen                                    |
+| GET    | `/api/friends/sent`                 | what you recommended, and whether it was seen                            |
+| GET    | `/api/prefs/friends`                | `{friends: {shareProgress, colours, shown}}`; `PUT` the whole document   |
 
 `friends[]` are `{userId, username, displayName, friendshipId, since, colour,
-sharesProgress, reading}`, where `reading` is the book they touched most
-recently and have not finished (`{bookId, title, kind, pct, updatedAt}`) or
-`null`; `people[]` are the other active accounts you have no row with.
+sharesProgress, reading, language}`, where `reading` is the book they touched
+most recently and have not finished (`{bookId, title, kind, pct, updatedAt}`)
+or `null`, and `language` the one they read in - the language of most of what
+they have been reading lately while they share their progress, else the one
+they chose for the app - so a book in several languages can be handed to them
+in theirs; `people[]` are the other active accounts you have no row with.
 `/api/friends/progress` returns `{friends: [{userId, username, displayName,
 colour, locator, pct, finished, updatedAt, live, chapterTitle}], friendCount}`,
 furthest along first. A linked pair counts as one work: a friend listening to
 the audiobook edition is in the ebook you are reading, at the edition they
-touched last. Two absences are deliberate and reported as nothing at all,
+touched last. So does the same book in another language: an entry for a
+friend reading a translation carries `edition: {bookId, language, title}`,
+its `pct` is their place carried into your book through the paragraph match,
+and its `chapterTitle` names that place as your edition does. Two absences are deliberate and reported as nothing at all,
 never as a 403: someone who is not an accepted friend, and a friend whose
 `shareProgress` is off. Nothing written in the margins is ever shared.
 
@@ -546,6 +552,61 @@ has not been aligned yet, `409 not-linked` when the pair is a rejected or
 unconfirmed suggestion, and `409 ebook-not-indexed` when the derived index is
 missing. The resolution's `confidence` and `granularity` are what the reader
 uses to decide how far to rewind before playing.
+
+## The same book in other languages
+
+A curator can link editions of one work that are in different languages - a
+novel and its translation - and they are then treated as one book told twice.
+A title's formats come along: an ebook and the audiobook it is paired with are
+one title, and linking either links both (a book paired later brings its other
+half too). Two titles of the same language are refused (`409
+same-language`), and so is a book's own other format (`409 same-title`) -
+that is pairing.
+
+| Method | Path                                                     | Notes                                                                                        |
+| ------ | -------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| GET    | `/api/books/:id/translations`                            | `{titles, suggestions, canLink}`; `suggestions` only for a curator                           |
+| POST   | `/api/books/:id/translations`                            | curator; `{otherBookId}` → `{titles}`; their groups become one work                          |
+| DELETE | `/api/books/:id/translations/:otherId`                   | curator; takes that title out, and remembers it is not a match                               |
+| POST   | `/api/books/:id/translations/dismiss`                    | curator; `{otherBookId}` - a guess that is wrong, never suggested again                      |
+| GET    | `/api/translations/suggestions`                          | curator; every likely translation in the library, `{suggestions: [{a, b, score, evidence}]}` |
+| POST   | `/api/books/:id/translations/map`                        | `{from: Locator, toBookId, mode: 'start' \| 'point'}` → `{bookId, to, precision}`            |
+| GET    | `/api/books/:id/translations/passage?to&spine&start&end` | the matching passage of another language's ebook                                             |
+
+`GET /api/books/:id` carries the same `translations` list. Each title is
+`{language, title, author, books, progress, match}`: `books` its ebook first,
+then its audiobook; `progress` where this reader is in it (whichever of its
+books they touched last); and `match` how closely its text lines up with this
+book's - `close` (paragraph by paragraph), `rough` (an abridged or rearranged
+edition), `pending` (being worked out), or `none` (no text on one side).
+
+**Matching.** Two ebooks of one work are matched paragraph to paragraph in a
+background job (`translation-align`): Gale and Church's length-based
+alignment, run over both books' paragraphs in a band around the diagonal,
+with chapter starts and numbers written as digits as anchors. It reads no
+words, needs no dictionary or model, and works for any pair of languages
+ReadPort indexes. The match is kept with the derived revision of both books;
+a book indexed again is matched again.
+
+**Carrying a place.** `map` finds a place of this book in one of its other
+languages: `start` lands at the beginning of the matching paragraph, on a
+sentence - where to carry on reading; `point` lands at the same point inside
+it - where a friend's marker goes. An audiobook takes one more step through
+its own pair's narration alignment at either end. `precision` is `paragraph`
+when the paragraph match was used and `proportional` when the place was
+carried as the same share of the way through (not matched yet, or no
+alignment for an audiobook's pair). `passage` answers `{bookId, language,
+direction, paragraphs, to, source, precision}`: the other edition's
+paragraphs matching `[start, end)` of chapter `spine`, where to carry on
+from, and the span of this chapter they match. Both answer `409 not-linked`
+for a book that is not this one in another language, and `passage` `409
+not-matched` until the match has been worked out.
+
+**Guesses** compare the author (romanized, then reduced to a consonant
+skeleton, so the same name in Latin, Cyrillic or Hebrew letters agrees), a
+place in a series, the length a translation into that language would have,
+and the number of chapters. `evidence` says which of the four agreed.
+Hidden books take part in none of this for anyone who may not see them.
 
 ## Portable alignments
 

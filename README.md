@@ -94,6 +94,11 @@ read-along only works inside ReadPort.
   bar, in a colour you pick, see when they are in it right now, and put a
   book in front of them with a note. Sharing is consent, per person, and
   nothing in the margins is ever shared.
+- **One book, several languages** - link a novel to its translation and a
+  friend reading the Russian edition is on your English bar at the matching
+  paragraph; carry on in the other language from the paragraph you are on,
+  or see a passage as the translation has it. Matches are paragraph to
+  paragraph, worked out from the two texts alone.
 - **A link to a book** - share one to WhatsApp or anywhere else and it
   previews with the cover; a friend with an account saves it as recommended
   by you, and anyone else can ask to join, for an admin to approve.

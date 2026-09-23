@@ -309,6 +309,39 @@ switch: a fading sentence highlight in the reader, a position tick on the
 player scrubber. The switch is recorded as an explicit `switch` intent in
 progress history.
 
+## The same book in other languages
+
+A book linked to its editions in other languages (a curator links them from
+the book page, or from the suggestions on the pairing page) says so under
+its title - _Also in Russian_ - with how far you are in each. The reader and
+the player gain a languages button beside the chapters:
+
+- **Read from here / Listen from here** carries your place into the other
+  language and opens it there. Between two ebooks it lands at the start of
+  the matching paragraph, on a sentence, and says _Continuing from the same
+  paragraph of the English edition_; an audiobook takes one more step through
+  its own pair's alignment. Where the two have not been matched yet (or an
+  audiobook's pair has no alignment) it lands at the same share of the way
+  through, and says _near_ instead.
+- **See this passage in Russian**, and the same button in the selection
+  toolbar, shows the matching paragraphs of the other edition in a sheet, in
+  that edition's language and direction, and marks the paragraph of this
+  page they match. From there the reader can carry on in the other language
+  at that paragraph.
+
+The match is paragraph to paragraph, by Gale and Church's length-based
+alignment over both books' paragraphs, with chapter starts and numbers as
+anchors. It reads no words, so it works between any two languages, and it
+is honest about its limits: an abridged or rearranged translation is
+reported as matched _loosely_, where a place lands in about the right
+passage rather than the right paragraph.
+
+A friend reading a translation is in your book too: on its page (_Dana ·
+58% · The Glass Room · in Russian_), and as a bead on your progress bar at
+their place carried into your edition, with the chapter named the way your
+edition names it. Recommending a book that is in several languages offers
+the edition in the language the friend reads.
+
 ## Offline packages
 
 Offline copies start from **Save offline** on the book page (a cloud, with a
