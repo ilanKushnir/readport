@@ -23,6 +23,7 @@ import {
   IconReadAlong,
   IconLink,
   IconClose,
+  IconCloudCheck,
   IconList,
   IconOffline,
   IconShelf,
@@ -45,7 +46,6 @@ import {
   type DownloadState,
 } from '../offline/downloads';
 import { bookAudioSupport } from '../lib/audioSupport';
-import { switchNote } from '../lib/pairLabel';
 import { ambientColorFromImage } from '../lib/ambient';
 import { recordCheckpoint } from '../progress/engine';
 
@@ -260,7 +260,20 @@ export function BookPage() {
   const isEbook = book.kind === 'ebook';
   const pct = book.progress?.pct ?? 0;
   const pair = book.pair && book.pair.status !== 'candidate' ? book.pair : null;
-  const pairNote = pair ? switchNote(pair, isEbook) : null;
+  /**
+   * The note under a paired book's buttons, when there is something to say.
+   *
+   * It used to be on every paired book - "You own the ebook too. Switching
+   * lands close to where you are..." - under three buttons that already say
+   * the book is owned both ways, and "close" is a claim about the aligner
+   * nobody reading needs. It speaks now only when switching will not do
+   * what the buttons promise: the pair is not timed yet, so the other
+   * edition starts at the beginning, or this edition is on the device and
+   * the other one is not, so switching needs a connection.
+   */
+  const pairUntimed = !!pair && (!pair.switchable || !pair.handoff);
+  const pairOffline =
+    !!pair && dl?.status === 'done' && companionDl !== undefined && companionDl?.status !== 'done';
   /**
    * Discovered but not yet indexed, and with nothing usable from a previous
    * pass. A scan inserts every book it finds up front and then indexes them a
@@ -294,7 +307,7 @@ export function BookPage() {
     }
     try {
       toast.show(
-        targets.length > 1 ? t('library.download.startingBoth') : t('library.download.startingOne'),
+        targets.length > 1 ? t('library.offline.startingBoth') : t('library.offline.starting'),
       );
       for (const target of targets) {
         await startDownload(target.id, target.onUpdate);
@@ -426,10 +439,7 @@ export function BookPage() {
               </button>
             ) : isEbook ? (
               <Link className="btn" to={`/read/${book.id}`}>
-                <IconBookOpen size={18} />{' '}
-                {pct > 0.001
-                  ? t('library.continueIn', { kind: book.kind })
-                  : t('library.book.open', { kind: book.kind })}
+                <IconBookOpen size={18} /> {t('library.book.open', { kind: book.kind })}
               </Link>
             ) : audioSupport && !audioSupport.supported ? (
               <button
@@ -445,10 +455,7 @@ export function BookPage() {
               </button>
             ) : (
               <Link className="btn" to={`/listen/${book.id}`}>
-                <IconHeadphones size={18} />{' '}
-                {pct > 0.001
-                  ? t('library.continueIn', { kind: book.kind })
-                  : t('library.book.open', { kind: book.kind })}
+                <IconHeadphones size={18} /> {t('library.book.open', { kind: book.kind })}
               </Link>
             )}
             {pair && (
@@ -472,11 +479,7 @@ export function BookPage() {
                   }
                 >
                   <IconReadAlong size={17} />
-                  {switching
-                    ? t('library.book.opening')
-                    : pair.switchable && pct > 0.001
-                      ? t('library.book.readAlongFromHere')
-                      : t('library.book.readAlong')}
+                  {switching ? t('library.book.opening') : t('library.book.readAlong')}
                 </button>
                 <button
                   className="btn btn--secondary"
@@ -486,9 +489,7 @@ export function BookPage() {
                   {isEbook ? <IconHeadphones size={17} /> : <IconBookOpen size={17} />}
                   {switching
                     ? t('library.book.opening')
-                    : pair.switchable && pct > 0.001
-                      ? t('library.book.fromHere', { kind: book.kind })
-                      : t('library.book.openOther', { kind: book.kind })}
+                    : t('library.book.openOther', { kind: book.kind })}
                 </button>
               </>
             )}
@@ -504,11 +505,15 @@ export function BookPage() {
             <ShareMenu bookId={id} title={book.title} />
             {user?.canExport && !notReadyYet && (
               // A real link, not a button: the browser has to perform the
-              // save itself. Distinct from the offline copy above, which
+              // save itself. Distinct from Save offline beside it, which
               // keeps the book inside the app and can be removed again -
-              // this one hands over a file that leaves with the reader.
+              // this one hands over the book's own file, which leaves with
+              // the reader. "Save a copy" and "Download" beside each other
+              // read as the same thing twice; "Save offline" and "Download
+              // file" do not.
               <a
                 className="btn btn--ghost book-tool"
+                title={t('library.book.downloadFileHint')}
                 href={
                   isEbook
                     ? `/api/books/${book.id}/export`
@@ -529,24 +534,22 @@ export function BookPage() {
                 <IconDownload size={17} />
                 <span>
                   {isEbook || detail.tracks.length <= 1
-                    ? t('library.book.saveCopy')
-                    : t('library.book.saveFiles')}
+                    ? t('library.book.downloadFile')
+                    : t('library.book.downloadFiles')}
                 </span>
               </a>
             )}
           </div>
-          {pair && pairNote && (
-            // One quiet line, not a card. What it says is the only thing a
-            // reader needs to know: what happens when they switch.
+          {(pairUntimed || pairOffline) && (
+            // One quiet line, not a card, and only when switching will not
+            // do what the buttons promise.
             <p className="book-hero__pairnote">
               <IconSwitch size={14} />
               <span>
-                {t(pairNote.key, pairNote.values)}{' '}
-                {dl?.status === 'done' &&
-                  companionDl !== undefined &&
-                  companionDl?.status !== 'done' &&
-                  `${t('library.book.otherNotOnDevice', { kind: book.kind })} `}
-                <Link to="/pairs">{t('library.book.reviewPairing')}</Link>
+                {pairUntimed &&
+                  `${t('library.pair.switchUnaligned', { kind: isEbook ? 'ebook' : 'audio' })} `}
+                {pairOffline && `${t('library.book.otherNotOnDevice', { kind: book.kind })} `}
+                {pairUntimed && <Link to="/pairs">{t('library.book.reviewPairing')}</Link>}
               </span>
             </p>
           )}
@@ -698,9 +701,9 @@ export function BookPage() {
       {saveOpen && (
         // An audiobook is many files and the server does not build archives,
         // so the reader picks. Listed as they play, with their own names.
-        <Sheet title={t('library.book.saveCopy')} onClose={() => setSaveOpen(false)}>
+        <Sheet title={t('library.book.downloadFilesTitle')} onClose={() => setSaveOpen(false)}>
           <p className="hint" style={{ marginBlockEnd: 'var(--sp-3)' }}>
-            {t('library.book.saveFilesHint', { n: detail.tracks.length })}
+            {t('library.book.downloadFilesHint', { n: detail.tracks.length })}
           </p>
           {detail.tracks.map((track, i) => (
             <a
@@ -776,9 +779,10 @@ function MembershipChips({
 }
 
 /**
- * The one entry point to offline downloads, so it carries a visible word - an
+ * The one entry point to the offline copy, so it carries a visible word - an
  * icon alone has no tooltip on touch, which is where most reading and most
- * flights happen.
+ * flights happen. "Save offline", with the cloud the On this device shelf
+ * wears, so it never reads as the file download beside it.
  */
 function OfflineButton({ dl, onClick }: { dl: DownloadState | null; onClick: () => void }) {
   const t = useT();
@@ -793,12 +797,12 @@ function OfflineButton({ dl, onClick }: { dl: DownloadState | null; onClick: () 
       onClick={onClick}
       aria-label={
         done
-          ? t('library.download.availableManage')
+          ? t('library.offline.savedManage')
           : downloading
-            ? t('library.download.downloadingPct', { pct: f.percent(downloadFraction(dl)) })
+            ? t('library.offline.savingPct', { pct: f.percent(downloadFraction(dl)) })
             : failed
-              ? t('library.download.retryLabel')
-              : t('library.download.forOffline')
+              ? t('library.offline.retryLabel')
+              : t('library.offline.saveLabel')
       }
     >
       {downloading ? (
@@ -806,15 +810,15 @@ function OfflineButton({ dl, onClick }: { dl: DownloadState | null; onClick: () 
           <span className="offline-btn__pct">{f.number(pctDone)}</span>
         </span>
       ) : done ? (
-        <IconOffline size={18} />
+        <IconCloudCheck size={18} />
       ) : failed ? (
         <IconAlert size={18} />
       ) : (
-        <IconDownload size={18} />
+        <IconOffline size={18} />
       )}
       {downloading ? (
         <span className="offline-btn__label">
-          {t('library.download.downloading')}
+          {t('library.offline.saving')}
           {dl.estimatedBytes > 0 && (
             <span className="offline-btn__bytes">
               {t('library.download.bytesOf', {
@@ -825,11 +829,11 @@ function OfflineButton({ dl, onClick }: { dl: DownloadState | null; onClick: () 
           )}
         </span>
       ) : done ? (
-        t('library.download.downloaded')
+        t('library.offline.saved')
       ) : failed ? (
         t('common.retry')
       ) : (
-        t('library.download.download')
+        t('library.offline.save')
       )}
     </button>
   );
@@ -878,8 +882,8 @@ function OfflineSheet({
         done
           ? t('library.download.available')
           : downloading
-            ? t('library.download.downloading')
-            : t('library.download.askTitle')
+            ? t('library.offline.saving')
+            : t('library.offline.askTitle')
       }
       onClose={onClose}
     >
@@ -903,7 +907,7 @@ function OfflineSheet({
           <div className="sheet__actions">
             {companion && !companionStored && (
               <button className="btn" onClick={() => onDownload(true)}>
-                <IconDownload size={16} /> {t('library.download.addOther', { kind })}
+                <IconOffline size={16} /> {t('library.download.addOther', { kind })}
               </button>
             )}
             <button className="btn btn--danger" onClick={onRemove}>
@@ -976,8 +980,8 @@ function OfflineSheet({
             {companion && !companionStored ? (
               <>
                 <button className="btn" onClick={() => onDownload(true)}>
-                  <IconDownload size={16} />{' '}
-                  {t('library.download.both', {
+                  <IconOffline size={16} />{' '}
+                  {t('library.offline.saveBoth', {
                     hasSize: companion.sizeBytes > 0,
                     size: f.bytes(book.sizeBytes + companion.sizeBytes),
                   })}
@@ -988,10 +992,8 @@ function OfflineSheet({
               </>
             ) : (
               <button className="btn" onClick={() => onDownload(false)}>
-                <IconDownload size={16} />{' '}
-                {dl?.status === 'error'
-                  ? t('library.download.retry')
-                  : t('library.download.download')}
+                <IconOffline size={16} />{' '}
+                {dl?.status === 'error' ? t('library.download.retry') : t('library.offline.save')}
               </button>
             )}
             {partialBytes > 0 && (
@@ -1064,13 +1066,13 @@ function LanguageChip({
         }}
       >
         <option value="">
+          {/* The language alone: where it came from - the file, the
+              paired edition, the text itself - is the chip's tooltip, and
+              "English · read from the text" said it on every book. */}
           {source === 'manual'
             ? t('library.book.languageAutoOption')
             : book.language
-              ? t('library.book.languageWithSource', {
-                  name: f.languageName(book.language),
-                  source: source ?? 'metadata',
-                })
+              ? f.languageName(book.language)
               : t('library.book.languageUnknownSet')}
         </option>
         {BOOK_LANGUAGES.map((l) => (

@@ -132,21 +132,16 @@ h3 {
   padding: 0;
   border-radius: var(--radius-pill);
 }
+/* Save offline sits among the other tools under a book and dresses like
+   them: no border, no fill. Saved is said by its icon - a cloud with a tick
+   - and its word, not by a box the others do not have. */
 .offline-btn {
   background: transparent;
   color: var(--rp-interactive);
-  border-color: var(--rp-border-strong);
+  border-color: transparent;
 }
 .offline-btn:hover {
   background: var(--rp-surface);
-}
-/* "Downloaded" is a fact, not a command. It wore the same solid ember as the
-   one button that opens the book, so the eye went to the status instead of
-   the verb. Still clearly marked, no longer shouting. */
-.offline-btn.is-done {
-  background: color-mix(in srgb, var(--rp-primary) 10%, transparent);
-  border-color: color-mix(in srgb, var(--rp-primary) 35%, var(--rp-border));
-  color: var(--rp-interactive);
 }
 
 /* The downloading state had NO rules at all, so its two spans inherited the
@@ -1607,6 +1602,9 @@ body:has(.app-body) {
   .share-menu > .book-tool {
     width: 100%;
     flex-direction: column;
+    /* Icons on one line, labels hanging from them: centred, a two-line
+       label ("Download file") lifted its icon above its neighbours'. */
+    justify-content: flex-start;
     gap: 5px;
     min-height: 58px;
     padding: 8px 2px;

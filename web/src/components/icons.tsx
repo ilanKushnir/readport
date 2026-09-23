@@ -334,6 +334,27 @@ export const IconOffline = (p: P) => (
     <path d="M12 12.5V19M9.2 16.2 12 19l2.8-2.8" />
   </I>
 );
+/** The same cloud with a tick in it: saved offline, on this device. */
+export const IconCloudCheck = (p: P) => (
+  <I {...p}>
+    <path d="M5 14.5a4.5 4.5 0 0 1 1.2-8.8 6 6 0 0 1 11.4 1.5A4 4 0 0 1 19 15" />
+    <path d="m8.8 16.2 2.3 2.3 4.2-4.2" />
+  </I>
+);
+/** One person: an account. */
+export const IconUser = (p: P) => (
+  <I {...p}>
+    <circle cx="12" cy="8.5" r="3.6" />
+    <path d="M5 19.5c1.2-3.4 3.9-5.2 7-5.2s5.8 1.8 7 5.2" />
+  </I>
+);
+/** Out through a door: signing out. Mirrored in RTL, where out is the other way. */
+export const IconSignOut = (p: P) => (
+  <I data-mirror="" {...p}>
+    <path d="M10 4.5H6.5A1.5 1.5 0 0 0 5 6v12a1.5 1.5 0 0 0 1.5 1.5H10" />
+    <path d="M10.5 12h9M15.5 8l4 4-4 4" />
+  </I>
+);
 export const IconSwitch = (p: P) => (
   <I {...p}>
     <path d="M4 8h13M14 4.8 17.5 8 14 11.2" />

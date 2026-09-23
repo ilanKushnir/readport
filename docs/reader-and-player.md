@@ -311,9 +311,11 @@ progress history.
 
 ## Offline packages
 
-Downloads start from the download icon on the book page, which first explains
-what will be stored (size, offline behaviour, removal on sign-out) and asks
-for confirmation; the same icon shows progress and later manages removal.
+Offline copies start from **Save offline** on the book page (a cloud, with a
+tick once saved), which first explains what will be stored (size, offline
+behaviour, removal on sign-out) and asks for confirmation; the same button
+shows progress and later manages removal. It is not **Download file** beside
+it, which hands the book's own file to the device to keep or open elsewhere.
 Per-title downloads verify every entry (byte size + SHA-256 from the
 server's offline manifest) before caching, include every referenced derived
 asset (illustrations), and only mark the package complete after everything

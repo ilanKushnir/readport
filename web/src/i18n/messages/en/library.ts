@@ -144,19 +144,30 @@ export const library = {
   'library.book.stillIndexedTitle': 'Still being indexed',
   'library.book.open': '{kind, select, ebook {Read} other {Listen}}',
   'library.book.openOther': '{kind, select, ebook {Listen} other {Read}}',
-  'library.book.fromHere': '{kind, select, ebook {Listen from here} other {Read from here}}',
-  // The third way to open a paired book, beside Read and Listen: the page
-  // with the voice on it. "From here" once there is a position to carry.
   'library.book.readAlong': 'Read along',
-  'library.book.readAlongFromHere': 'Read along from here',
   'library.book.readAlongHint': 'The page, with the narration playing over it',
   'library.book.readAlongNotReady': 'Read along unlocks once the pair is aligned',
   'library.book.opening': 'Opening…',
-  'library.book.saveCopy': 'Save a copy',
-  'library.book.saveFiles': 'Save files…',
-  'library.book.saveFilesHint':
-    '{n, plural, one {# file.} other {# files.}} Saving them is one at a time.',
   'library.book.part': 'Part {n}',
+  // The book's own file, as opposed to Save offline
+  'library.book.downloadFile': 'Download file',
+  'library.book.downloadFiles': 'Download files…',
+  'library.book.downloadFilesTitle': 'Download files',
+  'library.book.downloadFileHint': "The book's own file, saved to this device",
+  'library.book.downloadFilesHint':
+    '{n, plural, one {# file.} other {# files.}} Each one downloads on its own.',
+  // Save offline: the copy that stays inside the app
+  'library.offline.save': 'Save offline',
+  'library.offline.saving': 'Saving offline',
+  'library.offline.saved': 'Saved offline',
+  'library.offline.saveLabel': 'Save offline, to open without a connection',
+  'library.offline.retryLabel': 'Save offline - the last attempt failed',
+  'library.offline.savingPct': 'Saving offline, {pct}',
+  'library.offline.savedManage': 'Saved offline - manage the offline copy',
+  'library.offline.askTitle': 'Save offline?',
+  'library.offline.starting': 'Saving offline…',
+  'library.offline.startingBoth': 'Saving both editions offline…',
+  'library.offline.saveBoth': 'Save both offline{hasSize, select, true { ({size})} other {}}',
   'library.book.otherNotOnDevice':
     'The {kind, select, ebook {audiobook} other {ebook}} is not on this device, so switching needs a connection.',
   'library.book.reviewPairing': 'Review pairing',
@@ -188,8 +199,6 @@ export const library = {
   'library.book.languageUnknown': 'Language unknown',
   'library.book.languageTitle':
     'Language {source, select, manual {set by hand} metadata {from the file} pair {from the paired edition} detected {read from the text} other {}}',
-  'library.book.languageWithSource':
-    '{name} · {source, select, manual {set by hand} metadata {from the file} pair {from the paired edition} detected {read from the text} other {}}',
   'library.book.languageAutoOption': 'Auto',
   'library.book.languageUnknownSet': 'Unknown · set by hand?',
   'library.book.languageSet': 'Language set to {name}',
@@ -207,11 +216,6 @@ export const library = {
     'Choose an ebook and an audiobook of the same work. Alignment runs after linking; switching between editions is unavailable until alignment completes.',
   'library.pair.switchUnaligned':
     'You own {kind, select, ebook {the audiobook} other {the ebook}} too. Timing the two together has not finished, so moving between them will start at the beginning for now.',
-  'library.pair.switchExact':
-    'You own {kind, select, ebook {the audiobook} other {the ebook}} too, and switching between them picks up at the same sentence.',
-  'library.pair.switchClose':
-    'You own {kind, select, ebook {the audiobook} other {the ebook}} too. Switching lands close to where you are, though not always on the exact sentence.',
-  // Downloads in progress on the On this device shelf
   'library.download.inProgress': 'Downloads in progress',
   'library.download.title': 'Downloads',
   'library.download.downloadingN': 'Downloading {n}',
@@ -221,17 +225,7 @@ export const library = {
   'library.download.stop': 'Stop',
   'library.download.failed': 'Download failed',
   // The offline button on the book page
-  'library.download.download': 'Download',
-  'library.download.downloaded': 'Downloaded',
-  'library.download.downloading': 'Downloading',
   'library.download.bytesOf': '{stored} of {total}',
-  'library.download.forOffline': 'Download for offline',
-  'library.download.retryLabel': 'Download for offline - the last attempt failed',
-  'library.download.downloadingPct': 'Downloading for offline, {pct}',
-  'library.download.availableManage': 'Available offline - manage the download',
-  // Download toasts
-  'library.download.startingOne': 'Downloading for offline…',
-  'library.download.startingBoth': 'Downloading both editions…',
   'library.download.stopped': 'Download stopped',
   'library.download.available': 'Available offline',
   'library.download.doneBoth': 'Both editions are available offline',
@@ -239,7 +233,6 @@ export const library = {
   'library.download.needsHttps':
     'Offline downloads need HTTPS (or localhost). See the self-hosting guide in the {app} README.',
   // The offline sheet: before, during and after a download
-  'library.download.askTitle': 'Download for offline?',
   'library.download.askLede':
     'Keep {title} on this device for flights and dead zones - about {bytes}{kind, select, ebook { including images} other { of audio}}. {kind, select, ebook {Reading} other {Listening}} works fully offline and your position syncs back when you reconnect. Signing out removes offline copies.',
   'library.download.companionSeparate':
@@ -248,7 +241,6 @@ export const library = {
     '{bytes} from the last attempt is still on this device. Starting again continues from there; removing it frees the space now.',
   'library.download.interruptedLede':
     'The download was interrupted - starting again continues from where it stopped.',
-  'library.download.both': 'Download both{hasSize, select, true { ({size})} other {}}',
   'library.download.onlyThis': '{kind, select, ebook {Ebook} other {Audiobook}} only ({size})',
   'library.download.retry': 'Retry download',
   'library.download.removePartial': 'Remove partial download',
