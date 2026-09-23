@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { type AudioLocator, type EbookLocator } from '@readport/shared';
-import { api, isOffline, notifyUnauthorized } from '../api/client';
-import { cachedSwitch } from '../offline/downloads';
+import { api, ApiError, isOffline, notifyUnauthorized } from '../api/client';
+import { cachedSwitch, removeDownload } from '../offline/downloads';
 import {
   type Annotation,
   type BookDetail,
@@ -586,7 +586,10 @@ export function ReaderPage() {
             setSpineIdx(0);
           }
         }
-      } catch {
+      } catch (err) {
+        // Gone, or hidden from this reader: an offline copy is not theirs
+        // to keep reading either (see the book page).
+        if (err instanceof ApiError && err.status === 404) void removeDownload(id).catch(() => {});
         if (alive) setLoadError('reader.error.openFailed');
       }
     })();
