@@ -35,6 +35,7 @@ import {
 import { requireExport } from '../../auth/roles.js';
 import { seesHidden, setHidden, visiblePairSql, visibleSql } from '../../library/visibility.js';
 import { realResolveWithin } from '../../util/paths.js';
+import { zipStream, type ZipEntry } from '../../util/zip.js';
 
 /**
  * @param sees whether the person asking may see hidden books (see
@@ -701,6 +702,76 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
     reply.header('x-content-type-options', 'nosniff');
     return reply.send(fs.createReadStream(abs));
   });
+
+  /**
+   * An audiobook's files, all of them, as one ZIP: what a reader who keeps
+   * their books wants when the book is forty files. Under the same
+   * permission as the export above, and built the same way it is sent -
+   * stored, streamed, one pass over each file (util/zip.ts) - so a
+   * gigabyte audiobook costs the server a read buffer, not a gigabyte, and
+   * the browser is told the exact size up front and can show the progress.
+   *
+   * The files keep their own names, in a folder named for the book, in the
+   * order they play.
+   */
+  app.get('/api/books/:id/archive', async (req, reply) => {
+    if (!requireExport(db, req, reply)) return reply;
+    const { id } = req.params as { id: string };
+    const book = db
+      .prepare("SELECT * FROM books WHERE id = ? AND kind = 'audio' AND scan_state != 'missing'")
+      .get(id) as Record<string, unknown> | undefined;
+    if (!book) return reply.code(404).send({ error: 'not-found' });
+    const tracks = db
+      .prepare('SELECT idx, rel_path FROM audio_tracks WHERE book_id = ? ORDER BY idx')
+      .all(id) as { idx: number; rel_path: string }[];
+    if (tracks.length === 0) return reply.code(404).send({ error: 'no-track' });
+
+    const folder = archiveName(
+      book.author ? `${String(book.title)} - ${String(book.author)}` : String(book.title),
+    );
+    const entries: ZipEntry[] = [];
+    const taken = new Set<string>();
+    for (const t of tracks) {
+      let abs: string;
+      let stat: fs.Stats;
+      try {
+        abs = realResolveWithin(String(book.root_dir), t.rel_path);
+        stat = fs.statSync(abs);
+      } catch {
+        return reply.code(404).send({ error: 'file-missing' });
+      }
+      // Two parts called "track.mp3" in two folders are two files; the
+      // number they play at tells them apart.
+      let name = archiveName(posix.basename(t.rel_path));
+      if (taken.has(name.toLowerCase())) name = `${String(t.idx + 1).padStart(3, '0')} ${name}`;
+      taken.add(name.toLowerCase());
+      entries.push({ name: `${folder}/${name}`, path: abs, size: stat.size, mtime: stat.mtime });
+    }
+
+    const zip = zipStream(entries);
+    reply.header('content-type', 'application/zip');
+    reply.header('content-length', zip.length);
+    reply.header('content-disposition', contentDisposition(`${folder}.zip`));
+    reply.header('cache-control', 'private, no-store');
+    reply.header('x-content-type-options', 'nosniff');
+    return reply.send(zip.stream);
+  });
+}
+
+/**
+ * A name any unzip on any system will write as given: no path separators,
+ * no characters Windows refuses, no control characters, no trailing dots
+ * or spaces, and not so long that a folder plus a file name passes what a
+ * file system allows.
+ */
+export function archiveName(raw: string): string {
+  const cleaned = raw
+    .replace(/[\u0000-\u001f\u007f<>:"/\\|?*]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/[. ]+$/, '');
+  const chars = [...cleaned];
+  return (chars.length > 120 ? chars.slice(0, 120).join('').trim() : cleaned) || 'Audiobook';
 }
 
 /**
