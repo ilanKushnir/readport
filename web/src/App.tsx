@@ -6,6 +6,7 @@ import {
   Outlet,
   RouterProvider,
   useLocation,
+  useParams,
 } from 'react-router-dom';
 import { AUTO_SHELVES } from '@readport/shared';
 import { SessionProvider, useSession } from './state/session';
@@ -364,6 +365,20 @@ function Shell() {
   );
 }
 
+/**
+ * A book's page, reader or player, made fresh for each book.
+ *
+ * The router keeps an element mounted when only its `:id` changes, so going
+ * from one book straight to another - carrying on in the other language,
+ * following a link between editions - kept everything the page held about
+ * the first: an open sheet, a way back to one of its chapters, the paired
+ * edition it had looked up. Keyed by the book, each is a new page.
+ */
+function PerBook({ page: Page }: { page: () => React.ReactNode }) {
+  const { id = '' } = useParams();
+  return <Page key={id} />;
+}
+
 const router = createBrowserRouter([
   {
     element: <Shell />,
@@ -378,9 +393,9 @@ const router = createBrowserRouter([
       // search and sort - a genre is a shelf the library already had.
       { path: '/browse/:facetKind/:facetValue', element: <LibraryPage /> },
       { path: '/reading-list', element: <ReadingListPage /> },
-      { path: '/book/:id', element: <BookPage /> },
-      { path: '/read/:id', element: <ReaderPage /> },
-      { path: '/listen/:id', element: <PlayerPage /> },
+      { path: '/book/:id', element: <PerBook page={BookPage} /> },
+      { path: '/read/:id', element: <PerBook page={ReaderPage} /> },
+      { path: '/listen/:id', element: <PerBook page={PlayerPage} /> },
       { path: '/notes', element: <NotesPage /> },
       { path: '/notes/:bookId', element: <NotesBookPage /> },
       { path: '/notes/:bookId/export', element: <NotesExportPage /> },
