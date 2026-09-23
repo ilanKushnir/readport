@@ -1,5 +1,6 @@
 import { type Annotation } from '@readport/shared';
 import { type MessageKey } from '../i18n/messages/en';
+import { canPaint, paintRanges } from './paint';
 import { domToOffset, rangeForSpan, type TextMap } from './textmap';
 
 /**
@@ -45,13 +46,6 @@ const registryFor = (a: Annotation): string =>
 
 const ALL_REGISTRIES = ['rp-note', ...HIGHLIGHT_COLORS.map((c) => `rp-hl-${c}`)];
 
-type HighlightApi = {
-  highlights?: Map<string, unknown> & {
-    set(k: string, v: unknown): void;
-    delete(k: string): void;
-  };
-};
-
 /** The span an annotation covers, in chapter character offsets. */
 export function spanOf(a: Annotation): { start: number; end: number } | null {
   if (a.locator.medium !== 'ebook') return null;
@@ -75,34 +69,26 @@ export function marksInChapter(annotations: Annotation[], spineIdx: number): Ann
  * Paint every mark in this chapter, one registry per colour so the CSS can
  * give each its own tint, and notes their own dashed underline.
  *
- * Registries are cleared rather than left behind when a colour goes unused:
- * a stale registry keeps painting a range that no longer belongs to anything.
+ * Every registry is repainted, a colour with nothing in it included: one
+ * left as it was keeps painting a range that no longer belongs to anything,
+ * like the highlight that was just removed.
  */
 export function paintMarks(map: TextMap | null, annotations: Annotation[], spineIdx: number): void {
-  const css = CSS as unknown as HighlightApi;
-  if (!css.highlights || typeof Highlight === 'undefined') return;
-  if (!map) {
-    for (const name of ALL_REGISTRIES) css.highlights.delete(name);
-    return;
-  }
-
+  if (!canPaint()) return;
   const byRegistry = new Map<string, Range[]>();
-  for (const a of marksInChapter(annotations, spineIdx)) {
-    const span = spanOf(a);
-    if (!span) continue;
-    const range = rangeForSpan(map, span.start, span.end);
-    if (!range) continue;
-    const name = registryFor(a);
-    const list = byRegistry.get(name);
-    if (list) list.push(range);
-    else byRegistry.set(name, [range]);
+  if (map) {
+    for (const a of marksInChapter(annotations, spineIdx)) {
+      const span = spanOf(a);
+      if (!span) continue;
+      const range = rangeForSpan(map, span.start, span.end);
+      if (!range) continue;
+      const name = registryFor(a);
+      const list = byRegistry.get(name);
+      if (list) list.push(range);
+      else byRegistry.set(name, [range]);
+    }
   }
-
-  for (const name of ALL_REGISTRIES) {
-    const ranges = byRegistry.get(name);
-    if (ranges && ranges.length > 0) css.highlights.set(name, new Highlight(...ranges));
-    else css.highlights.delete(name);
-  }
+  for (const name of ALL_REGISTRIES) paintRanges(name, byRegistry.get(name) ?? []);
 }
 
 /**
@@ -146,11 +132,9 @@ const FOUND = 'rp-found';
 
 /** Mark the passage a search jumped to, or clear it. */
 export function paintFound(map: TextMap | null, span: { start: number; end: number } | null): void {
-  const css = CSS as unknown as HighlightApi;
-  if (!css.highlights || typeof Highlight === 'undefined') return;
+  if (!canPaint()) return;
   const range = map && span ? rangeForSpan(map, span.start, span.end) : null;
-  if (range) css.highlights.set(FOUND, new Highlight(range));
-  else css.highlights.delete(FOUND);
+  paintRanges(FOUND, range ? [range] : []);
 }
 
 /**

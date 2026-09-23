@@ -78,6 +78,7 @@ import {
   ScrollOwnership,
 } from './motion';
 import { LineOverlay, pageTurning } from './LineOverlay';
+import { canPaint, paintRanges } from './paint';
 import { hostOrigin, outlinePath, outlineRuns } from './overlay';
 import { lineBoxes, relativeTo, sameBoxes, type LineBox } from './overlay';
 import { trimQuote } from './share';
@@ -4561,10 +4562,6 @@ function isRtlLanguage(lang: string | null): boolean {
   return RTL_LANGS.has(lang.toLowerCase().split(/[-_]/)[0]!);
 }
 
-type HighlightApi = {
-  highlights?: Map<string, unknown> & { set(k: string, v: unknown): void; delete(k: string): void };
-};
-
 /**
  * Whether a character offset is currently on screen.
  *
@@ -4637,17 +4634,22 @@ function shifted(b: DOMRect, dy: number) {
   return { left: b.left, right: b.right, top: b.top + dy, bottom: b.bottom + dy };
 }
 
+/** Which handoff is on the page: a clear meant for an earlier one leaves a later one alone. */
+let handoffSeq = 0;
+
 function paintHandoff(map: TextMap, start: number, end: number): () => void {
-  const css = CSS as unknown as HighlightApi;
-  if (!css.highlights || typeof Highlight === 'undefined') return () => {};
+  if (!canPaint()) return () => {};
   const r = rangeForSpan(map, start, end);
   if (!r) return () => {};
-  css.highlights.set('rp-handoff', new Highlight(r));
+  const mine = ++handoffSeq;
+  paintRanges('rp-handoff', [r]);
   let cleared = false;
   const clear = () => {
     if (cleared) return;
     cleared = true;
-    setTimeout(() => css.highlights!.delete('rp-handoff'), 400);
+    setTimeout(() => {
+      if (handoffSeq === mine) paintRanges('rp-handoff', []);
+    }, 400);
   };
   setTimeout(clear, 12000);
   return clear;
