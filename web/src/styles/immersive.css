@@ -215,11 +215,6 @@
 .pace-marker[data-paused='yes'] {
   opacity: 0.3;
 }
-/* Following by itself: brighter, so it is clear what is driving the page. */
-.pace-marker[data-auto='on'] {
-  opacity: 0.95;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rd-link) 18%, transparent);
-}
 @media (prefers-reduced-motion: reduce) {
   .pace-marker {
     transition: none;

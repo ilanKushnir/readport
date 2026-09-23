@@ -3467,17 +3467,9 @@ export function ReaderPage() {
             <path d="M0 0h22v34l-11-8-11 8z" fill="currentColor" />
           </svg>
         )}
-        {pace?.nailed && (
-          // Driving the page: the mark holds still in the viewport and the
-          // text is moved to meet it.
-          <span
-            className={`pace-marker${paceJump ? ' is-jump' : ''}`}
-            style={{ left: pace.left, top: pace.top }}
-            aria-hidden="true"
-            data-auto="on"
-            data-paused={narration.playing ? undefined : 'yes'}
-          />
-        )}
+        {/* Driving the page draws no mark: the text is moved to a fixed
+            line for the voice, and a bar holding still in the margin beside
+            it said nothing the moving page did not. */}
         {prefs.mode === 'paginated' ? (
           <>
             <button
