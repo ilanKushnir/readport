@@ -1808,6 +1808,12 @@ const messages: Record<string, string> = {
     '{kind, select, ebook {Ebook} other {Audiolivro}} guardado neste dispositivo',
   'library.card.notSavedHere':
     '{kind, select, ebook {Ebook} other {Audiolivro}} não guardado neste dispositivo',
+  // whatsnew
+  'whatsnew.update.title': 'Está disponível uma nova versão do ReadPort',
+  'whatsnew.update.detail': 'Atualiza para começares a usar a versão {version}.',
+  'whatsnew.update.refresh': 'Atualizar',
+  'whatsnew.update.refreshing': 'A atualizar…',
+  'whatsnew.update.later': 'Agora não',
 };
 
 export default messages;

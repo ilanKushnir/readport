@@ -1790,6 +1790,12 @@ const messages: Record<string, string> = {
     '{kind, select, ebook {E-kitap} other {Sesli kitap}} bu cihazda kaydedildi',
   'library.card.notSavedHere':
     '{kind, select, ebook {E-kitap} other {Sesli kitap}} bu cihazda kaydedilmedi',
+  // whatsnew
+  'whatsnew.update.title': "ReadPort'un yeni sürümü hazır",
+  'whatsnew.update.detail': '{version} sürümünü kullanmaya başlamak için yenileyin.',
+  'whatsnew.update.refresh': 'Yenile',
+  'whatsnew.update.refreshing': 'Yenileniyor…',
+  'whatsnew.update.later': 'Şimdi değil',
 };
 
 export default messages;

@@ -1805,6 +1805,12 @@ const messages: Record<string, string> = {
     '{kind, select, ebook {Электронная книга} other {Аудиокнига}} сохранена на этом устройстве',
   'library.card.notSavedHere':
     '{kind, select, ebook {Электронная книга} other {Аудиокнига}} не сохранена на этом устройстве',
+  // whatsnew
+  'whatsnew.update.title': 'Готова новая версия ReadPort',
+  'whatsnew.update.detail': 'Обновите страницу, чтобы перейти на версию {version}.',
+  'whatsnew.update.refresh': 'Обновить',
+  'whatsnew.update.refreshing': 'Обновление…',
+  'whatsnew.update.later': 'Не сейчас',
 };
 
 export default messages;

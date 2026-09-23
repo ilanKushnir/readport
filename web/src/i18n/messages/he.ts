@@ -1806,5 +1806,11 @@ const messages: Record<string, string> = {
   'library.card.savedHere': '{kind, select, ebook {ספר אלקטרוני} other {ספר קול}} נשמר במכשיר הזה',
   'library.card.notSavedHere':
     '{kind, select, ebook {ספר אלקטרוני} other {ספר קול}} לא נשמר במכשיר הזה',
+  // whatsnew
+  'whatsnew.update.title': 'גרסה חדשה של ReadPort מוכנה',
+  'whatsnew.update.detail': 'כדי להתחיל להשתמש בגרסה {version}, יש לרענן.',
+  'whatsnew.update.refresh': 'רענון',
+  'whatsnew.update.refreshing': 'מתבצע רענון…',
+  'whatsnew.update.later': 'לא עכשיו',
 };
 export default messages;

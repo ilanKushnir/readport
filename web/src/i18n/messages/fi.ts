@@ -1785,5 +1785,11 @@ const messages: Record<string, string> = {
     '{kind, select, ebook {E-kirja} other {Äänikirja}} tallennettu tällä laitteella',
   'library.card.notSavedHere':
     '{kind, select, ebook {E-kirja} other {Äänikirja}} tallentamaton tällä laitteella',
+  // whatsnew
+  'whatsnew.update.title': 'ReadPortin uusi versio on valmis',
+  'whatsnew.update.detail': 'Päivitä, niin voit alkaa käyttää versiota {version}.',
+  'whatsnew.update.refresh': 'Päivitä',
+  'whatsnew.update.refreshing': 'Päivitetään…',
+  'whatsnew.update.later': 'Ei nyt',
 };
 export default messages;

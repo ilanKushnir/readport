@@ -1677,5 +1677,11 @@ const messages: Record<string, string> = {
   // library
   'library.card.savedHere': '{kind, select, ebook {电子书} other {有声书}}已保存在此设备上',
   'library.card.notSavedHere': '{kind, select, ebook {电子书} other {有声书}}未保存在此设备上',
+  // whatsnew
+  'whatsnew.update.title': 'ReadPort 新版本已就绪',
+  'whatsnew.update.detail': '刷新即可开始使用版本 {version}。',
+  'whatsnew.update.refresh': '刷新',
+  'whatsnew.update.refreshing': '正在刷新…',
+  'whatsnew.update.later': '暂不',
 };
 export default messages;

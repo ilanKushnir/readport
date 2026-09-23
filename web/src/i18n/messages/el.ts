@@ -1820,5 +1820,11 @@ const messages: Record<string, string> = {
     '{kind, select, ebook {Ηλεκτρονικό βιβλίο} other {Ηχητικό βιβλίο}} αποθηκεύτηκε σε αυτή τη συσκευή',
   'library.card.notSavedHere':
     '{kind, select, ebook {Ηλεκτρονικό βιβλίο} other {Ηχητικό βιβλίο}} δεν αποθηκεύτηκε σε αυτή τη συσκευή',
+  // whatsnew
+  'whatsnew.update.title': 'Μια νέα έκδοση του ReadPort είναι έτοιμη',
+  'whatsnew.update.detail': 'Κάνε ανανέωση για να αρχίσεις να χρησιμοποιείς την έκδοση {version}.',
+  'whatsnew.update.refresh': 'Ανανέωση',
+  'whatsnew.update.refreshing': 'Γίνεται ανανέωση…',
+  'whatsnew.update.later': 'Όχι τώρα',
 };
 export default messages;

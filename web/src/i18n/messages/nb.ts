@@ -1768,5 +1768,11 @@ const messages: Record<string, string> = {
   'library.card.savedHere': '{kind, select, ebook {E-bok} other {Lydbok}} lagret på denne enheten',
   'library.card.notSavedHere':
     '{kind, select, ebook {E-bok} other {Lydbok}} ikke lagret på denne enheten',
+  // whatsnew
+  'whatsnew.update.title': 'En ny versjon av ReadPort er klar',
+  'whatsnew.update.detail': 'Last inn på nytt for å ta i bruk versjon {version}.',
+  'whatsnew.update.refresh': 'Last inn på nytt',
+  'whatsnew.update.refreshing': 'Laster inn på nytt…',
+  'whatsnew.update.later': 'Ikke nå',
 };
 export default messages;

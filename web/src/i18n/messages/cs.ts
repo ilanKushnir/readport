@@ -1798,5 +1798,11 @@ const messages: Record<string, string> = {
     '{kind, select, ebook {E-kniha} other {Audiokniha}} uložena v tomto zařízení',
   'library.card.notSavedHere':
     '{kind, select, ebook {E-kniha} other {Audiokniha}} neuložena v tomto zařízení',
+  // whatsnew
+  'whatsnew.update.title': 'Je připravena nová verze aplikace ReadPort',
+  'whatsnew.update.detail': 'Obnov stránku a začni používat verzi {version}.',
+  'whatsnew.update.refresh': 'Obnovit',
+  'whatsnew.update.refreshing': 'Obnovuje se…',
+  'whatsnew.update.later': 'Teď ne',
 };
 export default messages;

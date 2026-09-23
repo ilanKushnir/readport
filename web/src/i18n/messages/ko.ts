@@ -1748,5 +1748,11 @@ const messages: Record<string, string> = {
     '{kind, select, ebook {전자책} other {오디오북}}이(가) 이 기기에 저장됨',
   'library.card.notSavedHere':
     '{kind, select, ebook {전자책} other {오디오북}}이(가) 이 기기에 저장되지 않음',
+  // whatsnew
+  'whatsnew.update.title': 'ReadPort 새 버전이 준비되었습니다',
+  'whatsnew.update.detail': '새로고침하여 버전 {version} 사용을 시작하세요.',
+  'whatsnew.update.refresh': '새로고침',
+  'whatsnew.update.refreshing': '새로고침 중…',
+  'whatsnew.update.later': '나중에',
 };
 export default messages;

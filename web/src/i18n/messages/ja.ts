@@ -1786,6 +1786,12 @@ const messages: Record<string, string> = {
     '{kind, select, ebook {電子書籍} other {オーディオブック}}はこの端末に保存済み',
   'library.card.notSavedHere':
     '{kind, select, ebook {電子書籍} other {オーディオブック}}はこの端末に未保存',
+  // whatsnew
+  'whatsnew.update.title': 'ReadPortの新しいバージョンの準備ができました',
+  'whatsnew.update.detail': '再読み込みすると、バージョン {version} を使い始められます。',
+  'whatsnew.update.refresh': '再読み込み',
+  'whatsnew.update.refreshing': '再読み込み中…',
+  'whatsnew.update.later': '今はしない',
 };
 
 export default messages;

@@ -1842,5 +1842,11 @@ const messages: Record<string, string> = {
     '{kind, select, ebook {كتاب إلكتروني} other {كتاب صوتي}} محفوظ على هذا الجهاز',
   'library.card.notSavedHere':
     '{kind, select, ebook {كتاب إلكتروني} other {كتاب صوتي}} غير محفوظ على هذا الجهاز',
+  // whatsnew
+  'whatsnew.update.title': 'إصدار جديد من ReadPort جاهز',
+  'whatsnew.update.detail': 'حدّث الصفحة لبدء استخدام الإصدار {version}.',
+  'whatsnew.update.refresh': 'تحديث',
+  'whatsnew.update.refreshing': 'جارٍ التحديث…',
+  'whatsnew.update.later': 'ليس الآن',
 };
 export default messages;

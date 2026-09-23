@@ -1811,5 +1811,11 @@ const messages: Record<string, string> = {
     '{kind, select, ebook {Carte electronică} other {Carte audio}} salvată pe acest dispozitiv',
   'library.card.notSavedHere':
     '{kind, select, ebook {Carte electronică} other {Carte audio}} nesalvată pe acest dispozitiv',
+  // whatsnew
+  'whatsnew.update.title': 'Este gata o versiune nouă de ReadPort',
+  'whatsnew.update.detail': 'Reîncarcă pentru a începe să folosești versiunea {version}.',
+  'whatsnew.update.refresh': 'Reîncarcă',
+  'whatsnew.update.refreshing': 'Se reîncarcă…',
+  'whatsnew.update.later': 'Nu acum',
 };
 export default messages;
