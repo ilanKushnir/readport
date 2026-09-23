@@ -4,6 +4,52 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.25.0 - 2026-09-23
+
+### Added
+
+- **The same book in other languages.** A curator can link a book to its
+  editions in other languages - a novel and its Russian translation - from
+  a new Languages tool on the book page, where ReadPort also suggests the
+  likely ones: the same author whatever alphabet the name is written in, the
+  same place in a series, the length a translation into that language would
+  have, and the same chapters. The pairing page lists every such guess in
+  the library, to link in one sitting. A book's formats come along: an ebook
+  and the audiobook it is paired with are one title. Linked, a book's page
+  says _Also in Russian_, with how far you are in each.
+- **Matched paragraph by paragraph.** Two editions' texts are matched in the
+  background with Gale and Church's length-based alignment, with chapter
+  starts and numbers as anchors. It reads no words - no dictionary, no model
+  - so any two languages ReadPort indexes can be matched, and an abridged or
+    rearranged translation is reported as matched loosely rather than passed
+    off as close.
+- **Carry on in the other language.** The reader and the player have a
+  languages button: _Read from here_ and _Listen from here_ open the other
+  edition at the matching paragraph - through a pair's narration alignment
+  when an audiobook is at either end - and say so when they arrive. Select a
+  passage, or ask from the button, to see it as the other language has it,
+  with the paragraph it matches marked on the page and a way to carry on
+  from there.
+- **Friends across languages.** A friend reading the translation is on your
+  book's page (_in Russian_) and on your progress bar, at their place carried
+  into your edition, with the chapter named as your edition names it.
+  Recommending a book that is in several languages offers the edition in the
+  language the friend reads.
+- **The sample library** has an invented Russian translation of the Lantern
+  of Ash Harbor, paragraph for paragraph, to link and try all of this with.
+
+### Fixed
+
+- **A new book is a new page.** Going from one book's page, reader or player
+  straight to another book's - following a link on the page itself - kept
+  what was open on the first: a sheet, a way back to one of its chapters.
+  Each book now gets a fresh page.
+
+### Upgrading
+
+- Migration 24 adds the tables for linked editions, dismissed guesses and
+  paragraph matches. Nothing to configure.
+
 ## 0.24.0 - 2026-09-23
 
 ### Added

@@ -23,6 +23,12 @@ export const whatsnew = {
   'whatsnew.update.refreshing': 'Refreshing…',
   'whatsnew.update.later': 'Not now',
 
+  // ---------------------------------------------------------------- 0.25.0
+  'whatsnew.release.otherLanguages':
+    'Link a book to its translation: a friend reading it in another language is on your bar, and you can carry on in the other language from the same paragraph.',
+  'whatsnew.release.passageIn':
+    'Select a passage and see it as the book\u2019s other language has it, or open that edition right there.',
+
   // ---------------------------------------------------------------- 0.24.0
   'whatsnew.release.updateCard':
     'When a new version of ReadPort is ready, a card at the bottom of the screen says so, with a button to refresh into it.',
