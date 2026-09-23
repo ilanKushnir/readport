@@ -13,3 +13,4 @@ export * from './locales.js';
 export * from './stats.js';
 export * from './friends.js';
 export * from './share.js';
+export * from './translations.js';

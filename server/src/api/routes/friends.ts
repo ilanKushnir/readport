@@ -15,6 +15,7 @@ import {
   friendshipBetween,
   friendshipRows,
   personOf,
+  readingLanguage,
   sharesProgress,
 } from '../../friends/service.js';
 
@@ -66,6 +67,8 @@ export function registerFriendRoutes(app: FastifyInstance, ctx: AppContext): voi
         colour: colours.get(person.userId)!,
         sharesProgress: shares,
         reading: shares ? currentlyReading(db, person.userId, seesHidden(req)) : null,
+        // Which edition to hand them when a book is in more than one language.
+        language: readingLanguage(ctx, person.userId, seesHidden(req)),
       };
     });
     const pending = (mine: boolean) =>

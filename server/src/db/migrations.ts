@@ -723,4 +723,46 @@ CREATE TABLE track_hashes (
 CREATE INDEX idx_track_hashes_path ON track_hashes(rel_path);
 `,
   },
+  {
+    version: 24,
+    sql: `
+-- The same book in other languages (library/translations.ts). A group is
+-- one work told in several languages; a row puts one book in it. A book is
+-- in at most one group. Its paired edition is in the group through it and
+-- needs no row of its own, so pairing a book later brings the new half in.
+CREATE TABLE translations (
+  book_id TEXT PRIMARY KEY REFERENCES books(id) ON DELETE CASCADE,
+  group_id TEXT NOT NULL,
+  linked_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+  linked_at TEXT NOT NULL
+);
+CREATE INDEX idx_translations_group ON translations(group_id);
+
+-- A suggestion a curator said no to stays said no to: the next guess must
+-- not offer the same two books again. Stored with the smaller id first.
+CREATE TABLE translation_dismissals (
+  book_a TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+  book_b TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+  decided_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+  decided_at TEXT NOT NULL,
+  PRIMARY KEY (book_a, book_b)
+);
+
+-- Two ebooks' texts matched paragraph to paragraph, so a place in one can be
+-- found in the other. Kept per pair of books (smaller id first) with the
+-- derived revision of each it was worked out from: a book indexed again
+-- makes its matches stale, and they are worked out again.
+CREATE TABLE translation_alignments (
+  book_a TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+  book_b TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+  rev_a TEXT,
+  rev_b TEXT,
+  match TEXT NOT NULL CHECK (match IN ('close','rough')),
+  beads_json TEXT NOT NULL,
+  stats_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (book_a, book_b)
+);
+`,
+  },
 ];

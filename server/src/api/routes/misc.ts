@@ -76,6 +76,20 @@ export function registerJobRoutes(app: FastifyInstance, ctx: AppContext): void {
           bookId: payload.bookId,
         };
       }
+      if (
+        type === 'translation-align' &&
+        typeof payload.a === 'string' &&
+        typeof payload.b === 'string'
+      ) {
+        const a = bookTitle(payload.a);
+        const b = bookTitle(payload.b);
+        return {
+          title: a ?? b ?? 'Book',
+          sub: a && b ? `${a} ⇄ ${b}` : null,
+          pairId: null,
+          bookId: payload.a,
+        };
+      }
       if (type === 'model-download' && typeof payload.modelId === 'string') {
         return {
           title: modelById(payload.modelId)?.label ?? String(payload.modelId),
@@ -99,6 +113,9 @@ export function registerJobRoutes(app: FastifyInstance, ctx: AppContext): void {
     if (sees) return false;
     if (typeof payload.bookId === 'string') return !bookVisible(db, payload.bookId, false);
     if (typeof payload.pairId === 'string') return !pairVisible(db, payload.pairId, false);
+    // Matching two editions' paragraphs names both of them.
+    for (const id of [payload.a, payload.b])
+      if (typeof id === 'string' && !bookVisible(db, id, false)) return true;
     return false;
   };
 

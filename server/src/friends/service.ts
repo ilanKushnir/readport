@@ -1,10 +1,12 @@
-import { type Locator, liveNow } from '@readport/shared';
+import { type Locator, liveNow, normaliseLanguage } from '@readport/shared';
 import { type AppContext } from '../context.js';
 import { type DB } from '../db/index.js';
 import { getProgressState, READING_NOW_WHERE } from '../progress/service.js';
 import { readPref } from '../api/routes/prefs.js';
 import { bookVisible, visiblePairSql, visibleSql } from '../library/visibility.js';
 import { defaultFriendColour, type FriendColourId } from './prefs.js';
+import { translationBookIds } from '../translations/groups.js';
+import { carryPlace } from '../translations/map.js';
 
 /**
  * Friendships and what they let two people see of each other.
@@ -202,13 +204,22 @@ export function chapterTitleFor(db: DB, bookId: string, locator: Locator): strin
 
 export interface FriendProgress extends Person {
   colour: FriendColourId;
+  /** Where they are, in the edition they are in. */
   locator: Locator;
+  /** How far along, as a share of the VIEWER's book: carried across when they read it in another language. */
   pct: number;
   finished: boolean;
   updatedAt: string;
   /** In the book right now, by the medium's live window (see shared liveNow). */
   live: boolean;
+  /** The chapter they are in, named as the viewer's book names it; null when that cannot be said. */
   chapterTitle: string | null;
+  /**
+   * The edition they are reading when it is the book in another language:
+   * which one, so the viewer can be told "in Russian". Absent when they are
+   * in this book or its other format.
+   */
+  edition?: { bookId: string; language: string | null; title: string };
 }
 
 /**
@@ -246,8 +257,14 @@ export function friendProgress(
   const friends = acceptedFriends(ctx.db, viewerId).map(personOf);
   const colours = friendColours(ctx, viewerId, friends);
   // A linked pair is one work: a friend listening to the audiobook is in
-  // the book you are reading, at a comparable fraction of it.
-  const editions = [bookId, ...linkedEditionsOf(ctx.db, bookId, viewerSeesHidden)];
+  // the book you are reading, at a comparable fraction of it. And so is the
+  // same book in another language - a friend reading the translation is in
+  // it too, at the matching paragraph.
+  const sameTitle = [bookId, ...linkedEditionsOf(ctx.db, bookId, viewerSeesHidden)];
+  const translated = translationBookIds(ctx.db, bookId).filter(
+    (id) => !sameTitle.includes(id) && bookVisible(ctx.db, id, viewerSeesHidden),
+  );
+  const editions = [...sameTitle, ...translated];
   const out: FriendProgress[] = [];
   for (const friend of friends) {
     if (!sharesProgress(ctx, friend.userId)) continue;
@@ -262,7 +279,7 @@ export function friendProgress(
     }
     if (!where) continue;
     const { edition, state } = where;
-    out.push({
+    const entry: FriendProgress = {
       ...friend,
       colour: colours.get(friend.userId)!,
       locator: state.locator,
@@ -271,7 +288,25 @@ export function friendProgress(
       updatedAt: state.updatedAt,
       live: liveNow(state.locator.medium, state.updatedAt),
       chapterTitle: chapterTitleFor(ctx.db, edition, state.locator),
-    });
+    };
+    if (translated.includes(edition)) {
+      // Their place, found in this book: the marker goes where they are in
+      // the story, and the chapter is named as this edition names it - their
+      // edition's "Глава 7" means nothing on an English bar.
+      const carried = state.finished
+        ? null
+        : carryPlace(ctx, edition, state.locator, bookId, 'point');
+      entry.pct = carried ? carried.to.pct : state.finished ? 1 : state.locator.pct;
+      entry.chapterTitle = carried ? chapterTitleFor(ctx.db, bookId, carried.to) : null;
+      const book = ctx.db.prepare('SELECT title, language FROM books WHERE id = ?').get(edition) as
+        { title: string; language: string | null } | undefined;
+      entry.edition = {
+        bookId: edition,
+        language: book?.language ?? null,
+        title: book?.title ?? '',
+      };
+    }
+    out.push(entry);
   }
   // Whoever is in the book right now first; then furthest along; a tie
   // goes to whoever was there most recently.
@@ -282,6 +317,38 @@ export function friendProgress(
       b.pct - a.pct ||
       Date.parse(b.updatedAt) - Date.parse(a.updatedAt),
   );
+}
+
+/**
+ * The language this person reads in, as a friend may know it: the language
+ * of most of what they have been reading lately - only while they share
+ * their progress, since it is learned from it - or else the language they
+ * chose for the app. Null when neither says. Used to hand them a book in
+ * the language they would open it in.
+ */
+export function readingLanguage(
+  ctx: AppContext,
+  userId: string,
+  viewerSeesHidden = false,
+): string | null {
+  if (sharesProgress(ctx, userId)) {
+    const rows = ctx.db
+      .prepare(
+        `SELECT b.language FROM progress_state p JOIN books b ON b.id = p.book_id
+          WHERE p.user_id = ? AND b.language IS NOT NULL AND ${visibleSql(viewerSeesHidden)}
+          ORDER BY p.updated_at DESC LIMIT 10`,
+      )
+      .all(userId) as { language: string }[];
+    const counts = new Map<string, number>();
+    for (const r of rows) {
+      const code = normaliseLanguage(r.language);
+      if (code) counts.set(code, (counts.get(code) ?? 0) + 1);
+    }
+    // Most read; a tie goes to the more recent, which Map order preserves.
+    const top = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
+    if (top) return top[0];
+  }
+  return normaliseLanguage(readPref(ctx, userId, 'locale')?.locale ?? null);
 }
 
 /** Requests waiting on this person's answer. */

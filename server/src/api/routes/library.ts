@@ -36,6 +36,7 @@ import { requireExport } from '../../auth/roles.js';
 import { seesHidden, setHidden, visiblePairSql, visibleSql } from '../../library/visibility.js';
 import { realResolveWithin } from '../../util/paths.js';
 import { zipStream, type ZipEntry } from '../../util/zip.js';
+import { translationTitles } from '../../translations/editions.js';
 
 /**
  * @param sees whether the person asking may see hidden books (see
@@ -606,6 +607,8 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
     const meta = JSON.parse(String(row.meta_json ?? '{}'));
     return {
       book: summary,
+      // The same book in other languages, as this reader may see them.
+      translations: translationTitles(ctx, req.user!.id, id, seesHidden(req)),
       description: meta.description ?? null,
       direction: meta.direction ?? 'ltr',
       totalChars: meta.totalChars ?? null,

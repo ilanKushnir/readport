@@ -49,6 +49,11 @@ import {
 import { alignWithCtc, AlignmentRefusedError } from '../alignment/ctc/engine.js';
 import { planFor } from '../alignment/ctc/sparse.js';
 import {
+  ensureMatches,
+  runTranslationAlign,
+  TRANSLATION_ALIGN_JOB,
+} from '../translations/store.js';
+import {
   enqueueJob,
   jobProgress,
   LeaseLostError,
@@ -77,6 +82,7 @@ export const JOB_HANDLERS: Record<string, JobHandler> = {
   'import-alignments': runImportAlignments,
   'export-alignments': runExportAlignments,
   [LANGUAGE_BACKFILL_JOB]: runLanguageBackfill,
+  [TRANSLATION_ALIGN_JOB]: runTranslationAlign,
 };
 
 /**
@@ -690,6 +696,9 @@ export async function runIndexEbook(
     // files (reference-safe GC; see sweepDerivedVersions).
     sweepDerivedVersions(root, rev);
     scheduleDerivedSweep(ctx, bookId);
+    // New text, so its paragraphs are matched again against the book's
+    // other languages; a book linked to nothing costs one lookup.
+    ensureMatches(db, bookId);
   } catch (err) {
     markBookError(ctx, guard, bookId, err);
     throw err;

@@ -19,6 +19,8 @@ import { loadManifest, loadSentences } from '../../epub/extract.js';
 import { languageCode } from '../../pairing/score.js';
 import { LANGUAGES, parseModelMissing } from '../../alignment/model.js';
 import { bookVisible, pairVisible, seesHidden, visiblePairSql } from '../../library/visibility.js';
+import { healTitleGroups } from '../../translations/groups.js';
+import { ensureMatches } from '../../translations/store.js';
 
 export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void {
   const { db } = ctx;
@@ -192,6 +194,14 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
     return { pair: pairDto(row) };
   });
 
+  const joinedTitle = (pairId: string) => {
+    const row = db.prepare('SELECT ebook_id FROM pairs WHERE id = ?').get(pairId) as
+      { ebook_id: string } | undefined;
+    if (!row) return;
+    healTitleGroups(db, row.ebook_id);
+    ensureMatches(db, row.ebook_id);
+  };
+
   const decide = (id: string, status: 'confirmed' | 'rejected', userId: string): boolean => {
     const res = db
       .prepare('UPDATE pairs SET status = ?, decided_at = ?, decided_by = ? WHERE id = ?')
@@ -199,6 +209,9 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
     // A pair that is confirmed lends each side the other's language; one
     // that is rejected takes that back.
     if (Number(res.changes) > 0) recomputePairLanguages(db, id);
+    // Two books now one title: if each was linked to other languages on its
+    // own, those are one work now too.
+    if (Number(res.changes) > 0 && status === 'confirmed') joinedTitle(id);
     return Number(res.changes) > 0;
   };
 
@@ -263,6 +276,7 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
       );
     }
     recomputePairLanguages(db, id);
+    joinedTitle(id);
     enqueueJob(db, 'align', { pairId: id }, { dedupeKey: `align:${id}` });
     const row = db.prepare('SELECT * FROM pairs WHERE id = ?').get(id) as Record<string, unknown>;
     return { pair: pairDto(row) };
