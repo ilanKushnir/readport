@@ -313,6 +313,19 @@
   font-variant-numeric: tabular-nums;
   flex: 1;
 }
+/* A figure is one thing: "sittings 84" never breaks between its word and
+   its number. On a phone the figures take a row of their own under the
+   label and the link, instead of being squeezed between them a word a
+   line. */
+.stats-strip__figures > span {
+  white-space: nowrap;
+}
+@media (max-width: 560px) {
+  .stats-strip__figures {
+    order: 3;
+    flex-basis: 100%;
+  }
+}
 .stats-strip__go {
   display: inline-flex;
   align-items: center;
