@@ -4,6 +4,15 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.22.1 - 2026-09-23
+
+### Fixed
+
+- **The read-along card lines up with the bar.** On an iPad, upright or on
+  its side, the card that opens over the bar was narrower than the bar and
+  held to its end, so it looked shifted off it. It is now exactly as wide
+  as the bar, edge over edge, still pointing at the Read along button.
+
 ## 0.22.0 - 2026-09-23
 
 ### Added

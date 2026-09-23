@@ -20,7 +20,7 @@ services:
     # ghcr.io/ilankushnir/readport (tags: the version, e.g. `0.13.0`, plus
     # `latest` on releases) but are built for linux/amd64 ONLY - on amd64 you
     # may replace the `build: .` line below with:
-    #   image: ghcr.io/ilankushnir/readport:0.22.0
+    #   image: ghcr.io/ilankushnir/readport:0.22.1
     # Pin the version rather than tracking `latest`, so an upgrade is a thing
     # you decide to do.
     build: .

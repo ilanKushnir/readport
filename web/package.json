@@ -1,6 +1,6 @@
 {
   "name": "@readport/web",
-  "version": "0.22.0",
+  "version": "0.22.1",
   "private": true,
   "license": "AGPL-3.0-or-later",
   "type": "module",
@@ -11,7 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@readport/shared": "^0.22.0",
+    "@readport/shared": "^0.22.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-router-dom": "7.18.3",
