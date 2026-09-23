@@ -410,6 +410,38 @@ try {
     );
   });
   await context.close();
+  {
+    // Auto-scroll moves the page when the voice reaches the next aligned
+    // chunk, and not while one is being read.
+    const { page, context } = await open('scroll');
+    await page.getByRole('button', { name: 'Read along', exact: true }).click();
+    const long = { ...cue(deep, 0), id: 'long', charEnd: deep + 600, endMs: 20000 };
+    const next = { ...cue(deep + 700, 20000), id: 'next', charEnd: deep + 900, endMs: 30000 };
+    await clock(page, [long, next], 500);
+    await page.getByRole('button', { name: 'Scroll with the voice', exact: true }).click();
+    await settleGlide(page);
+    await page.waitForTimeout(800);
+    const top = () => page.evaluate(() => document.querySelector('.reader-scroller').scrollTop);
+    await check('auto-scroll holds the page still while a chunk is read', async () => {
+      const before = await top();
+      for (const ms of [3000, 6000, 9000, 12000]) {
+        await clock(page, [long, next], ms);
+        await page.waitForTimeout(250);
+      }
+      assert.equal(Math.round(await top()), Math.round(before), 'the page moved inside one chunk');
+    });
+    await check('auto-scroll moves once when the voice reaches the next chunk', async () => {
+      const before = await top();
+      await clock(page, [long, next], 20500);
+      await page.waitForTimeout(900);
+      const after = await top();
+      assert(after > before + 5, `the page did not move on: ${before} -> ${after}`);
+      await clock(page, [long, next], 24000);
+      await page.waitForTimeout(400);
+      assert.equal(Math.round(await top()), Math.round(after), 'it kept moving inside the chunk');
+    });
+    await context.close();
+  }
   const reduced = await open('scroll', false, 'reduce');
   await reduced.page.getByRole('button', { name: 'Read along', exact: true }).click();
   await clock(reduced.page, [cue(deep)]);

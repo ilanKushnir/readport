@@ -60,9 +60,11 @@ import {
 import { NarrationBar, useNarration } from './Narration';
 import { cueForOffset, isConfident, nearestCue, paceOffset, type Cue } from './readalong';
 import {
-  autoScrollDelta,
+  AUTO_SCROLL_STEP_MS,
+  autoScrollTarget,
   markerPosition,
   canResumeAt,
+  glidePosition,
   GLIDE_MS,
   ScrollGlide,
   ScrollOwnership,
@@ -247,12 +249,10 @@ export function ReaderPage() {
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   /** The last time the reader was told a return could not be made. */
   const resumeRefusedAtRef = useRef(0);
-  /** Where the scroller should be so the marker sits on the anchor line. */
+  /** Where the scroller should rest, for the chunk being read (see autoScrollTarget). */
   const autoScrollTargetRef = useRef<number | null>(null);
-  /** Pixels per millisecond the narration is working down the page. */
-  const autoScrollSpeedRef = useRef(0);
-  /** When the target was last computed, for measuring that speed. */
-  const autoScrollAtRef = useRef<number | null>(null);
+  /** Which aligned chunk that resting place is for; a new one moves the page. */
+  const autoScrollChunkRef = useRef<string | null>(null);
 
   /**
    * This chapter would not divide into pages, so it scrolls instead.
@@ -369,8 +369,7 @@ export function ReaderPage() {
       return false;
     });
     autoScrollTargetRef.current = null;
-    autoScrollSpeedRef.current = 0;
-    autoScrollAtRef.current = null;
+    autoScrollChunkRef.current = null;
   }, []);
   /**
    * Move a scrolling box so a line comes into view: eased, so the eye can
@@ -1736,8 +1735,7 @@ export function ReaderPage() {
       currentOffsetRef.current = cue.charStart;
       setLiveOffset(cue.charStart);
       autoScrollTargetRef.current = null;
-      autoScrollSpeedRef.current = 0;
-      autoScrollAtRef.current = null;
+      autoScrollChunkRef.current = null;
       followingRef.current = true;
       cueLeftSinceTakeoverRef.current = true;
       setFollowing(true);
@@ -2047,44 +2045,38 @@ export function ReaderPage() {
     paceLeftRef.current = position?.left ?? null;
     setPaceJump(jumped);
 
-    // Auto-scrolling: the marker is nailed to the anchor line and the text is
-    // moved to meet it. Its position is therefore a constant, and what varies
-    // is where the page has to be.
+    // Auto-scrolling: the page holds still while an aligned chunk is read and
+    // moves once when the voice reaches the next (see autoScrollTarget). No
+    // marker is drawn - the page itself is the pointer.
     if (nailed) {
       const scroller = scrollBox();
-      setPace(
-        position && scroller
-          ? {
-              ...position,
-              top: b.top - origin.top + scroller.clientHeight * AUTO_SCROLL_ANCHOR,
-              nailed: true,
-            }
-          : null,
-      );
+      setPace(position ? { ...position, nailed: true } : null);
       if (scroller) {
-        const next =
-          scroller.scrollTop +
-          (r.top - b.top) +
-          r.height / 2 -
-          scroller.clientHeight * AUTO_SCROLL_ANCHOR;
-        // How fast the narration is moving down the page, from the distance
-        // between two targets. Smoothed, because the estimate jitters and a
-        // jittering speed is exactly the stutter this replaces.
-        const prev = autoScrollTargetRef.current;
-        const at = performance.now();
-        if (prev !== null && autoScrollAtRef.current !== null) {
-          const dt = at - autoScrollAtRef.current;
-          if (dt > 80 && dt < 4000) {
-            const observed = Math.max(0, (next - prev) / dt);
-            autoScrollSpeedRef.current = autoScrollSpeedRef.current * 0.7 + observed * 0.3;
-          }
+        // Content coordinates: where a line would be with the page at the top.
+        const toContent = (y: number) => scroller.scrollTop + (y - b.top);
+        const chunkRect = cue
+          ? (rangeForSpan(map, cue.charStart, cue.charStart + 1)?.getClientRects()[0] ?? null)
+          : null;
+        // Between aligned chunks the voice is its own chunk, moved only when
+        // it nears the foot of the screen.
+        const chunk = cue ? cue.id : 'between';
+        if (chunk !== autoScrollChunkRef.current) {
+          autoScrollChunkRef.current = chunk;
+          autoScrollTargetRef.current = null;
         }
-        autoScrollAtRef.current = at;
-        autoScrollTargetRef.current = next;
+        autoScrollTargetRef.current = autoScrollTarget({
+          held: autoScrollTargetRef.current,
+          chunkTop: toContent(chunkRect ? chunkRect.top : r.top),
+          voiceTop: toContent(r.top),
+          voiceBottom: toContent(r.bottom),
+          clientHeight: scroller.clientHeight,
+          anchor: AUTO_SCROLL_ANCHOR,
+        });
       }
       return;
     }
     autoScrollTargetRef.current = null;
+    autoScrollChunkRef.current = null;
 
     // Off the current page or scrolled out of view: nothing to point at.
     setPace(position);
@@ -2149,18 +2141,13 @@ export function ReaderPage() {
   }, [narration.seekNonce, readAlong]);
 
   /**
-   * Auto-scroll: the marker holds still and the text moves under it.
+   * Auto-scroll: the page moves when the voice moves on to the next aligned
+   * chunk, and holds still while one is read.
    *
-   * The first version did the opposite - the marker drifted down and the page
-   * jumped to catch it every so often, which is two things moving and neither
-   * of them smoothly. Pinned, it becomes what it should be: a fixed line to
-   * read at, with the book flowing past it.
-   *
-   * Eased every frame rather than scrolled in steps. `scrollBy` with smooth
-   * behaviour restarts its own animation on each call, so successive nudges
-   * fight each other and the page stutters; a small fraction of the remaining
-   * distance per frame is continuous and self-correcting, speeding up when
-   * the voice gets ahead and settling when it is level.
+   * It used to drift continuously at the narrator's pace, which kept the
+   * line being read sliding under the eye the whole time. Now each chunk is
+   * read on a still page, and the move to the next is one eased glide that
+   * brings its first line to the reading line (see autoScrollTarget).
    *
    * Scrolling mode only: in paginated mode the page already turns itself.
    */
@@ -2169,39 +2156,37 @@ export function ReaderPage() {
     if (prefs.mode === 'paginated' && !paginationFailed) return;
     const scroller = prefs.mode === 'paginated' ? pagesRef.current : scrollerRef.current;
     if (!scroller) return;
-    autoScrollSpeedRef.current = 0;
-    autoScrollAtRef.current = null;
     let raf = 0;
-    let last = performance.now();
-    const step = (now: number) => {
+    /** The glide under way, or the last one, which the page now rests at. */
+    let step: { from: number; to: number; start: number } | null = null;
+    const frame = (now: number) => {
       if (!followingRef.current) return;
       if (!scrollOwnership.current.matches(scroller)) {
         detachFollowing();
         return;
       }
-      raf = requestAnimationFrame(step);
-      const dt = Math.min(64, now - last); // a backgrounded tab must not lurch
-      last = now;
+      raf = requestAnimationFrame(frame);
       // A relocation glide owns the page until it lands.
       if (glideRef.current.active) return;
       const want = autoScrollTargetRef.current;
       if (want === null) return;
-
-      // Move at a steady speed, not by easing to each new target.
-      //
-      // Easing decelerates as it arrives, so with a target that only updates
-      // a few times a second the page rushed, stopped, rushed, stopped - one
-      // lurch per line. `autoScrollSpeedRef` is how fast the narration is
-      // actually working through the page, measured between targets, so the
-      // text drifts up at the pace it is being read.
-      const speed = autoScrollSpeedRef.current; // px per ms
+      if (!step || Math.abs(step.to - want) > 1) {
+        // Somewhere new to be: one glide there, from wherever the page is.
+        if (Math.abs(scroller.scrollTop - want) <= 1) {
+          step = { from: want, to: want, start: now - AUTO_SCROLL_STEP_MS };
+          return;
+        }
+        step = { from: scroller.scrollTop, to: want, start: now };
+      }
+      const elapsed = now - step.start;
+      // Arrived: nothing to write until the voice moves on.
+      if (elapsed > AUTO_SCROLL_STEP_MS + 32) return;
       scrollOwnership.current.write(
         scroller,
-        scroller.scrollTop +
-          autoScrollDelta(scroller.scrollTop, want, speed, dt, followingRef.current, reduceMotion),
+        glidePosition(step.from, step.to, elapsed, AUTO_SCROLL_STEP_MS),
       );
     };
-    raf = requestAnimationFrame(step);
+    raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
   }, [
     autoScroll,

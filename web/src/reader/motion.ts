@@ -61,27 +61,60 @@ export function markerPosition(
 }
 
 /**
- * One bounded frame of continuous following; never run during takeover.
+ * Where auto-scroll wants the page: it moves only when the voice moves on.
  *
- * Signed: the page glides up to meet the marker and, after a rewind or a
- * relocation that landed the line below the anchor, glides back down. It
- * used to move only one way, so any relocation left the text sitting a
- * viewport's fraction below the marker until the voice had read that far.
+ * The page used to drift up at the narrator's pace, a pixel a frame, so the
+ * line being read was always sliding under the eye. Now it holds still
+ * while an aligned chunk is read and moves once, in one short glide, when
+ * the voice reaches the next: the new chunk's first line comes to the
+ * reading line, `anchor` of the way down. A chunk too long to read from
+ * there - the voice would run off the foot of the screen - moves again the
+ * same way when the voice nears the foot, and a voice that is somehow above
+ * the screen (a seek inside a long chunk) is brought back to the line too.
+ *
+ * Every position is in the scroller's content coordinates, the units of
+ * `scrollTop`.
+ *
+ * @param held where the page has been held for this chunk, or null when the
+ *   chunk has just begun.
  */
-export function autoScrollDelta(
-  current: number,
-  target: number,
-  speed: number,
-  elapsed: number,
-  enabled: boolean,
-  reducedMotion: boolean,
-): number {
-  if (!enabled || reducedMotion) return 0;
-  const dt = Math.max(0, Math.min(64, elapsed));
-  const drift = target - current;
-  const cap = Math.min(speed * dt + (Math.abs(drift) * dt) / 3000, dt * 0.22, Math.abs(drift));
-  return drift < 0 ? -cap : cap;
+export function autoScrollTarget({
+  held,
+  chunkTop,
+  voiceTop,
+  voiceBottom,
+  clientHeight,
+  anchor,
+  foot = AUTO_SCROLL_FOOT,
+}: {
+  held: number | null;
+  chunkTop: number;
+  voiceTop: number;
+  voiceBottom: number;
+  clientHeight: number;
+  anchor: number;
+  foot?: number;
+}): number {
+  const toLine = (y: number) => Math.max(0, y - clientHeight * anchor);
+  if (held === null) {
+    // A chunk that starts far above where the voice already is (a long one,
+    // picked up half way) is placed by the voice, or the voice would open
+    // below the screen.
+    const at = toLine(chunkTop);
+    return voiceBottom - at > clientHeight * foot ? toLine(voiceTop) : at;
+  }
+  if (voiceBottom - held > clientHeight * foot || voiceTop - held < 0) return toLine(voiceTop);
+  return held;
 }
+
+/** How far down the screen the voice may read before the page moves anyway. */
+export const AUTO_SCROLL_FOOT = 0.82;
+
+/**
+ * How long one auto-scroll step takes: longer than a relocation, because it
+ * happens while somebody is reading and the eye has to be able to ride it.
+ */
+export const AUTO_SCROLL_STEP_MS = 650;
 
 /**
  * How long a relocation glide takes.

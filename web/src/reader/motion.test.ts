@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { autoScrollDelta, markerPosition } from './motion';
+import { autoScrollTarget, markerPosition } from './motion';
 
 const box = { left: 100, right: 1100, top: 50, bottom: 800 };
 const layout = { columns: 2 as const, pad: 24, columnGap: 48 };
@@ -21,31 +21,37 @@ describe('marker geometry', () => {
   });
 });
 
-describe('continuous scroll step', () => {
-  it('does not move after takeover or under reduced motion', () => {
-    expect(autoScrollDelta(0, 1000, 0.1, 16, false, false)).toBe(0);
-    expect(autoScrollDelta(0, 1000, 0.1, 16, true, true)).toBe(0);
+describe('auto-scroll, a chunk at a time', () => {
+  const base = { clientHeight: 1000, anchor: 0.3 };
+  it('brings a new chunk to the reading line', () => {
+    expect(
+      autoScrollTarget({ ...base, held: null, chunkTop: 2000, voiceTop: 2000, voiceBottom: 2030 }),
+    ).toBe(1700);
   });
-  it('caps catch-up and background-frame movement, and glides back when the line is above', () => {
-    expect(autoScrollDelta(0, 10000, 1, 16, true, false)).toBeCloseTo(3.52);
-    expect(autoScrollDelta(0, 10000, 1, 10000, true, false)).toBeCloseTo(14.08);
-    // Nothing measured yet (speed 0): the drift term alone moves it, gently.
-    expect(autoScrollDelta(100, 0, 0, 16, true, false)).toBeCloseTo(-(100 * 16) / 3000);
+  it('holds still while the chunk is read', () => {
+    expect(
+      autoScrollTarget({ ...base, held: 1700, chunkTop: 2000, voiceTop: 2300, voiceBottom: 2330 }),
+    ).toBe(1700);
   });
-  it('does not overshoot a stationary target', () => {
-    expect(autoScrollDelta(99, 100, 0.2, 16, true, false)).toBe(1);
+  it('moves again in a chunk too long to read from the line, when the voice nears the foot', () => {
+    expect(
+      autoScrollTarget({ ...base, held: 1700, chunkTop: 2000, voiceTop: 2600, voiceBottom: 2630 }),
+    ).toBe(2300);
   });
-});
-
-describe('autoScrollDelta direction', () => {
-  it('glides back up when the target is above the current position', () => {
-    const d = autoScrollDelta(1000, 800, 0.1, 16, true, false);
-    expect(d).toBeLessThan(0);
-    expect(Math.abs(d)).toBeLessThanOrEqual(16 * 0.22);
+  it('places a long chunk picked up half way by the voice, not by its first line', () => {
+    expect(
+      autoScrollTarget({ ...base, held: null, chunkTop: 2000, voiceTop: 3500, voiceBottom: 3530 }),
+    ).toBe(3200);
   });
-  it('never overshoots the target in either direction', () => {
-    expect(autoScrollDelta(1000, 1002, 5, 16, true, false)).toBe(2);
-    expect(autoScrollDelta(1000, 998, 5, 16, true, false)).toBe(-2);
+  it('brings back a voice that is above the screen', () => {
+    expect(
+      autoScrollTarget({ ...base, held: 1700, chunkTop: 1000, voiceTop: 1500, voiceBottom: 1530 }),
+    ).toBe(1200);
+  });
+  it('never asks for a place above the top of the book', () => {
+    expect(
+      autoScrollTarget({ ...base, held: null, chunkTop: 40, voiceTop: 40, voiceBottom: 70 }),
+    ).toBe(0);
   });
 });
 
