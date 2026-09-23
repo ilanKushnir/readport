@@ -4,7 +4,9 @@ import { type AppContext } from '../context.js';
 import { resolveSession, type SessionUser } from '../auth/sessions.js';
 import { buildSourceList, proxyAuthUser } from '../auth/proxyAuth.js';
 import { bearerToken, resolveApiKey } from '../auth/apikeys.js';
-import { AGENT_SCOPE, agentRoute } from './agent-contract.js';
+import { AGENT_BASE, AGENT_SCOPE, agentRoute } from './agent-contract.js';
+import { type DB } from '../db/index.js';
+import { pairVisible, seesHidden } from '../library/visibility.js';
 
 export { SESSION_COOKIE, sessionCookieOpts } from '../auth/cookie.js';
 import { SESSION_COOKIE, sessionCookieOpts } from '../auth/cookie.js';
@@ -112,6 +114,38 @@ export function requireUser(req: FastifyRequest, reply: FastifyReply): boolean {
     return false;
   }
   return true;
+}
+
+/**
+ * Whether this request names a book, or a pair, that its sender may not
+ * see - see library/visibility.ts. Asked once, for every route, before any
+ * handler runs: a route written next year that takes a book id is covered
+ * without remembering to be, and the answer is the 404 an unknown id gets.
+ *
+ * Books are named as `/api/books/:id…` (and the agent API's
+ * `…/books/:id…`) or as a `:bookId` further along a path; pairs as
+ * `/api/pairs/:id…`. Bodies that carry ids are the routes' own business.
+ */
+export function namesHiddenBook(db: DB, req: FastifyRequest): boolean {
+  const sees = seesHidden(req);
+  if (sees) return false;
+  const route = req.routeOptions?.url ?? '';
+  const params = (req.params ?? {}) as Record<string, string | undefined>;
+  const bookId =
+    route.startsWith('/api/books/:id') || route.startsWith(`${AGENT_BASE}/books/:id`)
+      ? params.id
+      : route.includes(':bookId')
+        ? params.bookId
+        : undefined;
+  if (bookId !== undefined) {
+    const row = db.prepare('SELECT hidden_at FROM books WHERE id = ?').get(bookId) as
+      { hidden_at: string | null } | undefined;
+    return row !== undefined && row.hidden_at !== null;
+  }
+  if (route.startsWith('/api/pairs/:id') && params.id !== undefined) {
+    return !pairVisible(db, params.id, sees);
+  }
+  return false;
 }
 
 /** Missing grants, unknown routes and every non-GET fail closed. */

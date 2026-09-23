@@ -686,4 +686,19 @@ DELETE FROM reading_sessions
  WHERE started_at >= strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-29 days');
 `,
   },
+  {
+    version: 22,
+    sql: `
+-- Hidden books. An admin can take a book off everyone else's shelves without
+-- taking it off the server: hidden, it is on no list, in no count and behind
+-- no link for anybody but an admin (see library/visibility.ts). Nothing a
+-- reader attached to it - progress, notes, shelves, the reading list - is
+-- touched, so all of it is there again the day the book is shown again.
+--
+-- Null is shown. The time is when it was hidden, and the admin who did it,
+-- so a household with two admins can tell whose decision it was.
+ALTER TABLE books ADD COLUMN hidden_at TEXT;
+ALTER TABLE books ADD COLUMN hidden_by TEXT REFERENCES users(id) ON DELETE SET NULL;
+`,
+  },
 ];

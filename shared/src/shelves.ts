@@ -77,6 +77,11 @@ export const shelvesOverviewSchema = z.object({
     nextBookId: z.string().nullable(),
     nextTitle: z.string().nullable(),
   }),
+  /**
+   * How many titles an admin has hidden from everybody else, for the
+   * admin's own Hidden shelf. Sent to admins only; nobody else has one.
+   */
+  hidden: z.number().int().optional(),
 });
 export type ShelvesOverview = z.infer<typeof shelvesOverviewSchema>;
 

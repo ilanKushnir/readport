@@ -20,12 +20,26 @@ export interface FacetScope {
   from: string;
   where: string;
   args: unknown[];
+  /** The library as a whole rather than a narrowed view of it. */
+  whole?: boolean;
 }
 export const WHOLE_LIBRARY: FacetScope = {
   from: 'books b',
   where: "b.scan_state != 'missing'",
   args: [],
+  whole: true,
 };
+
+/**
+ * The whole library as one person may see it: without the hidden books,
+ * unless an admin is asking (see visibility.ts). A genre only a hidden book
+ * carries is not a genre anybody else's sidebar should offer.
+ */
+export function wholeLibrary(seesHidden: boolean): FacetScope {
+  return seesHidden
+    ? WHOLE_LIBRARY
+    : { ...WHOLE_LIBRARY, where: `${WHOLE_LIBRARY.where} AND b.hidden_at IS NULL` };
+}
 
 /**
  * Reading the library's own metadata back out as ways to browse it.
@@ -139,7 +153,7 @@ export function facetGroups(
   // library, not about a search: under a narrowed scope one matching value
   // is exactly the answer, and the client keeps the library's own group
   // list and lays these counts over it.
-  const minValues = scope === WHOLE_LIBRARY ? MIN_FACET_VALUES : 1;
+  const minValues = scope.whole ? MIN_FACET_VALUES : 1;
 
   // Author, series and language: straight off the books table, so the counts
   // agree with the library listing by construction.

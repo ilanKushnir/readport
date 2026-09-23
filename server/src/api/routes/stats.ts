@@ -1,6 +1,7 @@
 import { type FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { type AppContext } from '../../context.js';
+import { seesHidden, visibleSql } from '../../library/visibility.js';
 
 /**
  * Reading statistics: the caller's own sittings and the books they name.
@@ -170,14 +171,17 @@ export function registerStatsRoutes(app: FastifyInstance, ctx: AppContext): void
     // entry with whatever is known: a session is a record of having read,
     // and the file going away takes nothing from it. `totalChars` is what
     // indexing wrote beside the book - the same figure the reader's manifest
-    // is built on - and null until the book has been indexed.
+    // is built on - and null until the book has been indexed. A hidden book
+    // is looked up the same way as one that left: the time spent in it is
+    // the reader's own and stays in their totals, but its name is not
+    // theirs to be shown while it is hidden.
     const bookStmt = db.prepare(
       `SELECT b.title, b.author, b.kind, b.duration_ms,
               CASE WHEN json_valid(b.meta_json) THEN json_extract(b.meta_json, '$.totalChars') END
                 AS total_chars,
               p.locator_json, p.finished, p.updated_at
          FROM (SELECT ? AS id) x
-         LEFT JOIN books b ON b.id = x.id
+         LEFT JOIN books b ON b.id = x.id AND ${visibleSql(seesHidden(req))}
          LEFT JOIN progress_state p ON p.book_id = x.id AND p.user_id = ?`,
     );
     const lastReadStmt = db.prepare(

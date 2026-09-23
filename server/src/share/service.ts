@@ -58,12 +58,14 @@ const SHARE_SELECT = `
     FROM book_shares s
     JOIN books b ON b.id = s.book_id
     JOIN users u ON u.id = s.created_by
-   WHERE s.token = ? AND s.revoked_at IS NULL`;
+   WHERE s.token = ? AND s.revoked_at IS NULL AND b.hidden_at IS NULL`;
 
 /**
  * The share a token stands for, or null: unknown, revoked, a book that has
- * since left the library, or a sharer whose account has been disabled - a
- * disabled account should not keep a door open.
+ * since left the library, a book an admin has hidden (whoever is asking - a
+ * link is opened by people who are not signed in at all), or a sharer whose
+ * account has been disabled - a disabled account should not keep a door
+ * open. A hidden book's links come back to life if it is shown again.
  */
 export function activeShare(db: DB, token: string): ActiveShare | null {
   if (!SHARE_TOKEN_RE.test(token)) return null;

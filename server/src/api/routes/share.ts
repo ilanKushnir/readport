@@ -99,8 +99,13 @@ export function registerShareRoutes(
    */
   app.post('/api/books/:id/share', async (req, reply) => {
     const { id } = req.params as { id: string };
-    const book = db.prepare("SELECT 1 FROM books WHERE id = ? AND scan_state != 'missing'").get(id);
+    const book = db
+      .prepare("SELECT hidden_at FROM books WHERE id = ? AND scan_state != 'missing'")
+      .get(id) as { hidden_at: string | null } | undefined;
     if (!book) return reply.code(404).send({ error: 'not-found' });
+    // Only an admin gets this far with a hidden book, and a link to it
+    // would open on nothing for everybody else: none is made.
+    if (book.hidden_at !== null) return reply.code(409).send({ error: 'hidden' });
     const token = getOrCreateShare(db, id, req.user!.id);
     const share = activeShare(db, token);
     if (!share) return reply.code(404).send({ error: 'not-found' });

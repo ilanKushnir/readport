@@ -3,6 +3,7 @@ import { createAnnotationSchema, type Annotation } from '@readport/shared';
 import { type AppContext } from '../../context.js';
 import { newId } from '../../util/ids.js';
 import { nowIso } from '../../db/index.js';
+import { seesHidden, visibleSql } from '../../library/visibility.js';
 
 function rowToAnnotation(r: Record<string, unknown>): Annotation {
   return {
@@ -39,7 +40,7 @@ export function registerAnnotationRoutes(app: FastifyInstance, ctx: AppContext):
         `SELECT a.*, b.title AS book_title, b.author AS book_author, b.kind AS book_kind,
                 b.cover_path AS book_cover_path
            FROM annotations a JOIN books b ON b.id = a.book_id
-          WHERE a.user_id = ? AND a.deleted_at IS NULL
+          WHERE a.user_id = ? AND a.deleted_at IS NULL AND ${visibleSql(seesHidden(req))}
             AND (? IS NULL OR a.kind = ?)
             AND (? = '' OR a.note LIKE '%' || ? || '%' OR a.selected_text LIKE '%' || ? || '%'
                  OR b.title LIKE '%' || ? || '%')

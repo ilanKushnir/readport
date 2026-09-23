@@ -12,6 +12,7 @@ import {
   type FacetScope,
   bookIdsWithFacet,
   facetGroups,
+  wholeLibrary,
   foldFacet,
   languageListWhere,
   matchesLanguage,
@@ -32,19 +33,31 @@ import {
   isReadingNow,
 } from '../../progress/service.js';
 import { requireExport } from '../../auth/roles.js';
+import { seesHidden, setHidden, visiblePairSql, visibleSql } from '../../library/visibility.js';
 import { realResolveWithin } from '../../util/paths.js';
 
+/**
+ * @param sees whether the person asking may see hidden books (see
+ *   library/visibility.ts). Off unless a caller says otherwise: a pair with a
+ *   hidden edition is then no pair at all, and the book stands on its own -
+ *   the safe way round, since forgetting to pass it costs an admin a card
+ *   label and never shows a reader the hidden half.
+ */
 export function bookRowToSummary(
   ctx: AppContext,
   userId: string,
   row: Record<string, unknown>,
+  sees = false,
 ): BookSummary {
   const { db } = ctx;
   const id = String(row.id);
   const pairRow = db
     .prepare(
-      `SELECT * FROM pairs WHERE (ebook_id = ? OR audio_id = ?) AND status IN ('auto','confirmed','candidate')
-       ORDER BY CASE status WHEN 'confirmed' THEN 0 WHEN 'auto' THEN 1 ELSE 2 END, score DESC LIMIT 1`,
+      `SELECT p.* FROM pairs p
+        WHERE (p.ebook_id = ? OR p.audio_id = ?) AND p.status IN ('auto','confirmed','candidate')
+          AND ${visiblePairSql(sees, 'p')}
+        ORDER BY CASE p.status WHEN 'confirmed' THEN 0 WHEN 'auto' THEN 1 ELSE 2 END, p.score DESC
+        LIMIT 1`,
     )
     .get(id, id) as Record<string, unknown> | undefined;
   let pair: BookSummary['pair'] = null;
@@ -82,6 +95,20 @@ export function bookRowToSummary(
     };
   }
   const state = getProgressState(db, userId, id);
+  // Who hid it, by the name they go by now. Only an admin is ever handed a
+  // hidden book, so only an admin ever reads this.
+  const hidden = row.hidden_at
+    ? {
+        at: String(row.hidden_at),
+        by: row.hidden_by
+          ? ((
+              db
+                .prepare('SELECT COALESCE(display_name, username) AS name FROM users WHERE id = ?')
+                .get(String(row.hidden_by)) as { name: string } | undefined
+            )?.name ?? null)
+          : null,
+      }
+    : null;
   return {
     id,
     kind: String(row.kind) as BookSummary['kind'],
@@ -98,6 +125,7 @@ export function bookRowToSummary(
     sizeBytes: Number(row.size_bytes ?? 0),
     hasCover: Boolean(row.cover_path) && fs.existsSync(String(row.cover_path)),
     addedAt: String(row.added_at),
+    hidden,
     pair,
     progress: state
       ? {
@@ -181,6 +209,8 @@ const libraryQuerySchema = z.object({
       'finished',
       'both-formats',
       'recently-added',
+      // What an admin has hidden from everybody else. Nobody else has any.
+      'hidden',
     ])
     .optional(),
   sort: z.enum(['title', 'author', 'recent', 'added']).optional(),
@@ -227,6 +257,7 @@ function progressShelf(
 function narrowing(
   q: z.infer<typeof libraryQuerySchema>,
   userId: string,
+  sees: boolean,
 ): { from: string; where: string[]; args: unknown[]; progressWhere: string | null } {
   const progressWhere =
     q.filter === 'in-progress' || q.filter === 'reading-now'
@@ -243,6 +274,10 @@ function narrowing(
   } else {
     where.push("b.scan_state != 'missing'");
   }
+  // Hidden books, for everyone who may not see them: gone from every view,
+  // count and shelf that is built from here.
+  where.push(visibleSql(sees));
+  if (q.filter === 'hidden') where.push(sees ? 'b.hidden_at IS NOT NULL' : '0');
   // Books that are not already half of a settled pair: what the manual
   // linker is allowed to offer. In SQL, with the rest of the narrowing,
   // because a library where most titles are owned twice would otherwise
@@ -256,7 +291,7 @@ function narrowing(
   if (q.filter === 'unpaired') {
     where.push(
       `NOT EXISTS (SELECT 1 FROM pairs pr WHERE pr.status IN ('auto','confirmed')
-         AND (pr.ebook_id = b.id OR pr.audio_id = b.id))`,
+         AND (pr.ebook_id = b.id OR pr.audio_id = b.id) AND ${visiblePairSql(sees, 'pr')})`,
     );
   }
   if (q.kind === 'ebook' || q.kind === 'audio') {
@@ -300,6 +335,7 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
     if (!parsedQuery.success) return reply.code(400).send({ error: 'bad-query' });
     const q = parsedQuery.data;
     const userId = req.user!.id;
+    const sees = seesHidden(req);
     // Narrowed in SQL, not afterwards. Building a summary costs several
     // queries and a stat() per book, so a search that matches three titles in
     // a library of a thousand used to pay for all thousand before discarding
@@ -308,13 +344,13 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
     // The progress shelves narrow the same way, through the one predicate the
     // sidebar counts with: Reading Now used to materialise the whole library
     // and keep three rows of it, every 2.5 seconds while a scan ran.
-    const { from, where, args } = narrowing(q, userId);
+    const { from, where, args } = narrowing(q, userId, sees);
     const rows = db
       .prepare(
         `SELECT b.* FROM ${from} WHERE ${where.join(' AND ')} ORDER BY b.title COLLATE NOCASE`,
       )
       .all(...(args as never[])) as Record<string, unknown>[];
-    let books = rows.map((r) => bookRowToSummary(ctx, userId, r));
+    let books = rows.map((r) => bookRowToSummary(ctx, userId, r, sees));
     if (q.filter === 'paired') books = books.filter((b) => b.pair && b.pair.status !== 'candidate');
     // The SQL already narrowed these; this only drops a row whose stored
     // state could not be parsed, which the summary reports as no progress.
@@ -368,7 +404,11 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
       //    format. A question about editions deserves an answer about
       //    editions, so no collapse there, same as the open shelf.
       books = onePerPair(books, { prefer: 'touched' });
-    } else if (q.kind === undefined && q.filter === undefined && q.collapse !== 'none') {
+    } else if (
+      q.kind === undefined &&
+      (q.filter === undefined || q.filter === 'hidden') &&
+      q.collapse !== 'none'
+    ) {
       // The open shelf (and the facet views, which are the same shelf
       // narrowed by author or series). Here the ebook is the better survivor:
       // it has the cover, the fuller title and the page count, and nothing on
@@ -428,10 +468,11 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
                 // takes two rows here and leaves one - so the band still fills
                 // for a reader who owns most of their library twice.
                 `SELECT b.* FROM progress_state p JOIN books b ON b.id = p.book_id
-                 WHERE ${READING_NOW_WHERE} ORDER BY p.updated_at DESC LIMIT ${CONTINUE_RAIL * 2}`,
+                 WHERE ${READING_NOW_WHERE} AND ${visibleSql(sees)}
+                 ORDER BY p.updated_at DESC LIMIT ${CONTINUE_RAIL * 2}`,
               )
               .all(userId) as Record<string, unknown>[]
-          ).map((r) => bookRowToSummary(ctx, userId, r)),
+          ).map((r) => bookRowToSummary(ctx, userId, r, sees)),
           // Already in most-recent-first order, so the survivor of a pair is
           // the edition in front - the one being read now, not the one that
           // was read last month.
@@ -471,17 +512,18 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
     const parsed = facetQuerySchema.safeParse(req.query ?? {});
     if (!parsed.success) return reply.code(400).send({ error: 'bad-query' });
     const q = parsed.data;
+    const sees = seesHidden(req);
     // Nothing to narrow by is the whole library, and the whole library keeps
     // its rule that a grouping with one value is not a way to browse.
     if (q.ids === undefined && !q.query && !q.kind && !q.filter && !q.lang) {
-      return { groups: facetGroups(db) };
+      return { groups: facetGroups(db, wholeLibrary(sees)) };
     }
     // Two scopes: the view as narrowed, and the same view before the
     // language chips narrowed it, which is what the languages are counted
     // over - a chip's count says what tapping it would show, not zero
     // because it is not tapped yet.
     const scopeOf = (query: typeof q): FacetScope => {
-      const { from, where, args } = narrowing(query, req.user!.id);
+      const { from, where, args } = narrowing(query, req.user!.id, sees);
       if (q.ids !== undefined) {
         const ids = q.ids
           .split(',')
@@ -515,7 +557,26 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
     if (!row) return reply.code(404).send({ error: 'not-found' });
     setBookLanguageOverride(db, id, code);
     const after = db.prepare('SELECT * FROM books WHERE id = ?').get(id) as Record<string, unknown>;
-    return { book: bookRowToSummary(ctx, req.user!.id, after) };
+    return { book: bookRowToSummary(ctx, req.user!.id, after, seesHidden(req)) };
+  });
+
+  /**
+   * Hide a book from everyone but the admins, or show it again. Both
+   * editions of a title owned twice go together (see library/visibility.ts),
+   * and the answer names every book that changed so the client can update
+   * the cards it holds without asking again.
+   */
+  app.post('/api/books/:id/hidden', async (req, reply) => {
+    if (!requireRole(req, reply, 'admin')) return reply;
+    const { id } = req.params as { id: string };
+    const parsed = z.object({ hidden: z.boolean() }).strict().safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: 'invalid' });
+    if (!db.prepare('SELECT 1 FROM books WHERE id = ?').get(id)) {
+      return reply.code(404).send({ error: 'not-found' });
+    }
+    const ids = setHidden(db, id, parsed.data.hidden, req.user!.id);
+    const after = db.prepare('SELECT * FROM books WHERE id = ?').get(id) as Record<string, unknown>;
+    return { book: bookRowToSummary(ctx, req.user!.id, after, true), ids };
   });
 
   app.post('/api/library/rescan', async (req, reply) => {
@@ -534,7 +595,7 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
     const row = db.prepare('SELECT * FROM books WHERE id = ?').get(id) as
       Record<string, unknown> | undefined;
     if (!row) return reply.code(404).send({ error: 'not-found' });
-    const summary = bookRowToSummary(ctx, req.user!.id, row);
+    const summary = bookRowToSummary(ctx, req.user!.id, row, seesHidden(req));
     const chapters = db
       .prepare('SELECT * FROM chapters WHERE book_id = ? ORDER BY idx')
       .all(id) as Record<string, unknown>[];

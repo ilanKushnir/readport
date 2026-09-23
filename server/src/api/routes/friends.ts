@@ -4,6 +4,7 @@ import { type AppContext } from '../../context.js';
 import { nowIso } from '../../db/index.js';
 import { newId } from '../../util/ids.js';
 import { bookRowToSummary } from './library.js';
+import { bookVisible, seesHidden, visibleSql } from '../../library/visibility.js';
 import { RECOMMENDATION_NOTE_MAX } from '../../friends/prefs.js';
 import {
   acceptedFriends,
@@ -40,8 +41,7 @@ export function registerFriendRoutes(app: FastifyInstance, ctx: AppContext): voi
       .prepare("SELECT id, username, display_name FROM users WHERE id = ? AND status = 'active'")
       .get(id) as { id: string; username: string; display_name: string | null } | undefined;
 
-  const bookExists = (bookId: string): boolean =>
-    db.prepare('SELECT 1 FROM books WHERE id = ?').get(bookId) !== undefined;
+  const bookExists = (bookId: string, sees: boolean): boolean => bookVisible(db, bookId, sees);
 
   /* ---------------------------------------------------------------- lists */
 
@@ -65,7 +65,7 @@ export function registerFriendRoutes(app: FastifyInstance, ctx: AppContext): voi
         since: r.responded_at ?? r.created_at,
         colour: colours.get(person.userId)!,
         sharesProgress: shares,
-        reading: shares ? currentlyReading(db, person.userId) : null,
+        reading: shares ? currentlyReading(db, person.userId, seesHidden(req)) : null,
       };
     });
     const pending = (mine: boolean) =>
@@ -190,7 +190,7 @@ export function registerFriendRoutes(app: FastifyInstance, ctx: AppContext): voi
     if (!q.success) return reply.code(400).send({ error: 'bad-query' });
     const me = req.user!.id;
     return {
-      friends: friendProgress(ctx, me, q.data.bookId),
+      friends: friendProgress(ctx, me, q.data.bookId, seesHidden(req)),
       friendCount: acceptedFriends(db, me).length,
     };
   });
@@ -215,7 +215,9 @@ export function registerFriendRoutes(app: FastifyInstance, ctx: AppContext): voi
     // Only to a friend. A request that was never answered is not consent to
     // be sent things.
     if (!areFriends(db, me, toUserId)) return reply.code(403).send({ error: 'not-friends' });
-    if (!bookExists(bookId)) return reply.code(404).send({ error: 'not-found' });
+    if (!bookExists(bookId, seesHidden(req))) return reply.code(404).send({ error: 'not-found' });
+    // A hidden book is not one to hand to somebody: they could not open it.
+    if (!bookVisible(db, bookId, false)) return reply.code(409).send({ error: 'hidden' });
     // Once, until they have dealt with it: the same book from the same
     // person twice is a nudge, and the inbox is not for nudging.
     const open = db
@@ -242,6 +244,7 @@ export function registerFriendRoutes(app: FastifyInstance, ctx: AppContext): voi
    */
   app.get('/api/friends/inbox', async (req) => {
     const me = req.user!.id;
+    const sees = seesHidden(req);
     const rows = db
       .prepare(
         `SELECT r.id, r.book_id, r.note, r.created_at, r.seen_at,
@@ -264,12 +267,14 @@ export function registerFriendRoutes(app: FastifyInstance, ctx: AppContext): voi
     for (const r of rows) {
       // No foreign key on book_id (migration 18): a book that has left the
       // library takes its recommendation off the page, not out of the table.
-      const book = db.prepare('SELECT * FROM books WHERE id = ?').get(r.book_id) as
-        Record<string, unknown> | undefined;
+      // So does a hidden one, until it is shown again.
+      const book = db
+        .prepare(`SELECT * FROM books b WHERE b.id = ? AND ${visibleSql(sees)}`)
+        .get(r.book_id) as Record<string, unknown> | undefined;
       if (!book) continue;
       recommendations.push({
         id: r.id,
-        book: bookRowToSummary(ctx, me, book),
+        book: bookRowToSummary(ctx, me, book, sees),
         from: personOf(r),
         note: r.note,
         createdAt: r.created_at,
@@ -318,7 +323,7 @@ export function registerFriendRoutes(app: FastifyInstance, ctx: AppContext): voi
                 b.id AS book_id, b.title, b.author, b.kind
            FROM recommendations r
            JOIN users u ON u.id = r.to_user_id
-           JOIN books b ON b.id = r.book_id
+           JOIN books b ON b.id = r.book_id AND ${visibleSql(seesHidden(req))}
           WHERE r.from_user_id = ?
           ORDER BY r.created_at DESC, r.id LIMIT 100`,
       )

@@ -18,6 +18,7 @@ import {
 import { loadManifest, loadSentences } from '../../epub/extract.js';
 import { languageCode } from '../../pairing/score.js';
 import { LANGUAGES, parseModelMissing } from '../../alignment/model.js';
+import { bookVisible, pairVisible, seesHidden, visiblePairSql } from '../../library/visibility.js';
 
 export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void {
   const { db } = ctx;
@@ -129,7 +130,7 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
    * (settings.alignSpeedRatio); before any measurement exists the
    * estimate is reported as unknown rather than guessed.
    */
-  const processingSummary = () => {
+  const processingSummary = (sees: boolean) => {
     const { values: settings } = resolveSettings(db, ctx.config);
     const row = db
       .prepare(
@@ -139,7 +140,7 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
         `SELECT COUNT(*) AS pairs, COALESCE(SUM(b.duration_ms), 0) AS audio_ms
            FROM pairs p
            JOIN books b ON b.id = p.audio_id
-          WHERE p.status IN ('auto', 'confirmed')
+          WHERE p.status IN ('auto', 'confirmed') AND ${visiblePairSql(sees, 'p')}
             AND NOT EXISTS (SELECT 1 FROM alignments a WHERE a.pair_id = p.id)
             AND NOT EXISTS (
               SELECT 1 FROM jobs j
@@ -150,7 +151,10 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
       )
       .get() as { pairs: number; audio_ms: number };
     const waiting = db
-      .prepare(`SELECT COUNT(*) AS c FROM pairs WHERE status = 'candidate'`)
+      .prepare(
+        `SELECT COUNT(*) AS c FROM pairs p
+          WHERE p.status = 'candidate' AND ${visiblePairSql(sees, 'p')}`,
+      )
       .get() as { c: number };
     const ratio = settings.alignSpeedRatio;
     return {
@@ -166,13 +170,18 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
     };
   };
 
-  app.get('/api/pairs', async () => {
+  app.get('/api/pairs', async (req) => {
+    // A pair with a hidden edition is not on this page for anybody who may
+    // not see that edition: its row would name the book.
+    const sees = seesHidden(req);
     const rows = db
       .prepare(
-        `SELECT * FROM pairs ORDER BY CASE status WHEN 'candidate' THEN 0 WHEN 'auto' THEN 1 WHEN 'confirmed' THEN 2 ELSE 3 END, score DESC`,
+        `SELECT p.* FROM pairs p WHERE ${visiblePairSql(sees, 'p')}
+          ORDER BY CASE p.status WHEN 'candidate' THEN 0 WHEN 'auto' THEN 1 WHEN 'confirmed' THEN 2 ELSE 3 END,
+                   p.score DESC`,
       )
       .all() as Record<string, unknown>[];
-    return { pairs: rows.map(pairDto), summary: processingSummary() };
+    return { pairs: rows.map(pairDto), summary: processingSummary(sees) };
   });
 
   app.get('/api/pairs/:id', async (req, reply) => {
@@ -227,7 +236,9 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
     const { ebookId, audioId } = parsed.data;
     const ebook = db.prepare("SELECT id FROM books WHERE id = ? AND kind = 'ebook'").get(ebookId);
     const audio = db.prepare("SELECT id FROM books WHERE id = ? AND kind = 'audio'").get(audioId);
-    if (!ebook || !audio) return reply.code(404).send({ error: 'not-found' });
+    const sees = seesHidden(req);
+    if (!ebook || !audio || !bookVisible(db, ebookId, sees) || !bookVisible(db, audioId, sees))
+      return reply.code(404).send({ error: 'not-found' });
     const id = stableId('pair', ebookId, audioId);
     const existing = db.prepare('SELECT id FROM pairs WHERE id = ?').get(id);
     if (existing) {
@@ -285,10 +296,15 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
     if (!parsed.success) return reply.code(400).send({ error: 'invalid' });
     let queued = 0;
     let skipped = 0;
+    const sees = seesHidden(req);
     for (const id of parsed.data.pairIds) {
       const row = db.prepare('SELECT status FROM pairs WHERE id = ?').get(id) as
         { status: string } | undefined;
-      if (!row || !['auto', 'confirmed', 'candidate'].includes(row.status)) {
+      if (
+        !row ||
+        !['auto', 'confirmed', 'candidate'].includes(row.status) ||
+        !pairVisible(db, id, sees)
+      ) {
         skipped += 1;
         continue;
       }
@@ -320,12 +336,18 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
     if (!parsed.success) return reply.code(400).send({ error: 'invalid' });
     let confirmed = 0;
     let skipped = 0;
+    const sees = seesHidden(req);
     for (const id of parsed.data.pairIds) {
       // Only a suggestion can be confirmed; anything already decided is left
       // exactly as it is rather than being silently re-linked.
       const row = db.prepare('SELECT status FROM pairs WHERE id = ?').get(id) as
         { status: string } | undefined;
-      if (!row || row.status !== 'candidate' || !decide(id, 'confirmed', req.user!.id)) {
+      if (
+        !row ||
+        row.status !== 'candidate' ||
+        !pairVisible(db, id, sees) ||
+        !decide(id, 'confirmed', req.user!.id)
+      ) {
         skipped += 1;
         continue;
       }

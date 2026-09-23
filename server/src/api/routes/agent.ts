@@ -1,6 +1,7 @@
 import { type FastifyInstance } from 'fastify';
 import { type AppContext } from '../../context.js';
 import { type DB } from '../../db/index.js';
+import { visiblePairSql } from '../../library/visibility.js';
 import {
   AGENT_BASE,
   AGENT_SCOPE,
@@ -105,7 +106,7 @@ export function registerAgentRoutes(app: FastifyInstance, ctx: AppContext): void
       SELECT a.coverage, a.mean_confidence AS meanConfidence
       FROM pairs p JOIN alignments a ON a.pair_id = p.id
       WHERE (p.ebook_id = ? OR p.audio_id = ?) AND p.status IN ('auto','confirmed')
-        AND a.status = 'ready'
+        AND a.status = 'ready' AND ${visiblePairSql(false, 'p')}
       ORDER BY CASE p.status WHEN 'confirmed' THEN 0 ELSE 1 END,
         p.score DESC, p.id, a.version DESC LIMIT 1
     `,
@@ -120,8 +121,13 @@ export function registerAgentRoutes(app: FastifyInstance, ctx: AppContext): void
       alignment,
     });
   };
+  // A key reads the library as a reader would, whoever holds it: hidden
+  // books are for admins signed in to ReadPort, not for the apps they
+  // connect to it (see library/visibility.ts).
   const exists = (id: string) =>
-    db.prepare("SELECT 1 FROM books WHERE id = ? AND scan_state != 'missing'").get(id);
+    db
+      .prepare("SELECT 1 FROM books WHERE id = ? AND scan_state != 'missing' AND hidden_at IS NULL")
+      .get(id);
   // A next offset the route would refuse is not a next offset: past the
   // ceiling the page simply ends, rather than pointing a compliant client at
   // a 400.
@@ -182,7 +188,7 @@ export function registerAgentRoutes(app: FastifyInstance, ctx: AppContext): void
           const rows = db
             .prepare(
               `SELECT ${BOOK_COLUMNS} FROM books b
-            WHERE b.scan_state != 'missing' AND (? = '' OR
+            WHERE b.scan_state != 'missing' AND b.hidden_at IS NULL AND (? = '' OR
               instr(lower(b.title), lower(?)) > 0 OR instr(lower(coalesce(b.author,'')), lower(?)) > 0
               OR instr(lower(coalesce(b.series,'')), lower(?)) > 0)
             ORDER BY b.title COLLATE NOCASE, b.id LIMIT ? OFFSET ?
@@ -194,7 +200,8 @@ export function registerAgentRoutes(app: FastifyInstance, ctx: AppContext): void
         case `${AGENT_BASE}/books/:id`: {
           const row = db
             .prepare(
-              `SELECT ${BOOK_COLUMNS} FROM books b WHERE b.id = ? AND b.scan_state != 'missing'`,
+              `SELECT ${BOOK_COLUMNS} FROM books b
+                WHERE b.id = ? AND b.scan_state != 'missing' AND b.hidden_at IS NULL`,
             )
             .get(id) as Row | undefined;
           return row ? { book: bookDto(row) } : reply.code(404).send({ error: 'not-found' });
@@ -218,7 +225,7 @@ export function registerAgentRoutes(app: FastifyInstance, ctx: AppContext): void
             .prepare(
               `SELECT ${BOOK_COLUMNS} FROM shelf_items i
             JOIN shelves s ON s.id = i.shelf_id JOIN books b ON b.id = i.book_id
-            WHERE s.id = ? AND s.user_id = ? AND b.scan_state != 'missing'
+            WHERE s.id = ? AND s.user_id = ? AND b.scan_state != 'missing' AND b.hidden_at IS NULL
             ORDER BY i.sort_key, b.id LIMIT ? OFFSET ?`,
             )
             .all(id, userId, limit + 1, offset) as Row[];
@@ -229,7 +236,7 @@ export function registerAgentRoutes(app: FastifyInstance, ctx: AppContext): void
             .prepare(
               `SELECT r.book_id AS bookId, substr(r.added_at,1,64) AS addedAt
             FROM reading_list r JOIN books b ON b.id = r.book_id
-            WHERE r.user_id = ? AND b.scan_state != 'missing'
+            WHERE r.user_id = ? AND b.scan_state != 'missing' AND b.hidden_at IS NULL
             ORDER BY r.sort_key, r.book_id LIMIT ? OFFSET ?`,
             )
             .all(userId, limit + 1, offset) as Row[];
@@ -243,6 +250,7 @@ export function registerAgentRoutes(app: FastifyInstance, ctx: AppContext): void
               substr(a.created_at,1,64) AS createdAt, substr(a.updated_at,1,64) AS updatedAt
             FROM annotations a JOIN books b ON b.id = a.book_id
             WHERE a.user_id = ? AND a.deleted_at IS NULL AND b.scan_state != 'missing'
+              AND b.hidden_at IS NULL
             ORDER BY a.created_at DESC, a.id LIMIT ? OFFSET ?`,
             )
             .all(userId, limit + 1, offset) as Row[];

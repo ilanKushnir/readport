@@ -7,7 +7,7 @@ import fastifyStatic from '@fastify/static';
 import { type AppContext } from '../context.js';
 import { buildClientIp, isPrivateAddress } from './clientIp.js';
 import { buildSourceList } from '../auth/proxyAuth.js';
-import { apiKeyAllows, attachUser, csrfCheck, requireUser } from './guards.js';
+import { apiKeyAllows, attachUser, csrfCheck, namesHiddenBook, requireUser } from './guards.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerLibraryRoutes } from './routes/library.js';
 import { registerPrefsRoutes } from './routes/prefs.js';
@@ -222,6 +222,8 @@ export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyIn
     if (!csrfCheck(req)) return reply.code(403).send({ error: 'csrf' });
     if (req.routeOptions?.config?.public === true) return;
     if (!requireUser(req, reply)) return reply;
+    // A hidden book is not there for anyone who may not see it.
+    if (namesHiddenBook(ctx.db, req)) return reply.code(404).send({ error: 'not-found' });
   });
 
   app.addHook('preSerialization', async (req, reply, payload) => {

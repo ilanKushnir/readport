@@ -30,6 +30,13 @@ export const bookSummarySchema = z.object({
   sizeBytes: z.number(),
   hasCover: z.boolean(),
   addedAt: z.string(),
+  /**
+   * Hidden from everyone but the admins: when, and by whom (their name as
+   * it is now; null once that account is gone). Only an admin is ever sent a
+   * hidden book, so for anybody else this is always null. Optional so a
+   * summary cached by an older build still parses.
+   */
+  hidden: z.object({ at: z.string(), by: z.string().nullable() }).nullable().optional(),
   pair: z
     .object({
       pairId: z.string(),

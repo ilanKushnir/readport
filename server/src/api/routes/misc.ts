@@ -20,6 +20,13 @@ import {
 } from '../../audio/integrity.js';
 import { realResolveWithin } from '../../util/paths.js';
 import {
+  bookVisible,
+  pairVisible,
+  seesHidden,
+  visiblePairSql,
+  visibleSql,
+} from '../../library/visibility.js';
+import {
   alignmentRoots,
   libraryRoots,
   resolveSettings,
@@ -86,18 +93,32 @@ export function registerJobRoutes(app: FastifyInstance, ctx: AppContext): void {
     return null;
   };
 
-  app.get('/api/jobs', async () => {
+  /**
+   * Whether a job is about a book this person may not see: its row would
+   * put the title on their screen. Jobs about the library at large - a
+   * scan, a model download - are nobody's secret.
+   */
+  const aboutHiddenBook = (payload: Record<string, unknown>, sees: boolean): boolean => {
+    if (sees) return false;
+    if (typeof payload.bookId === 'string') return !bookVisible(db, payload.bookId, false);
+    if (typeof payload.pairId === 'string') return !pairVisible(db, payload.pairId, false);
+    return false;
+  };
+
+  app.get('/api/jobs', async (req) => {
+    const sees = seesHidden(req);
     const rows = db
       .prepare('SELECT * FROM jobs ORDER BY created_at DESC LIMIT 100')
       .all() as Record<string, unknown>[];
     return {
-      jobs: rows.map((r) => {
+      jobs: rows.flatMap((r) => {
         let payload: Record<string, unknown> = {};
         try {
           payload = JSON.parse(String(r.payload_json ?? '{}'));
         } catch {
           /* ignore */
         }
+        if (aboutHiddenBook(payload, sees)) return [];
         return {
           id: String(r.id),
           type: String(r.type),
@@ -141,17 +162,28 @@ export function registerJobRoutes(app: FastifyInstance, ctx: AppContext): void {
 export function registerSettingsRoutes(app: FastifyInstance, ctx: AppContext): void {
   const { db, config } = ctx;
 
-  /** One cheap round trip for the settings dashboard's overview cards. */
-  const dashboardStats = () => {
+  /**
+   * One cheap round trip for the settings dashboard's overview cards,
+   * counting only what the person asking can see: a reader's library does
+   * not have the hidden books in it, so neither do its numbers.
+   */
+  const dashboardStats = (sees: boolean) => {
     const count = (sql: string) => Number((db.prepare(sql).get() as { c: number }).c);
+    const book = visibleSql(sees);
+    const pair = visiblePairSql(sees, 'p');
     return {
-      ebooks: count("SELECT COUNT(*) AS c FROM books WHERE kind = 'ebook'"),
-      audiobooks: count("SELECT COUNT(*) AS c FROM books WHERE kind = 'audio'"),
+      ebooks: count(`SELECT COUNT(*) AS c FROM books b WHERE kind = 'ebook' AND ${book}`),
+      audiobooks: count(`SELECT COUNT(*) AS c FROM books b WHERE kind = 'audio' AND ${book}`),
       booksIndexing: count(
-        "SELECT COUNT(*) AS c FROM books WHERE scan_state IN ('discovered','indexing')",
+        `SELECT COUNT(*) AS c FROM books b
+          WHERE scan_state IN ('discovered','indexing') AND ${book}`,
       ),
-      pairsLinked: count("SELECT COUNT(*) AS c FROM pairs WHERE status IN ('auto','confirmed')"),
-      pairsCandidate: count("SELECT COUNT(*) AS c FROM pairs WHERE status = 'candidate'"),
+      pairsLinked: count(
+        `SELECT COUNT(*) AS c FROM pairs p WHERE status IN ('auto','confirmed') AND ${pair}`,
+      ),
+      pairsCandidate: count(
+        `SELECT COUNT(*) AS c FROM pairs p WHERE status = 'candidate' AND ${pair}`,
+      ),
       pairsAligned: count('SELECT COUNT(DISTINCT pair_id) AS c FROM alignments'),
       jobsRunning: count("SELECT COUNT(*) AS c FROM jobs WHERE state = 'running'"),
       jobsQueued: count("SELECT COUNT(*) AS c FROM jobs WHERE state = 'queued'"),
@@ -170,12 +202,12 @@ export function registerSettingsRoutes(app: FastifyInstance, ctx: AppContext): v
     return { apps: values.apps };
   });
 
-  app.get('/api/settings', async () => {
+  app.get('/api/settings', async (req) => {
     const { values, envPinned } = resolveSettings(db, config);
     return {
       settings: values,
       envPinned,
-      stats: dashboardStats(),
+      stats: dashboardStats(seesHidden(req)),
       paths: {
         dataDir: config.dataDir,
         cacheDir: config.cacheDir,
@@ -336,11 +368,13 @@ export function registerOfflineRoutes(app: FastifyInstance, ctx: AppContext): vo
    * changes, including where it changes to "no aligned position here", so an
    * unaligned stretch can never inherit the previous entry's answer.
    */
-  const buildSwitchTable = (bookId: string): OfflineSwitchTable | null => {
+  const buildSwitchTable = (bookId: string, sees: boolean): OfflineSwitchTable | null => {
     const pairRow = db
       .prepare(
-        `SELECT * FROM pairs WHERE (ebook_id = ? OR audio_id = ?) AND status IN ('auto','confirmed')
-         ORDER BY CASE status WHEN 'confirmed' THEN 0 ELSE 1 END, score DESC LIMIT 1`,
+        `SELECT p.* FROM pairs p
+          WHERE (p.ebook_id = ? OR p.audio_id = ?) AND p.status IN ('auto','confirmed')
+            AND ${visiblePairSql(sees, 'p')}
+          ORDER BY CASE p.status WHEN 'confirmed' THEN 0 ELSE 1 END, p.score DESC LIMIT 1`,
       )
       .get(bookId, bookId) as Record<string, unknown> | undefined;
     if (!pairRow) return null;
@@ -425,7 +459,7 @@ export function registerOfflineRoutes(app: FastifyInstance, ctx: AppContext): vo
     const { id } = req.params as { id: string };
     const exists = db.prepare('SELECT id FROM books WHERE id = ?').get(id);
     if (!exists) return reply.code(404).send({ error: 'not-found' });
-    const table = buildSwitchTable(id);
+    const table = buildSwitchTable(id, seesHidden(req));
     if (!table) return reply.code(404).send({ error: 'no-alignment' });
     reply.header('cache-control', 'private, max-age=3600');
     return table;
@@ -511,7 +545,7 @@ export function registerOfflineRoutes(app: FastifyInstance, ctx: AppContext): vo
     // The alignment travels with the package: without it, a downloaded pair
     // can be read or listened to offline but not switched between, which is
     // the one thing owning both editions is for.
-    const switchTable = buildSwitchTable(id);
+    const switchTable = buildSwitchTable(id, seesHidden(req));
     if (switchTable) {
       urls.push(jsonEntry(`/api/books/${id}/offline-switch`, 'switch', switchTable));
     }

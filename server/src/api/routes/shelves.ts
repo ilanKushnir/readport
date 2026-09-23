@@ -28,6 +28,7 @@ import { nowIso } from '../../db/index.js';
 import { newId } from '../../util/ids.js';
 import { between } from '../../util/rank.js';
 import { bookRowToSummary } from './library.js';
+import { bookVisible, seesHidden, visibleSql } from '../../library/visibility.js';
 
 /**
  * Shelves and the reading list: the furniture each reader arranges for
@@ -97,10 +98,13 @@ const queueBookSchema = addToReadingListSchema.extend({
   recommendedBy: recommendedByIdSchema.optional(),
 });
 
-function shelfRowToSummary(db: DB, row: ShelfRow): ShelfSummary {
-  const c = db.prepare('SELECT COUNT(*) AS c FROM shelf_items WHERE shelf_id = ?').get(row.id) as {
-    c: number;
-  };
+function shelfRowToSummary(db: DB, row: ShelfRow, sees: boolean): ShelfSummary {
+  const c = db
+    .prepare(
+      `SELECT COUNT(*) AS c FROM shelf_items i JOIN books b ON b.id = i.book_id
+        WHERE i.shelf_id = ? AND ${visibleSql(sees)}`,
+    )
+    .get(row.id) as { c: number };
   return {
     id: row.id,
     name: row.name,
@@ -118,8 +122,8 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
     db.prepare('SELECT * FROM shelves WHERE id = ? AND user_id = ?').get(shelfId, userId) as
       ShelfRow | undefined;
 
-  const bookExists = (bookId: string): boolean =>
-    db.prepare('SELECT 1 FROM books WHERE id = ?').get(bookId) !== undefined;
+  /** A book this person may put somewhere: one that exists and is not hidden from them. */
+  const bookExists = (bookId: string, sees: boolean): boolean => bookVisible(db, bookId, sees);
 
   /**
    * Neighbour keys for a drop. Reads the key of the row the item now follows
@@ -168,28 +172,48 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
    * count what the reading list page actually shows them, or the book page
    * says "3rd" above a list where the book is second.
    */
-  const visibleReadingList = (userId: string): string[] =>
+  const visibleReadingList = (userId: string, sees: boolean): string[] =>
     (
       db
         .prepare(
           `SELECT r.book_id AS id FROM reading_list r JOIN books b ON b.id = r.book_id
-           WHERE r.user_id = ? AND b.scan_state != 'missing' ORDER BY r.sort_key`,
+           WHERE r.user_id = ? AND b.scan_state != 'missing' AND ${visibleSql(sees)}
+           ORDER BY r.sort_key`,
         )
         .all(userId) as { id: string }[]
     ).map((r) => r.id);
 
   /** 1-based place in the list the reader can see, or null if it is not in it. */
-  const visiblePosition = (userId: string, bookId: string): number | null => {
-    const at = visibleReadingList(userId).indexOf(bookId);
+  const visiblePosition = (userId: string, bookId: string, sees: boolean): number | null => {
+    const at = visibleReadingList(userId, sees).indexOf(bookId);
     return at < 0 ? null : at + 1;
   };
 
-  const shelfCount = (shelfId: string): number =>
+  /**
+   * How long the reading list is, as its owner can see it: every row but the
+   * hidden books. A book on an unplugged drive still counts, as it always has.
+   */
+  const queueLength = (userId: string, sees: boolean): number =>
     Number(
       (
-        db.prepare('SELECT COUNT(*) AS c FROM shelf_items WHERE shelf_id = ?').get(shelfId) as {
-          c: number;
-        }
+        db
+          .prepare(
+            `SELECT COUNT(*) AS c FROM reading_list r JOIN books b ON b.id = r.book_id
+              WHERE r.user_id = ? AND ${visibleSql(sees)}`,
+          )
+          .get(userId) as { c: number }
+      ).c,
+    );
+
+  const shelfCount = (shelfId: string, sees: boolean): number =>
+    Number(
+      (
+        db
+          .prepare(
+            `SELECT COUNT(*) AS c FROM shelf_items i JOIN books b ON b.id = i.book_id
+              WHERE i.shelf_id = ? AND ${visibleSql(sees)}`,
+          )
+          .get(shelfId) as { c: number }
       ).c,
     );
 
@@ -201,6 +225,7 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
    */
   app.get('/api/shelves', async (req) => {
     const userId = req.user!.id;
+    const sees = seesHidden(req);
     const one = (sql: string, ...params: unknown[]): number =>
       Number((db.prepare(sql).get(...(params as never[])) as { c: number }).c);
 
@@ -217,20 +242,21 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
            JOIN progress_state pa ON pa.book_id = pr.audio_id
            JOIN books ba ON ba.id = pr.audio_id
           WHERE pr.status IN ('auto','confirmed')
-            AND ${where('pe', 'be')} AND ${where('pa', 'ba')}`,
+            AND ${where('pe', 'be')} AND ${where('pa', 'ba')}
+            AND ${visibleSql(sees, 'be')} AND ${visibleSql(sees, 'ba')}`,
         userId,
         userId,
       );
     const readingNow =
       one(
         `SELECT COUNT(*) AS c FROM progress_state p JOIN books b ON b.id = p.book_id
-       WHERE ${READING_NOW_WHERE}`,
+       WHERE ${READING_NOW_WHERE} AND ${visibleSql(sees)}`,
         userId,
       ) - bothSidesQualify(readingNowWhere);
     const finished =
       one(
         `SELECT COUNT(*) AS c FROM progress_state p JOIN books b ON b.id = p.book_id
-       WHERE ${FINISHED_WHERE}`,
+       WHERE ${FINISHED_WHERE} AND ${visibleSql(sees)}`,
         userId,
       ) - bothSidesQualify(finishedWhere);
     // One count per PAIR, not per book: a title owned twice is one title.
@@ -238,11 +264,13 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
       `SELECT COUNT(*) AS c FROM pairs p
        JOIN books e ON e.id = p.ebook_id JOIN books a ON a.id = p.audio_id
        WHERE p.status IN ('auto','confirmed')
-         AND (e.scan_state != 'missing' OR a.scan_state != 'missing')`,
+         AND (e.scan_state != 'missing' OR a.scan_state != 'missing')
+         AND ${visibleSql(sees, 'e')} AND ${visibleSql(sees, 'a')}`,
     );
     const recentlyAdded = one(
       `SELECT COUNT(*) AS c FROM (
-         SELECT id FROM books WHERE scan_state != 'missing' AND added_at >= ?
+         SELECT id FROM books b WHERE scan_state != 'missing' AND added_at >= ?
+           AND ${visibleSql(sees)}
          ORDER BY added_at DESC LIMIT ?
        )`,
       new Date(Date.now() - RECENTLY_ADDED_DAYS * 86400000).toISOString(),
@@ -253,15 +281,29 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
       db
         .prepare('SELECT * FROM shelves WHERE user_id = ? ORDER BY sort_key')
         .all(userId) as unknown as ShelfRow[]
-    ).map((r) => shelfRowToSummary(db, r));
+    ).map((r) => shelfRowToSummary(db, r, sees));
 
-    const queueCount = one('SELECT COUNT(*) AS c FROM reading_list WHERE user_id = ?', userId);
+    const queueCount = queueLength(userId, sees);
     const next = db
       .prepare(
         `SELECT b.id, b.title FROM reading_list r JOIN books b ON b.id = r.book_id
-         WHERE r.user_id = ? AND b.scan_state != 'missing' ORDER BY r.sort_key LIMIT 1`,
+         WHERE r.user_id = ? AND b.scan_state != 'missing' AND ${visibleSql(sees)}
+         ORDER BY r.sort_key LIMIT 1`,
       )
       .get(userId) as { id: string; title: string } | undefined;
+    // What the admins have hidden, for the one shelf that shows it to them.
+    // Counted per title, like the library it is a part of: a pair hidden
+    // together is one book.
+    const hidden = sees
+      ? one(
+          `SELECT COUNT(*) AS c FROM books b
+            WHERE b.hidden_at IS NOT NULL AND b.scan_state != 'missing'
+              AND NOT (b.kind = 'audio' AND EXISTS (
+                SELECT 1 FROM pairs p JOIN books e ON e.id = p.ebook_id
+                 WHERE p.audio_id = b.id AND p.status IN ('auto','confirmed')
+                   AND e.hidden_at IS NOT NULL AND e.scan_state != 'missing'))`,
+        )
+      : 0;
 
     return {
       auto: [
@@ -276,6 +318,7 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
         nextBookId: next?.id ?? null,
         nextTitle: next?.title ?? null,
       },
+      ...(sees ? { hidden } : {}),
     };
   });
 
@@ -309,7 +352,9 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
       }
       throw err;
     }
-    return reply.code(201).send({ shelf: shelfRowToSummary(db, ownedShelf(userId, id)!) });
+    return reply
+      .code(201)
+      .send({ shelf: shelfRowToSummary(db, ownedShelf(userId, id)!, seesHidden(req)) });
   });
 
   app.patch('/api/shelves/:id', async (req, reply) => {
@@ -349,7 +394,7 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
         'UPDATE shelves SET sort_key = ?, updated_at = ? WHERE id = ? AND user_id = ?',
       ).run(moved.key, nowIso(), id, userId);
     }
-    return { shelf: shelfRowToSummary(db, ownedShelf(userId, id)!) };
+    return { shelf: shelfRowToSummary(db, ownedShelf(userId, id)!, seesHidden(req)) };
   });
 
   app.delete('/api/shelves/:id', async (req, reply) => {
@@ -374,18 +419,21 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
     if (!shelf) return reply.code(404).send({ error: 'not-found' });
     const parsedQuery = shelfBooksQuerySchema.safeParse(req.query ?? {});
     if (!parsedQuery.success) return reply.code(400).send({ error: 'bad-query' });
+    const sees = seesHidden(req);
 
     // sort_key ordering is BINARY: the rank alphabet is case-significant.
+    // A hidden book is not on the shelf at all, as far as its owner can
+    // tell - not even as one that is away.
     const rows = db
       .prepare(
         `SELECT b.*, s.sort_key AS shelf_sort_key FROM shelf_items s JOIN books b ON b.id = s.book_id
-         WHERE s.shelf_id = ? ORDER BY s.sort_key`,
+         WHERE s.shelf_id = ? AND ${visibleSql(sees)} ORDER BY s.sort_key`,
       )
       .all(id) as Record<string, unknown>[];
     // A book on an unmounted drive is still on the shelf. Counting it
     // separately lets the page say so instead of quietly shrinking.
     const present = rows.filter((r) => String(r.scan_state) !== 'missing');
-    const books = present.map((r) => bookRowToSummary(ctx, userId, r));
+    const books = present.map((r) => bookRowToSummary(ctx, userId, r, sees));
     switch (parsedQuery.data.sort) {
       case 'title':
         books.sort((a, b) => a.title.localeCompare(b.title));
@@ -400,7 +448,7 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
         break; // manual: the shelf's own order, from SQL
     }
     return {
-      shelf: shelfRowToSummary(db, shelf),
+      shelf: shelfRowToSummary(db, shelf, sees),
       books,
       missingCount: rows.length - present.length,
     };
@@ -412,14 +460,15 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
     const userId = req.user!.id;
     const shelf = ownedShelf(userId, id);
     if (!shelf) return reply.code(404).send({ error: 'not-found' });
-    if (!bookExists(bookId)) return reply.code(404).send({ error: 'not-found' });
+    const sees = seesHidden(req);
+    if (!bookExists(bookId, sees)) return reply.code(404).send({ error: 'not-found' });
     const parsed = addToShelfSchema.safeParse(req.body ?? {});
     if (!parsed.success) return reply.code(400).send({ error: 'invalid' });
 
     const already = db
       .prepare('SELECT 1 FROM shelf_items WHERE shelf_id = ? AND book_id = ?')
       .get(id, bookId);
-    if (already) return { added: false, count: shelfCount(id) };
+    if (already) return { added: false, count: shelfCount(id, sees) };
 
     const rows = shelfItemRows(id);
     let key: string;
@@ -434,7 +483,7 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
       'INSERT INTO shelf_items (shelf_id, book_id, sort_key, added_at) VALUES (?, ?, ?, ?)',
     ).run(id, bookId, key, nowIso());
     db.prepare('UPDATE shelves SET updated_at = ? WHERE id = ?').run(nowIso(), id);
-    return { added: true, count: shelfCount(id) };
+    return { added: true, count: shelfCount(id, sees) };
   });
 
   /** Bulk add, for "everything in this filtered view onto Summer". */
@@ -449,6 +498,7 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
     }
     let added = 0;
     let skipped = 0;
+    const sees = seesHidden(req);
     const insert = db.prepare(
       'INSERT INTO shelf_items (shelf_id, book_id, sort_key, added_at) VALUES (?, ?, ?, ?)',
     );
@@ -464,7 +514,7 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
             .get(id) as { sort_key: string } | undefined
         )?.sort_key ?? null;
       for (const bookId of parsed.data.bookIds) {
-        const exists = bookExists(bookId);
+        const exists = bookExists(bookId, sees);
         const dup = db
           .prepare('SELECT 1 FROM shelf_items WHERE shelf_id = ? AND book_id = ?')
           .get(id, bookId);
@@ -495,7 +545,7 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
     if (Number(res.changes) > 0) {
       db.prepare('UPDATE shelves SET updated_at = ? WHERE id = ?').run(nowIso(), id);
     }
-    return { removed: Number(res.changes) > 0, count: shelfCount(id) };
+    return { removed: Number(res.changes) > 0, count: shelfCount(id, seesHidden(req)) };
   });
 
   app.patch('/api/shelves/:id/books/:bookId/position', async (req, reply) => {
@@ -521,6 +571,7 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
 
   app.get('/api/reading-list', async (req) => {
     const userId = req.user!.id;
+    const sees = seesHidden(req);
     const rows = db
       .prepare(
         `SELECT b.*, r.note AS rl_note, r.added_at AS rl_added_at, r.sort_key AS rl_sort_key,
@@ -528,13 +579,13 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
                 ru.display_name AS rl_rec_display_name, ru.username AS rl_rec_username
          FROM reading_list r JOIN books b ON b.id = r.book_id
          LEFT JOIN users ru ON ru.id = r.recommended_by
-         WHERE r.user_id = ? ORDER BY r.sort_key`,
+         WHERE r.user_id = ? AND ${visibleSql(sees)} ORDER BY r.sort_key`,
       )
       .all(userId) as Record<string, unknown>[];
     const present = rows.filter((r) => String(r.scan_state) !== 'missing');
     const items: (ReadingListItem & { recommendedBy: RecommendedBy | null })[] = present.map(
       (r) => ({
-        book: bookRowToSummary(ctx, userId, r),
+        book: bookRowToSummary(ctx, userId, r, sees),
         note: (r.rl_note as string) ?? null,
         addedAt: String(r.rl_added_at),
         sortKey: String(r.rl_sort_key),
@@ -556,7 +607,8 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
   app.put('/api/reading-list/:bookId', async (req, reply) => {
     const { bookId } = req.params as { bookId: string };
     const userId = req.user!.id;
-    if (!bookExists(bookId)) return reply.code(404).send({ error: 'not-found' });
+    const sees = seesHidden(req);
+    if (!bookExists(bookId, sees)) return reply.code(404).send({ error: 'not-found' });
     const parsed = queueBookSchema.safeParse(req.body ?? {});
     if (!parsed.success) {
       return reply.code(400).send({ error: 'invalid', detail: parsed.error.issues[0]?.message });
@@ -589,8 +641,8 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
       return {
         added: false,
         moved: false,
-        position: visiblePosition(userId, bookId),
-        count: rows.length,
+        position: visiblePosition(userId, bookId, sees),
+        count: queueLength(userId, sees),
       };
     }
 
@@ -641,8 +693,8 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
     return {
       added: existing < 0,
       moved: existing >= 0,
-      position: visiblePosition(userId, bookId),
-      count: readingListRows(userId).length,
+      position: visiblePosition(userId, bookId, sees),
+      count: queueLength(userId, sees),
     };
   });
 
@@ -693,7 +745,8 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
   /** Two indexed lookups, so the book page can open its Add-to panel pre-ticked. */
   app.get('/api/books/:id/shelves', async (req, reply) => {
     const { id } = req.params as { id: string };
-    if (!bookExists(id)) return reply.code(404).send({ error: 'not-found' });
+    const sees = seesHidden(req);
+    if (!bookExists(id, sees)) return reply.code(404).send({ error: 'not-found' });
     const userId = req.user!.id;
     const rows = db
       .prepare(
@@ -707,7 +760,7 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
     // Where in the queue, so the book page can say "3rd" rather than merely
     // "queued" - and it must be the third row of the list the reader can
     // open, so books on an unmounted drive are not counted past.
-    const position = queued ? visiblePosition(userId, id) : null;
+    const position = queued ? visiblePosition(userId, id, sees) : null;
     return {
       shelfIds: rows.map((r) => r.id),
       onReadingList: queued !== undefined,

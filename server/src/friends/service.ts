@@ -3,6 +3,7 @@ import { type AppContext } from '../context.js';
 import { type DB } from '../db/index.js';
 import { getProgressState, READING_NOW_WHERE } from '../progress/service.js';
 import { readPref } from '../api/routes/prefs.js';
+import { bookVisible, visiblePairSql, visibleSql } from '../library/visibility.js';
 import { defaultFriendColour, type FriendColourId } from './prefs.js';
 
 /**
@@ -128,13 +129,21 @@ export interface CurrentlyReading {
  * The book this person touched most recently and has not finished - the
  * same predicate as their own Reading Now shelf, so a friend's line and the
  * person's own shelf never disagree about what they are in the middle of.
+ *
+ * Among the books the VIEWER may see (`viewerSeesHidden`): an admin in the
+ * middle of a hidden book is, to a reader, in whatever they read before it.
  */
-export function currentlyReading(db: DB, userId: string): CurrentlyReading | null {
+export function currentlyReading(
+  db: DB,
+  userId: string,
+  viewerSeesHidden = false,
+): CurrentlyReading | null {
   const row = db
     .prepare(
       `SELECT b.id, b.title, b.kind, p.locator_json, p.updated_at
          FROM progress_state p JOIN books b ON b.id = p.book_id
-        WHERE ${READING_NOW_WHERE} ORDER BY p.updated_at DESC LIMIT 1`,
+        WHERE ${READING_NOW_WHERE} AND ${visibleSql(viewerSeesHidden)}
+        ORDER BY p.updated_at DESC LIMIT 1`,
     )
     .get(userId) as
     | { id: string; title: string; kind: string; locator_json: string; updated_at: string }
@@ -202,12 +211,16 @@ export interface FriendProgress extends Person {
   chapterTitle: string | null;
 }
 
-/** The other editions this book is linked to: the confirmed or automatic pairs it sits in. */
-function linkedEditionsOf(db: DB, bookId: string): string[] {
+/**
+ * The other editions this book is linked to: the confirmed or automatic
+ * pairs it sits in, as far as the viewer can see them.
+ */
+function linkedEditionsOf(db: DB, bookId: string, sees: boolean): string[] {
   const rows = db
     .prepare(
-      `SELECT ebook_id, audio_id FROM pairs
-        WHERE (ebook_id = ? OR audio_id = ?) AND status IN ('auto', 'confirmed')`,
+      `SELECT p.ebook_id, p.audio_id FROM pairs p
+        WHERE (p.ebook_id = ? OR p.audio_id = ?) AND p.status IN ('auto', 'confirmed')
+          AND ${visiblePairSql(sees, 'p')}`,
     )
     .all(bookId, bookId) as { ebook_id: string; audio_id: string }[];
   return rows.map((r) => (r.ebook_id === bookId ? r.audio_id : r.ebook_id));
@@ -226,12 +239,15 @@ export function friendProgress(
   ctx: AppContext,
   viewerId: string,
   bookId: string,
+  viewerSeesHidden = false,
 ): FriendProgress[] {
+  // A book the viewer may not see has nobody in it, as far as they know.
+  if (!bookVisible(ctx.db, bookId, viewerSeesHidden)) return [];
   const friends = acceptedFriends(ctx.db, viewerId).map(personOf);
   const colours = friendColours(ctx, viewerId, friends);
   // A linked pair is one work: a friend listening to the audiobook is in
   // the book you are reading, at a comparable fraction of it.
-  const editions = [bookId, ...linkedEditionsOf(ctx.db, bookId)];
+  const editions = [bookId, ...linkedEditionsOf(ctx.db, bookId, viewerSeesHidden)];
   const out: FriendProgress[] = [];
   for (const friend of friends) {
     if (!sharesProgress(ctx, friend.userId)) continue;
@@ -284,17 +300,18 @@ export function pendingIncomingCount(db: DB, userId: string): number {
 
 /**
  * Books put in front of this person that they have neither looked at nor
- * dismissed. Only books still in the library: the inbox skips the others,
- * so counting them would light a dot nothing on the page can put out.
+ * dismissed. Only books still in the library, and not hidden from them: the
+ * inbox skips the others, so counting them would light a dot nothing on the
+ * page can put out.
  */
-export function unseenRecommendationCount(db: DB, userId: string): number {
+export function unseenRecommendationCount(db: DB, userId: string, sees = false): number {
   return Number(
     (
       db
         .prepare(
           `SELECT COUNT(*) AS c FROM recommendations r
             WHERE r.to_user_id = ? AND r.seen_at IS NULL AND r.dismissed_at IS NULL
-              AND EXISTS (SELECT 1 FROM books b WHERE b.id = r.book_id)`,
+              AND EXISTS (SELECT 1 FROM books b WHERE b.id = r.book_id AND ${visibleSql(sees)})`,
         )
         .get(userId) as { c: number }
     ).c,
