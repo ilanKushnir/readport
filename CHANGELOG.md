@@ -4,6 +4,28 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.20.0 - 2026-09-23
+
+### Added
+
+- **Read along from the book page.** A paired book's page now offers all
+  three ways to take it - Read, Read along, Listen - as three buttons in
+  the same order whichever edition you are on, with Read along between the
+  other two because it is both. It opens the ebook at the resolved
+  position with the voice already on the page (`?along=1`), and is
+  disabled with a reason until the pair is aligned. This also puts two
+  secondaries on the phone's second line, where before one sat alone at
+  half width.
+
+### Changed
+
+- **The read-along icon is a narrator.** A head and shoulders with the
+  voice coming off them, mirrored in RTL so the voice faces the text; the
+  text-lines-with-bars it replaces read as an equaliser.
+- **The scroll-with-the-voice icon** is text with a doubled chevron
+  running down beside it, for "keeps going by itself", in place of a plain
+  down arrow.
+
 ## 0.19.2 - 2026-09-23
 
 ### Changed

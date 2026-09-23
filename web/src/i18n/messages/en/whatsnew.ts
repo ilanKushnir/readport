@@ -16,6 +16,12 @@ export const whatsnew = {
   'whatsnew.olderHeading': 'Version {version}',
   'whatsnew.done': 'Start reading',
 
+  // ---------------------------------------------------------------- 0.20.0
+  'whatsnew.release.readAlongFromBook':
+    "A paired book's page offers Read, Read along and Listen as three buttons; Read along opens the page with the voice already on it.",
+  'whatsnew.release.narratorIcon':
+    'Read along is drawn as a narrator, and scrolling with the voice as text with a doubled chevron.',
+
   // ---------------------------------------------------------------- 0.19.0
   'whatsnew.release.selectionCaptions':
     'The selection menu is a pill with a name under each icon; Escape, or a tap elsewhere, drops the selection.',
