@@ -78,8 +78,10 @@ export function BookPage() {
   const [switching, setSwitching] = useState(false);
   const [offlineSheet, setOfflineSheet] = useState(false);
   const [addTo, setAddTo] = useState(false);
-  /** Multi-file audiobook: which file to save. */
+  /** The files to keep: both editions of a pair, or an audiobook's many files. */
   const [saveOpen, setSaveOpen] = useState(false);
+  /** The other edition's detail, for its row in that sheet; null when it could not be read. */
+  const [otherDetail, setOtherDetail] = useState<BookDetail | null | undefined>(undefined);
   const [hideSheet, setHideSheet] = useState(false);
   const [hiding, setHiding] = useState(false);
   const { user } = useSession();
@@ -571,42 +573,45 @@ export function BookPage() {
             {/* A link to a hidden book would open on nothing for everybody
                 it was sent to, so a hidden book has none to give. */}
             {!book.hidden && <ShareMenu bookId={id} title={book.title} />}
-            {user?.canExport && !notReadyYet && (
-              // A real link, not a button: the browser has to perform the
-              // save itself. Distinct from Save offline beside it, which
-              // keeps the book inside the app and can be removed again -
-              // this one hands over the book's own file, which leaves with
-              // the reader. "Save a copy" and "Download" beside each other
-              // read as the same thing twice; "Save offline" and "Download
-              // file" do not.
-              <a
-                className="btn btn--ghost book-tool"
-                title={t('library.book.downloadFileHint')}
-                href={
-                  isEbook
-                    ? `/api/books/${book.id}/export`
-                    : detail.tracks.length > 1
-                      ? undefined
-                      : `/api/books/${book.id}/export`
-                }
-                onClick={
-                  !isEbook && detail.tracks.length > 1
-                    ? (e) => {
-                        e.preventDefault();
-                        setSaveOpen(true);
-                      }
-                    : undefined
-                }
-                download=""
-              >
-                <IconDownload size={17} />
-                <span>
-                  {isEbook || detail.tracks.length <= 1
-                    ? t('library.book.downloadFile')
-                    : t('library.book.downloadFiles')}
-                </span>
-              </a>
-            )}
+            {user?.canExport &&
+              !notReadyYet &&
+              // Distinct from Save offline beside it, which keeps the book
+              // inside the app and can be removed again - this hands over
+              // the book's own files, which leave with the reader. "Save a
+              // copy" and "Download" beside each other read as the same
+              // thing twice; "Save offline" and "Download file" do not.
+              (pair || (!isEbook && detail.tracks.length > 1) ? (
+                // Two editions, or an audiobook in many files: a choice,
+                // so a sheet.
+                <button
+                  type="button"
+                  className="btn btn--ghost book-tool"
+                  title={t('library.book.downloadFileHint')}
+                  onClick={() => {
+                    setSaveOpen(true);
+                    if (pair && otherDetail === undefined) {
+                      api<BookDetail>(`/api/books/${pair.otherBookId}`)
+                        .then(setOtherDetail)
+                        .catch(() => setOtherDetail(null));
+                    }
+                  }}
+                >
+                  <IconDownload size={17} />
+                  <span>{t('library.book.downloadFiles')}</span>
+                </button>
+              ) : (
+                // One file: a real link, because the browser has to perform
+                // the save itself.
+                <a
+                  className="btn btn--ghost book-tool"
+                  title={t('library.book.downloadFileHint')}
+                  href={`/api/books/${book.id}/export`}
+                  download=""
+                >
+                  <IconDownload size={17} />
+                  <span>{t('library.book.downloadFile')}</span>
+                </a>
+              ))}
             {user?.role === 'admin' && !book.hidden && (
               <button
                 type="button"
@@ -807,27 +812,95 @@ export function BookPage() {
         />
       )}
       {saveOpen && (
-        // An audiobook is many files and the server does not build archives,
-        // so the reader picks. Listed as they play, with their own names.
-        <Sheet title={t('library.book.downloadFilesTitle')} onClose={() => setSaveOpen(false)}>
-          <p className="hint" style={{ marginBlockEnd: 'var(--sp-3)' }}>
-            {t('library.book.downloadFilesHint', { n: detail.tracks.length })}
-          </p>
-          {detail.tracks.map((track, i) => (
+        <DownloadSheet
+          editions={[detail, ...(pair && otherDetail ? [otherDetail] : [])]}
+          loadingOther={!!pair && otherDetail === undefined}
+          onClose={() => setSaveOpen(false)}
+        />
+      )}
+    </main>
+  );
+}
+
+/**
+ * The book's own files, to keep: each edition once, the ebook first.
+ *
+ * An audiobook in many files comes as one ZIP of all of them, in a folder
+ * named for the book, because forty separate downloads is not a way to
+ * take a book home. The files one at a time are still there underneath,
+ * for the reader who wants only the part they are missing.
+ */
+function DownloadSheet({
+  editions,
+  loadingOther,
+  onClose,
+}: {
+  editions: BookDetail[];
+  /** The other edition of a pair is still being looked up. */
+  loadingOther: boolean;
+  onClose: () => void;
+}) {
+  const t = useT();
+  const f = useFormat();
+  const sorted = [...editions]
+    .filter((d) => d.book.scanState !== 'missing')
+    .sort((a, b) => Number(a.book.kind === 'audio') - Number(b.book.kind === 'audio'));
+  const audio = sorted.find((d) => d.book.kind === 'audio' && d.tracks.length > 1) ?? null;
+  return (
+    <Sheet title={t('library.book.downloadFilesTitle')} onClose={onClose}>
+      <p className="sheet__lede">{t('library.book.downloadFilesLede')}</p>
+      <div className="dl-list">
+        {sorted.map((d) => {
+          const { book } = d;
+          const isEbook = book.kind === 'ebook';
+          const many = !isEbook && d.tracks.length > 1;
+          const size = f.bytes(
+            d.tracks.length > 0 ? d.tracks.reduce((a, x) => a + x.sizeBytes, 0) : book.sizeBytes,
+          );
+          return (
+            <a
+              key={book.id}
+              className="dl-row"
+              href={many ? `/api/books/${book.id}/archive` : `/api/books/${book.id}/export`}
+              download=""
+            >
+              <span className="dl-row__icon" aria-hidden="true">
+                {isEbook ? <IconBookOpen size={20} /> : <IconHeadphones size={20} />}
+              </span>
+              <span className="dl-row__text">
+                <strong>{isEbook ? t('common.ebook') : t('common.audiobook')}</strong>
+                <span>
+                  {many
+                    ? t('library.book.downloadZip', { n: d.tracks.length, size })
+                    : `${(isEbook ? 'EPUB' : book.format).toUpperCase()} · ${size}`}
+                </span>
+              </span>
+              <IconDownload size={18} className="dl-row__go" />
+            </a>
+          );
+        })}
+        {loadingOther && <div className="skeleton dl-row dl-row--loading" aria-hidden="true" />}
+      </div>
+      {audio && (
+        <details className="dl-parts">
+          <summary>{t('library.book.downloadParts', { n: audio.tracks.length })}</summary>
+          {audio.tracks.map((track, i) => (
             <a
               key={i}
               className="list-row"
-              href={`/api/books/${book.id}/export?track=${i}`}
+              href={`/api/books/${audio.book.id}/export?track=${i}`}
               download=""
             >
               <IconDownload size={16} />
               <span className="grow">{track.title || t('library.book.part', { n: i + 1 })}</span>
-              <span className="soft">{track.format.toUpperCase()}</span>
+              <span className="soft">
+                {track.format.toUpperCase()} · {f.bytes(track.sizeBytes)}
+              </span>
             </a>
           ))}
-        </Sheet>
+        </details>
       )}
-    </main>
+    </Sheet>
   );
 }
 

@@ -1177,6 +1177,76 @@ body:has(.app-body) {
 .hidden-note__show {
   flex: none;
 }
+/* Download files: each edition one row - what it is, what arrives and how
+   big - the ebook first; an audiobook's single files folded away below. */
+.dl-list {
+  display: grid;
+  gap: var(--sp-2);
+  margin-block-end: var(--sp-4);
+}
+.dl-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 64px;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--rp-border);
+  border-radius: var(--radius-card);
+  background: var(--rp-surface);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color var(--rp-duration-quick) var(--rp-ease);
+}
+.dl-row:hover {
+  border-color: var(--rp-border-strong);
+}
+.dl-row:focus-visible {
+  outline: 2px solid var(--rp-focus);
+  outline-offset: 2px;
+}
+.dl-row__icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--rp-primary) 12%, transparent);
+  color: var(--rp-interactive);
+}
+.dl-row__text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.dl-row__text strong {
+  font-weight: 650;
+}
+.dl-row__text span {
+  color: var(--rp-text-soft);
+  font-size: 13px;
+}
+.dl-row__go {
+  color: var(--rp-interactive);
+}
+.dl-row--loading {
+  min-height: 64px;
+  border: 0;
+}
+.dl-parts summary {
+  padding-block: var(--sp-2);
+  color: var(--rp-interactive);
+  font-size: 14px;
+  cursor: pointer;
+}
+.dl-parts[open] summary {
+  margin-block-end: var(--sp-2);
+}
+.dl-parts a.list-row {
+  color: inherit;
+  text-decoration: none;
+}
+
 /* What hiding does, one line per place a reader would notice. */
 .hide-points {
   display: grid;

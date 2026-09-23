@@ -154,8 +154,9 @@ export const library = {
   'library.book.downloadFiles': 'Download files…',
   'library.book.downloadFilesTitle': 'Download files',
   'library.book.downloadFileHint': "The book's own file, saved to this device",
-  'library.book.downloadFilesHint':
-    '{n, plural, one {# file.} other {# files.}} Each one downloads on its own.',
+  'library.book.downloadFilesLede': 'The book’s own files, saved to this device to keep.',
+  'library.book.downloadZip': '{n, plural, one {# file} other {# files}} in one ZIP · {size}',
+  'library.book.downloadParts': 'Or one of the {n} files on its own',
   // Save offline: the copy that stays inside the app
   'library.offline.save': 'Save offline',
   'library.offline.saving': 'Saving offline',
