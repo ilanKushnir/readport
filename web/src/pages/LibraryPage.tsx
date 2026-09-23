@@ -25,6 +25,7 @@ import { HiddenMark } from '../components/HiddenMark';
 import {
   IconAlert,
   IconBookOpen,
+  IconCheck,
   IconDownload,
   IconEye,
   IconEyeOff,
@@ -384,7 +385,29 @@ export function LibraryPage() {
     let source = data?.books ?? offlineBooks ?? [];
     // The one shelf the server cannot answer: what is downloaded lives in
     // this browser, so the filtering happens here and nowhere else.
-    if (showing.kind === 'device') source = source.filter((b) => downloaded.has(b.id));
+    if (showing.kind === 'device') {
+      // One card per title. A book saved in both formats is one book here as
+      // everywhere else, on the ebook's card, and the card's badge says which
+      // editions are on the device. It used to be two cards, one per file.
+      // Asked for one format, the answer is that edition itself: collapsing
+      // to the ebook's card would hide a saved audiobook from "Audiobooks".
+      const here = source.filter(
+        (b) => downloaded.has(b.id) && (kind === 'all' || b.kind === kind),
+      );
+      const shown = new Set<string>();
+      source = [];
+      for (const b of here) {
+        const pair = b.pair && b.pair.status !== 'candidate' ? b.pair : null;
+        if (!pair) {
+          source.push(b);
+          continue;
+        }
+        if (shown.has(pair.pairId)) continue;
+        shown.add(pair.pairId);
+        const partner = here.find((x) => x.id === pair.otherBookId);
+        source.push(b.kind === 'audio' && partner?.kind === 'ebook' ? partner : b);
+      }
+    }
     if (showing.kind === 'user' || showing.kind === 'device') {
       const needle = debouncedQuery.trim().toLowerCase();
       if (needle) {
@@ -690,6 +713,14 @@ export function LibraryPage() {
                 key={b.id}
                 book={b}
                 offline={downloaded.has(b.id)}
+                saved={
+                  showing.kind === 'device'
+                    ? {
+                        own: downloaded.has(b.id),
+                        other: !!b.pair && downloaded.has(b.pair.otherBookId),
+                      }
+                    : undefined
+                }
                 onAddTo={() => setAddTo(b)}
               />
             ))}
@@ -1007,7 +1038,16 @@ function DownloadsInProgress({
 }
 
 /** One format inside the badge: EPUB, M4B, MP3, or AUDIO for a folder of files. */
-function FormatPart({ kind, format }: { kind: BookSummary['kind']; format: string }) {
+function FormatPart({
+  kind,
+  format,
+  saved,
+}: {
+  kind: BookSummary['kind'];
+  format: string;
+  /** On the On this device shelf: whether this edition is saved here. */
+  saved?: boolean;
+}) {
   const t = useT();
   const label =
     kind === 'ebook'
@@ -1015,21 +1055,36 @@ function FormatPart({ kind, format }: { kind: BookSummary['kind']; format: strin
       : !format || format === 'multi'
         ? t('library.card.audioFormat')
         : format.toUpperCase();
-  return (
+  const inner = (
     <>
       {kind === 'ebook' ? <IconBookOpen size={11} /> : <IconHeadphones size={11} />}
       {label}
     </>
+  );
+  if (saved === undefined) return inner;
+  // Saved, with a tick; not saved, faded back - the same badge, telling
+  // which of the two editions this device can open without a connection.
+  return (
+    <span className={`badge__part ${saved ? 'is-saved' : 'is-unsaved'}`}>
+      {inner}
+      {saved && <IconCheck size={10} />}
+      <span className="visually-hidden">
+        {saved ? t('library.card.savedHere', { kind }) : t('library.card.notSavedHere', { kind })}
+      </span>
+    </span>
   );
 }
 
 function BookCard({
   book,
   offline,
+  saved,
   onAddTo,
 }: {
   book: BookSummary;
   offline: boolean;
+  /** On the On this device shelf: which of the title's editions are saved here. */
+  saved?: { own: boolean; other: boolean };
   onAddTo: () => void;
 }) {
   const t = useT();
@@ -1080,7 +1135,7 @@ function BookCard({
               className={`badge ${!pair && book.kind === 'audio' ? 'badge--audio' : ''}`}
               title={pair?.switchable ? t('library.card.syncedTitle') : undefined}
             >
-              <FormatPart kind={book.kind} format={book.format} />
+              <FormatPart kind={book.kind} format={book.format} saved={saved?.own} />
               {pair && (
                 <>
                   {/* The join between the two formats is the synced mark: a
@@ -1096,7 +1151,11 @@ function BookCard({
                   ) : (
                     <span className="badge__sep" aria-hidden="true" />
                   )}
-                  <FormatPart kind={pair.otherKind} format={pair.otherFormat} />
+                  <FormatPart
+                    kind={pair.otherKind}
+                    format={pair.otherFormat}
+                    saved={saved?.other}
+                  />
                   {pair.switchable && (
                     <span className="visually-hidden">{t('library.card.syncedTitle')}</span>
                   )}

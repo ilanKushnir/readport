@@ -1111,6 +1111,20 @@ body:has(.app-body) {
   color: var(--rp-danger);
 }
 
+/* On the On this device shelf each format in the badge says whether that
+   edition is saved here: a tick, or faded back. */
+.badge__part {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.badge__part.is-unsaved {
+  opacity: 0.42;
+}
+.badge__part.is-saved svg:last-of-type {
+  color: var(--rp-interactive);
+}
+
 /* Hidden books. Only an admin is ever shown one, and among their own books
    they should be able to tell at a glance which ones nobody else can see:
    the cover fades back, and wears the eye struck through. */

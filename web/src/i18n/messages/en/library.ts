@@ -292,6 +292,10 @@ export const library = {
   'library.offline.pillLabel': 'Saving {title} offline, {pct}. Open the book.',
   'library.offline.pillMore': '+{n} more',
   // Hidden books: an admin takes one off everyone else's shelves
+  // On the On this device shelf: which editions of a title are saved here
+  'library.card.savedHere': '{kind, select, ebook {Ebook} other {Audiobook}} saved on this device',
+  'library.card.notSavedHere':
+    '{kind, select, ebook {Ebook} other {Audiobook}} not saved on this device',
   'library.hidden.tool': 'Hide',
   'library.hidden.toolHint': 'Hide this book from everyone but admins',
   'library.hidden.askTitle': 'Hide from readers?',

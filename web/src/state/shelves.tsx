@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { type ShelfSummary, type ShelvesOverview } from '@readport/shared';
 import { api } from '../api/client';
-import { listDownloads } from '../offline/downloads';
+import { cachedBookSummary, listDownloads, subscribeDownloads } from '../offline/downloads';
 import { useSession } from './session';
 
 /**
@@ -63,12 +63,29 @@ export function ShelvesProvider({ children }: { children: ReactNode }) {
 
   const refreshDownloads = useCallback(async () => {
     try {
-      const list = await listDownloads();
-      setDeviceCount(list.filter((d) => d.status === 'done').length);
+      const done = (await listDownloads()).filter((d) => d.status === 'done');
+      // Titles, not editions: a book saved in both formats is one book on
+      // the On this device shelf, so it is one in its count. The pair is
+      // read from the copy each download keeps of its book.
+      const titles = new Set<string>();
+      for (const d of done) {
+        const pair = (await cachedBookSummary(d.bookId))?.pair;
+        titles.add(pair && pair.status !== 'candidate' ? `pair:${pair.pairId}` : d.bookId);
+      }
+      setDeviceCount(titles.size);
     } catch {
       setDeviceCount(0);
     }
   }, []);
+
+  // A download finishing, or a copy being removed, anywhere in the app.
+  useEffect(
+    () =>
+      subscribeDownloads((id, s) => {
+        if (id === '*' || !s || s.status === 'done') void refreshDownloads();
+      }),
+    [refreshDownloads],
+  );
 
   const refresh = useCallback(async () => {
     const mine = ++seq.current;
