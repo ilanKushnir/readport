@@ -114,6 +114,7 @@ export const shell = {
   'shell.jobType.index-audio': 'Index audiobook',
   'shell.jobType.pair-scan': 'Look for pairs',
   'shell.jobType.language-backfill': 'Read book languages',
+  'shell.jobType.translation-align': 'Match translations',
   'shell.jobState.queued': 'Queued',
   'shell.jobState.running': 'Running',
   'shell.jobState.done': 'Finished',

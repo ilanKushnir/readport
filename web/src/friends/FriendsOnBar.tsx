@@ -35,6 +35,8 @@ export interface FriendProgress {
   /** In the book right now; absent from a server that does not say. */
   live?: boolean;
   chapterTitle?: string | null;
+  /** Reading it in another language: which edition. `pct` is already this book's. */
+  edition?: { bookId: string; language: string | null; title: string };
 }
 
 interface FriendsPrefs {
@@ -226,11 +228,23 @@ export function FriendMarkers({
               ...friendColourStyle(x.colour),
             } as React.CSSProperties
           }
-          aria-label={t(x.live ? 'friends.bar.beadLive' : 'friends.bar.bead', {
-            name: x.displayName,
-            pct: f.percent(x.pct),
-          })}
-          title={`${x.displayName} · ${f.percent(x.pct)}`}
+          aria-label={
+            x.edition
+              ? t('translations.friends.bead', {
+                  name: x.displayName,
+                  pct: f.percent(x.pct),
+                  language: f.languageName(x.edition.language),
+                })
+              : t(x.live ? 'friends.bar.beadLive' : 'friends.bar.bead', {
+                  name: x.displayName,
+                  pct: f.percent(x.pct),
+                })
+          }
+          title={
+            x.edition
+              ? `${x.displayName} · ${f.percent(x.pct)} · ${t('translations.friends.in', { language: f.languageName(x.edition.language) })}`
+              : `${x.displayName} · ${f.percent(x.pct)}`
+          }
           onClick={(e) => {
             e.stopPropagation();
             onPick?.();
@@ -366,7 +380,10 @@ function FriendsCard({
         <ul className="fcard__list">
           {friends.map((x) => {
             const delta = Math.round((x.pct - myPct) * 100);
-            const chapter = x.chapterTitle ?? chapterOf?.(x.locator) ?? null;
+            // A friend in another language is in another edition: their
+            // locator names a chapter of THAT book, so only the server's
+            // chapter, carried across to this one, is worth saying.
+            const chapter = x.chapterTitle ?? (x.edition ? null : chapterOf?.(x.locator)) ?? null;
             const on = shownIds.has(x.userId);
             return (
               <li key={x.userId} className="fcard__row">
@@ -405,6 +422,16 @@ function FriendsCard({
                         : f.percent(x.pct)}
                     {x.live ? '' : ` · ${f.ago(x.updatedAt)}`}
                   </div>
+                  {x.edition && (
+                    <div className="fcard__edition">
+                      {t('translations.friends.reading', {
+                        language: f.languageName(x.edition.language),
+                        // Isolated, so a title in another direction cannot
+                        // reorder the sentence around it.
+                        title: `\u2068${x.edition.title}\u2069`,
+                      })}
+                    </div>
+                  )}
                   <div className="fcard__delta">
                     {x.finished
                       ? ''

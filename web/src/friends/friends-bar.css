@@ -308,3 +308,10 @@
   height: 24px;
   accent-color: var(--rp-primary);
 }
+
+/* A friend reading this book in another language: which edition. */
+.fcard__edition {
+  color: var(--rp-text-soft);
+  font-size: 12.5px;
+  line-height: 1.35;
+}

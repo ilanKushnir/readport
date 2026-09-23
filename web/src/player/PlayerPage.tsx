@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { LanguagesSheet } from '../translations/LanguagesSheet';
 import { type AudioLocator, type EbookLocator } from '@readport/shared';
 import { api, ApiError, failureMessage, isOffline } from '../api/client';
 import { cachedSwitch, removeDownload } from '../offline/downloads';
@@ -31,6 +32,7 @@ import {
   IconSkipFwd,
   IconSpeed,
   IconToc,
+  IconLanguages,
 } from '../components/icons';
 import { formatDuration } from '../lib/format';
 import { ambientColorFromImage } from '../lib/ambient';
@@ -51,7 +53,7 @@ const SLEEP_OPTIONS: { key: MessageKey; minutes: number; n?: number }[] = [
   { key: 'player.sleep.endOfChapter', minutes: -1 },
 ];
 
-type SheetKind = 'none' | 'chapters' | 'playback' | 'sleep' | 'bookmarks';
+type SheetKind = 'none' | 'chapters' | 'playback' | 'sleep' | 'bookmarks' | 'languages';
 
 interface SkipPrefs {
   back: number;
@@ -263,13 +265,23 @@ export function PlayerPage() {
             // A handoff aims deliberately behind the reader, so an unexplained
             // rewind would read as a bug rather than as the safeguard it is.
             const back = Math.round(Number(searchParams.get('back') ?? 0) / 1000);
-            toast.show(
-              back >= 3
-                ? t('player.handoff.startingBefore', { n: back })
-                : gran === 'sentence'
-                  ? t('player.handoff.fromPosition')
-                  : t('player.handoff.nearPosition'),
-            );
+            if (searchParams.get('via') === 'translation') {
+              // From the same book in another language: say which, and how close.
+              const name = f.languageName(searchParams.get('fromLang') || null);
+              toast.show(
+                gran === 'paragraph'
+                  ? t('translations.handoff.from', { language: name })
+                  : t('translations.handoff.near', { language: name }),
+              );
+            } else {
+              toast.show(
+                back >= 3
+                  ? t('player.handoff.startingBefore', { n: back })
+                  : gran === 'sentence'
+                    ? t('player.handoff.fromPosition')
+                    : t('player.handoff.nearPosition'),
+              );
+            }
           }
           void recordCheckpoint(id, handoff ? 'switch' : 'seek', {
             medium: 'audio',
@@ -791,6 +803,16 @@ export function PlayerPage() {
             <bdi>{detail.book.format.toUpperCase()}</bdi>
           )}
         </span>
+        {(detail.translations?.length ?? 0) > 0 && (
+          <button
+            className="icon-btn"
+            onClick={() => setSheet('languages')}
+            aria-label={t('translations.continue.title')}
+            title={t('translations.continue.title')}
+          >
+            <IconLanguages />
+          </button>
+        )}
         {/* Same split control as the reader: the ribbon marks this moment, and
             the caret beside it opens the list - shown only once there is a
             list to open. */}
@@ -1021,6 +1043,15 @@ export function PlayerPage() {
         )}
       </div>
 
+      {sheet === 'languages' && (
+        <LanguagesSheet
+          bookId={id}
+          language={detail.book.language}
+          titles={detail.translations ?? []}
+          here={locatorNow}
+          onClose={() => setSheet('none')}
+        />
+      )}
       {sheet === 'chapters' && (
         <Sheet title={t('player.chapters.title')} onClose={() => setSheet('none')}>
           {chapters.map((c, i) => (

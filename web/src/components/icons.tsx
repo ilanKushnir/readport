@@ -274,6 +274,14 @@ export const IconTrash = (p: P) => (
     <path d="M5 7h14M9.5 7V4.8h5V7M7 7l.8 12.2h8.4L17 7" />
   </I>
 );
+/** Two scripts side by side: the same book in another language. */
+export const IconLanguages = (p: P) => (
+  <I {...p}>
+    <path d="M3.5 5.5h9M8 3.4v2.1" />
+    <path d="M10.6 5.5c-.9 3.4-3.1 6-6.6 7.3M5.6 7.9c1.3 2.1 3.2 3.6 5.6 4.5" />
+    <path d="m12.8 20.6 4.1-9.6 4.1 9.6M14.2 17.4h5.4" />
+  </I>
+);
 /** A globe: the language a book is in. */
 export const IconGlobe = (p: P) => (
   <I {...p}>

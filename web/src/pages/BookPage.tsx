@@ -23,6 +23,7 @@ import {
   IconEye,
   IconEyeOff,
   IconHeadphones,
+  IconLanguages,
   IconReadAlong,
   IconLink,
   IconClose,
@@ -54,6 +55,8 @@ import { bookAudioSupport } from '../lib/audioSupport';
 import { ambientColorFromImage } from '../lib/ambient';
 import { recordCheckpoint } from '../progress/engine';
 import { useDownloadState } from '../offline/useDownloads';
+import { OtherLanguagesRow } from '../translations/OtherLanguagesRow';
+import { LinkTranslationsSheet } from '../translations/LinkTranslationsSheet';
 
 /** The paired edition, as far as the offline sheet needs to describe it. */
 interface Companion {
@@ -88,6 +91,8 @@ export function BookPage() {
   const [otherDetail, setOtherDetail] = useState<BookDetail | null | undefined>(undefined);
   const [hideSheet, setHideSheet] = useState(false);
   const [hiding, setHiding] = useState(false);
+  /** The sheet a curator links this book to its other languages in. */
+  const [languagesSheet, setLanguagesSheet] = useState(false);
   const { user } = useSession();
   const [member, setMember] = useState<{
     shelfIds: string[];
@@ -419,6 +424,7 @@ export function BookPage() {
             )}
             <span>{f.bytes(book.sizeBytes)}</span>
           </div>
+          <OtherLanguagesRow titles={detail.translations ?? []} />
           {book.hidden && (
             // Only an admin is ever shown a hidden book, so this is always
             // the person who can undo it - and the undo sits in the note
@@ -598,6 +604,17 @@ export function BookPage() {
                   <span>{t('library.book.downloadFile')}</span>
                 </a>
               ))}
+            {(user?.role === 'admin' || user?.role === 'curator') && (
+              <button
+                type="button"
+                className="btn btn--ghost book-tool"
+                title={t('translations.toolHint')}
+                onClick={() => setLanguagesSheet(true)}
+              >
+                <IconLanguages size={17} />
+                <span>{t('translations.tool')}</span>
+              </button>
+            )}
             {user?.role === 'admin' && !book.hidden && (
               <button
                 type="button"
@@ -649,7 +666,11 @@ export function BookPage() {
       </div>
 
       {/* Where friends are in this book, when there are friends at all. */}
-      <BookFriendsRow book={book} canRecommend={!book.hidden} />
+      <BookFriendsRow
+        book={book}
+        canRecommend={!book.hidden}
+        translations={detail.translations ?? []}
+      />
 
       {book.pair && book.pair.status === 'candidate' && (
         <div className="banner" role="note">
@@ -757,6 +778,13 @@ export function BookPage() {
             setOfflineSheet(false);
             toast.show(t('library.download.removed'));
           }}
+        />
+      )}
+      {languagesSheet && (
+        <LinkTranslationsSheet
+          book={book}
+          onChanged={(titles) => setDetail((d) => (d ? { ...d, translations: titles } : d))}
+          onClose={() => setLanguagesSheet(false)}
         />
       )}
       {hideSheet && (

@@ -19,6 +19,8 @@ const TYPE_KEY: Record<string, MessageKey | undefined> = {
   'index-ebook': 'shell.jobType.index-ebook',
   'index-audio': 'shell.jobType.index-audio',
   'pair-scan': 'shell.jobType.pair-scan',
+  'language-backfill': 'shell.jobType.language-backfill',
+  'translation-align': 'shell.jobType.translation-align',
 };
 
 const STATE_KEY: Record<string, MessageKey | undefined> = {

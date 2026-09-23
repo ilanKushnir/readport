@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { type AudioLocator, type EbookLocator } from '@readport/shared';
+import { type AudioLocator, type EbookLocator, type TranslationTitle } from '@readport/shared';
 import { api, ApiError, isOffline, notifyUnauthorized } from '../api/client';
 import { cachedSwitch, removeDownload } from '../offline/downloads';
 import {
@@ -36,6 +36,7 @@ import {
   IconSun,
   IconToc,
   IconType,
+  IconLanguages,
 } from '../components/icons';
 import {
   buildTextMap,
@@ -79,6 +80,8 @@ import {
 } from './motion';
 import { LineOverlay, pageTurning } from './LineOverlay';
 import { canPaint, paintRanges } from './paint';
+import { LanguagesSheet } from '../translations/LanguagesSheet';
+import { PeekSheet } from '../translations/PeekSheet';
 import { hostOrigin, outlinePath, outlineRuns } from './overlay';
 import { lineBoxes, relativeTo, sameBoxes, type LineBox } from './overlay';
 import { trimQuote } from './share';
@@ -119,7 +122,7 @@ import {
 import { formatDuration } from '../lib/format';
 import { applyAppThemeColor, setThemeColor } from '../lib/themeColor';
 
-type SheetKind = 'none' | 'toc' | 'settings' | 'search' | 'note';
+type SheetKind = 'none' | 'toc' | 'settings' | 'search' | 'note' | 'languages' | 'peek';
 
 const DARK_MQ = '(prefers-color-scheme: dark)';
 
@@ -536,6 +539,8 @@ export function ReaderPage() {
     fragment?: string;
     handoff?: boolean;
     granularity?: string;
+    /** Arrived from this book in another language: that language, to greet the reader with. */
+    fromLanguage?: string;
     /** The words at the mark, for finding it again if the text has moved. */
     excerpt?: string | null;
     /** Point at the landing, the way a resume does. */
@@ -596,6 +601,10 @@ export function ReaderPage() {
             initialIntent: handoff ? 'switch' : 'open',
             handoff,
             granularity: searchParams.get('granularity') ?? undefined,
+            fromLanguage:
+              handoff && searchParams.get('via') === 'translation'
+                ? (searchParams.get('fromLang') ?? '')
+                : undefined,
             mark: !handoff,
           };
           // Arriving at a mark from the Notes or book page moves the reading
@@ -941,11 +950,21 @@ export function ReaderPage() {
     }
 
     paintMarks(map, annotations, spineIdx);
-    if (target?.handoff && target.sentenceId && map) {
-      const s = sentences.find((x) => x.id === target.sentenceId);
+    if (target?.handoff && map) {
+      const s = target.sentenceId ? sentences.find((x) => x.id === target.sentenceId) : undefined;
       if (s) {
         handoffCleanupRef.current?.();
         handoffCleanupRef.current = paintHandoff(map, s.start, s.end);
+      }
+      if (target.fromLanguage !== undefined) {
+        // From the same book in another language: say which, and how close.
+        const name = f.languageName(target.fromLanguage || null);
+        toast.show(
+          target.granularity === 'paragraph'
+            ? t('translations.handoff.from', { language: name })
+            : t('translations.handoff.near', { language: name }),
+        );
+      } else if (s) {
         toast.show(
           target.granularity && target.granularity !== 'sentence'
             ? t('reader.handoff.near')
@@ -2850,6 +2869,50 @@ export function ReaderPage() {
   const sheetRef = useRef<SheetKind>('none');
   sheetRef.current = sheet;
 
+  /**
+   * The same book in other languages, and the passage asked about in one of
+   * them: the reader's selection, or the paragraph at the top of the page.
+   */
+  const translations = detail?.translations ?? [];
+  const peekable = translations.filter(
+    (x) => x.match !== 'none' && x.books.some((b) => b.kind === 'ebook'),
+  );
+  const [peek, setPeek] = useState<{
+    title?: TranslationTitle;
+    spineIdx: number;
+    start: number;
+    end: number;
+    from: EbookLocator;
+  } | null>(null);
+  /** The passage shown in the other language is marked on this page while it is shown. */
+  const showPeekSource = useCallback(
+    (span: { spineIdx: number; start: number; end: number } | null) => {
+      const map = textMapRef.current;
+      const range =
+        span && map && span.spineIdx === spineIdx ? rangeForSpan(map, span.start, span.end) : null;
+      paintRanges('rp-peek', range ? [range] : []);
+    },
+    [spineIdx],
+  );
+  const openPeek = useCallback(
+    (start: number, end: number, title?: TranslationTitle) => {
+      if (!manifest) return;
+      setPeek({
+        title,
+        spineIdx,
+        start,
+        end,
+        from: locatorAt(manifest, sentences, spineIdx, start),
+      });
+      setSheet('peek');
+    },
+    [manifest, sentences, spineIdx],
+  );
+  const hereLocator = useCallback(
+    () => (manifest ? locatorAt(manifest, sentences, spineIdx, currentOffsetRef.current) : null),
+    [manifest, sentences, spineIdx],
+  );
+
   const [markPop, setMarkPop] = useState<{ a: Annotation; x: number; y: number } | null>(null);
   /** The colour row in place of the icons, while a highlight colour is being chosen. */
   const [palette, setPalette] = useState(false);
@@ -3581,6 +3644,16 @@ export function ReaderPage() {
         >
           <IconType />
         </button>
+        {translations.length > 0 && (
+          <button
+            className="icon-btn"
+            onClick={() => setSheet('languages')}
+            aria-label={t('translations.continue.title')}
+            title={t('translations.continue.title')}
+          >
+            <IconLanguages />
+          </button>
+        )}
         <span className="reader-title">{chapterTitle}</span>
         {/* Search, drawn as the small field it opens: a glass and a word,
             at the end of the bar where a search field is looked for. */}
@@ -3957,6 +4030,40 @@ export function ReaderPage() {
                 <IconShare size={18} />
                 <span>{t('reader.select.share')}</span>
               </button>
+              {peekable.length > 0 && selection && (
+                // The words in the book's other language: the matching
+                // passage comes up underneath, and this one is marked.
+                <button
+                  type="button"
+                  aria-label={
+                    peekable.length === 1
+                      ? t('translations.peek.showIn', {
+                          language: f.languageName(peekable[0]!.language),
+                        })
+                      : t('translations.peek.toolbar')
+                  }
+                  title={
+                    peekable.length === 1
+                      ? t('translations.peek.showIn', {
+                          language: f.languageName(peekable[0]!.language),
+                        })
+                      : t('translations.peek.toolbar')
+                  }
+                  onClick={() => {
+                    const { start, end } = selection;
+                    document.getSelection()?.removeAllRanges();
+                    setSelection(null);
+                    openPeek(start, end);
+                  }}
+                >
+                  <IconLanguages size={18} />
+                  <span>
+                    {peekable.length === 1
+                      ? f.languageName(peekable[0]!.language)
+                      : t('translations.peek.toolbar')}
+                  </span>
+                </button>
+              )}
             </>
           )}
         </div>
@@ -4254,6 +4361,35 @@ export function ReaderPage() {
         )}
       </div>
 
+      {sheet === 'languages' && (
+        <LanguagesSheet
+          bookId={id}
+          language={detail?.book.language ?? language}
+          titles={translations}
+          here={hereLocator}
+          onPeek={(title) =>
+            openPeek(currentOffsetRef.current, currentOffsetRef.current + 1, title)
+          }
+          onClose={() => setSheet('none')}
+        />
+      )}
+      {sheet === 'peek' && peek && peekable.length > 0 && (
+        <PeekSheet
+          bookId={id}
+          language={detail?.book.language ?? language}
+          titles={peekable}
+          initial={peek.title && peekable.includes(peek.title) ? peek.title : undefined}
+          spineIdx={peek.spineIdx}
+          start={peek.start}
+          end={peek.end}
+          from={peek.from}
+          onSource={showPeekSource}
+          onClose={() => {
+            setSheet('none');
+            setPeek(null);
+          }}
+        />
+      )}
       {sheet === 'toc' && manifest && (
         <Sheet
           title={t('reader.contents.title')}

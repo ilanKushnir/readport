@@ -1323,6 +1323,16 @@
   background-color: var(--rd-handoff, rgb(180 83 42 / 0.2));
 }
 
+/* The passage shown in the book's other language, marked on this page while
+   the sheet is open: which paragraph that is the translation of. Quieter
+   than a search hit - it is context, not an answer. */
+::highlight(rp-peek) {
+  background-color: color-mix(in srgb, var(--rd-link) 14%, transparent);
+  text-decoration: underline 1px;
+  text-underline-offset: 5px;
+  text-decoration-color: color-mix(in srgb, var(--rd-link) 55%, transparent);
+}
+
 /* reading settings sheet (Apple Books-style) */
 .rs-group {
   padding-block: var(--sp-3);

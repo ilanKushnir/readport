@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { type BookSummary, type Locator } from '@readport/shared';
+import { type BookSummary, type Locator, type TranslationTitle } from '@readport/shared';
 import {
   DEFAULT_FRIENDS_PREFS,
   FRIEND_COLOURS,
@@ -55,6 +55,8 @@ export interface Friend extends Person {
     /** In it right now; absent from a server that does not say. */
     live?: boolean;
   } | null;
+  /** The language they read in, when the server can tell: which edition to hand them. */
+  language?: string | null;
 }
 
 export interface FriendRequest extends Person {
@@ -88,6 +90,8 @@ export interface FriendProgressEntry extends Person {
   /** In the book right now; absent from a server that does not say. */
   live?: boolean;
   chapterTitle: string | null;
+  /** Reading it in another language: which edition. */
+  edition?: { bookId: string; language: string | null; title: string };
 }
 
 /** How often a page asks again who is here now: presence lasts minutes, not seconds. */
@@ -904,20 +908,58 @@ function BookThumb({ book }: { book: BookSummary }) {
  * "Recommend to a friend" from the book page: the book is known, so this
  * only asks who, and for a line to go with it.
  */
+/** One edition to recommend, when a book is in more than one language. */
+interface Edition {
+  bookId: string;
+  title: string;
+  language: string | null;
+}
+
+/**
+ * The editions a book can be recommended as: this one, and one per other
+ * language (its ebook, else its audiobook).
+ */
+function editionsOf(
+  book: Pick<BookSummary, 'id' | 'title' | 'language'>,
+  translations: TranslationTitle[],
+): Edition[] {
+  return [
+    { bookId: book.id, title: book.title, language: book.language ?? null },
+    ...translations.map((x) => ({ bookId: x.books[0]!.id, title: x.title, language: x.language })),
+  ];
+}
+
+/** The edition to hand a friend by default: the one in the language they read in, else this one. */
+export function editionFor(editions: Edition[], language: string | null | undefined): Edition {
+  return (language && editions.find((e) => e.language === language)) || editions[0]!;
+}
+
 export function RecommendToFriendSheet({
   book,
+  translations = [],
   onClose,
 }: {
-  book: Pick<BookSummary, 'id' | 'title'>;
+  book: Pick<BookSummary, 'id' | 'title'> & { language?: string | null };
+  /** The same book in other languages: a friend is handed the one they read in. */
+  translations?: TranslationTitle[];
   onClose: () => void;
 }) {
   const t = useT();
+  const f = useFormat();
   const toast = useToast();
   const [friends, setFriends] = useState<Friend[] | null>(null);
   const [to, setTo] = useState<Friend | null>(null);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const editions = editionsOf({ ...book, language: book.language ?? null }, translations);
+  const [edition, setEdition] = useState<Edition>(editions[0]!);
+  // Picking a friend picks the edition in the language they read in; the
+  // sender can still choose another.
+  const pick = (fr: Friend) => {
+    setTo(fr);
+    setEdition(editionFor(editions, fr.language));
+  };
 
   useEffect(() => {
     let alive = true;
@@ -926,7 +968,7 @@ export function RecommendToFriendSheet({
         if (!alive) return;
         setFriends(d.friends);
         // One friend is not a choice.
-        if (d.friends.length === 1) setTo(d.friends[0]!);
+        if (d.friends.length === 1) pick(d.friends[0]!);
       })
       .catch(() => {
         if (alive) setFriends([]);
@@ -943,9 +985,9 @@ export function RecommendToFriendSheet({
     try {
       await api('/api/friends/recommend', {
         method: 'POST',
-        body: { toUserId: to.userId, bookId: book.id, note: note.trim() || undefined },
+        body: { toUserId: to.userId, bookId: edition.bookId, note: note.trim() || undefined },
       });
-      toast.show(t('friends.recommend.sent', { title: book.title, name: to.displayName }));
+      toast.show(t('friends.recommend.sent', { title: edition.title, name: to.displayName }));
       onClose();
     } catch (err) {
       setError(
@@ -986,7 +1028,7 @@ export function RecommendToFriendSheet({
                     role="radio"
                     aria-checked={to?.userId === fr.userId}
                     className="friends-pick"
-                    onClick={() => setTo(fr)}
+                    onClick={() => pick(fr)}
                   >
                     <span className="friends-dot" style={dotStyle(fr.colour)} aria-hidden="true" />
                     <span className="friends-pick__body">
@@ -997,6 +1039,34 @@ export function RecommendToFriendSheet({
               ))}
             </ul>
           </div>
+          {editions.length > 1 && (
+            <div className="field">
+              <label id="friends-edition-label">{t('translations.recommend.edition')}</label>
+              <div className="chip-row" role="radiogroup" aria-labelledby="friends-edition-label">
+                {editions.map((e) => (
+                  <button
+                    key={e.bookId}
+                    type="button"
+                    role="radio"
+                    aria-checked={edition.bookId === e.bookId}
+                    className="chip"
+                    title={e.title}
+                    onClick={() => setEdition(e)}
+                  >
+                    {f.languageName(e.language)}
+                  </button>
+                ))}
+              </div>
+              {to?.language && editions.some((e) => e.language === to.language) && (
+                <p className="hint">
+                  {t('translations.recommend.readsIn', {
+                    name: to.displayName,
+                    language: f.languageName(to.language),
+                  })}
+                </p>
+              )}
+            </div>
+          )}
           <NoteField value={note} onChange={setNote} />
           <button
             className="btn"
@@ -1022,10 +1092,13 @@ export function RecommendToFriendSheet({
 export function BookFriendsRow({
   book,
   canRecommend = true,
+  translations = [],
 }: {
-  book: Pick<BookSummary, 'id' | 'title'>;
+  book: Pick<BookSummary, 'id' | 'title' | 'language'>;
   /** False for a book nobody else could open - one an admin has hidden. */
   canRecommend?: boolean;
+  /** The same book in other languages: a friend may be handed the one they read in. */
+  translations?: TranslationTitle[];
 }) {
   const t = useT();
   const f = useFormat();
@@ -1076,6 +1149,11 @@ export function BookFriendsRow({
               aria-hidden="true"
             />
             {t(line.key, line.values)}
+            {e.edition && (
+              <span className="friends-strip__lang" title={e.edition.title}>
+                {t('translations.friends.in', { language: f.languageName(e.edition.language) })}
+              </span>
+            )}
             {e.live && (
               <span className="live-chip" title={t('friends.live.here', { name: e.displayName })}>
                 <span className="live-dot" aria-hidden="true" />
@@ -1096,7 +1174,13 @@ export function BookFriendsRow({
           {t('friends.book.recommend')}
         </button>
       )}
-      {sheet && <RecommendToFriendSheet book={book} onClose={() => setSheet(false)} />}
+      {sheet && (
+        <RecommendToFriendSheet
+          book={book}
+          translations={translations}
+          onClose={() => setSheet(false)}
+        />
+      )}
     </div>
   );
 }

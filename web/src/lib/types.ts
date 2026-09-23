@@ -5,10 +5,13 @@ import {
   type SwitchResolution,
   type TrackInfo,
   type Locator,
+  type TranslationTitle,
 } from '@readport/shared';
 
 export interface BookDetail {
   book: BookSummary;
+  /** The same book in other languages. Optional: a detail cached by an older build has none. */
+  translations?: TranslationTitle[];
   description: string | null;
   direction: 'ltr' | 'rtl';
   totalChars: number | null;

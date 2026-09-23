@@ -19,6 +19,7 @@ import {
 } from '../components/icons';
 import { formatDuration } from '../lib/format';
 import { PipelineDiagram, ProcessingQueue } from '../components/Processing';
+import { TranslationReview } from '../translations/TranslationReview';
 import { bucketCoverage } from '../lib/coverageBars';
 import { useT } from '../i18n';
 import { useFormat } from '../i18n/useFormat';
@@ -416,6 +417,7 @@ export function PairsPage() {
         </section>
       )}
       <ProcessingQueue canManage={isAdmin} onChange={() => void load()} quietWhenIdle />
+      {isAdmin && <TranslationReview />}
 
       <div className="ptabs" role="tablist" aria-label={t('pairs.tabsLabel')} onKeyDown={onTabKey}>
         {TABS.map((k) => (

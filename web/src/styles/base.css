@@ -264,12 +264,13 @@ select.input {
   white-space: nowrap;
   transition: background-color var(--rp-duration-quick) var(--rp-ease);
 }
-.chip[aria-pressed='true'] {
+.chip[aria-pressed='true'],
+.chip[role='radio'][aria-checked='true'] {
   background: var(--rp-primary);
   border-color: var(--rp-primary);
   color: var(--rp-on-primary);
 }
-.chip:hover:not([aria-pressed='true']) {
+.chip:hover:not([aria-pressed='true'], [aria-checked='true']) {
   background: var(--rp-surface);
 }
 
