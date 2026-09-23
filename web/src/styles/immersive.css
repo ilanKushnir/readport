@@ -47,6 +47,14 @@
   border-block-end: 1px solid color-mix(in srgb, var(--rd-text) 12%, transparent);
 }
 .immersive-chrome--bottom {
+  /* What the bar, the read-along card and the chapter line leave either
+     side of them: nothing on a phone, and on anything wider than one
+     column of controls, whatever centres that column. They are one unit
+     - the card grows out of a button in the bar - and they used to part
+     on an iPad on its side, two pages wide: the bar held to its own short
+     maximum at the start of the row and the card to the far end, one under
+     each page, its beak pointing at nothing. */
+  --rd-bar-side: max(0px, calc((100% - 720px) / 2));
   bottom: 0;
   flex-direction: column;
   align-items: stretch;
@@ -675,12 +683,19 @@
   gap: var(--sp-2);
   min-height: 40px;
 }
+.immersive-chrome--bottom > .reader-bar,
+.immersive-chrome--bottom > .reader-footer-row {
+  margin-inline: var(--rd-bar-side);
+}
 .reader-bar .reader-slider {
   flex: 1 1 auto;
   min-width: 0;
 }
 .reader-bar .reader-minibar {
   flex: 1 1 auto;
+  /* In the bar the line runs up to the percentage, so the voice's buttons
+     are always at the end of the row, under the card that grows from them. */
+  max-width: none;
 }
 .reader-bar__pct {
   flex: none;
@@ -2049,10 +2064,12 @@
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  /* Hugs the inline end, where the button is; on a phone that is the
-     whole width. */
+  /* Hugs the inline end of the bar's column, where the button is - logical
+     margins, so in a right-to-left book that is the left - and on a phone
+     is the whole width. */
   width: min(100%, 560px);
-  margin: 0 0 6px auto;
+  margin-block: 0 6px;
+  margin-inline: auto var(--rd-bar-side, 0px);
   padding: 5px 8px 5px 5px;
   border: 1px solid color-mix(in srgb, var(--rd-link) 35%, transparent);
   border-radius: 18px;

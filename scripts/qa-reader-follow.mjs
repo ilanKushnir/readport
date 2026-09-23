@@ -442,6 +442,34 @@ try {
     });
     await context.close();
   }
+  {
+    // An iPad on its side, two pages: the bar and the read-along card are
+    // one unit in the middle, the card's beak over its own button. They used
+    // to part, one under each page.
+    const { page, context } = await open(
+      'paginated',
+      false,
+      'no-preference',
+      { width: 1180, height: 820 },
+      { progressBar: 'compact' },
+    );
+    await page.getByRole('button', { name: 'Read along', exact: true }).click();
+    await clock(page, [cue(40)], 100);
+    await page.waitForTimeout(500);
+    await check('on a two-page spread the read-along card sits over its own button', async () => {
+      const g = await page.evaluate(() => {
+        const r = (sel) => document.querySelector(sel).getBoundingClientRect().toJSON();
+        return { card: r('.readalong'), bar: r('.reader-bar'), lead: r('.tandem-btn--lead') };
+      });
+      assert(
+        Math.abs(g.card.right - g.lead.right) <= 2,
+        `card ends at ${g.card.right}, button at ${g.lead.right}`,
+      );
+      assert(Math.abs(g.lead.right - g.bar.right) <= 2, 'the button is not at the end of the bar');
+      assert(Math.abs((g.bar.left + g.bar.right) / 2 - 590) <= 2, 'the bar is not centred');
+    });
+    await context.close();
+  }
   const reduced = await open('scroll', false, 'reduce');
   await reduced.page.getByRole('button', { name: 'Read along', exact: true }).click();
   await clock(reduced.page, [cue(deep)]);
