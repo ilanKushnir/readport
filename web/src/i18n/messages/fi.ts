@@ -1780,5 +1780,10 @@ const messages: Record<string, string> = {
   // reader
   'reader.readAlong.turnPrev': 'Edellinen sivu, lue siitä',
   'reader.readAlong.turnNext': 'Seuraava sivu, lue siitä',
+  // library
+  'library.card.savedHere':
+    '{kind, select, ebook {E-kirja} other {Äänikirja}} tallennettu tällä laitteella',
+  'library.card.notSavedHere':
+    '{kind, select, ebook {E-kirja} other {Äänikirja}} tallentamaton tällä laitteella',
 };
 export default messages;

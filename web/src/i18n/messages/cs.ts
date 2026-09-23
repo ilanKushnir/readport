@@ -1793,5 +1793,10 @@ const messages: Record<string, string> = {
   // reader
   'reader.readAlong.turnPrev': 'Předchozí stránka, číst odtamtud',
   'reader.readAlong.turnNext': 'Další stránka, číst odtamtud',
+  // library
+  'library.card.savedHere':
+    '{kind, select, ebook {E-kniha} other {Audiokniha}} uložena v tomto zařízení',
+  'library.card.notSavedHere':
+    '{kind, select, ebook {E-kniha} other {Audiokniha}} neuložena v tomto zařízení',
 };
 export default messages;

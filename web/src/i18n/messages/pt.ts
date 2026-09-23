@@ -1803,6 +1803,11 @@ const messages: Record<string, string> = {
   // reader
   'reader.readAlong.turnPrev': 'Página anterior, ler a partir daí',
   'reader.readAlong.turnNext': 'Página seguinte, ler a partir daí',
+  // library
+  'library.card.savedHere':
+    '{kind, select, ebook {Ebook} other {Audiolivro}} guardado neste dispositivo',
+  'library.card.notSavedHere':
+    '{kind, select, ebook {Ebook} other {Audiolivro}} não guardado neste dispositivo',
 };
 
 export default messages;

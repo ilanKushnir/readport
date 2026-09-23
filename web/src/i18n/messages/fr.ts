@@ -1816,6 +1816,11 @@ const messages: Record<string, string> = {
   // reader
   'reader.readAlong.turnPrev': 'Page précédente, lire à partir de là',
   'reader.readAlong.turnNext': 'Page suivante, lire à partir de là',
+  // library
+  'library.card.savedHere':
+    '{kind, select, ebook {Livre numérique} other {Livre audio}} enregistré sur cet appareil',
+  'library.card.notSavedHere':
+    '{kind, select, ebook {Livre numérique} other {Livre audio}} non enregistré sur cet appareil',
 };
 
 export default messages;

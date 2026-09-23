@@ -1743,5 +1743,10 @@ const messages: Record<string, string> = {
   // reader
   'reader.readAlong.turnPrev': '이전 페이지, 거기서부터 읽기',
   'reader.readAlong.turnNext': '다음 페이지, 거기서부터 읽기',
+  // library
+  'library.card.savedHere':
+    '{kind, select, ebook {전자책} other {오디오북}}이(가) 이 기기에 저장됨',
+  'library.card.notSavedHere':
+    '{kind, select, ebook {전자책} other {오디오북}}이(가) 이 기기에 저장되지 않음',
 };
 export default messages;

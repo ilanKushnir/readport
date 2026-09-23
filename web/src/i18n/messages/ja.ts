@@ -1781,6 +1781,11 @@ const messages: Record<string, string> = {
   // reader
   'reader.readAlong.turnPrev': '前のページ、そこから読む',
   'reader.readAlong.turnNext': '次のページ、そこから読む',
+  // library
+  'library.card.savedHere':
+    '{kind, select, ebook {電子書籍} other {オーディオブック}}はこの端末に保存済み',
+  'library.card.notSavedHere':
+    '{kind, select, ebook {電子書籍} other {オーディオブック}}はこの端末に未保存',
 };
 
 export default messages;

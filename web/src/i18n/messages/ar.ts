@@ -1837,5 +1837,10 @@ const messages: Record<string, string> = {
   // reader
   'reader.readAlong.turnPrev': 'الصفحة السابقة، القراءة من هناك',
   'reader.readAlong.turnNext': 'الصفحة التالية، القراءة من هناك',
+  // library
+  'library.card.savedHere':
+    '{kind, select, ebook {كتاب إلكتروني} other {كتاب صوتي}} محفوظ على هذا الجهاز',
+  'library.card.notSavedHere':
+    '{kind, select, ebook {كتاب إلكتروني} other {كتاب صوتي}} غير محفوظ على هذا الجهاز',
 };
 export default messages;

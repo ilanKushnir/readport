@@ -1802,5 +1802,9 @@ const messages: Record<string, string> = {
   // reader
   'reader.readAlong.turnPrev': 'העמוד הקודם, קריאה משם',
   'reader.readAlong.turnNext': 'העמוד הבא, קריאה משם',
+  // library
+  'library.card.savedHere': '{kind, select, ebook {ספר אלקטרוני} other {ספר קול}} נשמר במכשיר הזה',
+  'library.card.notSavedHere':
+    '{kind, select, ebook {ספר אלקטרוני} other {ספר קול}} לא נשמר במכשיר הזה',
 };
 export default messages;

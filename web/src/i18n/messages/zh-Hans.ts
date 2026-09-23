@@ -1674,5 +1674,8 @@ const messages: Record<string, string> = {
   // reader
   'reader.readAlong.turnPrev': '上一页，从那里开始阅读',
   'reader.readAlong.turnNext': '下一页，从那里开始阅读',
+  // library
+  'library.card.savedHere': '{kind, select, ebook {电子书} other {有声书}}已保存在此设备上',
+  'library.card.notSavedHere': '{kind, select, ebook {电子书} other {有声书}}未保存在此设备上',
 };
 export default messages;

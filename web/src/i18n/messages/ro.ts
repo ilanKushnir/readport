@@ -1806,5 +1806,10 @@ const messages: Record<string, string> = {
   // reader
   'reader.readAlong.turnPrev': 'Pagina anterioară, citește de acolo',
   'reader.readAlong.turnNext': 'Pagina următoare, citește de acolo',
+  // library
+  'library.card.savedHere':
+    '{kind, select, ebook {Carte electronică} other {Carte audio}} salvată pe acest dispozitiv',
+  'library.card.notSavedHere':
+    '{kind, select, ebook {Carte electronică} other {Carte audio}} nesalvată pe acest dispozitiv',
 };
 export default messages;

@@ -1785,6 +1785,11 @@ const messages: Record<string, string> = {
   // reader
   'reader.readAlong.turnPrev': 'Önceki sayfa, oradan oku',
   'reader.readAlong.turnNext': 'Sonraki sayfa, oradan oku',
+  // library
+  'library.card.savedHere':
+    '{kind, select, ebook {E-kitap} other {Sesli kitap}} bu cihazda kaydedildi',
+  'library.card.notSavedHere':
+    '{kind, select, ebook {E-kitap} other {Sesli kitap}} bu cihazda kaydedilmedi',
 };
 
 export default messages;

@@ -1764,5 +1764,9 @@ const messages: Record<string, string> = {
   // reader
   'reader.readAlong.turnPrev': 'Forrige side, les derfra',
   'reader.readAlong.turnNext': 'Neste side, les derfra',
+  // library
+  'library.card.savedHere': '{kind, select, ebook {E-bok} other {Lydbok}} lagret på denne enheten',
+  'library.card.notSavedHere':
+    '{kind, select, ebook {E-bok} other {Lydbok}} ikke lagret på denne enheten',
 };
 export default messages;

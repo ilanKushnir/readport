@@ -1815,5 +1815,10 @@ const messages: Record<string, string> = {
   // reader
   'reader.readAlong.turnPrev': 'Προηγούμενη σελίδα, ανάγνωση από εκεί',
   'reader.readAlong.turnNext': 'Επόμενη σελίδα, ανάγνωση από εκεί',
+  // library
+  'library.card.savedHere':
+    '{kind, select, ebook {Ηλεκτρονικό βιβλίο} other {Ηχητικό βιβλίο}} αποθηκεύτηκε σε αυτή τη συσκευή',
+  'library.card.notSavedHere':
+    '{kind, select, ebook {Ηλεκτρονικό βιβλίο} other {Ηχητικό βιβλίο}} δεν αποθηκεύτηκε σε αυτή τη συσκευή',
 };
 export default messages;

@@ -1814,5 +1814,10 @@ const messages: Record<string, string> = {
   // reader
   'reader.readAlong.turnPrev': 'Vorige pagina, vanaf daar lezen',
   'reader.readAlong.turnNext': 'Volgende pagina, vanaf daar lezen',
+  // library
+  'library.card.savedHere':
+    '{kind, select, ebook {E-book} other {Luisterboek}} bewaard op dit apparaat',
+  'library.card.notSavedHere':
+    '{kind, select, ebook {E-book} other {Luisterboek}} niet bewaard op dit apparaat',
 } as const;
 export default messages;

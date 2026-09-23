@@ -1800,6 +1800,11 @@ const messages: Record<string, string> = {
   // reader
   'reader.readAlong.turnPrev': 'Предыдущая страница, читать оттуда',
   'reader.readAlong.turnNext': 'Следующая страница, читать оттуда',
+  // library
+  'library.card.savedHere':
+    '{kind, select, ebook {Электронная книга} other {Аудиокнига}} сохранена на этом устройстве',
+  'library.card.notSavedHere':
+    '{kind, select, ebook {Электронная книга} other {Аудиокнига}} не сохранена на этом устройстве',
 };
 
 export default messages;

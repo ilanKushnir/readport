@@ -1803,6 +1803,11 @@ const messages: Record<string, string> = {
   // reader
   'reader.readAlong.turnPrev': 'Попередня сторінка, читати звідти',
   'reader.readAlong.turnNext': 'Наступна сторінка, читати звідти',
+  // library
+  'library.card.savedHere':
+    '{kind, select, ebook {Електронна книга} other {Аудіокнига}} збережена на цьому пристрої',
+  'library.card.notSavedHere':
+    '{kind, select, ebook {Електронна книга} other {Аудіокнига}} не збережена на цьому пристрої',
 };
 
 export default messages;
