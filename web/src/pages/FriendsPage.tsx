@@ -1019,7 +1019,14 @@ export function RecommendToFriendSheet({
  * put it in front of one. Nothing at all for a reader with no friends -
  * this is the book's page, not a feed.
  */
-export function BookFriendsRow({ book }: { book: Pick<BookSummary, 'id' | 'title'> }) {
+export function BookFriendsRow({
+  book,
+  canRecommend = true,
+}: {
+  book: Pick<BookSummary, 'id' | 'title'>;
+  /** False for a book nobody else could open - one an admin has hidden. */
+  canRecommend?: boolean;
+}) {
   const t = useT();
   const f = useFormat();
   const [state, setState] = useState<{
@@ -1053,7 +1060,9 @@ export function BookFriendsRow({ book }: { book: Pick<BookSummary, 'id' | 'title
     };
   }, [book.id]);
 
-  if (!state || (state.friends.length === 0 && state.friendCount === 0)) return null;
+  if (!state) return null;
+  // Nobody in it, and nobody to hand it to: no row at all.
+  if (state.friends.length === 0 && (state.friendCount === 0 || !canRecommend)) return null;
   return (
     <div className="friends-strip" role="group" aria-label={t('friends.book.label')}>
       <span className="friends-strip__label">{t('friends.book.label')}</span>
@@ -1078,13 +1087,15 @@ export function BookFriendsRow({ book }: { book: Pick<BookSummary, 'id' | 'title
           </span>
         );
       })}
-      <button
-        type="button"
-        className="btn btn--ghost btn--sm friends-strip__cta"
-        onClick={() => setSheet(true)}
-      >
-        {t('friends.book.recommend')}
-      </button>
+      {canRecommend && (
+        <button
+          type="button"
+          className="btn btn--ghost btn--sm friends-strip__cta"
+          onClick={() => setSheet(true)}
+        >
+          {t('friends.book.recommend')}
+        </button>
+      )}
       {sheet && <RecommendToFriendSheet book={book} onClose={() => setSheet(false)} />}
     </div>
   );

@@ -270,4 +270,29 @@ export const library = {
   'library.download.error.wrong-range': 'The server sent the wrong part of an audio file.',
   'library.download.error.source-changed':
     'The book changed on the server during the download. Start again to fetch the new version.',
+  // Hidden books: an admin takes one off everyone else's shelves
+  'library.hidden.tool': 'Hide',
+  'library.hidden.toolHint': 'Hide this book from everyone but admins',
+  'library.hidden.askTitle': 'Hide from readers?',
+  'library.hidden.askLede': 'Only admins will see {title}.',
+  'library.hidden.askShelves':
+    'It leaves everyone else’s library, search, shelves and reading lists.',
+  'library.hidden.askLinks':
+    'Its share links stop opening, and friends stop seeing it in each other’s reading.',
+  'library.hidden.askKept':
+    'Nothing is deleted. Readers’ progress, notes and shelves come back when you show it again.',
+  'library.hidden.askPair': 'The ebook and the audiobook are hidden together.',
+  'library.hidden.confirm': 'Hide book',
+  'library.hidden.done': 'Hidden. Only admins can see it now.',
+  'library.hidden.noteTitle': 'Hidden from readers',
+  'library.hidden.noteBy': 'Only admins can see this book. {name} hid it {when}.',
+  'library.hidden.noteWhen': 'Only admins can see this book. Hidden {when}.',
+  'library.hidden.show': 'Show to everyone',
+  'library.hidden.shown': 'Everyone can see it again.',
+  'library.hidden.failed': 'Could not change who sees this book.',
+  'library.hidden.badge': 'Hidden from readers',
+  'library.hidden.shelfLede':
+    'Only admins see these books. Open one and choose Show to everyone to put it back.',
+  'library.empty.auto.hidden': 'Nothing is hidden. Every book is on everyone’s shelves.',
+  'library.book.gone': 'This book is not in the library.',
 } as const;

@@ -10,6 +10,7 @@ import {
   IconBookOpen,
   IconCheck,
   IconChevronLeft,
+  IconEyeOff,
   IconGrip,
   IconLibrary,
   IconLink,
@@ -252,6 +253,18 @@ export function Sidebar({
           count={deviceCount}
           onNavigate={onNavigate}
         />
+        {/* An admin's: what they have hidden from everybody else. The
+            server only counts it for admins, and it is only a row while
+            there is something on it. */}
+        {(overview?.hidden ?? 0) > 0 && (
+          <Row
+            to="/shelf/hidden"
+            icon={<IconEyeOff size={18} />}
+            label={t('shelves.hidden')}
+            count={overview?.hidden ?? 0}
+            onNavigate={onNavigate}
+          />
+        )}
       </ul>
 
       <h2 className="sidebar__heading sidebar__heading--action">

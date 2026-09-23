@@ -341,6 +341,22 @@ export const IconCloudCheck = (p: P) => (
     <path d="m8.8 16.2 2.3 2.3 4.2-4.2" />
   </I>
 );
+/** An open eye: seen by everyone. */
+export const IconEye = (p: P) => (
+  <I {...p}>
+    <path d="M2.8 12s3.4-6.2 9.2-6.2 9.2 6.2 9.2 6.2-3.4 6.2-9.2 6.2S2.8 12 2.8 12Z" />
+    <circle cx="12" cy="12" r="2.7" />
+  </I>
+);
+/** The eye struck through: hidden from everyone but the admins. */
+export const IconEyeOff = (p: P) => (
+  <I {...p}>
+    <path d="M9.6 6.1A9.6 9.6 0 0 1 12 5.8c5.8 0 9.2 6.2 9.2 6.2a16 16 0 0 1-2.5 3.2" />
+    <path d="M6.3 7.8C4 9.5 2.8 12 2.8 12s3.4 6.2 9.2 6.2c1.7 0 3.2-.5 4.5-1.2" />
+    <path d="M10.1 10.1a2.7 2.7 0 0 0 3.8 3.8" />
+    <path d="m4 4 16 16" />
+  </I>
+);
 /** One person: an account. */
 export const IconUser = (p: P) => (
   <I {...p}>

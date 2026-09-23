@@ -21,10 +21,13 @@ import { ReadingNow } from './ReadingNow';
 import { AddToSheet } from '../components/AddToSheet';
 import { Cover, EmptyState } from '../components/ui';
 import { LanguagePicker } from '../components/LanguagePicker';
+import { HiddenMark } from '../components/HiddenMark';
 import {
   IconAlert,
   IconBookOpen,
   IconDownload,
+  IconEye,
+  IconEyeOff,
   IconHeadphones,
   IconLibrary,
   IconLink,
@@ -67,6 +70,8 @@ type Showing =
   | { kind: 'library' }
   | { kind: 'auto'; id: AutoShelfId }
   | { kind: 'device' }
+  /** An admin's: the books hidden from everybody else. */
+  | { kind: 'hidden' }
   | { kind: 'user'; id: string }
   /** One value of one of the library's own groupings - a genre, a narrator. */
   | { kind: 'facet'; facet: FacetKind; value: string };
@@ -135,6 +140,7 @@ export function LibraryPage() {
       return { kind: 'facet', facet: params.facetKind, value: params.facetValue };
     }
     if (params.autoShelf === 'on-this-device') return { kind: 'device' };
+    if (params.autoShelf === 'hidden') return { kind: 'hidden' };
     if (params.autoShelf && AUTO_IDS.includes(params.autoShelf)) {
       return { kind: 'auto', id: params.autoShelf as AutoShelfId };
     }
@@ -217,12 +223,13 @@ export function LibraryPage() {
       });
       return;
     }
-    if (showing.kind === 'auto' || q || k || langKey) {
+    if (showing.kind === 'auto' || showing.kind === 'hidden' || q || k || langKey) {
       setScope({
         query: q || undefined,
         kind: k,
         lang: langKey || undefined,
-        filter: showing.kind === 'auto' ? showing.id : undefined,
+        filter:
+          showing.kind === 'auto' ? showing.id : showing.kind === 'hidden' ? 'hidden' : undefined,
       });
       return;
     }
@@ -253,6 +260,7 @@ export function LibraryPage() {
       if (kind !== 'all') params.set('kind', kind);
       if (langKey) params.set('lang', langKey);
       if (showing.kind === 'auto') params.set('filter', showing.id);
+      if (showing.kind === 'hidden') params.set('filter', 'hidden');
       if (showing.kind === 'facet') params.set('facet', formatFacet(showing.facet, showing.value));
       // What this browser downloaded is decided here, not by the server, and
       // a downloaded audiobook must not vanish behind its undownloaded ebook.
@@ -413,11 +421,13 @@ export function LibraryPage() {
         ? t('shelves.on-this-device')
         : showing.kind === 'auto'
           ? t(`shelves.${showing.id}` as const)
-          : showing.kind === 'facet'
-            ? showing.facet === 'language'
-              ? f.languageListName(showing.value)
-              : showing.value
-            : t('nav.library');
+          : showing.kind === 'hidden'
+            ? t('shelves.hidden')
+            : showing.kind === 'facet'
+              ? showing.facet === 'language'
+                ? f.languageListName(showing.value)
+                : showing.value
+              : t('nav.library');
 
   const showChips = showing.kind !== 'library' || (overview?.shelves.length ?? 0) > 0;
   // The language chips: only when the library has more than one language
@@ -450,6 +460,11 @@ export function LibraryPage() {
       end: false,
     })),
     { to: '/shelf/on-this-device', label: t('shelves.on-this-device'), end: false },
+    // An admin's, and only while there is something on it - or while it is
+    // the shelf in front of them, so the chip they are on stays in the row.
+    ...((overview?.hidden ?? 0) > 0 || showing.kind === 'hidden'
+      ? [{ to: '/shelf/hidden', label: t('shelves.hidden'), end: false }]
+      : []),
     ...(overview?.shelves ?? []).map((s) => ({
       to: `/shelf/u/${s.id}`,
       label: s.name,
@@ -487,6 +502,13 @@ export function LibraryPage() {
             {t('common.retry')}
           </button>
         </div>
+      )}
+
+      {showing.kind === 'hidden' && (
+        <p className="hidden-lede">
+          <IconEyeOff size={16} />
+          <span>{t('library.hidden.shelfLede')}</span>
+        </p>
       )}
 
       {missingCount > 0 && (
@@ -729,6 +751,13 @@ function ShelfEmpty({
     return (
       <EmptyState art="device-empty" title={t('library.empty.deviceTitle')}>
         {t('library.empty.deviceBody')}
+      </EmptyState>
+    );
+  }
+  if (showing.kind === 'hidden') {
+    return (
+      <EmptyState icon={<IconEye size={40} />} title={t('library.empty.autoTitle')}>
+        {t('library.empty.auto.hidden')}
       </EmptyState>
     );
   }
@@ -1014,10 +1043,13 @@ function BookCard({
     // Two format badges wrap to a second row on a phone-width cover, which
     // lands on top of the placeholder title. Only these cards need the extra
     // clearance, so only these cards pay for it.
-    <div className={`book-card ${pair ? 'book-card--multiformat' : ''}`}>
+    <div
+      className={`book-card ${pair ? 'book-card--multiformat' : ''} ${book.hidden ? 'is-hidden' : ''}`}
+    >
       <Link className="book-card__link" to={`/book/${book.id}`}>
         <span className="book-card__coverwrap">
           <Cover book={book} className="book-card__cover" />
+          {book.hidden && <HiddenMark />}
           <span className="book-card__badges">
             {/* One card per title, so one badge naming every format it is
                 owned in. Two separate pills read as two books - which is the

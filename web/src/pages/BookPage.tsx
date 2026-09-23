@@ -6,10 +6,11 @@ import {
   type BookSummary,
   type EbookLocator,
 } from '@readport/shared';
-import { api, failureMessage, isOffline } from '../api/client';
+import { api, ApiError, failureMessage, isOffline } from '../api/client';
 import { type Annotation, type BookDetail, type ResolveResponse } from '../lib/types';
 import { Cover, EmptyState, Sheet, useToast } from '../components/ui';
 import { AddToSheet } from '../components/AddToSheet';
+import { HiddenMark } from '../components/HiddenMark';
 import { BookFriendsRow } from './FriendsPage';
 import { ShareMenu } from '../share/ShareMenu';
 import { useShelves } from '../state/shelves';
@@ -19,11 +20,14 @@ import {
   IconBookmark,
   IconBookOpen,
   IconDownload,
+  IconEye,
+  IconEyeOff,
   IconHeadphones,
   IconReadAlong,
   IconLink,
   IconClose,
   IconCloudCheck,
+  IconLibrary,
   IconList,
   IconOffline,
   IconShelf,
@@ -76,6 +80,8 @@ export function BookPage() {
   const [addTo, setAddTo] = useState(false);
   /** Multi-file audiobook: which file to save. */
   const [saveOpen, setSaveOpen] = useState(false);
+  const [hideSheet, setHideSheet] = useState(false);
+  const [hiding, setHiding] = useState(false);
   const { user } = useSession();
   const [member, setMember] = useState<{
     shelfIds: string[];
@@ -94,8 +100,17 @@ export function BookPage() {
         () => ({ annotations: [] as Annotation[] }),
       );
       setAnnotations(anns.annotations);
-    } catch {
-      setError('library.book.loadFailed');
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) {
+        // Gone from the library, or hidden from this reader by an admin:
+        // either way a copy kept on this device is not theirs to keep
+        // reading, and it would sit there taking up room behind a book page
+        // that will not open.
+        await removeDownload(id).catch(() => {});
+        setError('library.book.gone');
+      } else {
+        setError('library.book.loadFailed');
+      }
     }
     setDl(await getDownloadState(id));
   }, [id]);
@@ -353,6 +368,29 @@ export function BookPage() {
     }
   };
 
+  /**
+   * Hide the book from everyone but the admins, or show it again. The server
+   * moves both editions of a title owned twice together and answers with
+   * this book as it now is.
+   */
+  const setVisibility = async (hidden: boolean) => {
+    setHiding(true);
+    try {
+      const res = await api<{ book: BookSummary }>(`/api/books/${id}/hidden`, {
+        method: 'POST',
+        body: { hidden },
+      });
+      setDetail((d) => (d ? { ...d, book: res.book } : d));
+      setHideSheet(false);
+      toast.show(hidden ? t('library.hidden.done') : t('library.hidden.shown'));
+      void refreshShelves();
+    } catch (err) {
+      toast.show(failureMessage(err, t('library.hidden.failed'), t));
+    } finally {
+      setHiding(false);
+    }
+  };
+
   return (
     <main
       className="app-main book-page"
@@ -362,8 +400,9 @@ export function BookPage() {
     >
       <div className="book-hero__backdrop" aria-hidden="true" />
       <div className="book-hero">
-        <span className="book-hero__coverwrap">
+        <span className={`book-hero__coverwrap ${book.hidden ? 'is-hidden' : ''}`}>
           <Cover book={book} className="book-hero__cover" />
+          {book.hidden && <HiddenMark />}
         </span>
         <div className="book-hero__body">
           <div className="book-hero__eyebrow">
@@ -392,6 +431,33 @@ export function BookPage() {
             )}
             <span>{f.bytes(book.sizeBytes)}</span>
           </div>
+          {book.hidden && (
+            // Only an admin is ever shown a hidden book, so this is always
+            // the person who can undo it - and the undo sits in the note
+            // that explains it, not in the tools row below.
+            <div className="hidden-note" role="note">
+              <IconEyeOff size={18} className="hidden-note__icon" />
+              <p className="hidden-note__text">
+                <strong>{t('library.hidden.noteTitle')}</strong>
+                <span>
+                  {book.hidden.by
+                    ? t('library.hidden.noteBy', {
+                        name: book.hidden.by,
+                        when: f.ago(book.hidden.at),
+                      })
+                    : t('library.hidden.noteWhen', { when: f.ago(book.hidden.at) })}
+                </span>
+              </p>
+              <button
+                type="button"
+                className="btn btn--secondary hidden-note__show"
+                disabled={hiding}
+                onClick={() => void setVisibility(false)}
+              >
+                <IconEye size={16} /> {t('library.hidden.show')}
+              </button>
+            </div>
+          )}
           {audioSupport && !audioSupport.supported && audioSupport.reason && (
             <div className="banner" role="note">
               <IconAlert size={16} /> {t(audioSupport.reason, { format: audioSupport.format })}
@@ -502,7 +568,9 @@ export function BookPage() {
               <span>{t('library.card.addTo')}</span>
             </button>
             <OfflineButton dl={dl} onClick={() => void openOfflineSheet()} />
-            <ShareMenu bookId={id} title={book.title} />
+            {/* A link to a hidden book would open on nothing for everybody
+                it was sent to, so a hidden book has none to give. */}
+            {!book.hidden && <ShareMenu bookId={id} title={book.title} />}
             {user?.canExport && !notReadyYet && (
               // A real link, not a button: the browser has to perform the
               // save itself. Distinct from Save offline beside it, which
@@ -538,6 +606,17 @@ export function BookPage() {
                     : t('library.book.downloadFiles')}
                 </span>
               </a>
+            )}
+            {user?.role === 'admin' && !book.hidden && (
+              <button
+                type="button"
+                className="btn btn--ghost book-tool"
+                title={t('library.hidden.toolHint')}
+                onClick={() => setHideSheet(true)}
+              >
+                <IconEyeOff size={17} />
+                <span>{t('library.hidden.tool')}</span>
+              </button>
             )}
           </div>
           {(pairUntimed || pairOffline) && (
@@ -579,7 +658,7 @@ export function BookPage() {
       </div>
 
       {/* Where friends are in this book, when there are friends at all. */}
-      <BookFriendsRow book={book} />
+      <BookFriendsRow book={book} canRecommend={!book.hidden} />
 
       {book.pair && book.pair.status === 'candidate' && (
         <div className="banner" role="note">
@@ -689,6 +768,35 @@ export function BookPage() {
             toast.show(t('library.download.removed'));
           }}
         />
+      )}
+      {hideSheet && (
+        <Sheet title={t('library.hidden.askTitle')} onClose={() => setHideSheet(false)}>
+          <p className="sheet__lede">{t('library.hidden.askLede', { title: book.title })}</p>
+          {/* What hiding does, in the three places a reader would notice. */}
+          <ul className="hide-points">
+            <li>
+              <IconLibrary size={17} />
+              <span>{t('library.hidden.askShelves')}</span>
+            </li>
+            <li>
+              <IconLink size={17} />
+              <span>{t('library.hidden.askLinks')}</span>
+            </li>
+            <li>
+              <IconBookmark size={17} />
+              <span>{t('library.hidden.askKept')}</span>
+            </li>
+          </ul>
+          {pair && <p className="hint">{t('library.hidden.askPair')}</p>}
+          <div className="sheet__actions">
+            <button className="btn" disabled={hiding} onClick={() => void setVisibility(true)}>
+              <IconEyeOff size={16} /> {t('library.hidden.confirm')}
+            </button>
+            <button className="btn btn--ghost" onClick={() => setHideSheet(false)}>
+              {t('common.cancel')}
+            </button>
+          </div>
+        </Sheet>
       )}
       {addTo && (
         <AddToSheet

@@ -67,6 +67,8 @@ export const common = {
   'shelves.both-formats': 'Both formats',
   'shelves.recently-added': 'Recently added',
   'shelves.on-this-device': 'On this device',
+  // An admin's shelf: the books they have hidden from everybody else.
+  'shelves.hidden': 'Hidden',
   'shelves.readingList': 'Reading list',
   'shelves.allBooks': 'All books',
   'language.pickerTitle': 'Interface language',

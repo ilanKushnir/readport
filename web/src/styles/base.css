@@ -898,8 +898,8 @@ body:has(.app-body) {
   top: var(--sp-2);
   inset-inline-start: var(--sp-2);
   /* A title owned in both formats wears both badges, and a synced one wears a
-     third. Leave room for the + button in the opposite corner and let them
-     wrap rather than run off a phone-width cover. */
+     third. Leave room for the hidden mark in the opposite corner and let
+     them wrap rather than run off a phone-width cover. */
   inset-inline-end: 44px;
   display: flex;
   flex-wrap: wrap;
@@ -1109,6 +1109,104 @@ body:has(.app-body) {
 .banner--error {
   border-color: var(--rp-danger);
   color: var(--rp-danger);
+}
+
+/* Hidden books. Only an admin is ever shown one, and among their own books
+   they should be able to tell at a glance which ones nobody else can see:
+   the cover fades back, and wears the eye struck through. */
+.hidden-mark {
+  position: absolute;
+  top: var(--sp-2);
+  inset-inline-end: var(--sp-2);
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgb(20 18 16 / 0.74);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.2);
+  color: #fff;
+}
+.book-hero__coverwrap .hidden-mark {
+  width: 28px;
+  height: 28px;
+}
+.book-card.is-hidden .book-card__cover,
+.book-hero__coverwrap.is-hidden .book-hero__cover {
+  filter: grayscale(0.75);
+  opacity: 0.55;
+}
+/* The note on a hidden book's page: a withdrawn thing, drawn as one - a
+   dashed edge and a faint hatch rather than a warning colour, because
+   nothing is wrong. The way back sits inside it. */
+.hidden-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-block: var(--sp-3) var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px dashed var(--rp-border-strong);
+  border-radius: var(--radius-card);
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      transparent 0 7px,
+      color-mix(in srgb, var(--rp-text) 5%, transparent) 7px 8px
+    ),
+    var(--rp-surface);
+  font-size: 14px;
+}
+.hidden-note__icon {
+  flex: none;
+  color: var(--rp-text-soft);
+}
+.hidden-note__text {
+  flex: 1 1 14rem;
+  display: grid;
+  gap: 2px;
+  margin: 0;
+}
+.hidden-note__text strong {
+  font-weight: 650;
+}
+.hidden-note__text span {
+  color: var(--rp-text-soft);
+  font-size: 13px;
+}
+.hidden-note__show {
+  flex: none;
+}
+/* What hiding does, one line per place a reader would notice. */
+.hide-points {
+  display: grid;
+  gap: var(--sp-3);
+  margin: 0 0 var(--sp-4);
+  padding: 0;
+  list-style: none;
+}
+.hide-points li {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: var(--sp-3);
+  align-items: start;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.hide-points svg {
+  margin-block-start: 2px;
+  color: var(--rp-text-soft);
+}
+.hidden-lede {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0 0 var(--sp-4);
+  color: var(--rp-text-soft);
+  font-size: 14px;
+}
+.hidden-lede svg {
+  flex: none;
 }
 
 .skeleton {

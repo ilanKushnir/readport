@@ -133,6 +133,7 @@ function ShelfHeaderButton({
     if (user) return overview?.shelves.find((s) => s.id === user[1])?.name ?? null;
     if (location.pathname === '/reading-list') return t('shelves.readingList');
     if (location.pathname === '/shelf/on-this-device') return t('shelves.on-this-device');
+    if (location.pathname === '/shelf/hidden') return t('shelves.hidden');
     const facet = /^\/browse\/[a-z]+\/(.+)$/.exec(location.pathname);
     if (facet) return decodeURIComponent(facet[1]!);
     const auto = /^\/shelf\/([a-z-]+)$/.exec(location.pathname);
