@@ -456,18 +456,30 @@ try {
     await page.getByRole('button', { name: 'Read along', exact: true }).click();
     await clock(page, [cue(40)], 100);
     await page.waitForTimeout(500);
-    await check('on a two-page spread the read-along card sits over its own button', async () => {
-      const g = await page.evaluate(() => {
-        const r = (sel) => document.querySelector(sel).getBoundingClientRect().toJSON();
-        return { card: r('.readalong'), bar: r('.reader-bar'), lead: r('.tandem-btn--lead') };
-      });
-      assert(
-        Math.abs(g.card.right - g.lead.right) <= 2,
-        `card ends at ${g.card.right}, button at ${g.lead.right}`,
-      );
-      assert(Math.abs(g.lead.right - g.bar.right) <= 2, 'the button is not at the end of the bar');
-      assert(Math.abs((g.bar.left + g.bar.right) / 2 - 590) <= 2, 'the bar is not centred');
-    });
+    await check(
+      'on a two-page spread the read-along card sits on the bar, edge over edge',
+      async () => {
+        const g = await page.evaluate(() => {
+          const r = (sel) => document.querySelector(sel).getBoundingClientRect().toJSON();
+          return { card: r('.readalong'), bar: r('.reader-bar'), lead: r('.tandem-btn--lead') };
+        });
+        assert(
+          Math.abs(g.card.right - g.lead.right) <= 2,
+          `card ends at ${g.card.right}, button at ${g.lead.right}`,
+        );
+        assert(
+          Math.abs(g.lead.right - g.bar.right) <= 2,
+          'the button is not at the end of the bar',
+        );
+        // Edge over edge: the card is as wide as the bar, not a narrower
+        // panel held to one end of it.
+        assert(
+          Math.abs(g.card.left - g.bar.left) <= 2,
+          `card starts at ${g.card.left}, bar at ${g.bar.left}`,
+        );
+        assert(Math.abs((g.bar.left + g.bar.right) / 2 - 590) <= 2, 'the bar is not centred');
+      },
+    );
     await context.close();
   }
   const reduced = await open('scroll', false, 'reduce');

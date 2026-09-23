@@ -2064,12 +2064,12 @@
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  /* Hugs the inline end of the bar's column, where the button is - logical
-     margins, so in a right-to-left book that is the left - and on a phone
-     is the whole width. */
-  width: min(100%, 560px);
+  /* Exactly as wide as the bar beneath it, edge over edge, so the two read
+     as one panel; the beak at the end still points at the button it grew
+     from. Narrower and held to the end, it looked shifted off the bar on an
+     iPad rather than part of it. */
   margin-block: 0 6px;
-  margin-inline: auto var(--rd-bar-side, 0px);
+  margin-inline: var(--rd-bar-side, 0px);
   padding: 5px 8px 5px 5px;
   border: 1px solid color-mix(in srgb, var(--rd-link) 35%, transparent);
   border-radius: 18px;
