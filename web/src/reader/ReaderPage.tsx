@@ -2336,6 +2336,20 @@ export function ReaderPage() {
     }
   }, [toast, t, prefs.autoScroll, prefs.mode, reduceMotion]);
 
+  // `?along=1` (the book page's Read along) starts the voice once the page
+  // is here to follow it. `html` lands in the same commit as the layout pass
+  // that applies the URL position, and effects run after that pass, so by
+  // the time this sees the chapter the position is settled and the voice
+  // begins where the reader landed rather than at the top of the chapter.
+  // The alignment is required for the voice to follow text at all; a pair
+  // still aligning simply opens the page, as the button warned it would.
+  const alongRequestedRef = useRef(searchParams.get('along') === '1');
+  useEffect(() => {
+    if (!alongRequestedRef.current || !html || !pair?.switchable || readAlong) return;
+    alongRequestedRef.current = false;
+    startReadAlong();
+  }, [html, pair?.switchable, readAlong, startReadAlong]);
+
   // Keyboard.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

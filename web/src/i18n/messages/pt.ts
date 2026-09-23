@@ -473,6 +473,10 @@ const messages: Record<string, string> = {
   'library.book.openOther': '{kind, select, ebook {Ouvir} other {Ler}}',
   'library.book.fromHere':
     '{kind, select, ebook {Ouvir a partir daqui} other {Ler a partir daqui}}',
+  'library.book.readAlong': 'Ler com a voz',
+  'library.book.readAlongFromHere': 'Ler com a voz a partir daqui',
+  'library.book.readAlongHint': 'A página, com a narração a tocar por cima',
+  'library.book.readAlongNotReady': 'Ler com a voz fica disponível quando o par estiver alinhado',
   'library.book.opening': 'A abrir…',
   'library.book.saveCopy': 'Guardar uma cópia',
   'library.book.saveFiles': 'Guardar ficheiros…',

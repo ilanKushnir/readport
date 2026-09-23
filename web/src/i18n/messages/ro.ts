@@ -471,6 +471,11 @@ const messages: Record<string, string> = {
   'library.book.open': '{kind, select, ebook {Citește} other {Ascultă}}',
   'library.book.openOther': '{kind, select, ebook {Ascultă} other {Citește}}',
   'library.book.fromHere': '{kind, select, ebook {Ascultă de aici} other {Citește de aici}}',
+  'library.book.readAlong': 'Citește pe măsură',
+  'library.book.readAlongFromHere': 'Citește pe măsură de aici',
+  'library.book.readAlongHint': 'Pagina, cu narațiunea redată peste ea',
+  'library.book.readAlongNotReady':
+    'Citește pe măsură se deblochează odată ce perechea este aliniată',
   'library.book.opening': 'Se deschide…',
   'library.book.saveCopy': 'Salvează o copie',
   'library.book.saveFiles': 'Salvează fișierele…',

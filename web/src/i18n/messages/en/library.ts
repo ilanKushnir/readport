@@ -145,6 +145,12 @@ export const library = {
   'library.book.fromHere': '{kind, select, ebook {Listen from here} other {Read from here}}',
   'library.book.opening': 'Opening…',
   'library.book.saveCopy': 'Save a copy',
+  // The third way to open a paired book, beside Read and Listen: the page
+  // with the voice on it. "From here" once there is a position to carry.
+  'library.book.readAlong': 'Read along',
+  'library.book.readAlongFromHere': 'Read along from here',
+  'library.book.readAlongHint': 'The page, with the narration playing over it',
+  'library.book.readAlongNotReady': 'Read along unlocks once the pair is aligned',
   'library.book.saveFiles': 'Save files…',
   'library.book.saveFilesHint':
     '{n, plural, one {# file.} other {# files.}} Saving them is one at a time.',

@@ -268,7 +268,18 @@ When a pair is aligned, the reader shows **Listen from here**, the player
 shows **Read from here**, and the book page and library hero offer
 **Listen/Read instead** - every one of them resolves your saved position
 through the alignment graph, so opening the other edition lands at the
-same place rather than at that edition's own last position. The precision
+same place rather than at that edition's own last position.
+
+The book page of a paired book offers all three ways to take it, in the
+same order whichever edition the page is: the edition you are on, then
+**Read along** - the page with the voice on it - then the other edition.
+Read along is the bridge between the two, so it sits between them. From an
+ebook it opens that ebook at its own position and starts the narration
+there; from an audiobook it resolves the position exactly as a switch does
+and starts the voice once the page has landed (`?along=1`). It needs the
+alignment, so until the pair has one the button is disabled and says so
+rather than opening a page the voice cannot follow. Once there is a
+position to carry it reads _Read along from here_. The precision
 is reported honestly instead of a blanket "exact" claim:
 
 - `sentence` granularity with `source: exact` only when the current sentence

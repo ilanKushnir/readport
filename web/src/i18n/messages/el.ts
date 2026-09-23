@@ -479,6 +479,11 @@ const messages: Record<string, string> = {
   'library.book.open': '{kind, select, ebook {Ανάγνωση} other {Ακρόαση}}',
   'library.book.openOther': '{kind, select, ebook {Ακρόαση} other {Ανάγνωση}}',
   'library.book.fromHere': '{kind, select, ebook {Ακρόαση από εδώ} other {Ανάγνωση από εδώ}}',
+  'library.book.readAlong': 'Ανάγνωση με τον ήχο',
+  'library.book.readAlongFromHere': 'Ανάγνωση με τον ήχο από εδώ',
+  'library.book.readAlongHint': 'Η σελίδα, με την αφήγηση να παίζει από πάνω της',
+  'library.book.readAlongNotReady':
+    'Η ανάγνωση με τον ήχο ξεκλειδώνει μόλις ευθυγραμμιστεί το ζεύγος',
   'library.book.opening': 'Άνοιγμα…',
   'library.book.saveCopy': 'Αποθήκευση αντιγράφου',
   'library.book.saveFiles': 'Αποθήκευση αρχείων…',

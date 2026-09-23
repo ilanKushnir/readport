@@ -185,11 +185,18 @@ export const IconDownload = (p: P) => (
     <path d="M5 19h14" />
   </I>
 );
-/** Read along: lines of text with the narration rising off them. */
+/**
+ * Read along: a narrator - head and shoulders - with the voice coming off
+ * them as two arcs. The old glyph (text lines with bars rising from them)
+ * read as an equaliser; a person speaking is what the feature is. The arcs
+ * face the reading direction, so the voice points into the text in RTL too.
+ */
 export const IconReadAlong = (p: P) => (
-  <I {...p}>
-    <path d="M3.5 6.5h9M3.5 10.5h9M3.5 14.5h6M3.5 18.5h7.5" />
-    <path d="M15.5 9.2v5.6M18 7v10M20.5 10.4v3.2" />
+  <I data-mirror="" {...p}>
+    <circle cx="9" cy="8" r="3.1" />
+    <path d="M3.5 19.5c0-3.2 2.5-5.4 5.5-5.4s5.5 2.2 5.5 5.4" />
+    <path d="M16.6 8.6a3.9 3.9 0 0 1 0 6.8" />
+    <path d="M19.1 5.9a7.6 7.6 0 0 1 0 12.2" />
   </I>
 );
 /** Bring the page back to whatever is being spoken. */
@@ -388,11 +395,15 @@ export const IconListPlus = (p: P) => (
     <path d="M18 14.5v6M15 17.5h6" />
   </I>
 );
-/** Follow the voice down the page: lines with a caret tracking down them. */
+/**
+ * Scroll with the voice: text lines, and a doubled chevron running down
+ * beside them - "keeps going by itself". The single arrow it replaces read
+ * as a plain download/move-down.
+ */
 export const IconAutoScroll = (p: P) => (
-  <I {...p}>
-    <path d="M8.5 5h11M8.5 9.5h11M8.5 14h8M8.5 18.5h5" />
-    <path d="M4 8.5 L4 15.5 M2 13.5 L4 15.8 L6 13.5" />
+  <I data-mirror="" {...p}>
+    <path d="M3.5 6h9M3.5 10h9M3.5 14h6.5M3.5 18h8" />
+    <path d="m15.8 7.6 2.9 2.9 2.9-2.9M15.8 13.2l2.9 2.9 2.9-2.9" />
   </I>
 );
 export const IconPlus = (p: P) => (

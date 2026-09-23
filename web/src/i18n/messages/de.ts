@@ -482,6 +482,11 @@ const messages: Record<string, string> = {
   'library.book.open': '{kind, select, ebook {Lesen} other {Hören}}',
   'library.book.openOther': '{kind, select, ebook {Hören} other {Lesen}}',
   'library.book.fromHere': '{kind, select, ebook {Von hier hören} other {Von hier lesen}}',
+  'library.book.readAlong': 'Mitlesen',
+  'library.book.readAlongFromHere': 'Von hier mitlesen',
+  'library.book.readAlongHint': 'Die Seite, mit der Erzählung darüber',
+  'library.book.readAlongNotReady':
+    'Mitlesen wird freigeschaltet, sobald das Paar ausgerichtet ist',
   'library.book.opening': 'Wird geöffnet…',
   'library.book.saveCopy': 'Kopie sichern',
   'library.book.saveFiles': 'Dateien sichern…',

@@ -20,6 +20,7 @@ import {
   IconBookOpen,
   IconDownload,
   IconHeadphones,
+  IconReadAlong,
   IconLink,
   IconClose,
   IconList,
@@ -152,62 +153,78 @@ export function BookPage() {
    * position through the pair alignment and hand off with a marker. Falls
    * back to plainly opening the other edition (at its own position) when the
    * pair is not aligned or nothing has been read yet.
+   *
+   * `along` opens the EBOOK with the narration on the page instead - the
+   * third way to take a paired book. From an ebook that is this book at its
+   * own position; from an audiobook it is the same resolved handoff as a
+   * switch, and the reader starts the voice once it has landed.
    */
-  const openOtherEdition = useCallback(async () => {
-    if (!detail?.book.pair) return;
-    const { pair, progress, kind } = detail.book;
-    const otherRoute =
-      kind === 'ebook' ? `/listen/${pair.otherBookId}` : `/read/${pair.otherBookId}`;
-    if (!pair.switchable || !progress || progress.pct <= 0.001) {
-      navigate(otherRoute);
-      return;
-    }
-    setSwitching(true);
-    try {
-      let res: ResolveResponse;
-      try {
-        res = await api<ResolveResponse>(`/api/pairs/${pair.pairId}/resolve`, {
-          method: 'POST',
-          body: { from: progress.locator },
-        });
-      } catch (err) {
-        if (!isOffline(err)) throw err;
-        // No network. The downloaded package carries the server's own
-        // answers for this book, so the handoff lands where it would online.
-        const stored = await cachedSwitch(id, progress.locator);
-        if (!stored) {
-          toast.show(t('library.book.switchNotStored'));
-          navigate(otherRoute);
-          return;
-        }
-        res = stored;
+  const openEdition = useCallback(
+    async (along = false) => {
+      if (!detail?.book.pair) return;
+      const { pair, progress, kind } = detail.book;
+      const alongQuery = along ? 'along=1' : '';
+      if (along && kind === 'ebook') {
+        navigate(`/read/${id}?${alongQuery}`);
+        return;
       }
-      if (!res.to) {
-        toast.show(res.resolution.reason ?? t('library.book.switchNoPosition'));
+      const otherRoute =
+        kind === 'ebook'
+          ? `/listen/${pair.otherBookId}`
+          : `/read/${pair.otherBookId}${along ? `?${alongQuery}` : ''}`;
+      if (!pair.switchable || !progress || progress.pct <= 0.001) {
         navigate(otherRoute);
         return;
       }
-      void recordCheckpoint(id, 'switch', progress.locator);
-      if (res.to.medium === 'audio') {
-        const to = res.to as AudioLocator;
-        navigate(
-          `/listen/${pair.otherBookId}?track=${to.trackIdx}&pos=${to.positionMs}&handoff=1&granularity=${res.resolution.granularity}`,
-        );
-      } else {
-        const to = res.to as EbookLocator;
-        navigate(
-          `/read/${pair.otherBookId}?spine=${to.spineIdx}&char=${to.charOffset ?? 0}${
-            to.sentenceId ? `&sentence=${to.sentenceId}` : ''
-          }&handoff=1&granularity=${res.resolution.granularity}`,
-        );
+      setSwitching(true);
+      try {
+        let res: ResolveResponse;
+        try {
+          res = await api<ResolveResponse>(`/api/pairs/${pair.pairId}/resolve`, {
+            method: 'POST',
+            body: { from: progress.locator },
+          });
+        } catch (err) {
+          if (!isOffline(err)) throw err;
+          // No network. The downloaded package carries the server's own
+          // answers for this book, so the handoff lands where it would online.
+          const stored = await cachedSwitch(id, progress.locator);
+          if (!stored) {
+            toast.show(t('library.book.switchNotStored'));
+            navigate(otherRoute);
+            return;
+          }
+          res = stored;
+        }
+        if (!res.to) {
+          toast.show(res.resolution.reason ?? t('library.book.switchNoPosition'));
+          navigate(otherRoute);
+          return;
+        }
+        void recordCheckpoint(id, 'switch', progress.locator);
+        if (res.to.medium === 'audio') {
+          const to = res.to as AudioLocator;
+          navigate(
+            `/listen/${pair.otherBookId}?track=${to.trackIdx}&pos=${to.positionMs}&handoff=1&granularity=${res.resolution.granularity}`,
+          );
+        } else {
+          const to = res.to as EbookLocator;
+          navigate(
+            `/read/${pair.otherBookId}?spine=${to.spineIdx}&char=${to.charOffset ?? 0}${
+              to.sentenceId ? `&sentence=${to.sentenceId}` : ''
+            }&handoff=1&granularity=${res.resolution.granularity}${along ? `&${alongQuery}` : ''}`,
+          );
+        }
+      } catch {
+        toast.show(t('library.book.switchFailed'));
+        navigate(otherRoute);
+      } finally {
+        setSwitching(false);
       }
-    } catch {
-      toast.show(t('library.book.switchFailed'));
-      navigate(otherRoute);
-    } finally {
-      setSwitching(false);
-    }
-  }, [detail, id, navigate, toast, t]);
+    },
+    [detail, id, navigate, toast, t],
+  );
+  const openOtherEdition = useCallback(() => openEdition(false), [openEdition]);
 
   // `?switch=1` (from the library's "Listen/Read instead") switches right away.
   useEffect(() => {
@@ -435,20 +452,45 @@ export function BookPage() {
               </Link>
             )}
             {pair && (
-              // Owning the book both ways is a reading option, not an
-              // announcement: it belongs in this row beside Read and Listen.
-              <button
-                className="btn btn--secondary"
-                onClick={() => void openOtherEdition()}
-                disabled={switching}
-              >
-                {isEbook ? <IconHeadphones size={17} /> : <IconBookOpen size={17} />}
-                {switching
-                  ? t('library.book.opening')
-                  : pair.switchable && pct > 0.001
-                    ? t('library.book.fromHere', { kind: book.kind })
-                    : t('library.book.openOther', { kind: book.kind })}
-              </button>
+              // Owning the book both ways gives three ways to take it, and
+              // they are three buttons rather than one with a menu hidden in
+              // it: Read, Listen, and - between them, because it is both -
+              // Read along, the page with the voice on it. The same three in
+              // the same order whichever edition this page is, so the middle
+              // one is always the bridge. Read along needs the alignment,
+              // so until the pair has it the button says so instead of
+              // opening a page the voice cannot follow.
+              <>
+                <button
+                  className="btn btn--secondary"
+                  onClick={() => void openEdition(true)}
+                  disabled={switching || !pair.switchable}
+                  title={
+                    pair.switchable
+                      ? t('library.book.readAlongHint')
+                      : t('library.book.readAlongNotReady')
+                  }
+                >
+                  <IconReadAlong size={17} />
+                  {switching
+                    ? t('library.book.opening')
+                    : pair.switchable && pct > 0.001
+                      ? t('library.book.readAlongFromHere')
+                      : t('library.book.readAlong')}
+                </button>
+                <button
+                  className="btn btn--secondary"
+                  onClick={() => void openOtherEdition()}
+                  disabled={switching}
+                >
+                  {isEbook ? <IconHeadphones size={17} /> : <IconBookOpen size={17} />}
+                  {switching
+                    ? t('library.book.opening')
+                    : pair.switchable && pct > 0.001
+                      ? t('library.book.fromHere', { kind: book.kind })
+                      : t('library.book.openOther', { kind: book.kind })}
+                </button>
+              </>
             )}
           </div>
           {/* Keeping, sharing and saving: a quieter row than the ways to
