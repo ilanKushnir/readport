@@ -4,6 +4,34 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.23.0 - 2026-09-23
+
+### Added
+
+- **Turn the page with the voice.** Reading along in page view, a tap on
+  the text moves the voice, so the page could only be swiped - which
+  turned it without the voice. A slim tab now sits against each edge of
+  the screen, in the margin beside the text: it turns the page and the
+  voice starts reading the new one, into the next chapter at the end of
+  one. When the page begins in the middle of a sentence and little of it
+  is behind, the voice starts at that sentence so it is heard whole, and
+  the page waits for the voice instead of flipping back to it; when most
+  of it is behind, the voice starts at the first sentence on the page. In
+  a right-to-left book the next page is the left tab.
+
+### Changed
+
+- **On this device shows a book owned twice once.** A book saved in both
+  formats was two cards on the shelf. It is one, and its badge marks which
+  editions are on the device. The shelf's count in the sidebar counts
+  titles and updates as downloads finish or are removed.
+- **Invented books everywhere in the repository.** Tests, docs, comments
+  and the QA scripts used published books, their authors and quotations
+  from them as examples; every example is now an invented title by an
+  invented author, with prose written for the purpose. The sample
+  library's Lantern ebook changed by one sentence, so an existing
+  development library suggests its pairing again.
+
 ## 0.22.1 - 2026-09-23
 
 ### Fixed

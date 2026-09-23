@@ -16,6 +16,10 @@ export const whatsnew = {
   'whatsnew.olderHeading': 'Version {version}',
   'whatsnew.done': 'Start reading',
 
+  // ---------------------------------------------------------------- 0.23.0
+  'whatsnew.release.turnWithVoice':
+    'Reading along in page view, the tabs at the sides of the page turn it, and the voice starts reading the new page.',
+
   // ---------------------------------------------------------------- 0.22.0
   'whatsnew.release.offlineSurvives':
     'Saving a big audiobook offline carries on through a dropped connection, and shows its progress wherever you are in the app.',
