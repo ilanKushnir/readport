@@ -12,6 +12,7 @@ import { claimNextJob, finishJob, makeLeaseGuard } from '../jobs/queue.js';
 import { JOB_HANDLERS } from '../jobs/handlers.js';
 import { ensureSetupToken } from '../auth/setupToken.js';
 import { storeAlignment } from '../alignment/service.js';
+import { settleHashing } from '../audio/hashes.js';
 import {
   segmentsFromTimings,
   type EbookSentenceInput,
@@ -1310,7 +1311,16 @@ describe('ReadPort API', () => {
     const { createHash } = await import('node:crypto');
     expect(createHash('sha256').update(res.rawPayload).digest('hex')).toBe(ch.sha256);
 
-    const am = (await authed({ url: `/api/books/${lanternAudioId}/offline-manifest` })).json() as {
+    // An audiobook is prepared first: the answer says how far along that
+    // is, the work carries on without the request, and once done it is kept.
+    const first = await authed({ url: `/api/books/${lanternAudioId}/offline-manifest` });
+    expect(first.statusCode).toBe(202);
+    expect(first.json()).toMatchObject({ status: 'preparing' });
+    expect(first.json().total).toBeGreaterThan(100_000);
+    await settleHashing(lanternAudioId);
+    const ready = await authed({ url: `/api/books/${lanternAudioId}/offline-manifest` });
+    expect(ready.statusCode).toBe(200);
+    const am = ready.json() as {
       urls: {
         kind: string;
         url: string;
@@ -1434,6 +1444,8 @@ describe('ReadPort API', () => {
     expect(stored!.resolution).toEqual(online.resolution);
 
     // The audiobook's package answers the other direction, sampled in time.
+    await authed({ url: `/api/books/${lanternAudioId}/offline-manifest` }); // prepared first
+    await settleHashing(lanternAudioId);
     const am = (await authed({ url: `/api/books/${lanternAudioId}/offline-manifest` })).json() as {
       urls: { kind: string; url: string }[];
     };

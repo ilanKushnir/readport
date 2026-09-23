@@ -27,10 +27,14 @@ export function trackSourceVersion(
     .digest('hex');
 }
 
-/** Streamed per-chunk SHA-256 digests of a file, chunked at `chunkBytes`. */
+/**
+ * Streamed per-chunk SHA-256 digests of a file, chunked at `chunkBytes`.
+ * `onBytes` hears how much has been read, for a caller showing progress.
+ */
 export async function hashFileChunks(
   filePath: string,
   chunkBytes: number = OFFLINE_AUDIO_CHUNK_BYTES,
+  onBytes?: (bytes: number) => void,
 ): Promise<string[]> {
   const hashes: string[] = [];
   let hash = createHash('sha256');
@@ -38,6 +42,7 @@ export async function hashFileChunks(
   const stream = fs.createReadStream(filePath, { highWaterMark: 256 * 1024 });
   for await (const piece of stream) {
     let buf = piece as Buffer;
+    onBytes?.(buf.length);
     while (buf.length > 0) {
       const take = Math.min(buf.length, chunkBytes - inChunk);
       hash.update(buf.subarray(0, take));

@@ -13,11 +13,8 @@ import { requireRole } from '../../auth/roles.js';
 import { enqueueJob } from '../../jobs/queue.js';
 import { type AppContext, activeDerivedDir } from '../../context.js';
 import { loadManifest, loadSentences } from '../../epub/extract.js';
-import {
-  hashFileChunks,
-  OFFLINE_AUDIO_CHUNK_BYTES,
-  trackSourceVersion,
-} from '../../audio/integrity.js';
+import { OFFLINE_AUDIO_CHUNK_BYTES, trackSourceVersion } from '../../audio/integrity.js';
+import { bookTrackHashes, type TrackToHash } from '../../audio/hashes.js';
 import { realResolveWithin } from '../../util/paths.js';
 import {
   bookVisible,
@@ -514,33 +511,49 @@ export function registerOfflineRoutes(app: FastifyInstance, ctx: AppContext): vo
         if (asset) urls.push(asset);
       }
     } else {
-      const tracks = db
+      const rows = db
         .prepare('SELECT idx, rel_path FROM audio_tracks WHERE book_id = ? ORDER BY idx')
         .all(id) as { idx: number; rel_path: string }[];
-      for (const t of tracks) {
-        // Integrity is computed from the file AS CURRENTLY SERVED (not the
-        // scan-time database row): size, an immutable source version the
-        // track route also emits as its ETag, and a SHA-256 per 8MiB chunk
-        // (streamed - the file is never buffered whole). A track that
-        // cannot be read must fail the manifest rather than yield a
-        // "complete" offline package with holes.
-        let abs: string;
-        let stat: fs.Stats;
+      // Integrity is computed from the file AS CURRENTLY SERVED (not the
+      // scan-time database row): size, an immutable source version the
+      // track route also emits as its ETag, and a SHA-256 per 8MiB chunk
+      // (streamed - the file is never buffered whole). A track that cannot
+      // be read must fail the manifest rather than yield a "complete"
+      // offline package with holes.
+      const tracks: (TrackToHash & { idx: number })[] = [];
+      for (const t of rows) {
         try {
-          abs = realResolveWithin(String(book.root_dir), t.rel_path);
-          stat = fs.statSync(abs);
+          const abs = realResolveWithin(String(book.root_dir), t.rel_path);
+          const stat = fs.statSync(abs);
+          tracks.push({
+            idx: t.idx,
+            abs,
+            relPath: t.rel_path,
+            size: stat.size,
+            sourceVersion: trackSourceVersion(stat, t.rel_path),
+          });
         } catch {
           return reply.code(409).send({ error: 'track-missing' });
         }
+      }
+      // The hashes are worked out once per version of a file and kept (see
+      // audio/hashes.ts). Until they are, the answer is how far along that
+      // is - not a request held open for as long as a gigabyte takes to read.
+      const hashed = bookTrackHashes(db, id, tracks, OFFLINE_AUDIO_CHUNK_BYTES, ctx.log);
+      if (!hashed.ready) {
+        reply.code(202).header('retry-after', '2');
+        return { status: 'preparing', done: hashed.done, total: hashed.total };
+      }
+      tracks.forEach((t, i) =>
         urls.push({
           url: `/api/books/${id}/track/${t.idx}`,
-          sizeBytes: stat.size,
+          sizeBytes: t.size,
           kind: 'track',
-          sourceVersion: trackSourceVersion(stat, t.rel_path),
+          sourceVersion: t.sourceVersion,
           chunkSize: OFFLINE_AUDIO_CHUNK_BYTES,
-          chunkHashes: await hashFileChunks(abs, OFFLINE_AUDIO_CHUNK_BYTES),
-        });
-      }
+          chunkHashes: hashed.hashes[i]!,
+        }),
+      );
     }
     // The alignment travels with the package: without it, a downloaded pair
     // can be read or listened to offline but not switched between, which is

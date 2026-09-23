@@ -701,4 +701,26 @@ ALTER TABLE books ADD COLUMN hidden_at TEXT;
 ALTER TABLE books ADD COLUMN hidden_by TEXT REFERENCES users(id) ON DELETE SET NULL;
 `,
   },
+  {
+    version: 23,
+    sql: `
+-- The per-chunk hashes an offline download checks each piece of audio
+-- against, kept once worked out. They were computed on every request for a
+-- book's offline manifest - the whole file read and hashed again, a
+-- gigabyte over a network share, before the first byte of the answer, and
+-- all of it again for the retry. Keyed by the file's source version (size,
+-- mtime and path, see audio/integrity.ts), so a replaced file is never
+-- vouched for by its predecessor's hashes; the path is kept so the rows of
+-- a file's older versions can be let go.
+CREATE TABLE track_hashes (
+  source_version TEXT NOT NULL,
+  chunk_size INTEGER NOT NULL,
+  rel_path TEXT NOT NULL,
+  hashes_json TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (source_version, chunk_size)
+);
+CREATE INDEX idx_track_hashes_path ON track_hashes(rel_path);
+`,
+  },
 ];

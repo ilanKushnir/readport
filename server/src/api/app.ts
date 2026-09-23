@@ -103,6 +103,11 @@ export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyIn
       },
     },
     bodyLimit: 2 * 1024 * 1024,
+    // Longer than a reverse proxy's idle timeout (Traefik's is 90s). Node's
+    // own 72s is shorter, so a proxy would now and then send a request down
+    // a connection this end had just closed, and answer it 502 itself - one
+    // failed chunk in a long offline download.
+    keepAliveTimeout: 95_000,
     // Default false: forwarded headers are ignored so clients cannot spoof
     // their IP (rate-limit keys). Operators behind a reverse proxy opt in
     // with RP_TRUST_PROXY (see config.ts).
