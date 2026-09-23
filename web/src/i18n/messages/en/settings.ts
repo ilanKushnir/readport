@@ -151,6 +151,8 @@ export const settings = {
   'settings.account.proxySignOut':
     'Sign-in is handled by the reverse proxy in front of {app}; sign out from there.',
   'settings.account.signOut': 'Sign out',
+  'settings.account.menuLabel': 'Account: {name}',
+  'settings.account.goTo': 'Account settings',
   'settings.account.displayName': 'Display name',
   'settings.account.nameSaved': 'Name saved',
   'settings.account.couldNotSave': 'Could not save',

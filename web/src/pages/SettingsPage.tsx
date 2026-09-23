@@ -21,6 +21,7 @@ import { ConnectedAppsSection } from './ConnectedApps';
 import { openWhatsNew } from '../whatsnew/open';
 import { Link } from 'react-router-dom';
 import { folderApi, LibraryFolders } from '../components/LibraryFolders';
+import { AccountMenu } from '../components/AccountMenu';
 
 interface DashboardStats {
   ebooks: number;
@@ -206,7 +207,23 @@ export function SettingsPage() {
       style={{ '--rp-measure': '900px' } as React.CSSProperties}
     >
       <header className="page-head">
-        <h1>{t('nav.settings')}</h1>
+        {/* The title, and at its far end who is signed in - with the way
+            out - where an account is looked for. */}
+        <div className="page-head__titlerow">
+          <h1>{t('nav.settings')}</h1>
+          <AccountMenu
+            onAccount={() => {
+              const section = document.getElementById('account');
+              section?.scrollIntoView({
+                block: 'start',
+                behavior: matchMedia('(prefers-reduced-motion: reduce)').matches
+                  ? 'auto'
+                  : 'smooth',
+              });
+              section?.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true });
+            }}
+          />
+        </div>
         <p>{t('settings.lede')}</p>
       </header>
 
@@ -437,8 +454,8 @@ export function SettingsPage() {
         )}
       </section>
 
-      <section className="settings-section" aria-label={t('settings.account.title')}>
-        <h2>{t('settings.account.title')}</h2>
+      <section className="settings-section" aria-label={t('settings.account.title')} id="account">
+        <h2 tabIndex={-1}>{t('settings.account.title')}</h2>
         <p style={{ fontSize: 14.5 }}>
           {t('settings.account.signedInAs')} <strong>{user?.displayName ?? user?.username}</strong>
           {user?.displayName ? (

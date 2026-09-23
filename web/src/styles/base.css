@@ -1893,6 +1893,162 @@ body:has(.app-body) {
   color: var(--rp-text-soft);
   font-size: 14.5px;
 }
+/* A page title with something at its far end - on Settings, the account. */
+.page-head__titlerow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+.page-head__titlerow h1 {
+  min-width: 0;
+}
+
+/* Who is signed in, and the way out: their initial, their name where there
+   is room, and a short menu under it at the page's end edge. */
+.acct-menu {
+  position: relative;
+  flex: none;
+}
+.acct-menu__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 4px 12px 4px 4px;
+  border: 1px solid var(--rp-border);
+  border-radius: var(--radius-pill);
+  background: var(--rp-surface-raised);
+  color: var(--rp-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.acct-menu__btn > svg {
+  flex: none;
+  color: var(--rp-text-soft);
+}
+@media (hover: hover) {
+  .acct-menu__btn:hover {
+    border-color: var(--rp-border-strong);
+  }
+}
+.acct-menu__btn[aria-expanded='true'] {
+  border-color: var(--rp-border-strong);
+}
+.acct-menu__btn:focus-visible {
+  outline: 2px solid var(--rp-primary);
+  outline-offset: 2px;
+}
+.acct-menu__avatar {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--rp-primary) 16%, var(--rp-surface));
+  color: var(--rp-interactive);
+  font-size: 15px;
+  font-weight: 700;
+}
+.acct-menu__name {
+  max-width: 18ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.acct-menu__pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  inset-inline-end: 0;
+  z-index: 30;
+  min-width: 248px;
+  padding: 6px;
+  border: 1px solid var(--rp-border);
+  border-radius: 14px;
+  background: var(--rp-surface-raised);
+  box-shadow: var(--rp-shadow-2);
+  animation: share-menu-in var(--rp-duration-quick) var(--rp-ease);
+}
+.acct-menu__who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-block-end: 6px;
+  padding: 8px 10px 12px;
+  border-block-end: 1px solid var(--rp-border);
+}
+.acct-menu__whoText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.acct-menu__whoText strong {
+  font-size: 14.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.acct-menu__handle {
+  font-size: 12.5px;
+  color: var(--rp-text-soft);
+}
+.acct-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--rp-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: start;
+  cursor: pointer;
+}
+.acct-menu__item > svg {
+  flex: none;
+  color: var(--rp-interactive);
+}
+.acct-menu__item:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--rp-primary);
+}
+@media (hover: hover) {
+  .acct-menu__item:hover {
+    background: var(--rp-surface);
+  }
+}
+.acct-menu__item--out,
+.acct-menu__item--out > svg {
+  color: var(--rp-danger);
+}
+.acct-menu__note {
+  margin: 6px 10px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--rp-text-soft);
+}
+@media (max-width: 560px) {
+  /* A phone: the initial alone beside the title. */
+  .acct-menu__name {
+    display: none;
+  }
+  .acct-menu__btn {
+    padding-inline-end: 8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .acct-menu__pop {
+    animation: none;
+  }
+}
 .page-head--row {
   display: flex;
   align-items: flex-start;
