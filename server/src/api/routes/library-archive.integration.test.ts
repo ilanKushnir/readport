@@ -57,7 +57,9 @@ describe('GET /api/books/:id/archive', () => {
     const res = await as('astra', '/api/books/kites/archive');
     expect(res.statusCode).toBe(200);
     expect(res.headers['content-type']).toBe('application/zip');
-    expect(res.headers['content-disposition']).toContain('Seventeen Kites Over Varenne - Ilse Marrowdale.zip');
+    expect(res.headers['content-disposition']).toContain(
+      'Seventeen Kites Over Varenne - Ilse Marrowdale.zip',
+    );
     const body = res.rawPayload;
     expect(Number(res.headers['content-length'])).toBe(body.length);
     const eocd = body.length - 22;

@@ -43,9 +43,9 @@ import {
  * sparse.ts). That is the difference between an hour of compute for a six-hour
  * audiobook and about five minutes of it.
  *
- * Measured on a real human-narrated audiobook (about an hour long):
- * nearly nineteen thousand candidate anchors, all but a handful of them monotone, about 94% of sentences timed, and
- * every spot check landed on the correct sentence. The alternative that was
+ * Measured on a real hour-long human-narrated audiobook: nearly nineteen
+ * thousand candidate anchors, all but a handful of them monotone, about 94% of
+ * sentences timed, and every spot check landed on the correct sentence. The alternative that was
  * tried first - synthesising the text with espeak and warping it onto the
  * narration with DTW - looked superb against a synthetic fixture and failed
  * completely against a real narrator, so it is not in the codebase.

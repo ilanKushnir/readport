@@ -133,8 +133,8 @@ const DEFAULT_MIN_ANCHORS_PER_KILOCHAR = 2;
 /**
  * Uncertainty slope and floor, measured rather than chosen. Against a
  * contiguous decode of a real hour-long audiobook, sampled every 150 seconds:
- * signed error ran from -19.8 s to +8.8 s with a median of -0.5 s, and this
- * slope covered all but 11 of 817 sentences. The floor covers the rest - the
+ * signed error ran from about -20 s to +9 s with a median of half a second, and
+ * this slope covered all but about one timed sentence in seventy. The floor covers the rest - the
  * sentences sitting right on an anchor, where the residual is frame
  * quantisation, the seek, and the reference's own imprecision rather than
  * anything this module can model.

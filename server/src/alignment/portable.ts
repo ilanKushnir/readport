@@ -20,8 +20,8 @@ import { z } from 'zod';
  *
  * The file is a gzip-compressed JSON document with COLUMNAR segments - eight
  * parallel arrays rather than an array of objects. On a long book of some
- * sixteen thousand segments that is under a megabyte raw and about 300 KiB gzipped, against roughly 2.4 MB / 430 KiB for
- * objects: the repeated key names dominate both the raw size and, because gzip
+ * sixteen thousand segments that is under a megabyte raw and about 300 KiB
+ * gzipped, against roughly 2.4 MB / 430 KiB for objects: the repeated key names dominate both the raw size and, because gzip
  * is matching them over a 32 KiB window, a good part of the compressed size
  * too. It is deliberately NOT delta-encoded. Delta-encoding the timestamps
  * saves a further 82 KiB, and costs the one property that makes a portable

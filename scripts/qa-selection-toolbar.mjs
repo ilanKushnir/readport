@@ -23,6 +23,7 @@ const browser = await browserType.launch({
     engine === 'chromium' ? process.env.AGENT_BROWSER_EXECUTABLE_PATH || undefined : undefined,
 });
 let passed = 0;
+// Written for this fixture: no line of any published book.
 const passage =
   'The ferry left the harbour an hour late, and the passengers crowded to the rail to watch the lighthouse slide away. Somebody began to hum, and by the time the gulls turned back the whole deck was singing.';
 async function open(viewport, direction = 'ltr', touch = true, mode = 'scroll') {

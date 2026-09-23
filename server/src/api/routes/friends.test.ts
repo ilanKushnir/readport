@@ -500,7 +500,17 @@ describe('friends', () => {
     const now = new Date().toISOString();
     db.prepare(
       'INSERT INTO books (id,kind,root_dir,rel_path,format,title,author,scan_state,added_at) VALUES (?,?,?,?,?,?,?,?,?)',
-    ).run('gone', 'ebook', tmp, 'gone.epub', 'epub', 'Here Until Thursday', 'M. Vale', 'ready', now);
+    ).run(
+      'gone',
+      'ebook',
+      tmp,
+      'gone.epub',
+      'epub',
+      'Here Until Thursday',
+      'M. Vale',
+      'ready',
+      now,
+    );
     expect((await recommend('carol', ids.alice!, 'gone')).statusCode).toBe(201);
     const before = (await me('alice')).recommendations;
     db.prepare('DELETE FROM books WHERE id = ?').run('gone');

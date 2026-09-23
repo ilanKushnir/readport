@@ -43,7 +43,10 @@ const audio = (title: string, durationMs: number) => ({
   durationMs,
 });
 
-const HARVESTS_E = ebook('Tenfold Harvests: How to Plan an Orchard That Pays for Itself', HARVESTS_CHARS);
+const HARVESTS_E = ebook(
+  'Tenfold Harvests: How to Plan an Orchard That Pays for Itself',
+  HARVESTS_CHARS,
+);
 const CELLARS_E = ebook(
   'Tenfold Cellars: How to Store a Season So Nothing Goes to Waste',
   CELLARS_CHARS,

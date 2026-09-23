@@ -25,7 +25,8 @@ describe('formatFacet / parseFacet', () => {
   });
 
   it('keeps a colon that belongs to the value', () => {
-    // Series and imprints with a colon in the name are common: "Harborlight: Book Two", "A: An Imprint".
+    // Series and imprints with a colon in the name are common: "Harborlight:
+    // Book Two", "A: An Imprint".
     expect(parseFacet('series:Harborlight: Book Two')).toEqual({
       kind: 'series',
       value: 'Harborlight: Book Two',

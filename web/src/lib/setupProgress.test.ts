@@ -6,7 +6,8 @@ import { setupProgress } from './setupProgress';
  * The state a real first run actually reaches, and the two ways the old
  * version of this never left "Reading your shelves".
  *
- * Reported from a live library of a couple of hundred books: scanning and indexing had finished,
+ * Reported from a live library of a couple of hundred books: scanning and
+ * indexing had finished,
  * the alignment model was fully downloaded, every job had succeeded - and the
  * wizard still showed a 4% bar that never moved.
  */

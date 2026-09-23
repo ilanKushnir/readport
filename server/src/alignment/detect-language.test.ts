@@ -16,6 +16,7 @@ import {
  * must come back as no answer rather than a wrong one.
  */
 
+/** A page of each, written for this test: no line of any published book. */
 const SAMPLES: Record<string, string> = {
   en: `The harbour woke slowly that morning. A thin fog lay over the water, and the fishing
     boats rocked against their ropes while the gulls argued on the roofs of the sheds. Mira

@@ -306,9 +306,7 @@ describe('applyFilters', () => {
     expect(applyFilters(all, { kind: 'highlight', colors: ['plum'], query: 'weir' })).toEqual([
       highlightPlum,
     ]);
-    expect(applyFilters(all, { kind: 'highlight', colors: ['amber'], query: 'weir' })).toEqual(
-      [],
-    );
+    expect(applyFilters(all, { kind: 'highlight', colors: ['amber'], query: 'weir' })).toEqual([]);
   });
 });
 

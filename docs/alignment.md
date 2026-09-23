@@ -55,7 +55,8 @@ reading rate says the interpolation would be a lie.
 - **`standard`** (the default) samples the narration on a schedule and
   interpolates between the matches. Measured on the target server (a 6-CPU
   LXC with `RP_ALIGN_THREADS=4`): an hour-long book in a little over a minute,
-  a book of more than thirty hours in under half an hour - i.e. a six-hour audiobook in about six minutes. It
+  a book of more than thirty hours in under half an hour - i.e. a six-hour
+  audiobook in about six minutes. It
   decodes around 7% of the audio.
 - **`exact`** puts every sample through the model. Roughly fifteen times the
   wall clock, and on everything measured so far no more accurate at the
@@ -68,8 +69,9 @@ records seconds of audio aligned per second of wall clock after every run
 ### Sampling, and what it costs
 
 Every measurement below is the same book: an hour-long human-narrated
-audiobook of some nine hundred ebook sentences. `standard` times 817 of them, which is where
-that denominator keeps coming from; the contiguous decode of the same audio,
+audiobook of some nine hundred ebook sentences. `standard` times about 93% of
+them, the base the figures below are counted against; the contiguous decode
+of the same audio,
 which is what `exact` would have produced, is the reference the sampled run is
 scored against.
 
@@ -178,7 +180,8 @@ inside it. Indexing both sides into a `Map<string, number>` allocates one
 14-character string per position - around ninety bytes each in V8 - so both
 sides had to be capped at 1.2 million characters to keep the index near
 110 MB a side. A long book quietly ran past that: on an audiobook of more
-than thirty hours the last 7% of the text was never even offered to the matcher, and
+than thirty hours the last 7% of the text was never even offered to the
+matcher, and
 the job reported 92% coverage as though that were the honest answer.
 
 `ngram-index.ts` inverts the problem. Only the **decoded** side is indexed -
@@ -199,9 +202,9 @@ around ninety thousand characters and a few megabytes of typed array.
 
 ## The refusal signal
 
-On the validated book, nearly nineteen thousand candidate anchors were found and all but a handful of
-them (99.9%) survived the monotonicity pass - close to four hundred anchors per
-thousand characters of text. A wrong pairing does not produce a worse
+On the validated book, nearly nineteen thousand candidate anchors were found
+and all but a handful of them (99.9%) survived the monotonicity pass - close
+to four hundred anchors per thousand characters of text. A wrong pairing does not produce a worse
 alignment; it produces almost no anchors at all.
 
 So the density is the edition check. Below **2 monotone anchors per thousand
@@ -257,17 +260,17 @@ language nobody can trace.
   copyright, dedications, "end of part one", an index: no anchors, so those
   sentences are reported as gaps and the reader refuses the handoff there
   rather than landing somewhere plausible-looking. Decoding the validated
-  book contiguously - hearing every second of it - still timed only about 94% of its
-  sentences; the rest were gaps or too far from an anchor to trust.
-  Those are not what sampling costs. They are what the narration does
-  not contain.
+  book contiguously - hearing every second of it - still timed only about 94%
+  of its sentences; the rest were gaps or too far from an anchor to trust.
+  Those are not what sampling costs. They are what the narration does not
+  contain.
 - **Abridged editions are refused,** not silently half-aligned. A softer
   version of the same signal is surfaced before refusal: when the narration
   ratio - the decoded characters, divided back out by the fraction of the
   audio that was actually decoded, so the number means the same thing at
   either precision - falls below 0.7, the pairing page warns that the
-  narration covers noticeably less text than the ebook. (The validated ratio
-  on a matching pair was about 0.94.)
+  narration covers noticeably less text than the ebook. (On a matching pair
+  it measured about 0.94.)
 - **Digits and abbreviations are not in the model's alphabet.** The narrator
   says "twenty five" where the ebook has "25", and the model cannot spell
   "25". The romanizer therefore expands numbers, currency, percent, "&" and
@@ -297,8 +300,8 @@ language nobody can trace.
   the matcher scored it. Both halves matter under sampling: 300 characters is
   twenty seconds of narration, so the character score alone would let an
   interpolation across a third of a minute call itself exact. On the sampled
-  run, that second condition is what took the `exact` count from 335 of 817
-  sentences down to an honest 70.
+  run, that second condition is what took the `exact` count from 41% of the
+  timed sentences down to an honest 9%.
 - **A timing is where the sentence starts, interpolated linearly.** Between
   two anchors we assume the narrator kept a steady pace. Over a few hundred
   characters that is a good assumption; a long pause, a sound effect, or a
@@ -321,9 +324,9 @@ sentence visible on the page rather than the last, so the two together put the
 handoff at or slightly above the top of the screen - the line that just
 scrolled away.
 
-Measured on the sampled run of the validated book, that leaves 2 sentences out
-of 817 landing later than the truth, by at most 2.0 seconds, for a median
-rewind of 7.6 seconds. Going the other way (narration to page) needs no margin:
+Measured on the sampled run of the validated book, that leaves two of the
+timed sentences landing later than the truth, by at most two seconds, for a
+median rewind of under eight seconds. Going the other way (narration to page) needs no margin:
 the segment containing the current instant is the sentence being spoken, and
 erring toward the earlier one is already what the lookup does.
 
@@ -398,8 +401,9 @@ title it has ever had.
 ```
 
 The segments are **columnar** - eight parallel arrays rather than an array of
-objects. On a long book of some sixteen thousand segments that is under a megabyte raw and about 300 KiB gzipped,
-against roughly 2.4 MB / 430 KiB for objects: the repeated key names dominate the
+objects. On a long book of some sixteen thousand segments that is under a
+megabyte raw and about 300 KiB gzipped, against roughly 2.4 MB / 430 KiB for
+objects: the repeated key names dominate the
 raw size and, because gzip is matching them over a 32 KiB window, much of the
 compressed size too. It is deliberately **not** delta-encoded. Delta-encoding
 the timestamps saves a further 82 KiB and costs the one property that makes a

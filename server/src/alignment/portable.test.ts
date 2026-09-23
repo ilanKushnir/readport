@@ -404,10 +404,7 @@ describe('writeAlignmentFile', () => {
     // The library's metadata changes far more often than its audio does. Each
     // retitle would otherwise add an importable, stale copy of the same pair.
     const first = writeAlignmentFile(dir, mkDoc({ title: 'The Reedbank Almanac' }));
-    const second = writeAlignmentFile(
-      dir,
-      mkDoc({ title: 'The Reedbank Almanac (Illustrated)' }),
-    );
+    const second = writeAlignmentFile(dir, mkDoc({ title: 'The Reedbank Almanac (Illustrated)' }));
 
     expect(second).not.toBe(first);
     expect(fs.existsSync(first)).toBe(false);
@@ -542,15 +539,15 @@ describe('alignmentFileName', () => {
   const KEY = '9f2c1a7b3d5e0011abcd2233';
 
   it('names a file after the book and the pair it belongs to', () => {
-    expect(alignmentFileName({ author: 'Corwin Ashgrove', title: 'The Reedbank', pairKey: KEY })).toBe(
-      `Corwin Ashgrove - The Reedbank [9f2c1a7b3d5e]${ALIGNMENT_FILE_EXT}`,
-    );
+    expect(
+      alignmentFileName({ author: 'Corwin Ashgrove', title: 'The Reedbank', pairKey: KEY }),
+    ).toBe(`Corwin Ashgrove - The Reedbank [9f2c1a7b3d5e]${ALIGNMENT_FILE_EXT}`);
   });
 
   it('folds accents to ASCII so the name survives a trip through an SMB share', () => {
-    expect(alignmentFileName({ author: 'Célestine Vauquelin', title: 'Le Phare Éteint', pairKey: KEY })).toBe(
-      `Celestine Vauquelin - Le Phare Eteint [9f2c1a7b3d5e]${ALIGNMENT_FILE_EXT}`,
-    );
+    expect(
+      alignmentFileName({ author: 'Célestine Vauquelin', title: 'Le Phare Éteint', pairKey: KEY }),
+    ).toBe(`Celestine Vauquelin - Le Phare Eteint [9f2c1a7b3d5e]${ALIGNMENT_FILE_EXT}`);
   });
 
   it('drops punctuation that a filesystem or a shell would object to', () => {

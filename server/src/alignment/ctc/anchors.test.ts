@@ -8,7 +8,8 @@ import { matchChars, type BookSentence, type HeardChar } from './anchors.js';
  *
  * The book text is pseudo-random letters: at N=14 a random gram is unique with
  * overwhelming probability, which is the same property that real prose has at
- * that length (nearly nineteen thousand unique shared 14-grams on the validated audiobook).
+ * that length (nearly nineteen thousand unique shared 14-grams on the validated
+ * audiobook).
  */
 
 const MS_PER_CHAR = 60;
