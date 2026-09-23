@@ -23,6 +23,10 @@ export const whatsnew = {
   'whatsnew.update.refreshing': 'Refreshing…',
   'whatsnew.update.later': 'Not now',
 
+  // ---------------------------------------------------------------- 0.24.0
+  'whatsnew.release.updateCard':
+    'When a new version of ReadPort is ready, a card at the bottom of the screen says so, with a button to refresh into it.',
+
   // ---------------------------------------------------------------- 0.23.0
   'whatsnew.release.turnWithVoice':
     'Reading along in page view, the tabs at the sides of the page turn it, and the voice starts reading the new page.',

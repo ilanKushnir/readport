@@ -4,6 +4,32 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.24.0 - 2026-09-23
+
+### Added
+
+- **A new version says so.** An app kept on a home screen can go on
+  running the version it was opened with for weeks. ReadPort now asks the
+  server which version it runs - when the app opens, when it comes back to
+  the front, and every quarter of an hour while it stays there - and when
+  the server's is newer, a card at the bottom of the screen says a new
+  version is ready, with Refresh at its foot. Refresh reloads into the new
+  version, and What's new follows when it has something to say. Not now
+  puts the card away until the app is next opened. It is never shown over
+  a book being read or listened to. This is the first version that can
+  show the card, so it first appears for the release after this one.
+
+### Fixed
+
+- **Removing a highlight clears it at once on an iPad.** After Remove, the
+  highlight stayed on the page until something else, like selecting text,
+  repainted its line. Safari repaints text when a highlight is added to or
+  taken out of the set it belongs to, but not when the whole set is
+  swapped for a new one, which is how highlights were redrawn; they are
+  now changed in place. Recolouring a highlight, the mark a search leaves
+  and the line lit up after a handoff or a new bookmark had the same
+  delay, and are fixed with it.
+
 ## 0.23.0 - 2026-09-23
 
 ### Added
