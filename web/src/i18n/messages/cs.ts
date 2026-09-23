@@ -539,8 +539,6 @@ const messages: Record<string, string> = {
   'library.download.retry': 'Zkusit stažení znovu',
   'library.download.removePartial': 'Odstranit částečné stažení',
   'library.download.notNow': 'Teď ne',
-  'library.download.progressLede':
-    '{done} z {total, plural, one {# část} few {# části} many {# části} other {# částí}} · zatím {bytes}. Mezitím můžete aplikaci dál používat.',
   'library.download.cancel': 'Zrušit stahování',
   'library.download.storedLede':
     'Kniha „{title}“ je uložena v tomto zařízení ({bytes}). Můžete ji {kind, select, ebook {číst} other {poslouchat}} bez připojení; postup se synchronizuje, jakmile budete zpět online.',
@@ -1725,8 +1723,6 @@ const messages: Record<string, string> = {
   'library.book.downloadFiles': 'Stáhnout soubory…',
   'library.book.downloadFilesTitle': 'Stáhnout soubory',
   'library.book.downloadFileHint': 'Vlastní soubor knihy, uložený v tomto zařízení',
-  'library.book.downloadFilesHint':
-    '{n, plural, one {# soubor.} few {# soubory.} many {# souboru.} other {# souborů.}} Každý se stahuje zvlášť.',
   'library.offline.save': 'Uložit offline',
   'library.offline.saving': 'Ukládání offline',
   'library.offline.saved': 'Uloženo offline',
@@ -1739,5 +1735,60 @@ const messages: Record<string, string> = {
   'library.offline.startingBoth': 'Ukládání obou vydání offline…',
   'library.offline.saveBoth':
     'Uložit obě vydání offline{hasSize, select, true { ({size})} other {}}',
+  // shelves
+  'shelves.hidden': 'Skryté',
+
+  // library
+  'library.book.downloadFilesLede':
+    'Vlastní soubory knihy, uložené v tomto zařízení, abyste si je ponechali.',
+  'library.book.downloadZip':
+    '{n, plural, one {# soubor} few {# soubory} many {# souboru} other {# souborů}} v jednom ZIP souboru · {size}',
+  'library.book.downloadParts': 'Nebo jeden z {n} souborů zvlášť',
+  'library.download.error.network':
+    'Připojení pořád vypadávalo. Zkuste to znovu, až bude stabilnější; co je uloženo, zůstává zachováno.',
+  'library.download.error.server':
+    'Server pořád odpovídal chybou. Zkuste to znovu za chvíli; co je uloženo, zůstává zachováno.',
+  'library.download.error.stalled':
+    'Stahování se pořád zadrhávalo. Zkuste to znovu; co je uloženo, zůstává zachováno.',
+  'library.download.error.interrupted':
+    'Stahování se zastavilo, když se aplikace zavřela. Zkuste to znovu a pokračujte tam, kde to skončilo.',
+  'library.download.error.unauthorized': 'Byli jste odhlášeni, takže se stahování zastavilo.',
+  'library.offline.preparing': 'Příprava…',
+  'library.offline.preparingLede':
+    'Server připravuje {title} k uložení - zatím přečteno {pct}. Musí to udělat jen jednou.',
+  'library.offline.checking': 'Kontrola toho, co už je uloženo…',
+  'library.offline.waiting': 'Čeká se na připojení…',
+  'library.offline.retrying': 'Připojení vypadlo. Zkouší se to znovu…',
+  'library.offline.progress': '{stored} z {total} · {pct}',
+  'library.offline.keepOpen':
+    '{app} udržuje obrazovku rozsvícenou, dokud probíhá ukládání. Na telefonu zůstaňte v aplikaci, dokud to nedokončí.',
+  'library.offline.pill': 'Ukládání offline',
+  'library.offline.pillLabel': 'Ukládání {title} offline, {pct}. Otevřít knihu.',
+  'library.offline.pillMore': '+{n} další',
+  'library.hidden.tool': 'Skrýt',
+  'library.hidden.toolHint': 'Skrýt tuto knihu před všemi kromě administrátorů',
+  'library.hidden.askTitle': 'Skrýt před čtenáři?',
+  'library.hidden.askLede': 'Jen administrátoři uvidí {title}.',
+  'library.hidden.askShelves':
+    'Zmizí z knihovny, hledání, polic a seznamů ke čtení všech ostatních.',
+  'library.hidden.askLinks':
+    'Sdílené odkazy k ní přestanou fungovat a přátelé ji přestanou vídat ve čtení svých přátel.',
+  'library.hidden.askKept':
+    'Nic se nemaže. Postup, poznámky a police čtenářů se vrátí, když ho znovu zobrazíte.',
+  'library.hidden.askPair': 'E-kniha a audiokniha se skrývají společně.',
+  'library.hidden.confirm': 'Skrýt knihu',
+  'library.hidden.done': 'Skryto. Teď ji vidí jen administrátoři.',
+  'library.hidden.noteTitle': 'Skryto před čtenáři',
+  'library.hidden.noteBy':
+    'Tuto knihu mohou vidět jen administrátoři. Uživatel {name} ji skryl {when}.',
+  'library.hidden.noteWhen': 'Tuto knihu mohou vidět jen administrátoři. Skryto {when}.',
+  'library.hidden.show': 'Zobrazit všem',
+  'library.hidden.shown': 'Všichni ji mohou znovu vidět.',
+  'library.hidden.failed': 'Nepodařilo se změnit, kdo tuto knihu vidí.',
+  'library.hidden.badge': 'Skryto před čtenáři',
+  'library.hidden.shelfLede':
+    'Tyto knihy vidí jen administrátoři. Otevřete některou a zvolte Zobrazit všem, abyste ji vrátili zpět.',
+  'library.empty.auto.hidden': 'Nic není skryté. Každá kniha je na policích všech.',
+  'library.book.gone': 'Tato kniha není v knihovně.',
 };
 export default messages;

@@ -534,8 +534,6 @@ const messages: Record<string, string> = {
   'library.download.retry': 'Försök ladda ner igen',
   'library.download.removePartial': 'Ta bort delvis nedladdning',
   'library.download.notNow': 'Inte nu',
-  'library.download.progressLede':
-    '{done} av {total, plural, one {# del} other {# delar}} · {bytes} hittills. Du kan fortsätta använda appen under tiden.',
   'library.download.cancel': 'Avbryt nedladdning',
   'library.download.storedLede':
     '{title} finns lagrad på den här enheten ({bytes}). Du kan {kind, select, ebook {läsa} other {lyssna på}} den utan anslutning; framsteg synkas när du är online igen.',
@@ -1699,8 +1697,6 @@ const messages: Record<string, string> = {
   'library.book.downloadFiles': 'Ladda ner filer…',
   'library.book.downloadFilesTitle': 'Ladda ner filer',
   'library.book.downloadFileHint': 'Bokens egen fil, sparad på den här enheten',
-  'library.book.downloadFilesHint':
-    '{n, plural, one {# fil.} other {# filer.}} Varje fil laddas ner separat.',
   'library.offline.save': 'Spara offline',
   'library.offline.saving': 'Sparar offline',
   'library.offline.saved': 'Sparad offline',
@@ -1713,5 +1709,58 @@ const messages: Record<string, string> = {
   'library.offline.startingBoth': 'Sparar båda utgåvorna offline…',
   'library.offline.saveBoth':
     'Spara båda utgåvorna offline{hasSize, select, true { ({size})} other {}}',
+  // shelves
+  'shelves.hidden': 'Dold',
+
+  // library
+  'library.book.downloadFilesLede':
+    'Bokens egna filer, sparade på den här enheten för att behålla dem.',
+  'library.book.downloadZip': '{n, plural, one {# fil} other {# filer}} i en ZIP · {size}',
+  'library.book.downloadParts': 'Eller en av de {n} filerna för sig själv',
+  'library.download.error.network':
+    'Anslutningen fortsatte att brytas. Försök igen när den är stabilare; det som redan är sparat finns kvar.',
+  'library.download.error.server':
+    'Servern fortsatte att svara med ett fel. Försök igen om en stund; det som redan är sparat finns kvar.',
+  'library.download.error.stalled':
+    'Nedladdningen fortsatte att stanna av. Försök igen; det som redan är sparat finns kvar.',
+  'library.download.error.interrupted':
+    'Nedladdningen avbröts när appen stängdes. Försök igen för att fortsätta där den slutade.',
+  'library.download.error.unauthorized': 'Du blev utloggad, så nedladdningen stoppades.',
+  'library.offline.preparing': 'Förbereder…',
+  'library.offline.preparingLede':
+    'Servern förbereder {title} för att sparas: {pct} läst hittills. Det behöver bara göras en gång.',
+  'library.offline.checking': 'Kontrollerar vad som redan är sparat…',
+  'library.offline.waiting': 'Väntar på en anslutning…',
+  'library.offline.retrying': 'Anslutningen bröts. Försöker igen…',
+  'library.offline.progress': '{stored} av {total} · {pct}',
+  'library.offline.keepOpen':
+    '{app} håller skärmen tänd medan den sparar. Stanna kvar i appen på mobilen tills den är klar.',
+  'library.offline.pill': 'Sparar offline',
+  'library.offline.pillLabel': 'Sparar {title} offline, {pct}. Öppna boken.',
+  'library.offline.pillMore': '+{n} till',
+  'library.hidden.tool': 'Dölj',
+  'library.hidden.toolHint': 'Dölj den här boken för alla utom admins',
+  'library.hidden.askTitle': 'Dölj för läsare?',
+  'library.hidden.askLede': 'Bara admins kommer att se {title}.',
+  'library.hidden.askShelves':
+    'Den försvinner från alla andras bibliotek, sökning, hyllor och läslista.',
+  'library.hidden.askLinks':
+    'Bokens delningslänkar slutar fungera, och vänner slutar se att andra läser den.',
+  'library.hidden.askKept':
+    'Inget tas bort. Läsarnas framsteg, anteckningar och hyllor kommer tillbaka när du visar den igen.',
+  'library.hidden.askPair': 'E-boken och ljudboken döljs tillsammans.',
+  'library.hidden.confirm': 'Dölj bok',
+  'library.hidden.done': 'Dold. Bara admins kan se den nu.',
+  'library.hidden.noteTitle': 'Dold för läsare',
+  'library.hidden.noteBy': 'Bara admins kan se den här boken. {name} dolde den {when}.',
+  'library.hidden.noteWhen': 'Bara admins kan se den här boken. Dold {when}.',
+  'library.hidden.show': 'Visa för alla',
+  'library.hidden.shown': 'Alla kan se den igen.',
+  'library.hidden.failed': 'Kunde inte ändra vem som kan se den här boken.',
+  'library.hidden.badge': 'Dold för läsare',
+  'library.hidden.shelfLede':
+    'Bara admins ser de här böckerna. Öppna en och välj Visa för alla för att få tillbaka den.',
+  'library.empty.auto.hidden': 'Inget är dolt. Alla böcker finns i allas hyllor.',
+  'library.book.gone': 'Den här boken finns inte i biblioteket.',
 };
 export default messages;

@@ -553,8 +553,6 @@ const messages: Record<string, string> = {
   'library.download.retry': 'Réessayer le téléchargement',
   'library.download.removePartial': 'Supprimer le téléchargement partiel',
   'library.download.notNow': 'Pas maintenant',
-  'library.download.progressLede':
-    "{done} sur {total, plural, one {# partie} other {# parties}} · {bytes} pour l'instant. Vous pouvez continuer à utiliser l'application pendant ce temps.",
   'library.download.cancel': 'Annuler le téléchargement',
   'library.download.storedLede':
     "{title} est stocké sur cet appareil ({bytes}). Vous pouvez {kind, select, ebook {le lire} other {l'écouter}} sans connexion ; la progression se synchronise dès que vous êtes de nouveau en ligne.",
@@ -1746,8 +1744,6 @@ const messages: Record<string, string> = {
   'library.book.downloadFiles': 'Télécharger les fichiers…',
   'library.book.downloadFilesTitle': 'Télécharger les fichiers',
   'library.book.downloadFileHint': 'Le fichier du livre, enregistré sur cet appareil',
-  'library.book.downloadFilesHint':
-    '{n, plural, one {# fichier.} other {# fichiers.}} Chacun se télécharge séparément.',
   'library.offline.save': 'Enregistrer hors ligne',
   'library.offline.saving': 'Enregistrement hors ligne',
   'library.offline.saved': 'Enregistré hors ligne',
@@ -1760,6 +1756,63 @@ const messages: Record<string, string> = {
   'library.offline.startingBoth': 'Enregistrement des deux éditions hors ligne…',
   'library.offline.saveBoth':
     'Enregistrer les deux hors ligne{hasSize, select, true { ({size})} other {}}',
+  // shelves
+  'shelves.hidden': 'Masqués',
+
+  // library
+  'library.book.downloadFilesLede':
+    'Les fichiers du livre lui-même, enregistrés sur cet appareil pour les garder.',
+  'library.book.downloadZip':
+    '{n, plural, one {# fichier} other {# fichiers}} dans un seul ZIP · {size}',
+  'library.book.downloadParts': "Ou l'un des {n} fichiers séparément",
+  'library.download.error.network':
+    "La connexion n'arrêtait pas de se couper. Réessayez quand elle sera plus stable ; ce qui est déjà enregistré reste conservé.",
+  'library.download.error.server':
+    "Le serveur n'a cessé de répondre par une erreur. Réessayez un peu plus tard ; ce qui est déjà enregistré reste conservé.",
+  'library.download.error.stalled':
+    "Le téléchargement n'arrêtait pas de caler. Réessayez ; ce qui est déjà enregistré reste conservé.",
+  'library.download.error.interrupted':
+    "Le téléchargement s'est arrêté à la fermeture de l'application. Réessayez pour reprendre là où il en était.",
+  'library.download.error.unauthorized':
+    "Vous avez été déconnecté, le téléchargement s'est donc arrêté.",
+  'library.offline.preparing': 'Préparation…',
+  'library.offline.preparingLede':
+    "Le serveur prépare {title} pour l'enregistrer hors ligne - {pct} lu jusqu'ici. Il n'a besoin de le faire qu'une seule fois.",
+  'library.offline.checking': 'Vérification de ce qui est déjà enregistré…',
+  'library.offline.waiting': "En attente d'une connexion…",
+  'library.offline.retrying': "La connexion s'est coupée. Nouvelle tentative…",
+  'library.offline.progress': '{stored} sur {total} · {pct}',
+  'library.offline.keepOpen':
+    "{app} garde l'écran allumé pendant l'enregistrement. Sur un téléphone, restez dans l'application jusqu'à la fin.",
+  'library.offline.pill': 'Enregistrement hors ligne',
+  'library.offline.pillLabel': 'Enregistrement de {title} hors ligne, {pct}. Ouvrir le livre.',
+  'library.offline.pillMore': '+{n} de plus',
+  'library.hidden.tool': 'Masquer',
+  'library.hidden.toolHint': 'Masquer ce livre à tout le monde sauf aux administrateurs',
+  'library.hidden.askTitle': 'Masquer aux lecteurs ?',
+  'library.hidden.askLede': 'Seuls les administrateurs verront {title}.',
+  'library.hidden.askShelves':
+    'Il disparaît de la bibliothèque, de la recherche, des étagères et des listes de lecture de tous les autres.',
+  'library.hidden.askLinks':
+    'Ses liens de partage cessent de fonctionner, et les amis cessent de le voir dans la lecture de leurs amis.',
+  'library.hidden.askKept':
+    "Rien n'est supprimé. La progression, les notes et les étagères des lecteurs reviennent quand vous l'affichez de nouveau.",
+  'library.hidden.askPair': 'Le livre numérique et le livre audio sont masqués ensemble.',
+  'library.hidden.confirm': 'Masquer le livre',
+  'library.hidden.done': 'Masqué. Seuls les administrateurs peuvent le voir désormais.',
+  'library.hidden.noteTitle': 'Masqué aux lecteurs',
+  'library.hidden.noteBy':
+    "Seuls les administrateurs peuvent voir ce livre. {name} l'a masqué {when}.",
+  'library.hidden.noteWhen': 'Seuls les administrateurs peuvent voir ce livre. Masqué {when}.',
+  'library.hidden.show': 'Afficher à tout le monde',
+  'library.hidden.shown': 'Tout le monde peut à nouveau le voir.',
+  'library.hidden.failed': 'Impossible de modifier qui peut voir ce livre.',
+  'library.hidden.badge': 'Masqué aux lecteurs',
+  'library.hidden.shelfLede':
+    'Seuls les administrateurs voient ces livres. Ouvrez-en un et choisissez Afficher à tout le monde pour le remettre en place.',
+  'library.empty.auto.hidden':
+    "Rien n'est masqué. Tous les livres sont sur les étagères de tout le monde.",
+  'library.book.gone': "Ce livre n'est pas dans la bibliothèque.",
 };
 
 export default messages;

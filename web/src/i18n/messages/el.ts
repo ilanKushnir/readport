@@ -557,8 +557,6 @@ const messages: Record<string, string> = {
   'library.download.retry': 'Επανάληψη λήψης',
   'library.download.removePartial': 'Αφαίρεση ημιτελούς λήψης',
   'library.download.notNow': 'Όχι τώρα',
-  'library.download.progressLede':
-    '{done} από {total, plural, one {# μέρος} other {# μέρη}} · {bytes} μέχρι στιγμής. Μπορείς να συνεχίσεις να χρησιμοποιείς την εφαρμογή στο μεταξύ.',
   'library.download.cancel': 'Ακύρωση λήψης',
   'library.download.storedLede':
     'Το {title} είναι αποθηκευμένο σε αυτή τη συσκευή ({bytes}). Μπορείς να το {kind, select, ebook {διαβάσεις} other {ακούσεις}} χωρίς σύνδεση· η πρόοδος συγχρονίζεται όταν επανασυνδεθείς.',
@@ -1746,8 +1744,6 @@ const messages: Record<string, string> = {
   'library.book.downloadFiles': 'Λήψη αρχείων…',
   'library.book.downloadFilesTitle': 'Λήψη αρχείων',
   'library.book.downloadFileHint': 'Το δικό του αρχείο, διατηρημένο σε αυτή τη συσκευή',
-  'library.book.downloadFilesHint':
-    '{n, plural, one {# αρχείο.} other {# αρχεία.}} Καθένα κατεβαίνει ξεχωριστά.',
   'library.offline.save': 'Αποθήκευση εκτός σύνδεσης',
   'library.offline.saving': 'Γίνεται αποθήκευση εκτός σύνδεσης',
   'library.offline.saved': 'Αποθηκεύτηκε εκτός σύνδεσης',
@@ -1761,5 +1757,60 @@ const messages: Record<string, string> = {
   'library.offline.startingBoth': 'Γίνεται αποθήκευση και των δύο εκδόσεων εκτός σύνδεσης…',
   'library.offline.saveBoth':
     'Αποθήκευση και των δύο εκτός σύνδεσης{hasSize, select, true { ({size})} other {}}',
+  // shelves
+  'shelves.hidden': 'Κρυμμένα',
+
+  // library
+  'library.book.downloadFilesLede':
+    'Τα δικά του αρχεία, διατηρημένα σε αυτή τη συσκευή για φύλαξη.',
+  'library.book.downloadZip': '{n, plural, one {# αρχείο} other {# αρχεία}} σε ένα ZIP · {size}',
+  'library.book.downloadParts': 'Ή ένα από τα {n} αρχεία μόνο του',
+  'library.download.error.network':
+    'Η σύνδεση συνέχιζε να διακόπτεται. Δοκίμασε ξανά όταν σταθεροποιηθεί· ό,τι έχει αποθηκευτεί ως τώρα διατηρείται.',
+  'library.download.error.server':
+    'Ο διακομιστής συνέχιζε να απαντά με σφάλμα. Δοκίμασε ξανά σε λίγο· ό,τι έχει αποθηκευτεί ως τώρα διατηρείται.',
+  'library.download.error.stalled':
+    'Η λήψη συνέχιζε να κολλάει. Δοκίμασε ξανά· ό,τι έχει αποθηκευτεί ως τώρα διατηρείται.',
+  'library.download.error.interrupted':
+    'Η λήψη σταμάτησε όταν έκλεισε η εφαρμογή. Δοκίμασε ξανά για να συνεχίσεις από εκεί που έμεινε.',
+  'library.download.error.unauthorized': 'Αποσυνδέθηκες, οπότε η λήψη σταμάτησε.',
+  'library.offline.preparing': 'Προετοιμασία…',
+  'library.offline.preparingLede':
+    'Ο διακομιστής ετοιμάζει το {title} για αποθήκευση: {pct} έχει διαβαστεί ως τώρα. Το κάνει αυτό μόνο μία φορά.',
+  'library.offline.checking': 'Έλεγχος όσων έχουν ήδη αποθηκευτεί…',
+  'library.offline.waiting': 'Αναμονή σύνδεσης…',
+  'library.offline.retrying': 'Η σύνδεση διακόπηκε. Νέα προσπάθεια…',
+  'library.offline.progress': '{stored} από {total} · {pct}',
+  'library.offline.keepOpen':
+    'Το {app} κρατάει την οθόνη αναμμένη όσο αποθηκεύει. Σε κινητό, μείνε στην εφαρμογή μέχρι να ολοκληρωθεί.',
+  'library.offline.pill': 'Γίνεται αποθήκευση εκτός σύνδεσης',
+  'library.offline.pillLabel': 'Αποθήκευση του {title} εκτός σύνδεσης, {pct}. Άνοιξε το βιβλίο.',
+  'library.offline.pillMore': '+{n} ακόμη',
+  'library.hidden.tool': 'Απόκρυψη',
+  'library.hidden.toolHint': 'Απόκρυψη αυτού του βιβλίου από όλους εκτός από διαχειριστές',
+  'library.hidden.askTitle': 'Απόκρυψη από αναγνώστες;',
+  'library.hidden.askLede': 'Μόνο οι διαχειριστές θα βλέπουν το {title}.',
+  'library.hidden.askShelves':
+    'Εξαφανίζεται από τη βιβλιοθήκη, την αναζήτηση, τα ράφια και τις λίστες ανάγνωσης όλων των άλλων.',
+  'library.hidden.askLinks':
+    'Οι σύνδεσμοι κοινής χρήσης του σταματούν να ανοίγουν, και οι φίλοι σταματούν να το βλέπουν στην ανάγνωση ο ένας του άλλου.',
+  'library.hidden.askKept':
+    'Τίποτα δεν διαγράφεται. Η πρόοδος, οι σημειώσεις και τα ράφια των αναγνωστών επιστρέφουν όταν το εμφανίσεις ξανά.',
+  'library.hidden.askPair': 'Το ηλεκτρονικό βιβλίο και το ηχητικό βιβλίο κρύβονται μαζί.',
+  'library.hidden.confirm': 'Απόκρυψη βιβλίου',
+  'library.hidden.done': 'Κρύφτηκε. Μόνο οι διαχειριστές το βλέπουν πια.',
+  'library.hidden.noteTitle': 'Κρυμμένο από αναγνώστες',
+  'library.hidden.noteBy':
+    'Μόνο οι διαχειριστές μπορούν να δουν αυτό το βιβλίο. Ο/Η {name} το έκρυψε {when}.',
+  'library.hidden.noteWhen':
+    'Μόνο οι διαχειριστές μπορούν να δουν αυτό το βιβλίο. Κρύφτηκε {when}.',
+  'library.hidden.show': 'Εμφάνιση σε όλους',
+  'library.hidden.shown': 'Όλοι μπορούν να το δουν ξανά.',
+  'library.hidden.failed': 'Δεν ήταν δυνατόν να αλλάξει ποιος βλέπει αυτό το βιβλίο.',
+  'library.hidden.badge': 'Κρυμμένο από αναγνώστες',
+  'library.hidden.shelfLede':
+    'Μόνο οι διαχειριστές βλέπουν αυτά τα βιβλία. Άνοιξε ένα και επίλεξε «Εμφάνιση σε όλους» για να το επαναφέρεις.',
+  'library.empty.auto.hidden': 'Τίποτα δεν είναι κρυμμένο. Κάθε βιβλίο βρίσκεται στα ράφια όλων.',
+  'library.book.gone': 'Αυτό το βιβλίο δεν υπάρχει στη βιβλιοθήκη.',
 };
 export default messages;

@@ -561,8 +561,6 @@ const messages: Record<string, string> = {
   'library.download.retry': 'Download erneut versuchen',
   'library.download.removePartial': 'Unvollständigen Download entfernen',
   'library.download.notNow': 'Jetzt nicht',
-  'library.download.progressLede':
-    '{done} von {total, plural, one {# Teil} other {# Teilen}} · bisher {bytes}. Die App lässt sich währenddessen weiter nutzen.',
   'library.download.cancel': 'Download abbrechen',
   'library.download.storedLede':
     '{title} ist auf diesem Gerät gespeichert ({bytes}). {kind, select, ebook {Lesen} other {Hören}} funktioniert ohne Verbindung; der Fortschritt synchronisiert sich, sobald wieder online.',
@@ -1755,8 +1753,6 @@ const messages: Record<string, string> = {
   'library.book.downloadFiles': 'Dateien herunterladen…',
   'library.book.downloadFilesTitle': 'Dateien herunterladen',
   'library.book.downloadFileHint': 'Die Datei des Buchs, gespeichert auf diesem Gerät',
-  'library.book.downloadFilesHint':
-    '{n, plural, one {# Datei.} other {# Dateien.}} Jede lädt einzeln herunter.',
   'library.offline.save': 'Offline speichern',
   'library.offline.saving': 'Wird offline gespeichert',
   'library.offline.saved': 'Offline gespeichert',
@@ -1768,5 +1764,60 @@ const messages: Record<string, string> = {
   'library.offline.starting': 'Wird offline gespeichert…',
   'library.offline.startingBoth': 'Beide Ausgaben werden offline gespeichert…',
   'library.offline.saveBoth': 'Beide offline speichern{hasSize, select, true { ({size})} other {}}',
+  // shelves
+  'shelves.hidden': 'Verborgen',
+
+  // library
+  'library.book.downloadFilesLede':
+    'Die eigenen Dateien des Buchs – auf diesem Gerät gespeichert, um sie zu behalten.',
+  'library.book.downloadZip': '{n, plural, one {# Datei} other {# Dateien}} in einer ZIP · {size}',
+  'library.book.downloadParts': 'Oder eine der {n} Dateien einzeln',
+  'library.download.error.network':
+    'Die Verbindung brach immer wieder ab. Erneut versuchen, sobald sie stabiler ist; was bisher gespeichert ist, bleibt erhalten.',
+  'library.download.error.server':
+    'Der Server antwortete immer wieder mit einem Fehler. Später erneut versuchen; was bisher gespeichert ist, bleibt erhalten.',
+  'library.download.error.stalled':
+    'Der Download blieb immer wieder stecken. Erneut versuchen; was bisher gespeichert ist, bleibt erhalten.',
+  'library.download.error.interrupted':
+    'Der Download wurde gestoppt, als die App geschlossen wurde. Erneut versuchen, um dort weiterzumachen, wo er aufgehört hat.',
+  'library.download.error.unauthorized':
+    'Der Download wurde gestoppt, weil die Anmeldung nicht mehr gültig war.',
+  'library.offline.preparing': 'Wird vorbereitet…',
+  'library.offline.preparingLede':
+    'Der Server bereitet {title} zum Speichern vor: bisher {pct} gelesen. Das ist nur einmal nötig.',
+  'library.offline.checking': 'Wird geprüft, was bereits gespeichert ist…',
+  'library.offline.waiting': 'Wartet auf eine Verbindung…',
+  'library.offline.retrying': 'Die Verbindung brach ab. Wird erneut versucht…',
+  'library.offline.progress': '{stored} von {total} · {pct}',
+  'library.offline.keepOpen':
+    '{app} hält den Bildschirm wach, solange gespeichert wird. Auf dem Handy so lange in der App bleiben, bis es fertig ist.',
+  'library.offline.pill': 'Wird offline gespeichert',
+  'library.offline.pillLabel': '{title} wird offline gespeichert, {pct}. Buch öffnen.',
+  'library.offline.pillMore': '+{n} weitere',
+  'library.hidden.tool': 'Verbergen',
+  'library.hidden.toolHint': 'Dieses Buch vor allen außer Administratoren verbergen',
+  'library.hidden.askTitle': 'Vor Lesern verbergen?',
+  'library.hidden.askLede': 'Nur Administratoren werden {title} sehen.',
+  'library.hidden.askShelves':
+    'Es verschwindet aus Mediathek, Suche, Regalen und Leseliste aller anderen.',
+  'library.hidden.askLinks':
+    'Seine Freigabelinks funktionieren nicht mehr, und Freunde sehen nicht mehr, dass andere es gerade lesen.',
+  'library.hidden.askKept':
+    'Nichts wird gelöscht. Der Fortschritt, die Notizen und die Regale der Leser sind wieder da, sobald es wieder gezeigt wird.',
+  'library.hidden.askPair': 'E-Book und Hörbuch werden gemeinsam verborgen.',
+  'library.hidden.confirm': 'Buch verbergen',
+  'library.hidden.done': 'Verborgen. Nur noch Administratoren können es sehen.',
+  'library.hidden.noteTitle': 'Vor Lesern verborgen',
+  'library.hidden.noteBy':
+    'Nur Administratoren können dieses Buch sehen. {name} hat es {when} verborgen.',
+  'library.hidden.noteWhen': 'Nur Administratoren können dieses Buch sehen. Verborgen {when}.',
+  'library.hidden.show': 'Allen zeigen',
+  'library.hidden.shown': 'Alle können es wieder sehen.',
+  'library.hidden.failed': 'Die Sichtbarkeit dieses Buchs konnte nicht geändert werden.',
+  'library.hidden.badge': 'Vor Lesern verborgen',
+  'library.hidden.shelfLede':
+    'Nur Administratoren sehen diese Bücher. Eins öffnen und Allen zeigen wählen, um es zurückzuholen.',
+  'library.empty.auto.hidden': 'Nichts ist verborgen. Jedes Buch ist bei allen im Regal.',
+  'library.book.gone': 'Dieses Buch ist nicht in der Mediathek.',
 } as const;
 export default messages;

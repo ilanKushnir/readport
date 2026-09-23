@@ -559,8 +559,6 @@ const messages: Record<string, string> = {
   'library.download.retry': 'إعادة محاولة التنزيل',
   'library.download.removePartial': 'إزالة التنزيل الجزئي',
   'library.download.notNow': 'ليس الآن',
-  'library.download.progressLede':
-    '{done} من {total, plural, zero {لا أجزاء} one {جزء واحد} two {جزآن} few {# أجزاء} many {# جزءًا} other {# جزء}} · {bytes} حتى الآن. يمكنك الاستمرار في استخدام التطبيق في هذه الأثناء.',
   'library.download.cancel': 'إلغاء التنزيل',
   'library.download.storedLede':
     '{title} مخزَّن على هذا الجهاز ({bytes}). يمكنك {kind, select, ebook {قراءته} other {الاستماع إليه}} دون اتصال؛ يُزامَن التقدم عند عودة الاتصال.',
@@ -1772,8 +1770,6 @@ const messages: Record<string, string> = {
   'library.book.downloadFiles': 'تنزيل الملفات…',
   'library.book.downloadFilesTitle': 'تنزيل الملفات',
   'library.book.downloadFileHint': 'ملف الكتاب الأصلي، محفوظ على هذا الجهاز',
-  'library.book.downloadFilesHint':
-    '{n, plural, zero {لا ملفات.} one {ملف واحد.} two {ملفان.} few {# ملفات.} many {# ملفًا.} other {# ملف.}} يتم تنزيل كل ملف على حدة.',
   'library.offline.save': 'حفظ دون اتصال',
   'library.offline.saving': 'جارٍ الحفظ دون اتصال',
   'library.offline.saved': 'محفوظ دون اتصال',
@@ -1786,5 +1782,57 @@ const messages: Record<string, string> = {
   'library.offline.startingBoth': 'جارٍ حفظ كلتا النسختين دون اتصال…',
   'library.offline.saveBoth':
     'حفظ كلتا النسختين دون اتصال{hasSize, select, true { ({size})} other {}}',
+  // shelves
+  'shelves.hidden': 'مخفية',
+
+  // library
+  'library.book.downloadFilesLede': 'ملفات الكتاب الأصلية، محفوظة على هذا الجهاز للاحتفاظ بها.',
+  'library.book.downloadZip':
+    '{n, plural, zero {لا ملفات} one {ملف واحد} two {ملفان} few {# ملفات} many {# ملفًا} other {# ملف}} في أرشيف ZIP واحد · {size}',
+  'library.book.downloadParts': 'أو أحد الملفات الـ{n} بمفرده',
+  'library.download.error.network':
+    'ظل الاتصال ينقطع. حاول مرة أخرى عندما يصبح أكثر ثباتًا؛ ما حُفظ حتى الآن يبقى محفوظًا.',
+  'library.download.error.server':
+    'ظل الخادم يستجيب بخطأ. حاول مرة أخرى بعد قليل؛ ما حُفظ حتى الآن يبقى محفوظًا.',
+  'library.download.error.stalled':
+    'ظل التنزيل يتعثر. حاول مرة أخرى؛ ما حُفظ حتى الآن يبقى محفوظًا.',
+  'library.download.error.interrupted':
+    'توقف التنزيل عند إغلاق التطبيق. حاول مرة أخرى للمتابعة من حيث توقف.',
+  'library.download.error.unauthorized': 'سُجِّل خروجك، فتوقف التنزيل.',
+  'library.offline.preparing': 'جارٍ التحضير…',
+  'library.offline.preparingLede':
+    'يُجهّز الخادم {title} للحفظ: قُرئ {pct} حتى الآن. يفعل هذا مرة واحدة فقط.',
+  'library.offline.checking': 'جارٍ التحقق مما هو محفوظ بالفعل…',
+  'library.offline.waiting': 'جارٍ انتظار الاتصال…',
+  'library.offline.retrying': 'انقطع الاتصال. جارٍ إعادة المحاولة…',
+  'library.offline.progress': '{stored} من {total} · {pct}',
+  'library.offline.keepOpen':
+    'يُبقي {app} الشاشة مضاءة أثناء الحفظ. على الهاتف، ابقَ في التطبيق حتى ينتهي.',
+  'library.offline.pill': 'جارٍ الحفظ دون اتصال',
+  'library.offline.pillLabel': 'جارٍ حفظ {title} دون اتصال، {pct}. افتح الكتاب.',
+  'library.offline.pillMore': '+{n} أخرى',
+  'library.hidden.tool': 'إخفاء',
+  'library.hidden.toolHint': 'إخفاء هذا الكتاب عن الجميع إلا المسؤولين',
+  'library.hidden.askTitle': 'إخفاء عن القراء؟',
+  'library.hidden.askLede': 'المسؤولون فقط سيرون {title}.',
+  'library.hidden.askShelves': 'يختفي من مكتبة كل شخص آخر، والبحث، والرفوف، وقوائم القراءة.',
+  'library.hidden.askLinks':
+    'تتوقف روابط مشاركته عن العمل، ويتوقف الأصدقاء عن رؤيته في قراءات بعضهم البعض.',
+  'library.hidden.askKept':
+    'لا شيء يُحذف. يعود تقدم القراء وملاحظاتهم ورفوفهم عند إظهاره مرة أخرى.',
+  'library.hidden.askPair': 'يُخفى الكتاب الإلكتروني والكتاب الصوتي معًا.',
+  'library.hidden.confirm': 'إخفاء الكتاب',
+  'library.hidden.done': 'أُخفي. المسؤولون فقط يرونه الآن.',
+  'library.hidden.noteTitle': 'مخفي عن القراء',
+  'library.hidden.noteBy': 'المسؤولون فقط يرون هذا الكتاب. أخفاه {name} {when}.',
+  'library.hidden.noteWhen': 'المسؤولون فقط يرون هذا الكتاب. أُخفي {when}.',
+  'library.hidden.show': 'إظهار للجميع',
+  'library.hidden.shown': 'يمكن للجميع رؤيته مرة أخرى.',
+  'library.hidden.failed': 'تعذّر تغيير من يرى هذا الكتاب.',
+  'library.hidden.badge': 'مخفي عن القراء',
+  'library.hidden.shelfLede':
+    'المسؤولون فقط يرون هذه الكتب. افتح أحدها واختر «إظهار للجميع» لإعادته.',
+  'library.empty.auto.hidden': 'لا يوجد شيء مخفي. كل كتاب موجود على رفوف الجميع.',
+  'library.book.gone': 'هذا الكتاب غير موجود في المكتبة.',
 };
 export default messages;

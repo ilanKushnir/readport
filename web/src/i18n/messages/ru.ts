@@ -542,8 +542,6 @@ const messages: Record<string, string> = {
   'library.download.retry': 'Повторить загрузку',
   'library.download.removePartial': 'Удалить частичную загрузку',
   'library.download.notNow': 'Не сейчас',
-  'library.download.progressLede':
-    '{done} из {total, plural, one {# части} few {# частей} many {# частей} other {# частей}} · {bytes} пока что. Приложением можно пользоваться и во время загрузки.',
   'library.download.cancel': 'Отменить загрузку',
   'library.download.storedLede':
     '«{title}» сохранена на этом устройстве ({bytes}). Вы можете {kind, select, ebook {читать} other {слушать}} её без подключения; прогресс синхронизируется, когда вы снова будете онлайн.',
@@ -1734,8 +1732,6 @@ const messages: Record<string, string> = {
   'library.book.downloadFiles': 'Скачать файлы…',
   'library.book.downloadFilesTitle': 'Скачать файлы',
   'library.book.downloadFileHint': 'Собственный файл книги хранится на этом устройстве',
-  'library.book.downloadFilesHint':
-    '{n, plural, one {# файл.} few {# файла.} many {# файлов.} other {# файла.}} Каждый скачивается отдельно.',
   'library.offline.save': 'Сохранить офлайн',
   'library.offline.saving': 'Сохранение офлайн',
   'library.offline.saved': 'Сохранено офлайн',
@@ -1747,6 +1743,60 @@ const messages: Record<string, string> = {
   'library.offline.starting': 'Сохранение офлайн…',
   'library.offline.startingBoth': 'Сохранение обоих изданий офлайн…',
   'library.offline.saveBoth': 'Сохранить оба офлайн{hasSize, select, true { ({size})} other {}}',
+  // shelves
+  'shelves.hidden': 'Скрытые',
+
+  // library
+  'library.book.downloadFilesLede':
+    'Собственные файлы книги, сохранённые на этом устройстве насовсем.',
+  'library.book.downloadZip':
+    '{n, plural, one {# файл} few {# файла} many {# файлов} other {# файла}} в одном ZIP · {size}',
+  'library.book.downloadParts': 'Или один из {n} файлов отдельно',
+  'library.download.error.network':
+    'Соединение постоянно обрывалось. Повторите попытку, когда оно станет стабильнее. Всё, что уже сохранено, останется на месте.',
+  'library.download.error.server':
+    'Сервер продолжал отвечать ошибкой. Повторите попытку немного позже. Всё, что уже сохранено, останется на месте.',
+  'library.download.error.stalled':
+    'Загрузка постоянно зависала. Повторите попытку. Всё, что уже сохранено, останется на месте.',
+  'library.download.error.interrupted':
+    'Загрузка остановилась, потому что приложение было закрыто. Повторите попытку, чтобы продолжить с того места, где она остановилась.',
+  'library.download.error.unauthorized': 'Вы вышли из аккаунта, поэтому загрузка остановилась.',
+  'library.offline.preparing': 'Подготовка…',
+  'library.offline.preparingLede':
+    'Сервер готовит «{title}» к сохранению: обработано {pct}. Это нужно сделать только один раз.',
+  'library.offline.checking': 'Проверяем, что уже сохранено…',
+  'library.offline.waiting': 'Ожидание подключения…',
+  'library.offline.retrying': 'Соединение прервалось. Повторяем попытку…',
+  'library.offline.progress': '{stored} из {total} · {pct}',
+  'library.offline.keepOpen':
+    '{app} не даёт экрану погаснуть во время сохранения. На телефоне оставайтесь в приложении, пока оно не завершится.',
+  'library.offline.pill': 'Сохранение офлайн',
+  'library.offline.pillLabel': 'Сохранение «{title}» офлайн, {pct}. Открыть книгу.',
+  'library.offline.pillMore': '+{n} ещё',
+  'library.hidden.tool': 'Скрыть',
+  'library.hidden.toolHint': 'Скрыть эту книгу от всех, кроме администраторов',
+  'library.hidden.askTitle': 'Скрыть от читателей?',
+  'library.hidden.askLede': 'Только администраторы будут видеть «{title}».',
+  'library.hidden.askShelves': 'Она исчезнет из чужих библиотек, поиска, полок и списков чтения.',
+  'library.hidden.askLinks':
+    'Ссылки на неё перестанут открываться, а друзья перестанут видеть её в чтении друг друга.',
+  'library.hidden.askKept':
+    'Ничего не удаляется. Прогресс читателей, заметки и полки вернутся, когда вы покажете её снова.',
+  'library.hidden.askPair': 'Электронная книга и аудиокнига скрываются вместе.',
+  'library.hidden.confirm': 'Скрыть книгу',
+  'library.hidden.done': 'Скрыта. Теперь её видят только администраторы.',
+  'library.hidden.noteTitle': 'Скрыто от читателей',
+  'library.hidden.noteBy':
+    'Эту книгу видят только администраторы. Скрыта администратором {name}, {when}.',
+  'library.hidden.noteWhen': 'Эту книгу видят только администраторы. Скрыта {when}.',
+  'library.hidden.show': 'Показать всем',
+  'library.hidden.shown': 'Теперь её снова видят все.',
+  'library.hidden.failed': 'Не удалось изменить, кто видит эту книгу.',
+  'library.hidden.badge': 'Скрыто от читателей',
+  'library.hidden.shelfLede':
+    'Эти книги видят только администраторы. Откройте книгу и выберите «Показать всем», чтобы вернуть её обратно.',
+  'library.empty.auto.hidden': 'Ничего не скрыто. Каждая книга есть на полках у всех.',
+  'library.book.gone': 'Этой книги нет в библиотеке.',
 };
 
 export default messages;

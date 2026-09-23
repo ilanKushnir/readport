@@ -546,8 +546,6 @@ const messages: Record<string, string> = {
   'library.download.retry': 'ניסיון הורדה חוזר',
   'library.download.removePartial': 'הסרת ההורדה החלקית',
   'library.download.notNow': 'לא עכשיו',
-  'library.download.progressLede':
-    '{done} מתוך {total, plural, one {# חלק} two {# חלקים} other {# חלקים}} · {bytes} עד כה. אפשר להמשיך להשתמש באפליקציה בינתיים.',
   'library.download.cancel': 'ביטול ההורדה',
   'library.download.storedLede':
     '{title} שמור במכשיר הזה ({bytes}). אפשר {kind, select, ebook {לקרוא} other {להאזין ל}}ו בלי חיבור; ההתקדמות מסתנכרת כשחוזרים להיות מחוברים.',
@@ -1736,8 +1734,6 @@ const messages: Record<string, string> = {
   'library.book.downloadFiles': 'הורדת קבצים…',
   'library.book.downloadFilesTitle': 'הורדת קבצים',
   'library.book.downloadFileHint': 'קובץ הספר עצמו, נשמר במכשיר הזה',
-  'library.book.downloadFilesHint':
-    '{n, plural, one {# קובץ.} two {# קבצים.} other {# קבצים.}} כל קובץ יורד בנפרד.',
   'library.offline.save': 'שמור לא מקוון',
   'library.offline.saving': 'שומר לא מקוון',
   'library.offline.saved': 'נשמר לא מקוון',
@@ -1750,5 +1746,58 @@ const messages: Record<string, string> = {
   'library.offline.startingBoth': 'שומר את שתי המהדורות לא מקוון…',
   'library.offline.saveBoth':
     'שמור את שתי המהדורות לא מקוון{hasSize, select, true { ({size})} other {}}',
+  // shelves
+  'shelves.hidden': 'הוסתרו',
+
+  // library
+  'library.book.downloadFilesLede': 'קובצי הספר עצמו, נשמרים במכשיר הזה לצמיתות.',
+  'library.book.downloadZip':
+    '{n, plural, one {# קובץ} two {# קבצים} other {# קבצים}} בארכיון ZIP אחד · {size}',
+  'library.book.downloadParts': 'או אחד מ-{n} הקבצים בנפרד',
+  'library.download.error.network':
+    'החיבור המשיך להתנתק. כדאי לנסות שוב כשהוא יציב יותר; מה שנשמר עד כה נשאר שמור.',
+  'library.download.error.server':
+    'השרת המשיך להשיב בשגיאה. כדאי לנסות שוב בעוד זמן מה; מה שנשמר עד כה נשאר שמור.',
+  'library.download.error.stalled':
+    'ההורדה המשיכה להיתקע. כדאי לנסות שוב; מה שנשמר עד כה נשאר שמור.',
+  'library.download.error.interrupted':
+    'ההורדה נעצרה כשהאפליקציה נסגרה. כדאי לנסות שוב כדי להמשיך מהנקודה שבה היא הפסיקה.',
+  'library.download.error.unauthorized': 'נותקת, ולכן ההורדה נעצרה.',
+  'library.offline.preparing': 'מכין…',
+  'library.offline.preparingLede':
+    'השרת מכין את {title} לשמירה: {pct} נקרא עד כה. הוא עושה את זה פעם אחת בלבד.',
+  'library.offline.checking': 'בודק מה כבר נשמר…',
+  'library.offline.waiting': 'ממתין לחיבור…',
+  'library.offline.retrying': 'החיבור התנתק. מנסה שוב…',
+  'library.offline.progress': '{stored} מתוך {total} · {pct}',
+  'library.offline.keepOpen':
+    '{app} משאיר את המסך דלוק בזמן השמירה. בטלפון, יש להישאר באפליקציה עד לסיום.',
+  'library.offline.pill': 'שומר לא מקוון',
+  'library.offline.pillLabel': 'שומר את {title} לא מקוון, {pct}. יש לפתוח את הספר.',
+  'library.offline.pillMore': '+{n} נוספים',
+  'library.hidden.tool': 'הסתר',
+  'library.hidden.toolHint': 'הסתר את הספר הזה מכולם חוץ ממנהלים',
+  'library.hidden.askTitle': 'להסתיר מקוראים?',
+  'library.hidden.askLede': 'רק מנהלים יראו את {title}.',
+  'library.hidden.askShelves':
+    'הוא נעלם מהספרייה, מהחיפוש, מהמדפים ומרשימות הקריאה של כולם האחרים.',
+  'library.hidden.askLinks':
+    'קישורי השיתוף שלו מפסיקים להיפתח, וחברים מפסיקים לראות אותו בקריאה ההדדית שלהם.',
+  'library.hidden.askKept':
+    'שום דבר לא נמחק. ההתקדמות, ההערות והמדפים של הקוראים חוזרים כשמציגים אותו שוב.',
+  'library.hidden.askPair': 'הספר האלקטרוני וספר הקול מוסתרים יחד.',
+  'library.hidden.confirm': 'הסתר את הספר',
+  'library.hidden.done': 'הוסתר. רק מנהלים יכולים לראות אותו עכשיו.',
+  'library.hidden.noteTitle': 'מוסתר מקוראים',
+  'library.hidden.noteBy': 'רק מנהלים יכולים לראות את הספר הזה. {name} הסתיר/ה אותו {when}.',
+  'library.hidden.noteWhen': 'רק מנהלים יכולים לראות את הספר הזה. הוסתר {when}.',
+  'library.hidden.show': 'הצג לכולם',
+  'library.hidden.shown': 'כולם יכולים לראות אותו שוב.',
+  'library.hidden.failed': 'לא ניתן היה לשנות מי רואה את הספר הזה.',
+  'library.hidden.badge': 'מוסתר מקוראים',
+  'library.hidden.shelfLede':
+    'רק מנהלים רואים את הספרים האלה. יש לפתוח אחד ולבחור ב„הצג לכולם” כדי להחזיר אותו.',
+  'library.empty.auto.hidden': 'שום דבר לא מוסתר. כל ספר נמצא על המדפים של כולם.',
+  'library.book.gone': 'הספר הזה לא נמצא בספרייה.',
 };
 export default messages;

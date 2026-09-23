@@ -543,8 +543,6 @@ const messages: Record<string, string> = {
   'library.download.retry': 'İndirmeyi yeniden dene',
   'library.download.removePartial': 'Yarım indirmeyi kaldır',
   'library.download.notNow': 'Şimdi değil',
-  'library.download.progressLede':
-    '{total, plural, one {# parçadan} other {# parçadan}} {done} tamamlandı · şimdiye kadar {bytes}. Bu sırada uygulamayı kullanmaya devam edebilirsiniz.',
   'library.download.cancel': 'İndirmeyi iptal et',
   'library.download.storedLede':
     '{title}, bu cihazda saklı ({bytes}). Bağlantı olmadan {kind, select, ebook {okuyabilirsiniz} other {dinleyebilirsiniz}}; tekrar çevrimiçi olduğunuzda ilerleme eşitlenir.',
@@ -1720,8 +1718,6 @@ const messages: Record<string, string> = {
   'library.book.downloadFiles': 'Dosyaları indir…',
   'library.book.downloadFilesTitle': 'Dosyaları indir',
   'library.book.downloadFileHint': 'Kitabın kendi dosyası, bu cihazda saklanır',
-  'library.book.downloadFilesHint':
-    '{n, plural, one {# dosya.} other {# dosya.}} Her biri ayrı ayrı indirilir.',
   'library.offline.save': 'Çevrimdışı kaydet',
   'library.offline.saving': 'Çevrimdışı kaydediliyor',
   'library.offline.saved': 'Çevrimdışı kaydedildi',
@@ -1734,6 +1730,58 @@ const messages: Record<string, string> = {
   'library.offline.startingBoth': 'Her iki baskı da çevrimdışı kaydediliyor…',
   'library.offline.saveBoth':
     'Her ikisini de çevrimdışı kaydet{hasSize, select, true { ({size})} other {}}',
+  // shelves
+  'shelves.hidden': 'Gizlenenler',
+
+  // library
+  'library.book.downloadFilesLede': 'Kitabın kendi dosyaları, saklamak üzere bu cihaza kaydedilir.',
+  'library.book.downloadZip': '{n, plural, one {# dosya} other {# dosya}} tek bir ZIP’te · {size}',
+  'library.book.downloadParts': 'Veya {n} dosyadan biri, tek başına',
+  'library.download.error.network':
+    'Bağlantı sürekli kesiliyordu. Daha kararlı olduğunda tekrar deneyin; şimdiye kadar kaydedilenler saklı kalır.',
+  'library.download.error.server':
+    'Sunucu sürekli hatayla yanıt veriyordu. Bir süre sonra tekrar deneyin; şimdiye kadar kaydedilenler saklı kalır.',
+  'library.download.error.stalled':
+    'İndirme sürekli takılıyordu. Tekrar deneyin; şimdiye kadar kaydedilenler saklı kalır.',
+  'library.download.error.interrupted':
+    'Uygulama kapatıldığında indirme durdu. Kaldığı yerden devam etmek için tekrar deneyin.',
+  'library.download.error.unauthorized': 'Oturumunuz kapatıldığı için indirme durdu.',
+  'library.offline.preparing': 'Hazırlanıyor…',
+  'library.offline.preparingLede':
+    'Sunucu {title} başlığını kaydetmeye hazırlıyor: şimdiye kadar {pct} okundu. Bunu yalnızca bir kez yapar.',
+  'library.offline.checking': 'Zaten kaydedilenler kontrol ediliyor…',
+  'library.offline.waiting': 'Bağlantı bekleniyor…',
+  'library.offline.retrying': 'Bağlantı kesildi. Yeniden deneniyor…',
+  'library.offline.progress': '{stored} / {total} · {pct}',
+  'library.offline.keepOpen':
+    '{app}, kaydederken ekranı açık tutar. Telefonda, işlem bitene kadar uygulamada kalın.',
+  'library.offline.pill': 'Çevrimdışı kaydediliyor',
+  'library.offline.pillLabel': '{title} çevrimdışı kaydediliyor, {pct}. Kitabı açın.',
+  'library.offline.pillMore': '+{n} tane daha',
+  'library.hidden.tool': 'Gizle',
+  'library.hidden.toolHint': 'Bu kitabı yöneticiler dışında herkesten gizle',
+  'library.hidden.askTitle': 'Okuyanlardan gizlensin mi?',
+  'library.hidden.askLede': '{title} kitabını yalnızca yöneticiler görecek.',
+  'library.hidden.askShelves':
+    'Herkesin kitaplığından, aramadan, raflarından ve okuma listelerinden kaybolur.',
+  'library.hidden.askLinks':
+    'Paylaşım bağlantıları açılmaz olur, arkadaşlar da birbirlerinin okumalarında onu görmez olur.',
+  'library.hidden.askKept':
+    'Hiçbir şey silinmez. Okuyucuların ilerlemesi, notları ve rafları, tekrar gösterdiğinizde geri döner.',
+  'library.hidden.askPair': 'E-kitap ve sesli kitap birlikte gizlenir.',
+  'library.hidden.confirm': 'Kitabı gizle',
+  'library.hidden.done': 'Gizlendi. Artık yalnızca yöneticiler görebilir.',
+  'library.hidden.noteTitle': 'Okuyuculardan gizli',
+  'library.hidden.noteBy': 'Bu kitabı yalnızca yöneticiler görebilir. {name} onu {when} gizledi.',
+  'library.hidden.noteWhen': 'Bu kitabı yalnızca yöneticiler görebilir. {when} gizlendi.',
+  'library.hidden.show': 'Herkese göster',
+  'library.hidden.shown': 'Artık herkes onu tekrar görebilir.',
+  'library.hidden.failed': 'Bu kitabı kimin görebileceği değiştirilemedi.',
+  'library.hidden.badge': 'Okuyuculardan gizli',
+  'library.hidden.shelfLede':
+    'Bu kitapları yalnızca yöneticiler görür. Birini açın ve geri getirmek için “Herkese göster” seçeneğini seçin.',
+  'library.empty.auto.hidden': 'Hiçbir şey gizli değil. Her kitap herkesin raflarında.',
+  'library.book.gone': 'Bu kitap kitaplıkta yok.',
 };
 
 export default messages;

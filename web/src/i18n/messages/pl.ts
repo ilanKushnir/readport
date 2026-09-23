@@ -547,8 +547,6 @@ const messages: Record<string, string> = {
   'library.download.retry': 'Spróbuj pobrać ponownie',
   'library.download.removePartial': 'Usuń częściowe pobieranie',
   'library.download.notNow': 'Nie teraz',
-  'library.download.progressLede':
-    '{done} z {total, plural, one {# część} few {# części} many {# części} other {# części}} · dotychczas {bytes}. W międzyczasie możesz dalej korzystać z aplikacji.',
   'library.download.cancel': 'Anuluj pobieranie',
   'library.download.storedLede':
     '„{title}” jest zapisana na tym urządzeniu ({bytes}). Możesz {kind, select, ebook {ją czytać} other {jej słuchać}} bez połączenia; postęp zsynchronizuje się, gdy wrócisz do sieci.',
@@ -1742,8 +1740,6 @@ const messages: Record<string, string> = {
   'library.book.downloadFiles': 'Pobierz pliki…',
   'library.book.downloadFilesTitle': 'Pobierz pliki',
   'library.book.downloadFileHint': 'Własny plik książki, zapisany na tym urządzeniu',
-  'library.book.downloadFilesHint':
-    '{n, plural, one {# plik.} few {# pliki.} many {# plików.} other {# pliku.}} Każdy pobiera się osobno.',
   'library.offline.save': 'Zapisz offline',
   'library.offline.saving': 'Zapisywanie offline',
   'library.offline.saved': 'Zapisano offline',
@@ -1756,5 +1752,58 @@ const messages: Record<string, string> = {
   'library.offline.startingBoth': 'Zapisywanie obu wydań offline…',
   'library.offline.saveBoth':
     'Zapisz oba wydania offline{hasSize, select, true { ({size})} other {}}',
+  // shelves
+  'shelves.hidden': 'Ukryte',
+
+  // library
+  'library.book.downloadFilesLede': 'Własne pliki książki, zapisane na tym urządzeniu na stałe.',
+  'library.book.downloadZip':
+    '{n, plural, one {# plik} few {# pliki} many {# plików} other {# pliku}} w jednym ZIP · {size}',
+  'library.book.downloadParts': 'Albo jeden z {n} plików osobno',
+  'library.download.error.network':
+    'Połączenie ciągle się urywało. Spróbuj ponownie, gdy będzie stabilniejsze. To, co już zapisane, zostaje.',
+  'library.download.error.server':
+    'Serwer ciągle odpowiadał błędem. Spróbuj ponownie za jakiś czas. To, co już zapisane, zostaje.',
+  'library.download.error.stalled':
+    'Pobieranie ciągle się zawieszało. Spróbuj ponownie. To, co już zapisane, zostaje.',
+  'library.download.error.interrupted':
+    'Pobieranie zatrzymało się, gdy aplikacja została zamknięta. Spróbuj ponownie, aby kontynuować od tego miejsca.',
+  'library.download.error.unauthorized': 'Wylogowano cię, więc pobieranie się zatrzymało.',
+  'library.offline.preparing': 'Przygotowywanie…',
+  'library.offline.preparingLede':
+    'Serwer przygotowuje „{title}” do zapisania: przetworzono {pct}. To trzeba zrobić tylko raz.',
+  'library.offline.checking': 'Sprawdzanie, co już zapisano…',
+  'library.offline.waiting': 'Oczekiwanie na połączenie…',
+  'library.offline.retrying': 'Połączenie zostało przerwane. Próbujemy ponownie…',
+  'library.offline.progress': '{stored} z {total} · {pct}',
+  'library.offline.keepOpen':
+    '{app} nie pozwala zgasnąć ekranowi podczas zapisywania. Na telefonie zostań w aplikacji, aż się skończy.',
+  'library.offline.pill': 'Zapisywanie offline',
+  'library.offline.pillLabel': 'Zapisywanie „{title}” offline, {pct}. Otwórz książkę.',
+  'library.offline.pillMore': '+{n} więcej',
+  'library.hidden.tool': 'Ukryj',
+  'library.hidden.toolHint': 'Ukryj tę książkę przed wszystkimi oprócz administratorów',
+  'library.hidden.askTitle': 'Ukryć przed czytelnikami?',
+  'library.hidden.askLede': 'Tylko administratorzy będą widzieć „{title}”.',
+  'library.hidden.askShelves':
+    'Zniknie z cudzych bibliotek, wyszukiwania, półek i list do przeczytania.',
+  'library.hidden.askLinks':
+    'Jej linki przestaną działać, a znajomi przestaną widzieć ją nawzajem w swoim czytaniu.',
+  'library.hidden.askKept':
+    'Nic nie jest usuwane. Postęp czytelników, notatki i półki wrócą, gdy ponownie ją pokażesz.',
+  'library.hidden.askPair': 'E-book i audiobook są ukrywane razem.',
+  'library.hidden.confirm': 'Ukryj książkę',
+  'library.hidden.done': 'Ukryta. Teraz widzą ją tylko administratorzy.',
+  'library.hidden.noteTitle': 'Ukryta przed czytelnikami',
+  'library.hidden.noteBy': 'Tylko administratorzy widzą tę książkę. Ukryta przez {name}, {when}.',
+  'library.hidden.noteWhen': 'Tylko administratorzy widzą tę książkę. Ukryta {when}.',
+  'library.hidden.show': 'Pokaż wszystkim',
+  'library.hidden.shown': 'Wszyscy znowu ją widzą.',
+  'library.hidden.failed': 'Nie udało się zmienić, kto widzi tę książkę.',
+  'library.hidden.badge': 'Ukryta przed czytelnikami',
+  'library.hidden.shelfLede':
+    'Te książki widzą tylko administratorzy. Otwórz książkę i wybierz „Pokaż wszystkim”, aby ją przywrócić.',
+  'library.empty.auto.hidden': 'Nic nie jest ukryte. Każda książka jest na półkach wszystkich.',
+  'library.book.gone': 'Tej książki nie ma w bibliotece.',
 };
 export default messages;

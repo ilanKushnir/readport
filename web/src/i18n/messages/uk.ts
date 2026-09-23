@@ -544,8 +544,6 @@ const messages: Record<string, string> = {
   'library.download.retry': 'Повторити завантаження',
   'library.download.removePartial': 'Видалити часткове завантаження',
   'library.download.notNow': 'Не зараз',
-  'library.download.progressLede':
-    '{done} з {total, plural, one {# частини} few {# частин} many {# частин} other {# частини}} · {bytes} поки що. Застосунком можна користуватися і під час завантаження.',
   'library.download.cancel': 'Скасувати завантаження',
   'library.download.storedLede':
     '«{title}» збережена на цьому пристрої ({bytes}). Ви можете {kind, select, ebook {читати} other {слухати}} її без підключення; прогрес синхронізується, коли ви знову будете онлайн.',
@@ -1738,8 +1736,6 @@ const messages: Record<string, string> = {
   'library.book.downloadFiles': 'Завантажити файли…',
   'library.book.downloadFilesTitle': 'Завантажити файли',
   'library.book.downloadFileHint': 'Власний файл книги, збережений на цьому пристрої',
-  'library.book.downloadFilesHint':
-    '{n, plural, one {# файл.} few {# файли.} many {# файлів.} other {# файлу.}} Кожен завантажується окремо.',
   'library.offline.save': 'Зберегти офлайн',
   'library.offline.saving': 'Збереження офлайн',
   'library.offline.saved': 'Збережено офлайн',
@@ -1751,6 +1747,59 @@ const messages: Record<string, string> = {
   'library.offline.starting': 'Збереження офлайн…',
   'library.offline.startingBoth': 'Збереження обох видань офлайн…',
   'library.offline.saveBoth': 'Зберегти обидва офлайн{hasSize, select, true { ({size})} other {}}',
+  // shelves
+  'shelves.hidden': 'Приховані',
+
+  // library
+  'library.book.downloadFilesLede': 'Власні файли книги, збережені на цьому пристрої назавжди.',
+  'library.book.downloadZip':
+    '{n, plural, one {# файл} few {# файли} many {# файлів} other {# файлу}} в одному ZIP · {size}',
+  'library.book.downloadParts': 'Або один із {n} файлів окремо',
+  'library.download.error.network':
+    'З’єднання постійно уривалося. Спробуйте ще раз, коли воно стане стабільнішим. Усе, що вже збережено, залишиться.',
+  'library.download.error.server':
+    'Сервер постійно відповідав помилкою. Спробуйте ще раз трохи пізніше. Усе, що вже збережено, залишиться.',
+  'library.download.error.stalled':
+    'Завантаження постійно зависало. Спробуйте ще раз. Усе, що вже збережено, залишиться.',
+  'library.download.error.interrupted':
+    'Завантаження зупинилося, бо застосунок був закритий. Спробуйте ще раз, щоб продовжити з того місця, де воно зупинилося.',
+  'library.download.error.unauthorized': 'Ви вийшли з акаунта, тому завантаження зупинилося.',
+  'library.offline.preparing': 'Підготовка…',
+  'library.offline.preparingLede':
+    'Сервер готує «{title}» до збереження: опрацьовано {pct}. Це потрібно зробити лише один раз.',
+  'library.offline.checking': 'Перевіряємо, що вже збережено…',
+  'library.offline.waiting': 'Очікування підключення…',
+  'library.offline.retrying': 'З’єднання перервалося. Пробуємо ще раз…',
+  'library.offline.progress': '{stored} з {total} · {pct}',
+  'library.offline.keepOpen':
+    '{app} не дає екрану згаснути під час збереження. На телефоні залишайтеся в застосунку, поки це не завершиться.',
+  'library.offline.pill': 'Збереження офлайн',
+  'library.offline.pillLabel': 'Збереження «{title}» офлайн, {pct}. Відкрити книгу.',
+  'library.offline.pillMore': '+{n} ще',
+  'library.hidden.tool': 'Приховати',
+  'library.hidden.toolHint': 'Приховати цю книгу від усіх, крім адміністраторів',
+  'library.hidden.askTitle': 'Приховати від читачів?',
+  'library.hidden.askLede': 'Тільки адміністратори бачитимуть «{title}».',
+  'library.hidden.askShelves': 'Вона зникне з чужих бібліотек, пошуку, полиць і списків читання.',
+  'library.hidden.askLinks':
+    'Посилання на неї перестануть відкриватися, а друзі перестануть бачити її в читанні одне одного.',
+  'library.hidden.askKept':
+    'Нічого не видаляється. Прогрес читачів, нотатки і полиці повернуться, коли ви покажете її знову.',
+  'library.hidden.askPair': 'Електронна книга і аудіокнига приховуються разом.',
+  'library.hidden.confirm': 'Приховати книгу',
+  'library.hidden.done': 'Прихована. Тепер її бачать лише адміністратори.',
+  'library.hidden.noteTitle': 'Приховано від читачів',
+  'library.hidden.noteBy':
+    'Цю книгу бачать лише адміністратори. Прихована адміністратором {name}, {when}.',
+  'library.hidden.noteWhen': 'Цю книгу бачать лише адміністратори. Прихована {when}.',
+  'library.hidden.show': 'Показати всім',
+  'library.hidden.shown': 'Тепер її знову бачать усі.',
+  'library.hidden.failed': 'Не вдалося змінити, хто бачить цю книгу.',
+  'library.hidden.badge': 'Приховано від читачів',
+  'library.hidden.shelfLede':
+    'Ці книги бачать лише адміністратори. Відкрийте книгу і виберіть «Показати всім», щоб повернути її.',
+  'library.empty.auto.hidden': 'Нічого не приховано. Кожна книга є на полицях у всіх.',
+  'library.book.gone': 'Цієї книги немає в бібліотеці.',
 };
 
 export default messages;

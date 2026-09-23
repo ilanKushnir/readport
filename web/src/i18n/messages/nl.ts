@@ -557,8 +557,6 @@ const messages: Record<string, string> = {
   'library.download.retry': 'Download opnieuw proberen',
   'library.download.removePartial': 'Onvolledige download verwijderen',
   'library.download.notNow': 'Niet nu',
-  'library.download.progressLede':
-    '{done} van {total, plural, one {# deel} other {# delen}} · tot nu toe {bytes}. Je kunt de app ondertussen gewoon blijven gebruiken.',
   'library.download.cancel': 'Download annuleren',
   'library.download.storedLede':
     '{title} is opgeslagen op dit apparaat ({bytes}). {kind, select, ebook {Lezen} other {Luisteren}} kan zonder verbinding; de voortgang synchroniseert zodra je weer online bent.',
@@ -1747,8 +1745,6 @@ const messages: Record<string, string> = {
   'library.book.downloadFiles': 'Bestanden downloaden…',
   'library.book.downloadFilesTitle': 'Bestanden downloaden',
   'library.book.downloadFileHint': 'Het eigen bestand van het boek, opgeslagen op dit apparaat',
-  'library.book.downloadFilesHint':
-    '{n, plural, one {# bestand.} other {# bestanden.}} Elk bestand wordt apart gedownload.',
   'library.offline.save': 'Offline bewaren',
   'library.offline.saving': 'Wordt offline bewaard',
   'library.offline.saved': 'Offline bewaard',
@@ -1760,5 +1756,60 @@ const messages: Record<string, string> = {
   'library.offline.starting': 'Wordt offline bewaard…',
   'library.offline.startingBoth': 'Beide edities worden offline bewaard…',
   'library.offline.saveBoth': 'Beide offline bewaren{hasSize, select, true { ({size})} other {}}',
+  // shelves
+  'shelves.hidden': 'Verborgen',
+
+  // library
+  'library.book.downloadFilesLede':
+    'De eigen bestanden van het boek, opgeslagen op dit apparaat om ze te bewaren.',
+  'library.book.downloadZip':
+    '{n, plural, one {# bestand} other {# bestanden}} in één ZIP · {size}',
+  'library.book.downloadParts': 'Of een van de {n} bestanden apart',
+  'library.download.error.network':
+    'De verbinding viel steeds weg. Probeer het opnieuw zodra die stabieler is; wat er al is opgeslagen, blijft bewaard.',
+  'library.download.error.server':
+    'De server antwoordde steeds met een fout. Probeer het straks nog eens; wat er al is opgeslagen, blijft bewaard.',
+  'library.download.error.stalled':
+    'De download bleef steeds hangen. Probeer het opnieuw; wat er al is opgeslagen, blijft bewaard.',
+  'library.download.error.interrupted':
+    'De download stopte toen de app werd gesloten. Probeer het opnieuw om verder te gaan waar hij was gebleven.',
+  'library.download.error.unauthorized': 'Je bent afgemeld, dus de download is gestopt.',
+  'library.offline.preparing': 'Wordt voorbereid…',
+  'library.offline.preparingLede':
+    'De server maakt {title} klaar om te bewaren: tot nu toe {pct} gelezen. Dat hoeft maar één keer te gebeuren.',
+  'library.offline.checking': 'Wordt gecontroleerd wat al is opgeslagen…',
+  'library.offline.waiting': 'Wacht op een verbinding…',
+  'library.offline.retrying': 'De verbinding viel weg. Wordt opnieuw geprobeerd…',
+  'library.offline.progress': '{stored} van {total} · {pct}',
+  'library.offline.keepOpen':
+    '{app} houdt het scherm aan terwijl het bewaart. Blijf in de app op je telefoon tot het klaar is.',
+  'library.offline.pill': 'Wordt offline bewaard',
+  'library.offline.pillLabel': '{title} wordt offline bewaard, {pct}. Boek openen.',
+  'library.offline.pillMore': '+{n} meer',
+  'library.hidden.tool': 'Verbergen',
+  'library.hidden.toolHint': 'Dit boek verbergen voor iedereen behalve beheerders',
+  'library.hidden.askTitle': 'Verbergen voor lezers?',
+  'library.hidden.askLede': 'Alleen beheerders zien {title} dan nog.',
+  'library.hidden.askShelves':
+    'Het verdwijnt bij iedereen anders uit de mediatheek, zoekresultaten, planken en leeslijst.',
+  'library.hidden.askLinks':
+    'Zijn deellinks werken niet meer, en vrienden zien niet meer dat anderen het lezen.',
+  'library.hidden.askKept':
+    'Er wordt niets verwijderd. De voortgang, notities en planken van lezers komen terug zodra je het weer toont.',
+  'library.hidden.askPair': 'Het e-book en het luisterboek worden samen verborgen.',
+  'library.hidden.confirm': 'Boek verbergen',
+  'library.hidden.done': 'Verborgen. Alleen beheerders kunnen het nu nog zien.',
+  'library.hidden.noteTitle': 'Verborgen voor lezers',
+  'library.hidden.noteBy':
+    'Alleen beheerders kunnen dit boek zien. {name} heeft het {when} verborgen.',
+  'library.hidden.noteWhen': 'Alleen beheerders kunnen dit boek zien. Verborgen {when}.',
+  'library.hidden.show': 'Aan iedereen tonen',
+  'library.hidden.shown': 'Iedereen kan het weer zien.',
+  'library.hidden.failed': 'De zichtbaarheid van dit boek kon niet worden gewijzigd.',
+  'library.hidden.badge': 'Verborgen voor lezers',
+  'library.hidden.shelfLede':
+    'Alleen beheerders zien deze boeken. Open er een en kies Aan iedereen tonen om het terug te zetten.',
+  'library.empty.auto.hidden': 'Niets is verborgen. Elk boek staat bij iedereen op de plank.',
+  'library.book.gone': 'Dit boek staat niet in de mediatheek.',
 } as const;
 export default messages;

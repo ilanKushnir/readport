@@ -529,8 +529,6 @@ const messages: Record<string, string> = {
   'library.download.retry': '다운로드 다시 시도',
   'library.download.removePartial': '부분 다운로드 제거',
   'library.download.notNow': '나중에',
-  'library.download.progressLede':
-    '{total, plural, other {전체 #개 부분}} 중 {done} · 지금까지 {bytes}. 그동안 앱을 계속 사용할 수 있습니다.',
   'library.download.cancel': '다운로드 취소',
   'library.download.storedLede':
     '{title}이(가) 이 기기에 저장되어 있습니다({bytes}). 연결 없이도 {kind, select, ebook {읽을} other {들을}} 수 있으며, 다시 온라인 상태가 되면 진행 상황이 동기화됩니다.',
@@ -1679,7 +1677,6 @@ const messages: Record<string, string> = {
   'library.book.downloadFiles': '파일 다운로드…',
   'library.book.downloadFilesTitle': '파일 다운로드',
   'library.book.downloadFileHint': '책의 원본 파일을 이 기기에 보관',
-  'library.book.downloadFilesHint': '{n, plural, other {파일 #개.}} 각각 따로 다운로드됩니다.',
   'library.offline.save': '오프라인 저장',
   'library.offline.saving': '오프라인 저장 중',
   'library.offline.saved': '오프라인 저장됨',
@@ -1692,5 +1689,56 @@ const messages: Record<string, string> = {
   'library.offline.startingBoth': '두 판 모두 오프라인 저장 중…',
   'library.offline.saveBoth':
     '두 판 모두 오프라인 저장{hasSize, select, true { ({size})} other {}}',
+  // shelves
+  'shelves.hidden': '숨김',
+
+  // library
+  'library.book.downloadFilesLede': '책의 원본 파일을 이 기기에 보관합니다.',
+  'library.book.downloadZip': '{n, plural, other {파일 #개를 ZIP 하나로}} · {size}',
+  'library.book.downloadParts': '또는 {n}개 파일 중 하나만 따로',
+  'library.download.error.network':
+    '연결이 계속 끊겼습니다. 더 안정되면 다시 시도하세요. 지금까지 저장된 내용은 유지됩니다.',
+  'library.download.error.server':
+    '서버가 계속 오류로 응답했습니다. 잠시 후 다시 시도하세요. 지금까지 저장된 내용은 유지됩니다.',
+  'library.download.error.stalled':
+    '다운로드가 계속 멈췄습니다. 다시 시도하세요. 지금까지 저장된 내용은 유지됩니다.',
+  'library.download.error.interrupted':
+    '앱이 닫혀서 다운로드가 중지되었습니다. 다시 시도하면 중단된 지점부터 이어집니다.',
+  'library.download.error.unauthorized': '로그아웃되어 다운로드가 중지되었습니다.',
+  'library.offline.preparing': '준비 중…',
+  'library.offline.preparingLede':
+    '서버가 {title}을(를) 저장할 준비를 하는 중입니다. 지금까지 {pct} 처리했습니다. 이 작업은 한 번만 하면 됩니다.',
+  'library.offline.checking': '이미 저장된 항목을 확인하는 중…',
+  'library.offline.waiting': '연결을 기다리는 중…',
+  'library.offline.retrying': '연결이 끊겼습니다. 다시 시도하는 중…',
+  'library.offline.progress': '{total} 중 {stored} · {pct}',
+  'library.offline.keepOpen':
+    '저장하는 동안 {app}이(가) 화면이 꺼지지 않게 유지합니다. 휴대폰에서는 완료될 때까지 앱을 벗어나지 마세요.',
+  'library.offline.pill': '오프라인 저장 중',
+  'library.offline.pillLabel': '{title}을(를) 오프라인 저장 중, {pct}. 책 열기.',
+  'library.offline.pillMore': '+{n}개 더',
+  'library.hidden.tool': '숨기기',
+  'library.hidden.toolHint': '관리자를 제외한 모두에게 이 책을 숨깁니다',
+  'library.hidden.askTitle': '독자에게서 숨길까요?',
+  'library.hidden.askLede': '관리자만 {title}을(를) 볼 수 있습니다.',
+  'library.hidden.askShelves': '다른 사람의 라이브러리, 검색, 서가, 읽기 목록에서 사라집니다.',
+  'library.hidden.askLinks':
+    '공유 링크는 더 이상 열리지 않고, 친구끼리 서로의 읽기에도 표시되지 않습니다.',
+  'library.hidden.askKept':
+    '아무것도 삭제되지 않습니다. 다시 표시하면 독자의 진행 상황, 노트, 서가가 돌아옵니다.',
+  'library.hidden.askPair': '전자책과 오디오북이 함께 숨겨집니다.',
+  'library.hidden.confirm': '책 숨기기',
+  'library.hidden.done': '숨겼습니다. 이제 관리자만 볼 수 있습니다.',
+  'library.hidden.noteTitle': '독자로부터 숨김',
+  'library.hidden.noteBy': '관리자만 이 책을 볼 수 있습니다. {name}님이 {when} 숨겼습니다.',
+  'library.hidden.noteWhen': '관리자만 이 책을 볼 수 있습니다. {when} 숨겨졌습니다.',
+  'library.hidden.show': '모두에게 표시',
+  'library.hidden.shown': '이제 모두가 다시 볼 수 있습니다.',
+  'library.hidden.failed': '이 책을 누가 볼 수 있는지 바꿀 수 없습니다.',
+  'library.hidden.badge': '독자로부터 숨김',
+  'library.hidden.shelfLede':
+    '이 책들은 관리자만 볼 수 있습니다. 책을 열고 “모두에게 표시”를 선택하면 되돌릴 수 있습니다.',
+  'library.empty.auto.hidden': '숨겨진 책이 없습니다. 모든 책이 모두의 서가에 있습니다.',
+  'library.book.gone': '이 책은 라이브러리에 없습니다.',
 };
 export default messages;

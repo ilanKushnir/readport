@@ -550,8 +550,6 @@ const messages: Record<string, string> = {
   'library.download.retry': 'Reintentar descarga',
   'library.download.removePartial': 'Eliminar descarga parcial',
   'library.download.notNow': 'Ahora no',
-  'library.download.progressLede':
-    '{done} de {total, plural, one {# parte} other {# partes}} · {bytes} hasta ahora. Puedes seguir usando la app mientras tanto.',
   'library.download.cancel': 'Cancelar descarga',
   'library.download.storedLede':
     '{title} está guardado en este dispositivo ({bytes}). Puedes {kind, select, ebook {leerlo} other {escucharlo}} sin conexión; el progreso se sincroniza al volver a estar en línea.',
@@ -1736,8 +1734,6 @@ const messages: Record<string, string> = {
   'library.book.downloadFiles': 'Descargar archivos…',
   'library.book.downloadFilesTitle': 'Descargar archivos',
   'library.book.downloadFileHint': 'El propio archivo del libro, guardado en este dispositivo',
-  'library.book.downloadFilesHint':
-    '{n, plural, one {# archivo.} other {# archivos.}} Cada uno se descarga por separado.',
   'library.offline.save': 'Guardar sin conexión',
   'library.offline.saving': 'Guardando sin conexión',
   'library.offline.saved': 'Guardado sin conexión',
@@ -1750,6 +1746,62 @@ const messages: Record<string, string> = {
   'library.offline.startingBoth': 'Guardando ambas ediciones sin conexión…',
   'library.offline.saveBoth':
     'Guardar ambas sin conexión{hasSize, select, true { ({size})} other {}}',
+  // shelves
+  'shelves.hidden': 'Ocultos',
+
+  // library
+  'library.book.downloadFilesLede':
+    'Los propios archivos del libro, guardados en este dispositivo para conservarlos.',
+  'library.book.downloadZip':
+    '{n, plural, one {# archivo} other {# archivos}} en un solo ZIP · {size}',
+  'library.book.downloadParts': 'O uno de los {n} archivos por separado',
+  'library.download.error.network':
+    'La conexión no dejaba de cortarse. Vuelve a intentarlo cuando esté más estable; lo que ya se ha guardado se conserva.',
+  'library.download.error.server':
+    'El servidor seguía respondiendo con un error. Vuelve a intentarlo dentro de un rato; lo que ya se ha guardado se conserva.',
+  'library.download.error.stalled':
+    'La descarga no dejaba de atascarse. Vuelve a intentarlo; lo que ya se ha guardado se conserva.',
+  'library.download.error.interrupted':
+    'La descarga se detuvo al cerrar la aplicación. Vuelve a intentarlo para continuar donde se quedó.',
+  'library.download.error.unauthorized': 'Se cerró tu sesión, así que la descarga se detuvo.',
+  'library.offline.preparing': 'Preparando…',
+  'library.offline.preparingLede':
+    'El servidor está preparando {title} para guardarlo: {pct} leído hasta ahora. Solo tiene que hacerlo una vez.',
+  'library.offline.checking': 'Comprobando qué hay ya guardado…',
+  'library.offline.waiting': 'Esperando conexión…',
+  'library.offline.retrying': 'Se perdió la conexión. Reintentando…',
+  'library.offline.progress': '{stored} de {total} · {pct}',
+  'library.offline.keepOpen':
+    '{app} mantiene la pantalla encendida mientras guarda. En un móvil, quédate en la aplicación hasta que termine.',
+  'library.offline.pill': 'Guardando sin conexión',
+  'library.offline.pillLabel': 'Guardando {title} sin conexión, {pct}. Abrir el libro.',
+  'library.offline.pillMore': '+{n} más',
+  'library.hidden.tool': 'Ocultar',
+  'library.hidden.toolHint': 'Ocultar este libro a todos excepto a los administradores',
+  'library.hidden.askTitle': '¿Ocultar a los lectores?',
+  'library.hidden.askLede': 'Solo los administradores verán {title}.',
+  'library.hidden.askShelves':
+    'Desaparece de la biblioteca, la búsqueda, las estanterías y las listas de lectura de los demás.',
+  'library.hidden.askLinks':
+    'Sus enlaces compartidos dejan de abrirse, y los amigos dejan de verlo en la lectura de sus amigos.',
+  'library.hidden.askKept':
+    'No se elimina nada. El progreso, las notas y las estanterías de los lectores vuelven cuando vuelvas a mostrarlo.',
+  'library.hidden.askPair': 'El ebook y el audiolibro se ocultan juntos.',
+  'library.hidden.confirm': 'Ocultar libro',
+  'library.hidden.done': 'Oculto. Ahora solo los administradores pueden verlo.',
+  'library.hidden.noteTitle': 'Oculto a los lectores',
+  'library.hidden.noteBy':
+    'Solo los administradores pueden ver este libro. {name} lo ocultó {when}.',
+  'library.hidden.noteWhen': 'Solo los administradores pueden ver este libro. Oculto {when}.',
+  'library.hidden.show': 'Mostrar a todos',
+  'library.hidden.shown': 'Todos pueden volver a verlo.',
+  'library.hidden.failed': 'No se pudo cambiar quién ve este libro.',
+  'library.hidden.badge': 'Oculto a los lectores',
+  'library.hidden.shelfLede':
+    'Solo los administradores ven estos libros. Abre uno y elige Mostrar a todos para devolverlo a su sitio.',
+  'library.empty.auto.hidden':
+    'No hay nada oculto. Todos los libros están en las estanterías de todos.',
+  'library.book.gone': 'Este libro no está en la biblioteca.',
 };
 
 export default messages;

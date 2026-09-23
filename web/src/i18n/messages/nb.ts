@@ -537,8 +537,6 @@ const messages: Record<string, string> = {
   'library.download.retry': 'Prøv nedlasting igjen',
   'library.download.removePartial': 'Fjern delvis nedlasting',
   'library.download.notNow': 'Ikke nå',
-  'library.download.progressLede':
-    '{done} av {total, plural, one {# del} other {# deler}} · {bytes} så langt. Du kan fortsette å bruke appen i mellomtiden.',
   'library.download.cancel': 'Avbryt nedlasting',
   'library.download.storedLede':
     '{title} er lagret på denne enheten ({bytes}). Du kan {kind, select, ebook {lese} other {lytte til}} den uten tilkobling; fremdriften synkroniseres når du er tilkoblet igjen.',
@@ -1700,8 +1698,6 @@ const messages: Record<string, string> = {
   'library.book.downloadFiles': 'Last ned filer…',
   'library.book.downloadFilesTitle': 'Last ned filer',
   'library.book.downloadFileHint': 'Bokens egen fil, lagret på denne enheten',
-  'library.book.downloadFilesHint':
-    '{n, plural, one {# fil.} other {# filer.}} Hver lastes ned for seg.',
   'library.offline.save': 'Lagre offline',
   'library.offline.saving': 'Lagrer offline',
   'library.offline.saved': 'Lagret offline',
@@ -1713,5 +1709,57 @@ const messages: Record<string, string> = {
   'library.offline.starting': 'Lagrer offline…',
   'library.offline.startingBoth': 'Lagrer begge utgavene offline…',
   'library.offline.saveBoth': 'Lagre begge offline{hasSize, select, true { ({size})} other {}}',
+  // shelves
+  'shelves.hidden': 'Skjult',
+
+  // library
+  'library.book.downloadFilesLede': 'Bokens egne filer, lagret på denne enheten for å beholde dem.',
+  'library.book.downloadZip': '{n, plural, one {# fil} other {# filer}} i én ZIP · {size}',
+  'library.book.downloadParts': 'Eller en av de {n} filene for seg selv',
+  'library.download.error.network':
+    'Tilkoblingen fortsatte å brytes. Prøv igjen når den er mer stabil; det som allerede er lagret, blir liggende.',
+  'library.download.error.server':
+    'Serveren fortsatte å svare med en feil. Prøv igjen om en stund; det som allerede er lagret, blir liggende.',
+  'library.download.error.stalled':
+    'Nedlastingen fortsatte å stoppe opp. Prøv igjen; det som allerede er lagret, blir liggende.',
+  'library.download.error.interrupted':
+    'Nedlastingen stoppet da appen ble lukket. Prøv igjen for å fortsette der den slapp.',
+  'library.download.error.unauthorized': 'Du ble logget ut, så nedlastingen stoppet.',
+  'library.offline.preparing': 'Forbereder…',
+  'library.offline.preparingLede':
+    'Serveren forbereder {title} for lagring: {pct} lest så langt. Dette skjer bare én gang.',
+  'library.offline.checking': 'Sjekker hva som allerede er lagret…',
+  'library.offline.waiting': 'Venter på en tilkobling…',
+  'library.offline.retrying': 'Tilkoblingen ble brutt. Prøver igjen…',
+  'library.offline.progress': '{stored} av {total} · {pct}',
+  'library.offline.keepOpen':
+    '{app} holder skjermen på mens den lagrer. Bli i appen på mobilen til den er ferdig.',
+  'library.offline.pill': 'Lagrer offline',
+  'library.offline.pillLabel': 'Lagrer {title} offline, {pct}. Åpne boken.',
+  'library.offline.pillMore': '+{n} til',
+  'library.hidden.tool': 'Skjul',
+  'library.hidden.toolHint': 'Skjul denne boken for alle unntatt administratorer',
+  'library.hidden.askTitle': 'Skjul for lesere?',
+  'library.hidden.askLede': 'Bare administratorer vil se {title}.',
+  'library.hidden.askShelves':
+    'Den forsvinner fra alle andres bibliotek, søk, hyller og leseliste.',
+  'library.hidden.askLinks':
+    'Bokens delingslenker slutter å fungere, og venner slutter å se at andre leser den.',
+  'library.hidden.askKept':
+    'Ingenting slettes. Lesernes fremdrift, notater og hyller kommer tilbake når du viser den igjen.',
+  'library.hidden.askPair': 'E-boken og lydboken skjules sammen.',
+  'library.hidden.confirm': 'Skjul bok',
+  'library.hidden.done': 'Skjult. Bare administratorer kan se den nå.',
+  'library.hidden.noteTitle': 'Skjult for lesere',
+  'library.hidden.noteBy': 'Bare administratorer kan se denne boken. {name} skjulte den {when}.',
+  'library.hidden.noteWhen': 'Bare administratorer kan se denne boken. Skjult {when}.',
+  'library.hidden.show': 'Vis for alle',
+  'library.hidden.shown': 'Alle kan se den igjen.',
+  'library.hidden.failed': 'Kunne ikke endre hvem som kan se denne boken.',
+  'library.hidden.badge': 'Skjult for lesere',
+  'library.hidden.shelfLede':
+    'Bare administratorer ser disse bøkene. Åpne en og velg Vis for alle for å få den tilbake.',
+  'library.empty.auto.hidden': 'Ingenting er skjult. Alle bøker står i alles hyller.',
+  'library.book.gone': 'Denne boken er ikke i biblioteket.',
 };
 export default messages;

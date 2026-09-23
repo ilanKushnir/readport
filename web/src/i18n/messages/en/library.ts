@@ -246,8 +246,6 @@ export const library = {
   'library.download.retry': 'Retry download',
   'library.download.removePartial': 'Remove partial download',
   'library.download.notNow': 'Not now',
-  'library.download.progressLede':
-    '{done} of {total, plural, one {# part} other {# parts}} · {bytes} so far. You can keep using the app meanwhile.',
   'library.download.cancel': 'Cancel download',
   'library.download.storedLede':
     '{title} is stored on this device ({bytes}). You can {kind, select, ebook {read} other {listen to}} it with no connection; progress syncs when you are back online.',

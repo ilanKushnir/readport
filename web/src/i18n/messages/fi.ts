@@ -540,8 +540,6 @@ const messages: Record<string, string> = {
   'library.download.retry': 'Yritä latausta uudelleen',
   'library.download.removePartial': 'Poista osittainen lataus',
   'library.download.notNow': 'Ei nyt',
-  'library.download.progressLede':
-    '{done}/{total, plural, one {# osa} other {# osaa}} · {bytes} tähän mennessä. Voit jatkaa sovelluksen käyttöä sillä välin.',
   'library.download.cancel': 'Peruuta lataus',
   'library.download.storedLede':
     '{title} on tallennettu tälle laitteelle ({bytes}). Voit {kind, select, ebook {lukea} other {kuunnella}} sitä ilman yhteyttä; edistyminen synkronoituu, kun olet taas yhteydessä.',
@@ -1713,8 +1711,6 @@ const messages: Record<string, string> = {
   'library.book.downloadFiles': 'Lataa tiedostot…',
   'library.book.downloadFilesTitle': 'Lataa tiedostot',
   'library.book.downloadFileHint': 'Kirjan oma tiedosto, tallennettuna tälle laitteelle',
-  'library.book.downloadFilesHint':
-    '{n, plural, one {# tiedosto.} other {# tiedostoa.}} Jokainen ladataan erikseen.',
   'library.offline.save': 'Tallenna offline',
   'library.offline.saving': 'Tallennetaan offline',
   'library.offline.saved': 'Tallennettu offline',
@@ -1727,5 +1723,59 @@ const messages: Record<string, string> = {
   'library.offline.startingBoth': 'Tallennetaan molemmat painokset offline…',
   'library.offline.saveBoth':
     'Tallenna molemmat offline{hasSize, select, true { ({size})} other {}}',
+  // shelves
+  'shelves.hidden': 'Piilotetut',
+
+  // library
+  'library.book.downloadFilesLede':
+    'Kirjan omat tiedostot, tallennettuna tälle laitteelle säilytettäväksi.',
+  'library.book.downloadZip':
+    '{n, plural, one {# tiedosto} other {# tiedostoa}} yhdessä ZIP-tiedostossa · {size}',
+  'library.book.downloadParts': 'Tai yksi {n} tiedostosta erikseen',
+  'library.download.error.network':
+    'Yhteys katkeili jatkuvasti. Yritä uudelleen, kun se on vakaampi; tähän mennessä tallennettu säilyy.',
+  'library.download.error.server':
+    'Palvelin vastasi jatkuvasti virheellä. Yritä uudelleen hetken kuluttua; tähän mennessä tallennettu säilyy.',
+  'library.download.error.stalled':
+    'Lataus jumiutui toistuvasti. Yritä uudelleen; tähän mennessä tallennettu säilyy.',
+  'library.download.error.interrupted':
+    'Lataus pysähtyi, kun sovellus suljettiin. Yritä uudelleen jatkaaksesi siitä, mihin se jäi.',
+  'library.download.error.unauthorized': 'Sinut kirjattiin ulos, joten lataus pysähtyi.',
+  'library.offline.preparing': 'Valmistellaan…',
+  'library.offline.preparingLede':
+    'Palvelin valmistelee kirjaa {title} tallennusta varten: {pct} luettu tähän mennessä. Tämän tekee vain kerran.',
+  'library.offline.checking': 'Tarkistetaan, mitä on jo tallennettu…',
+  'library.offline.waiting': 'Odotetaan yhteyttä…',
+  'library.offline.retrying': 'Yhteys katkesi. Yritetään uudelleen…',
+  'library.offline.progress': '{stored} / {total} · {pct}',
+  'library.offline.keepOpen':
+    '{app} pitää näytön päällä tallennuksen ajan. Puhelimessa pysy sovelluksessa, kunnes se on valmis.',
+  'library.offline.pill': 'Tallennetaan offline',
+  'library.offline.pillLabel': 'Tallennetaan kirjaa {title} offline, {pct}. Avaa kirja.',
+  'library.offline.pillMore': '+{n} muuta',
+  'library.hidden.tool': 'Piilota',
+  'library.hidden.toolHint': 'Piilota tämä kirja kaikilta paitsi ylläpitäjiltä',
+  'library.hidden.askTitle': 'Piilotetaanko lukijoilta?',
+  'library.hidden.askLede': 'Vain ylläpitäjät näkevät kirjan {title}.',
+  'library.hidden.askShelves':
+    'Se katoaa kaikkien muiden kirjastosta, hausta, hyllyiltä ja lukulistoilta.',
+  'library.hidden.askLinks':
+    'Sen jakolinkit lakkaavat toimimasta, eivätkä ystävät enää näe sitä toistensa lukemisissa.',
+  'library.hidden.askKept':
+    'Mitään ei poisteta. Lukijoiden edistyminen, muistiinpanot ja hyllyt palautuvat, kun näytät sen taas kaikille.',
+  'library.hidden.askPair': 'E-kirja ja äänikirja piilotetaan yhdessä.',
+  'library.hidden.confirm': 'Piilota kirja',
+  'library.hidden.done': 'Piilotettu. Vain ylläpitäjät näkevät sen nyt.',
+  'library.hidden.noteTitle': 'Piilotettu lukijoilta',
+  'library.hidden.noteBy': 'Vain ylläpitäjät näkevät tämän kirjan. {name} piilotti sen {when}.',
+  'library.hidden.noteWhen': 'Vain ylläpitäjät näkevät tämän kirjan. Piilotettu {when}.',
+  'library.hidden.show': 'Näytä kaikille',
+  'library.hidden.shown': 'Kaikki näkevät sen taas.',
+  'library.hidden.failed': 'Kirjan näkyvyyttä ei voitu muuttaa.',
+  'library.hidden.badge': 'Piilotettu lukijoilta',
+  'library.hidden.shelfLede':
+    'Vain ylläpitäjät näkevät nämä kirjat. Avaa yksi ja valitse ”Näytä kaikille” tuodaksesi sen takaisin.',
+  'library.empty.auto.hidden': 'Mikään ei ole piilotettu. Jokainen kirja on kaikkien hyllyillä.',
+  'library.book.gone': 'Tätä kirjaa ei ole kirjastossa.',
 };
 export default messages;

@@ -546,8 +546,6 @@ const messages: Record<string, string> = {
   'library.download.retry': 'ダウンロードを再試行',
   'library.download.removePartial': '途中のダウンロードを削除',
   'library.download.notNow': '今はしない',
-  'library.download.progressLede':
-    '{total, plural, other {#個中}}{done}個完了 · ここまで{bytes}。その間もアプリを利用できます。',
   'library.download.cancel': 'ダウンロードをキャンセル',
   'library.download.storedLede':
     '{title}はこの端末に保存されています({bytes})。接続がなくても{kind, select, ebook {読む} other {聴く}}ことができ、オンラインに戻ると進捗が同期されます。',
@@ -1719,8 +1717,6 @@ const messages: Record<string, string> = {
   'library.book.downloadFiles': 'ファイルをダウンロード…',
   'library.book.downloadFilesTitle': 'ダウンロードするファイル',
   'library.book.downloadFileHint': '本自体のファイルを、この端末に保存します',
-  'library.book.downloadFilesHint':
-    '{n, plural, other {#件のファイル。それぞれ個別にダウンロードされます。}}',
   'library.offline.save': 'オフライン保存',
   'library.offline.saving': 'オフライン保存中',
   'library.offline.saved': 'オフライン保存済み',
@@ -1732,6 +1728,56 @@ const messages: Record<string, string> = {
   'library.offline.starting': 'オフライン保存中…',
   'library.offline.startingBoth': '両方の版をオフライン保存中…',
   'library.offline.saveBoth': '両方をオフライン保存{hasSize, select, true {({size})} other {}}',
+  // shelves
+  'shelves.hidden': '非表示',
+
+  // library
+  'library.book.downloadFilesLede': '本自体のファイルを、この端末に保存して残します。',
+  'library.book.downloadZip': '{n, plural, other {#件のファイルを1つのZIPに}} · {size}',
+  'library.book.downloadParts': 'または{n}件のファイルのうち1つだけ',
+  'library.download.error.network':
+    '接続が何度も切れました。安定してから再試行してください。ここまで保存した分は残ります。',
+  'library.download.error.server':
+    'サーバーがエラーを返し続けました。しばらくしてから再試行してください。ここまで保存した分は残ります。',
+  'library.download.error.stalled':
+    'ダウンロードが何度も止まりました。再試行してください。ここまで保存した分は残ります。',
+  'library.download.error.interrupted':
+    'アプリを閉じたためダウンロードが停止しました。再試行すると、中断した箇所から続けられます。',
+  'library.download.error.unauthorized': 'サインアウトされたため、ダウンロードが停止しました。',
+  'library.offline.preparing': '準備中…',
+  'library.offline.preparingLede':
+    'サーバーが{title}を保存用に準備しています。ここまで{pct}処理済みです。これは最初の1回だけで済みます。',
+  'library.offline.checking': 'すでに保存済みの内容を確認しています…',
+  'library.offline.waiting': '接続を待っています…',
+  'library.offline.retrying': '接続が切れました。再試行しています…',
+  'library.offline.progress': '{total}中{stored} · {pct}',
+  'library.offline.keepOpen':
+    '保存中は{app}が画面をオンのままにします。スマートフォンでは、完了するまでアプリを閉じないでください。',
+  'library.offline.pill': 'オフライン保存中',
+  'library.offline.pillLabel': '{title}をオフライン保存中 · {pct}。本を開く。',
+  'library.offline.pillMore': '+{n}件',
+  'library.hidden.tool': '隠す',
+  'library.hidden.toolHint': '管理者以外の全員からこの本を隠します',
+  'library.hidden.askTitle': '読者から隠しますか?',
+  'library.hidden.askLede': '{title}は管理者だけが見られるようになります。',
+  'library.hidden.askShelves': '他の人のライブラリ、検索、シェルフ、読書リストから消えます。',
+  'library.hidden.askLinks': '共有リンクは開けなくなり、友達同士でも読書に表示されなくなります。',
+  'library.hidden.askKept':
+    '何も削除されません。もう一度表示すると、読者の進捗、ノート、シェルフは元に戻ります。',
+  'library.hidden.askPair': '電子書籍とオーディオブックは同時に隠されます。',
+  'library.hidden.confirm': '本を隠す',
+  'library.hidden.done': '隠しました。これで管理者だけが見られます。',
+  'library.hidden.noteTitle': '読者から非表示',
+  'library.hidden.noteBy': '管理者だけがこの本を見られます。{name}さんが{when}に隠しました。',
+  'library.hidden.noteWhen': '管理者だけがこの本を見られます。{when}に隠しました。',
+  'library.hidden.show': '全員に表示',
+  'library.hidden.shown': 'また全員が見られるようになりました。',
+  'library.hidden.failed': 'この本を見られる人を変更できませんでした。',
+  'library.hidden.badge': '読者から非表示',
+  'library.hidden.shelfLede':
+    'これらの本は管理者だけが見られます。本を開いて「全員に表示」を選ぶと元に戻ります。',
+  'library.empty.auto.hidden': '非表示の本はありません。すべての本が全員のシェルフにあります。',
+  'library.book.gone': 'この本はライブラリにありません。',
 };
 
 export default messages;

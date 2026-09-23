@@ -549,8 +549,6 @@ const messages: Record<string, string> = {
   'library.download.retry': 'Riprova il download',
   'library.download.removePartial': 'Rimuovi il download parziale',
   'library.download.notNow': 'Non ora',
-  'library.download.progressLede':
-    "{done} di {total, plural, one {# parte} other {# parti}} · {bytes} finora. Puoi continuare a usare l'app nel frattempo.",
   'library.download.cancel': 'Annulla il download',
   'library.download.storedLede':
     "{title} è salvato su questo dispositivo ({bytes}). Puoi {kind, select, ebook {leggerlo} other {ascoltarlo}} senza connessione; l'avanzamento si sincronizza quando torni online.",
@@ -1734,8 +1732,6 @@ const messages: Record<string, string> = {
   'library.book.downloadFiles': 'Scarica i file…',
   'library.book.downloadFilesTitle': 'Scarica i file',
   'library.book.downloadFileHint': 'Il file del libro, salvato su questo dispositivo',
-  'library.book.downloadFilesHint':
-    '{n, plural, one {# file.} other {# file.}} Ciascuno si scarica a parte.',
   'library.offline.save': 'Salva offline',
   'library.offline.saving': 'Salvataggio offline',
   'library.offline.saved': 'Salvato offline',
@@ -1747,6 +1743,62 @@ const messages: Record<string, string> = {
   'library.offline.starting': 'Salvataggio offline…',
   'library.offline.startingBoth': 'Salvataggio di entrambe le edizioni offline…',
   'library.offline.saveBoth': 'Salva entrambi offline{hasSize, select, true { ({size})} other {}}',
+  // shelves
+  'shelves.hidden': 'Nascosti',
+
+  // library
+  'library.book.downloadFilesLede':
+    'I file del libro stesso, salvati su questo dispositivo per conservarli.',
+  'library.book.downloadZip': '{n, plural, one {# file} other {# file}} in un unico ZIP · {size}',
+  'library.book.downloadParts': 'Oppure uno dei {n} file a parte',
+  'library.download.error.network':
+    'La connessione continuava a cadere. Riprova quando sarà più stabile; ciò che è già stato salvato viene conservato.',
+  'library.download.error.server':
+    "Il server continuava a rispondere con un errore. Riprova tra un po'; ciò che è già stato salvato viene conservato.",
+  'library.download.error.stalled':
+    'Il download continuava a bloccarsi. Riprova; ciò che è già stato salvato viene conservato.',
+  'library.download.error.interrupted':
+    "Il download si è interrotto alla chiusura dell'app. Riprova per continuare da dove si era fermato.",
+  'library.download.error.unauthorized':
+    'Sei stato disconnesso, quindi il download si è interrotto.',
+  'library.offline.preparing': 'Preparazione…',
+  'library.offline.preparingLede':
+    'Il server sta preparando {title} per il salvataggio - {pct} letto finora. Deve farlo solo una volta.',
+  'library.offline.checking': 'Verifica di ciò che è già salvato…',
+  'library.offline.waiting': 'In attesa di una connessione…',
+  'library.offline.retrying': 'La connessione è caduta. Nuovo tentativo…',
+  'library.offline.progress': '{stored} di {total} · {pct}',
+  'library.offline.keepOpen':
+    "{app} mantiene lo schermo acceso durante il salvataggio. Su un telefono, resta nell'app finché non finisce.",
+  'library.offline.pill': 'Salvataggio offline',
+  'library.offline.pillLabel': 'Salvataggio di {title} offline, {pct}. Apri il libro.',
+  'library.offline.pillMore': '+{n} altri',
+  'library.hidden.tool': 'Nascondi',
+  'library.hidden.toolHint': 'Nascondi questo libro a tutti tranne gli amministratori',
+  'library.hidden.askTitle': 'Nascondere ai lettori?',
+  'library.hidden.askLede': 'Solo gli amministratori vedranno {title}.',
+  'library.hidden.askShelves':
+    'Sparisce dalla biblioteca, dalla ricerca, dagli scaffali e dalle liste di lettura di tutti gli altri.',
+  'library.hidden.askLinks':
+    'I suoi link di condivisione smettono di funzionare, e gli amici smettono di vederlo nella lettura dei loro amici.',
+  'library.hidden.askKept':
+    "Nulla viene eliminato. L'avanzamento, le note e gli scaffali dei lettori tornano quando lo mostri di nuovo.",
+  'library.hidden.askPair': "L'ebook e l'audiolibro vengono nascosti insieme.",
+  'library.hidden.confirm': 'Nascondi libro',
+  'library.hidden.done': 'Nascosto. Ora possono vederlo solo gli amministratori.',
+  'library.hidden.noteTitle': 'Nascosto ai lettori',
+  'library.hidden.noteBy':
+    'Solo gli amministratori possono vedere questo libro. {name} lo ha nascosto {when}.',
+  'library.hidden.noteWhen':
+    'Solo gli amministratori possono vedere questo libro. Nascosto {when}.',
+  'library.hidden.show': 'Mostra a tutti',
+  'library.hidden.shown': 'Tutti possono vederlo di nuovo.',
+  'library.hidden.failed': 'Impossibile cambiare chi può vedere questo libro.',
+  'library.hidden.badge': 'Nascosto ai lettori',
+  'library.hidden.shelfLede':
+    'Solo gli amministratori vedono questi libri. Aprine uno e scegli Mostra a tutti per rimetterlo al suo posto.',
+  'library.empty.auto.hidden': 'Niente è nascosto. Ogni libro è sugli scaffali di tutti.',
+  'library.book.gone': 'Questo libro non è nella biblioteca.',
 };
 
 export default messages;

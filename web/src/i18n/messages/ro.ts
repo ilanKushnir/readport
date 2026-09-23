@@ -549,8 +549,6 @@ const messages: Record<string, string> = {
   'library.download.retry': 'Reîncearcă descărcarea',
   'library.download.removePartial': 'Elimină descărcarea parțială',
   'library.download.notNow': 'Nu acum',
-  'library.download.progressLede':
-    '{done} din {total, plural, one {# parte} few {# părți} other {# de părți}} · {bytes} până acum. Poți continua să folosești aplicația între timp.',
   'library.download.cancel': 'Anulează descărcarea',
   'library.download.storedLede':
     '{title} este stocată pe acest dispozitiv ({bytes}). Poți {kind, select, ebook {să o citești} other {să o asculți}} fără conexiune; progresul se sincronizează când revii online.',
@@ -1739,8 +1737,6 @@ const messages: Record<string, string> = {
   'library.book.downloadFiles': 'Descarcă fișierele…',
   'library.book.downloadFilesTitle': 'Descarcă fișierele',
   'library.book.downloadFileHint': 'Fișierul propriu-zis al cărții, salvat pe acest dispozitiv',
-  'library.book.downloadFilesHint':
-    '{n, plural, one {# fișier.} few {# fișiere.} other {# de fișiere.}} Fiecare se descarcă separat.',
   'library.offline.save': 'Salvează offline',
   'library.offline.saving': 'Se salvează offline',
   'library.offline.saved': 'Salvat offline',
@@ -1752,5 +1748,60 @@ const messages: Record<string, string> = {
   'library.offline.starting': 'Se salvează offline…',
   'library.offline.startingBoth': 'Se salvează ambele ediții offline…',
   'library.offline.saveBoth': 'Salvează ambele offline{hasSize, select, true { ({size})} other {}}',
+  // shelves
+  'shelves.hidden': 'Ascunse',
+
+  // library
+  'library.book.downloadFilesLede':
+    'Fișierele proprii ale cărții, salvate pe acest dispozitiv ca să le păstrezi.',
+  'library.book.downloadZip':
+    '{n, plural, one {# fișier} few {# fișiere} other {# de fișiere}} într-un singur ZIP · {size}',
+  'library.book.downloadParts': 'Sau unul dintre cele {n} fișiere separat',
+  'library.download.error.network':
+    'Conexiunea se tot întrerupea. Încearcă din nou când va fi mai stabilă; ce s-a salvat până acum rămâne păstrat.',
+  'library.download.error.server':
+    'Serverul continua să răspundă cu o eroare. Încearcă din nou peste puțin timp; ce s-a salvat până acum rămâne păstrat.',
+  'library.download.error.stalled':
+    'Descărcarea continua să se blocheze. Încearcă din nou; ce s-a salvat până acum rămâne păstrat.',
+  'library.download.error.interrupted':
+    'Descărcarea s-a oprit când aplicația a fost închisă. Încearcă din nou ca să continui de unde a rămas.',
+  'library.download.error.unauthorized': 'Ai fost deconectat, așa că descărcarea s-a oprit.',
+  'library.offline.preparing': 'Se pregătește…',
+  'library.offline.preparingLede':
+    'Serverul pregătește {title} pentru salvare - {pct} citit până acum. Trebuie să facă asta o singură dată.',
+  'library.offline.checking': 'Se verifică ce este deja salvat…',
+  'library.offline.waiting': 'Se așteaptă o conexiune…',
+  'library.offline.retrying': 'Conexiunea s-a întrerupt. Se încearcă din nou…',
+  'library.offline.progress': '{stored} din {total} · {pct}',
+  'library.offline.keepOpen':
+    '{app} păstrează ecranul aprins cât timp salvează. Pe telefon, rămâi în aplicație până se termină.',
+  'library.offline.pill': 'Se salvează offline',
+  'library.offline.pillLabel': 'Se salvează {title} offline, {pct}. Deschide cartea.',
+  'library.offline.pillMore': '+{n} în plus',
+  'library.hidden.tool': 'Ascunde',
+  'library.hidden.toolHint': 'Ascunde această carte de toată lumea, în afară de administratori',
+  'library.hidden.askTitle': 'Ascunzi de cititori?',
+  'library.hidden.askLede': 'Doar administratorii vor vedea {title}.',
+  'library.hidden.askShelves':
+    'Dispare din biblioteca, căutarea, rafturile și listele de lectură ale tuturor celorlalți.',
+  'library.hidden.askLinks':
+    'Linkurile lui distribuite nu se mai deschid, iar prietenii nu-l mai văd în lectura prietenilor lor.',
+  'library.hidden.askKept':
+    'Nimic nu este șters. Progresul, notițele și rafturile cititorilor revin când îl afișezi din nou.',
+  'library.hidden.askPair': 'Cartea electronică și cartea audio sunt ascunse împreună.',
+  'library.hidden.confirm': 'Ascunde cartea',
+  'library.hidden.done': 'Ascunsă. Acum doar administratorii o pot vedea.',
+  'library.hidden.noteTitle': 'Ascunsă de cititori',
+  'library.hidden.noteBy':
+    'Doar administratorii pot vedea această carte. {name} l-a ascuns {when}.',
+  'library.hidden.noteWhen': 'Doar administratorii pot vedea această carte. Ascunsă {when}.',
+  'library.hidden.show': 'Afișează tuturor',
+  'library.hidden.shown': 'Toată lumea o poate vedea din nou.',
+  'library.hidden.failed': 'Nu s-a putut schimba cine vede această carte.',
+  'library.hidden.badge': 'Ascunsă de cititori',
+  'library.hidden.shelfLede':
+    'Doar administratorii văd aceste cărți. Deschide una și alege Afișează tuturor ca s-o pui la loc.',
+  'library.empty.auto.hidden': 'Nimic nu este ascuns. Fiecare carte este pe rafturile tuturor.',
+  'library.book.gone': 'Această carte nu este în bibliotecă.',
 };
 export default messages;
