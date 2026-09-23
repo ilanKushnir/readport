@@ -126,8 +126,8 @@ export async function runLanguageBackfill(
 ): Promise<void> {
   const { db } = ctx;
   const books = db
-    .prepare(`SELECT b.id, b.title FROM books b WHERE ${STALE_WHERE} ORDER BY b.id LIMIT ?`)
-    .all(LANGUAGE_DETECTOR_REV, BACKFILL_BATCH) as { id: string; title: string }[];
+    .prepare(`SELECT b.id FROM books b WHERE ${STALE_WHERE} ORDER BY b.id LIMIT ?`)
+    .all(LANGUAGE_DETECTOR_REV, BACKFILL_BATCH) as { id: string }[];
   if (books.length === 0) {
     jobProgress(db, job.id, job.lease_token, 1, 'Every book has been read');
     return;
@@ -140,7 +140,15 @@ export async function runLanguageBackfill(
     if (outcome.read) read++;
     if (outcome.changed) changed++;
     if (i % 10 === 9 || i === books.length - 1) {
-      jobProgress(db, job.id, job.lease_token, (i + 1) / books.length, `Reading ${book.title}`);
+      // A count, not a title: the job list is everybody's, and the book
+      // being read may be one an admin has hidden from them.
+      jobProgress(
+        db,
+        job.id,
+        job.lease_token,
+        (i + 1) / books.length,
+        `Reading ${i + 1} of ${books.length}`,
+      );
     }
     // One book at a time; yield so worker heartbeats stay live.
     await new Promise((r) => setImmediate(r));
