@@ -1968,5 +1968,65 @@ const messages: Record<string, string> = {
   'settings.covers.auto': 'اقتراح الأغلفة تلقائيًا',
   'settings.covers.autoHint':
     'عندما يفتح منسّق كتابًا بلا غلاف، يُبحث عن غلاف له فورًا بدلاً من انتظار «البحث عن غلاف».',
+  // library
+  'library.meta.tool': 'البيانات الوصفية',
+  'library.meta.toolHint': 'ملف الكتاب، ومكانه، وما تعرفه ReadPort عنه',
+  'library.meta.title': 'البيانات الوصفية',
+  'library.meta.loading': 'جارٍ التحميل…',
+  'library.meta.failed': 'تعذّر تحميل البيانات الوصفية.',
+  'library.meta.onDisk': 'على القرص',
+  'library.meta.missing':
+    'الملف غير موجود على القرص الآن. سيصنّف الفحص التالي هذا الكتاب على أنه مفقود.',
+  'library.meta.fileName': 'الملف',
+  'library.meta.folderName': 'المجلد',
+  'library.meta.location': 'الموقع',
+  'library.meta.libraryTop': 'جذر مجلد المكتبة',
+  'library.meta.library': 'مجلد المكتبة',
+  'library.meta.fullPath': 'المسار الكامل',
+  'library.meta.format': 'الصيغة',
+  'library.meta.modified': 'التعديل',
+  'library.meta.tracks':
+    '{n, plural, zero {لا ملفات} one {ملف واحد} two {ملفان} few {# ملفات} many {# ملفًا} other {# ملف}}',
+  'library.meta.fromFile': 'تفاصيل الكتاب',
+  'library.meta.titleLabel': 'العنوان',
+  'library.meta.author': 'المؤلف',
+  'library.meta.series': 'السلسلة',
+  'library.meta.language': 'اللغة',
+  'library.meta.publisher': 'الناشر',
+  'library.meta.identifiers': 'المعرِّفات',
+  'library.meta.tagKind':
+    '{kind, select, genre {النوع} narrator {الراوي} year {السنة} rating {التقييم} other {الوسم}}',
+  'library.meta.inReadPort': 'في ReadPort',
+  'library.meta.id': 'معرّف الكتاب',
+  'library.meta.added': 'الإضافة',
+  'library.meta.indexed': 'الفهرسة',
+  'library.meta.state': 'الحالة',
+  'library.meta.stateValue':
+    '{state, select, ready {جاهز} error {تعذّرت قراءته} missing {مفقود من المكتبة} indexing {قيد القراءة} discovered {في انتظار القراءة} other {غير معروف}}',
+  'library.meta.languageSource':
+    '{source, select, manual {ضُبطت يدويًا} metadata {من الملف} pair {من الطبعة المقترنة} detected {قراءة من النص} other {}}',
+  'library.meta.cover': 'الغلاف',
+  'library.meta.coverOwn': 'خاص به',
+  'library.meta.coverPicked': 'اختير من {source}',
+  'library.meta.coverPickedEdition': 'اختير من الصيغة الأخرى',
+  'library.meta.coverNone': 'لا يوجد',
+  'library.meta.length': 'الطول',
+  'library.meta.duration': 'المدة',
+  'library.meta.chapters':
+    '{n, plural, zero {لا فصول} one {فصل واحد} two {فصلان} few {# فصول} many {# فصلًا} other {# فصل}}',
+  'library.meta.characters':
+    '{n, plural, zero {لا أحرف} one {حرف واحد} two {حرفان} few {# أحرف} many {# حرفًا} other {# حرف}}',
+  'library.meta.pairedWith': 'مقترن بـ',
+  'library.meta.pairKind': '{kind, select, audio {كتاب صوتي} other {كتاب إلكتروني}}',
+  'library.meta.pairStatus':
+    '{status, select, confirmed {مؤكَّد} auto {رُبط تلقائيًا} candidate {مُقترَح} other {غير معروف}}',
+  'library.meta.hidden': 'مخفي',
+  'library.meta.hiddenBy': '{when}، بواسطة {name}',
+  'library.meta.notSet': 'غير محدد',
+  'library.meta.copy': 'نسخ',
+  'library.meta.copyPath': 'نسخ المسار الكامل',
+  'library.meta.copyId': 'نسخ معرّف الكتاب',
+  'library.meta.copied': 'تم النسخ',
+  'library.meta.copyFailed': 'تعذّر نسخ ذلك.',
 };
 export default messages;

@@ -1940,6 +1940,65 @@ const messages: Record<string, string> = {
   'settings.covers.auto': 'Пропонувати обкладинки автоматично',
   'settings.covers.autoHint':
     'Коли куратор відкриває книгу без обкладинки, обкладинку шукають одразу, а не лише за кнопкою «Знайти обкладинку».',
+  // library
+  'library.meta.tool': 'Метадані',
+  'library.meta.toolHint': 'Файл книжки, де він знаходиться і що про нього знає ReadPort',
+  'library.meta.title': 'Метадані',
+  'library.meta.loading': 'Завантаження…',
+  'library.meta.failed': 'Не вдалося завантажити метадані.',
+  'library.meta.onDisk': 'На диску',
+  'library.meta.missing':
+    'Файлу зараз немає на диску. Наступне сканування позначить книжку як відсутню.',
+  'library.meta.fileName': 'Файл',
+  'library.meta.folderName': 'Папка',
+  'library.meta.location': 'Розташування',
+  'library.meta.libraryTop': 'Прямо в папці бібліотеки',
+  'library.meta.library': 'Папка бібліотеки',
+  'library.meta.fullPath': 'Повний шлях',
+  'library.meta.format': 'Формат',
+  'library.meta.modified': 'Змінено',
+  'library.meta.tracks': '{n, plural, one {# файл} few {# файли} many {# файлів} other {# файлу}}',
+  'library.meta.fromFile': 'Відомості про книгу',
+  'library.meta.titleLabel': 'Назва',
+  'library.meta.author': 'Автор',
+  'library.meta.series': 'Серія',
+  'library.meta.language': 'Мова',
+  'library.meta.publisher': 'Видавництво',
+  'library.meta.identifiers': 'Ідентифікатори',
+  'library.meta.tagKind':
+    '{kind, select, genre {Жанр} narrator {Читець} year {Рік} rating {Оцінка} other {Тег}}',
+  'library.meta.inReadPort': 'На ReadPort',
+  'library.meta.id': 'ID книги',
+  'library.meta.added': 'Додано',
+  'library.meta.indexed': 'Індексовано',
+  'library.meta.state': 'Статус',
+  'library.meta.stateValue':
+    '{state, select, ready {Готово} error {Не вдалося прочитати} missing {Немає в бібліотеці} indexing {Індексується} discovered {Індексація в черзі} other {Невідомо}}',
+  'library.meta.languageSource':
+    '{source, select, manual {задана вручну} metadata {з файлу} pair {з парного видання} detected {визначена за текстом} other {}}',
+  'library.meta.cover': 'Обкладинка',
+  'library.meta.coverOwn': 'Власна',
+  'library.meta.coverPicked': 'Джерело: {source}',
+  'library.meta.coverPickedEdition': 'З парного видання',
+  'library.meta.coverNone': 'Немає',
+  'library.meta.length': 'Довжина',
+  'library.meta.duration': 'Тривалість',
+  'library.meta.chapters':
+    '{n, plural, one {# розділ} few {# розділи} many {# розділів} other {# розділи}}',
+  'library.meta.characters':
+    '{n, plural, one {# символ} few {# символи} many {# символів} other {# символи}}',
+  'library.meta.pairedWith': 'У парі з',
+  'library.meta.pairKind': '{kind, select, audio {Аудіокнига} other {Електронна книга}}',
+  'library.meta.pairStatus':
+    '{status, select, confirmed {Підтверджено} auto {Зв’язано автоматично} candidate {Запропоновано} other {Невідомо}}',
+  'library.meta.hidden': 'Приховано',
+  'library.meta.hiddenBy': '{when} · {name}',
+  'library.meta.notSet': 'Не задано',
+  'library.meta.copy': 'Копіювати',
+  'library.meta.copyPath': 'Копіювати повний шлях',
+  'library.meta.copyId': 'Копіювати ID книги',
+  'library.meta.copied': 'Скопійовано',
+  'library.meta.copyFailed': 'Не вдалося це скопіювати.',
 };
 
 export default messages;

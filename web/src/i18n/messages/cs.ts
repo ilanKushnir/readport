@@ -1927,5 +1927,65 @@ const messages: Record<string, string> = {
   'settings.covers.auto': 'Automaticky navrhovat obálky',
   'settings.covers.autoHint':
     'Když kurátor otevře knihu bez obálky, obálka se vyhledá hned, místo čekání na tlačítko „Najít obálku“.',
+  // library
+  'library.meta.tool': 'Metadata',
+  'library.meta.toolHint': 'Soubor knihy, kde se nachází a co o něm ReadPort ví',
+  'library.meta.title': 'Metadata',
+  'library.meta.loading': 'Načítání…',
+  'library.meta.failed': 'Metadata se nepodařilo načíst.',
+  'library.meta.onDisk': 'Na disku',
+  'library.meta.missing':
+    'Tento soubor teď není na disku. Příští sken označí knihu jako chybějící.',
+  'library.meta.fileName': 'Soubor',
+  'library.meta.folderName': 'Složka',
+  'library.meta.location': 'Umístění',
+  'library.meta.libraryTop': 'Přímo ve složce knihovny',
+  'library.meta.library': 'Složka knihovny',
+  'library.meta.fullPath': 'Celá cesta',
+  'library.meta.format': 'Formát',
+  'library.meta.modified': 'Změněno',
+  'library.meta.tracks':
+    '{n, plural, one {# soubor} few {# soubory} many {# souboru} other {# souborů}}',
+  'library.meta.fromFile': 'Podrobnosti o knize',
+  'library.meta.titleLabel': 'Název',
+  'library.meta.author': 'Autor',
+  'library.meta.series': 'Série',
+  'library.meta.language': 'Jazyk',
+  'library.meta.publisher': 'Vydavatel',
+  'library.meta.identifiers': 'Identifikátory',
+  'library.meta.tagKind':
+    '{kind, select, genre {Žánr} narrator {Vypravěč} year {Rok} rating {Hodnocení} other {Štítek}}',
+  'library.meta.inReadPort': 'V ReadPortu',
+  'library.meta.id': 'ID knihy',
+  'library.meta.added': 'Přidáno',
+  'library.meta.indexed': 'Indexováno',
+  'library.meta.state': 'Stav',
+  'library.meta.stateValue':
+    '{state, select, ready {Připraveno} error {Nepodařilo se přečíst} missing {Chybí v knihovně} indexing {Probíhá indexace} discovered {Indexace zařazena do fronty} other {Neznámé}}',
+  'library.meta.languageSource':
+    '{source, select, manual {nastaven ručně} metadata {ze souboru} pair {ze spárovaného vydání} detected {rozpoznán z textu} other {}}',
+  'library.meta.cover': 'Obálka',
+  'library.meta.coverOwn': 'Vlastní',
+  'library.meta.coverPicked': 'Zdroj: {source}',
+  'library.meta.coverPickedEdition': 'Ze spárovaného vydání',
+  'library.meta.coverNone': 'Žádná',
+  'library.meta.length': 'Délka',
+  'library.meta.duration': 'Stopáž',
+  'library.meta.chapters':
+    '{n, plural, one {# kapitola} few {# kapitoly} many {# kapitoly} other {# kapitol}}',
+  'library.meta.characters':
+    '{n, plural, one {# znak} few {# znaky} many {# znaku} other {# znaků}}',
+  'library.meta.pairedWith': 'Spárováno s',
+  'library.meta.pairKind': '{kind, select, audio {Audiokniha} other {E-kniha}}',
+  'library.meta.pairStatus':
+    '{status, select, confirmed {Potvrzeno} auto {Propojeno automaticky} candidate {Navrženo} other {Neznámé}}',
+  'library.meta.hidden': 'Skryto',
+  'library.meta.hiddenBy': '{when} · {name}',
+  'library.meta.notSet': 'Nenastaveno',
+  'library.meta.copy': 'Kopírovat',
+  'library.meta.copyPath': 'Kopírovat celou cestu',
+  'library.meta.copyId': 'Kopírovat ID knihy',
+  'library.meta.copied': 'Zkopírováno',
+  'library.meta.copyFailed': 'Toto se nepodařilo zkopírovat.',
 };
 export default messages;
