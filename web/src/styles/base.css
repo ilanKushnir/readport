@@ -1641,37 +1641,24 @@ body:has(.app-body) {
   }
 }
 /* The shelves on a phone (Sheet's `docked`): standing on the tab bar and
-   reaching nearly to the top, with the tab bar left uncovered - in reach,
-   and dressed in the sheet's colour so the two read as one panel - so
-   Shelves closes what Shelves opened. The sheet moves inside a frame that
-   ends at the bar: it rises from behind the bar and goes back behind it.
-   With the keyboard up it all stands on the keyboard, as every sheet does.
-   A card on anything wider: the frame is no box at all there. */
-.sheet-dock {
-  display: contents;
-}
+   reaching nearly to the top, with the tab bar left in front of them - in
+   reach, in the sheet's colour, a rule between the two - so Shelves closes
+   what Shelves opened. The sheet is drawn inside the app's own frame, where
+   the tab bar is, so the bar can stand in front of it: it rises from behind
+   the bar with nothing clipped. Clipping it did the same - but an
+   `overflow: hidden` frame had iOS draw the sheet without its background
+   until it came to rest, and an animated clip-path ran a frame apart from
+   the slide. With the keyboard up it stands on the keyboard, as every sheet
+   does. */
 @media (max-width: 743.98px) {
-  .sheet-dock {
-    --dock-bottom: max(
+  .sheet--docked {
+    top: calc(var(--app-viewport-top, 0px) + max(var(--rp-safe-top), 12px) + 10px);
+    bottom: max(
       var(--tabbar-h, 64px),
       calc(100dvh - var(--app-viewport-top, 0px) - var(--app-viewport-height, 100dvh))
     );
-    display: block;
-    position: fixed;
-    z-index: 41;
-    inset-inline: 0;
-    top: 0;
-    bottom: var(--dock-bottom);
-    overflow: hidden;
-    pointer-events: none;
-  }
-  .sheet-dock > .sheet--docked {
-    position: absolute;
-    top: calc(var(--app-viewport-top, 0px) + max(var(--rp-safe-top), 12px) + 10px);
-    bottom: 0;
     max-height: none;
     padding-block-end: 0;
-    pointer-events: auto;
   }
   .sheet-backdrop--docked {
     bottom: max(
@@ -1679,9 +1666,10 @@ body:has(.app-body) {
       calc(100dvh - var(--app-viewport-top, 0px) - var(--app-viewport-height, 100dvh))
     );
   }
-  body:has(.sheet--docked) .tabbar {
+  .app-shell:has(.sheet--docked) .tabbar {
+    z-index: 42;
     background: var(--rp-surface-raised);
-    border-block-start-color: transparent;
+    border-block-start-color: var(--rp-border-strong);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }

@@ -169,6 +169,7 @@ export function Sheet({
   head,
   docked = false,
   closeRef,
+  host,
 }: {
   title: string;
   onClose: () => void;
@@ -183,6 +184,12 @@ export function Sheet({
   docked?: boolean;
   /** Filled with this sheet's own animated close, for a control outside it. */
   closeRef?: React.RefObject<(() => void) | null>;
+  /**
+   * Where the sheet is drawn, when not over everything: the docked shelves
+   * go inside the app's own frame, so the tab bar - in the same frame - can
+   * stand in front of them while they rise from behind it.
+   */
+  host?: Element | null;
 }) {
   const t = useT();
   const ref = useRef<HTMLDivElement>(null);
@@ -327,11 +334,9 @@ export function Sheet({
         onClick={close}
         aria-hidden="true"
       />
-      {/* Docked, the sheet moves inside a frame that ends at the tab bar, so
-          it rises out from behind the bar and goes back behind it. */}
-      {docked ? <div className="sheet-dock">{panel}</div> : panel}
+      {panel}
     </>,
-    document.body,
+    host ?? document.body,
   );
 }
 

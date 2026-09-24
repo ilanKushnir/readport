@@ -98,14 +98,17 @@ function useWideShell(): boolean {
 function ShelfOverlay({
   onClose,
   closeRef,
+  host,
 }: {
   onClose: () => void;
   closeRef: React.RefObject<(() => void) | null>;
+  /** The app's frame, which the tab bar is in too. */
+  host: Element | null;
 }) {
   const t = useT();
   const narrow = !useWideShell();
   return narrow ? (
-    <Sheet title={t('nav.shelves')} onClose={onClose} docked closeRef={closeRef}>
+    <Sheet title={t('nav.shelves')} onClose={onClose} docked closeRef={closeRef} host={host}>
       <SheetShelves />
     </Sheet>
   ) : (
@@ -394,7 +397,11 @@ function Shell() {
         </div>
       )}
       {overlay && !immersive && (
-        <ShelfOverlay onClose={() => setOverlay(false)} closeRef={closeShelves} />
+        <ShelfOverlay
+          onClose={() => setOverlay(false)}
+          closeRef={closeShelves}
+          host={shell.current}
+        />
       )}
       {/* Never over a book: an interruption is tolerable on the way in, and
           not at all once somebody is reading or listening. */}
