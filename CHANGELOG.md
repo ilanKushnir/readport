@@ -4,6 +4,16 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.26.4 - 2026-09-24
+
+### Fixed
+
+- **The library's top stays put.** Choosing Ebooks or Audiobooks, a
+  language or a search took Continue, the week's strip and the library's
+  totals away with it, and everything under them - the control just
+  pressed included - jumped up the screen. Only the books below change
+  now; what you are in the middle of stays where it was.
+
 ## 0.26.3 - 2026-09-24
 
 ### Fixed
