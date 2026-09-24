@@ -226,6 +226,26 @@ function Shell() {
 
   useEffect(() => startProgressLifecycle(), []);
 
+  // A tab tapped on the page it opens takes that page back to its top, the
+  // way a phone's tab bar does. Tapped from anywhere else, the page starts
+  // at its top: the library, its shelves and its groupings are one page, and
+  // the scroll used to carry over from whichever of them was open before.
+  const topNext = useRef(false);
+  const pane = () => shell.current?.querySelector<HTMLElement>('.app-body > .app-main') ?? null;
+  const tabClick = (to: string) => () => {
+    if (location.pathname !== to) {
+      topNext.current = true;
+      return;
+    }
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    pane()?.scrollTo({ top: 0, behavior: still ? 'auto' : 'smooth' });
+  };
+  useLayoutEffect(() => {
+    if (!topNext.current) return;
+    topNext.current = false;
+    pane()?.scrollTo({ top: 0 });
+  }, [location.key]);
+
   // What was being saved offline when the app was last closed carries on,
   // once there is a signed-in reader for it to belong to.
   useEffect(() => {
@@ -274,19 +294,19 @@ function Shell() {
 
   const nav = (
     <>
-      <NavLink to="/" end>
+      <NavLink to="/" end onClick={tabClick('/')}>
         <IconLibrary size={18} /> {t('nav.library')}
       </NavLink>
-      <NavLink to="/notes">
+      <NavLink to="/notes" onClick={tabClick('/notes')}>
         <IconNotes size={18} /> {t('nav.notes')}
       </NavLink>
       {/* Stats and Pairing sit out of the phone tab bar: five tabs is what a
           narrow screen holds, and both stay reachable elsewhere (the library
           home's stats strip, and the settings and book pages for pairing). */}
-      <NavLink to="/stats" className="nav-wide">
+      <NavLink to="/stats" className="nav-wide" onClick={tabClick('/stats')}>
         <IconStats size={18} /> {t('nav.stats')}
       </NavLink>
-      <NavLink to="/friends">
+      <NavLink to="/friends" onClick={tabClick('/friends')}>
         <span className="nav-mark">
           <IconPeople size={18} />
           {friendsAttention > 0 && (
@@ -295,10 +315,10 @@ function Shell() {
         </span>{' '}
         {t('nav.friends')}
       </NavLink>
-      <NavLink to="/pairs" className="nav-wide">
+      <NavLink to="/pairs" className="nav-wide" onClick={tabClick('/pairs')}>
         <IconLink size={18} /> {t('nav.pairing')}
       </NavLink>
-      <NavLink to="/settings">
+      <NavLink to="/settings" onClick={tabClick('/settings')}>
         <span className="nav-mark">
           <IconSettings size={18} />
           {joinRequests > 0 && (
