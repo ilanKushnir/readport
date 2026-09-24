@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { openDatabase, type DB } from '../db/index.js';
-import { FACETS_REV, applyScan, type ScanReport } from './scan.js';
+import { AUDIO_NAMING_REV, FACETS_REV, applyScan, type ScanReport } from './scan.js';
 
 /**
  * What a rescan decides to re-index, and - just as important - what it leaves
@@ -123,5 +123,81 @@ describe('applyScan', () => {
       content_hash: string;
     };
     expect(row.content_hash).toBe('hash-1');
+  });
+});
+
+describe('a folder moved between two scans', () => {
+  const audio = (relPath: string): ScanReport => ({
+    ebooks: [],
+    audiobooks: [
+      {
+        rootDir: '/library/audiobooks',
+        relPath,
+        tracks: [{ relPath: `${relPath}/01.mp3`, sizeBytes: 10, ext: '.mp3' }],
+        sizeBytes: 10,
+        contentHash: 'audio-hash',
+      },
+    ],
+    unsupported: [],
+    errors: [],
+  });
+
+  it('is the same book in its new place, with nothing left behind as missing', () => {
+    // Moved into a folder of its series: the old place is gone and the new
+    // one found in the SAME scan, which never marked the book missing first.
+    applyScan(db, audio('Rivka Sharon/Fog Signals. Book 2'));
+    const before = db.prepare('SELECT id FROM books').get() as { id: string };
+    applyScan(db, audio('Rivka Sharon/Fog Signals/Fog Signals. Book 2'));
+    const rows = db.prepare('SELECT id, rel_path, scan_state FROM books').all() as {
+      id: string;
+      rel_path: string;
+      scan_state: string;
+    }[];
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      id: before.id,
+      rel_path: 'Rivka Sharon/Fog Signals/Fog Signals. Book 2',
+    });
+  });
+
+  it('is not taken from a copy still in its place', () => {
+    applyScan(db, audio('Rivka Sharon/Fog Signals. Book 2'));
+    const both = audio('Rivka Sharon/Fog Signals. Book 2');
+    both.audiobooks.push({ ...audio('Rivka Sharon/Copy/Fog Signals. Book 2').audiobooks[0]! });
+    applyScan(db, both);
+    expect((db.prepare('SELECT COUNT(*) AS n FROM books').get() as { n: number }).n).toBe(2);
+  });
+});
+
+describe('an audiobook named by older rules', () => {
+  it('is read again, and stays playable while it waits', () => {
+    const r: ScanReport = {
+      ebooks: [],
+      audiobooks: [
+        {
+          rootDir: '/library/audiobooks',
+          relPath: 'Noa Adler/The Clockmaker’s Garden',
+          tracks: [
+            { relPath: 'Noa Adler/The Clockmaker’s Garden/01.mp3', sizeBytes: 10, ext: '.mp3' },
+          ],
+          sizeBytes: 10,
+          contentHash: 'h',
+        },
+      ],
+      unsupported: [],
+      errors: [],
+    };
+    applyScan(db, r);
+    const { id } = db.prepare('SELECT id FROM books').get() as { id: string };
+    db.prepare(
+      "UPDATE books SET scan_state = 'ready', facets_rev = ?, meta_json = '{}' WHERE id = ?",
+    ).run(FACETS_REV, id);
+    expect(applyScan(db, r).needsIndex.map((n) => n.bookId)).toEqual([id]);
+    expect(stateOf(id)).toBe('ready');
+    db.prepare('UPDATE books SET meta_json = ? WHERE id = ?').run(
+      JSON.stringify({ namingRev: AUDIO_NAMING_REV }),
+      id,
+    );
+    expect(applyScan(db, r).needsIndex).toEqual([]);
   });
 });

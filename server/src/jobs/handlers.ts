@@ -16,7 +16,7 @@ import { extractCover, probeAudio } from '../audio/probe.js';
 import { normaliseLanguage } from '@readport/shared';
 import { facetsForBook, writeFacets } from '../library/facets.js';
 import { formatBytes } from '../util/format.js';
-import { FACETS_REV } from '../scanner/scan.js';
+import { AUDIO_EXTS, AUDIO_NAMING_REV, FACETS_REV } from '../scanner/scan.js';
 import { CANDIDATE_THRESHOLD, scorePair } from '../pairing/score.js';
 import { latestAlignment, storeAlignment } from '../alignment/service.js';
 import { textFingerprint, timelineFingerprint } from '../alignment/portable.js';
@@ -54,6 +54,7 @@ import {
   TRANSLATION_ALIGN_JOB,
 } from '../translations/store.js';
 import { foundCoverOf, ownFolderOf } from '../covers/lookup.js';
+import { nameAudiobook, type TrackTags } from '../library/audiobookNaming.js';
 import {
   enqueueJob,
   jobProgress,
@@ -818,8 +819,7 @@ export async function runIndexAudio(
       .prepare('SELECT * FROM audio_tracks WHERE book_id = ? ORDER BY idx')
       .all(bookId) as Record<string, unknown>[];
     let absoluteMs = 0;
-    let title: string | null = null;
-    let author: string | null = null;
+    const tagged: TrackTags[] = [];
     let language: string | null = null;
     const genres = new Set<string>();
     let narrator: string | null = null;
@@ -861,8 +861,7 @@ export async function runIndexAudio(
       }
       trackDurationsMs.push(probe.durationMs);
       absoluteMs += probe.durationMs;
-      title = title ?? probe.album ?? probe.title;
-      author = author ?? probe.artist;
+      tagged.push({ album: probe.album, artist: probe.artist, title: probe.title });
       language = language ?? probe.language;
       // Tags are per file, and a multi-file audiobook usually repeats them.
       // Union rather than first-wins: a book split by chapter sometimes tags
@@ -900,14 +899,25 @@ export async function runIndexAudio(
     );
     chapters.forEach((c, idx) => insCh.run(bookId, idx, c.title, c.startMs, c.endMs));
 
+    // Named from the tags its files agree on, else from its folders
+    // (library/audiobookNaming.ts) - never from its first file's own title.
+    const relPath = String(book.rel_path);
+    const named = nameAudiobook(
+      relPath,
+      AUDIO_EXTS.has(path.extname(relPath).toLowerCase()),
+      tagged,
+    );
+    const meta = JSON.parse(String(book.meta_json ?? '{}')) as Record<string, unknown>;
     db.prepare(
-      `UPDATE books SET title = COALESCE(?, title), author = COALESCE(?, author),
+      `UPDATE books SET title = ?, author = ?, series = ?, series_idx = ?,
          language_metadata = COALESCE(?, language_metadata), duration_ms = ?, cover_path = ?,
-         scan_state = 'ready', scanned_at = ?, audio_timeline_fingerprint = ?
+         scan_state = 'ready', scanned_at = ?, audio_timeline_fingerprint = ?, meta_json = ?
        WHERE id = ?`,
     ).run(
-      title,
-      author,
+      named.title,
+      named.author,
+      named.series,
+      named.seriesIdx,
       // ffmpeg reports ISO 639-2; an EPUB declares ISO 639-1. Stored in one
       // form so the two halves of a paired book agree about their language.
       normaliseLanguage(language),
@@ -918,6 +928,7 @@ export async function runIndexAudio(
       // end, so it is the sequence of lengths that has to be unchanged for a
       // saved alignment to still be true of this audiobook.
       timelineFingerprint(trackDurationsMs),
+      JSON.stringify({ ...meta, namingRev: AUDIO_NAMING_REV }),
       bookId,
     );
     recomputeBookAndPartners(db, bookId);

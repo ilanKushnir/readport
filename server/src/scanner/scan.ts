@@ -65,6 +65,10 @@ function quickHash(filePath: string, stat: fs.Stats): string {
   return h.digest('hex').slice(0, 32);
 }
 
+/** Where a book is found: its kind, library folder and path within it. */
+const placeKey = (kind: string, rootDir: string, relPath: string) =>
+  `${kind}\u0000${rootDir}\u0000${relPath}`;
+
 /** Natural sort so "Track 2" < "Track 10". */
 export function naturalCompare(a: string, b: string): number {
   return a.localeCompare(b, 'en', { numeric: true, sensitivity: 'base' });
@@ -210,6 +214,22 @@ function facetsStale(existing: { facets_rev?: unknown }): boolean {
 }
 
 /**
+ * The generation of the rules that name an audiobook (library/audiobookNaming.ts).
+ * An audiobook named by older rules - after its first file's own title - is
+ * read again, and stays playable while it is.
+ */
+export const AUDIO_NAMING_REV = 1;
+
+function namingStale(existing: { meta_json?: unknown }): boolean {
+  try {
+    const meta = JSON.parse(String(existing.meta_json ?? '{}')) as { namingRev?: unknown };
+    return Number(meta.namingRev ?? 0) < AUDIO_NAMING_REV;
+  } catch {
+    return true;
+  }
+}
+
+/**
  * A book that vanished from one path and reappeared at another.
  *
  * Book ids are derived from the path, so renaming a file or reorganising a
@@ -225,12 +245,24 @@ function relinkMoved(
   contentHash: string,
   rootDir: string,
   relPath: string,
+  here: Set<string>,
 ): string | null {
-  const hit = db
-    .prepare(
-      "SELECT id FROM books WHERE kind = ? AND content_hash = ? AND scan_state = 'missing' LIMIT 1",
-    )
-    .get(kind, contentHash) as { id: string } | undefined;
+  // Gone from where it was: missing since an earlier scan - or not found in
+  // this one, which is a folder moved between two scans. Only the first was
+  // looked for, and a book moved into a folder of its series came back as a
+  // new book, its old self left behind as missing.
+  const hit = (
+    db
+      .prepare(
+        'SELECT id, root_dir, rel_path, scan_state FROM books WHERE kind = ? AND content_hash = ?',
+      )
+      .all(kind, contentHash) as {
+      id: string;
+      root_dir: string;
+      rel_path: string;
+      scan_state: string;
+    }[]
+  ).find((b) => b.scan_state === 'missing' || !here.has(placeKey(kind, b.root_dir, b.rel_path)));
   if (!hit) return null;
   db.prepare(
     "UPDATE books SET root_dir = ?, rel_path = ?, scan_state = 'discovered' WHERE id = ?",
@@ -277,6 +309,12 @@ export function applyScan(db: DB, report: ScanReport): UpsertResult {
   const needsIndex: UpsertResult['needsIndex'] = [];
   const seenIds = new Set<string>();
   const now = nowIso();
+  // Every place a book is found in this scan: a book whose place is not
+  // among them has moved, or gone.
+  const here = new Set([
+    ...report.ebooks.map((e) => placeKey('ebook', e.rootDir, e.relPath)),
+    ...report.audiobooks.map((a) => placeKey('audio', a.rootDir, a.relPath)),
+  ]);
 
   const upsert = db.prepare(
     `INSERT INTO books (id, kind, root_dir, rel_path, format, title, size_bytes, content_hash, scan_state, added_at)
@@ -284,7 +322,7 @@ export function applyScan(db: DB, report: ScanReport): UpsertResult {
      ON CONFLICT(kind, root_dir, rel_path) DO UPDATE SET size_bytes = excluded.size_bytes`,
   );
   const getExisting = db.prepare(
-    'SELECT id, content_hash, scan_state, facets_rev FROM books WHERE kind = ? AND root_dir = ? AND rel_path = ?',
+    'SELECT id, content_hash, scan_state, facets_rev, meta_json FROM books WHERE kind = ? AND root_dir = ? AND rel_path = ?',
   );
 
   for (const e of report.ebooks) {
@@ -294,7 +332,7 @@ export function applyScan(db: DB, report: ScanReport): UpsertResult {
       | { id: string; content_hash: string | null; scan_state: string; facets_rev?: number }
       | undefined;
     if (!existing) {
-      const moved = relinkMoved(db, 'ebook', e.contentHash, e.rootDir, e.relPath);
+      const moved = relinkMoved(db, 'ebook', e.contentHash, e.rootDir, e.relPath, here);
       if (moved) {
         seenIds.add(moved);
         needsIndex.push({ bookId: moved, kind: 'ebook' });
@@ -342,10 +380,16 @@ export function applyScan(db: DB, report: ScanReport): UpsertResult {
     seenIds.add(id);
     const format = a.tracks.length === 1 ? a.tracks[0]!.ext.slice(1) : 'multi';
     const existing = getExisting.get('audio', a.rootDir, a.relPath) as
-      | { id: string; content_hash: string | null; scan_state: string; facets_rev?: number }
+      | {
+          id: string;
+          content_hash: string | null;
+          scan_state: string;
+          facets_rev?: number;
+          meta_json?: string | null;
+        }
       | undefined;
     if (!existing) {
-      const moved = relinkMoved(db, 'audio', a.contentHash, a.rootDir, a.relPath);
+      const moved = relinkMoved(db, 'audio', a.contentHash, a.rootDir, a.relPath, here);
       if (moved) {
         seenIds.add(moved);
         insertTracks(db, moved, a);
@@ -368,7 +412,8 @@ export function applyScan(db: DB, report: ScanReport): UpsertResult {
     } else if (
       existing.content_hash !== a.contentHash ||
       ['error', 'missing', 'discovered'].includes(existing.scan_state) ||
-      facetsStale(existing)
+      facetsStale(existing) ||
+      namingStale(existing)
     ) {
       const changed =
         existing.content_hash !== a.contentHash ||

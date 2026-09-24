@@ -1,3 +1,4 @@
+import { repairMojibake } from '../library/audiobookNaming.js';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
@@ -132,6 +133,9 @@ export async function extractCover(
 
 function lowerKeys(obj: Record<string, string>): Record<string, string> {
   const out: Record<string, string> = {};
-  for (const [k, v] of Object.entries(obj)) out[k.toLowerCase()] = v;
+  // A Russian tag written in a Windows code page arrives as Latin-1 letters
+  // ("Ðèâêà"): read as what it is.
+  for (const [k, v] of Object.entries(obj))
+    out[k.toLowerCase()] = typeof v === 'string' ? repairMojibake(v) : v;
   return out;
 }

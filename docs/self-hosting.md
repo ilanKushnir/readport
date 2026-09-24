@@ -57,6 +57,20 @@ Automated (`.../Calibre Library`), Kavita, Audiobookshelf
 ReadPort detects `.epub` files and `.m4b/.mp3/.m4a/.flac/.ogg/.opus` audio
 (one directory per multi-file book).
 
+An audiobook is named from the tags its files agree on - an album most of its
+files share, an artist most of them share - and otherwise from its folders,
+laid out as Audiobookshelf lays them: `Author/Book/` or
+`Author/Series/Book/`. A multi-file book's first file's own title names that
+file's chapter, not the book, so it is never used as the book's title. In
+`Author/Series/Book/` the middle folder is the series, and the volume number
+is read from the book folder's name ("Book 2", "Vol. IV", "Часть 3" and the
+like, Roman numerals included). An Audible id at the end of a folder's name
+is left out of the title. Tags written in a Windows Cyrillic code page and
+misread as Latin letters are read as Cyrillic.
+
+Moving or renaming a book's file or folder keeps the book - its progress,
+marks and shelves - as long as its contents are unchanged.
+
 The alignment folder is one you make yourself, anywhere you like - beside the
 books, or on the same share. It is the one library mount without `:ro`, and it
 has to be writable by the container user: the entrypoint takes ownership of `/data`,
