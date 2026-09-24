@@ -4,6 +4,20 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.27.0 - 2026-09-24
+
+### Added
+
+- **A book's metadata, for admins.** A Metadata tool on the book page opens
+  what ReadPort knows about the book: its file - or an audiobook's folder,
+  with each of its files - by name, where it sits in the library, the whole
+  path as the server sees it with a Copy button, its format, size and last
+  change on disk, and a warning when it is gone; what the book says about
+  itself - title, author, series, language, publisher, identifiers, genre,
+  narrator, year; and ReadPort's own record - its id, when it was added and
+  last indexed, its state, where its language and cover came from, its
+  length, its pair and whether it is hidden.
+
 ## 0.26.7 - 2026-09-24
 
 ### Fixed
