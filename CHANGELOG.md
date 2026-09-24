@@ -4,6 +4,24 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.26.3 - 2026-09-24
+
+### Fixed
+
+- **Every page turns, wherever your finger lands.** In page view, taps and
+  swipes on empty paper - below a chapter's last line, around a picture -
+  did nothing from a chapter's second page on: no turn, no controls. A book
+  whose front matter is full-page pictures could leave a reader on a page
+  they could not turn either way. They are read on the page itself now,
+  and a sideways swipe is always the reader's, never taken by the browser
+  as a pan.
+- **No blank page after a picture.** The flower after a chapter's last line
+  is left out when it would stand on a page by itself, so a cover or a
+  full-page illustration is followed by the next chapter, not by a dark,
+  empty page.
+- **A stalled connection no longer holds the next chapter.** The app's
+  session check, which book requests wait on, gives up after five seconds.
+
 ## 0.26.2 - 2026-09-24
 
 ### Fixed
