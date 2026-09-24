@@ -167,12 +167,22 @@ export function Sheet({
   onClose,
   children,
   head,
+  docked = false,
+  closeRef,
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
   /** What stands in the head instead of the title: a row of tabs, say, that must stay put while the body scrolls. */
   head?: ReactNode;
+  /**
+   * On a phone, stands on the tab bar rather than over it, and reaches
+   * nearly to the top: the tab bar stays in reach, in the sheet's colour,
+   * so the button that opened the sheet can close it. For the shelves.
+   */
+  docked?: boolean;
+  /** Filled with this sheet's own animated close, for a control outside it. */
+  closeRef?: React.RefObject<(() => void) | null>;
 }) {
   const t = useT();
   const ref = useRef<HTMLDivElement>(null);
@@ -209,6 +219,13 @@ export function Sheet({
 
   useFocusTrap(ref, close);
   useScrollLock();
+  useEffect(() => {
+    if (!closeRef) return;
+    closeRef.current = close;
+    return () => {
+      closeRef.current = null;
+    };
+  }, [closeRef, close]);
 
   // A finger on the handle or the title row. Followed directly - no React
   // render per move - and judged on letting go (sheetMotion.ts).
@@ -277,31 +294,42 @@ export function Sheet({
     onPointerCancel: onPointerUp,
   };
 
+  const panel = (
+    <div
+      className={`sheet${docked ? ' sheet--docked' : ''}`}
+      role="dialog"
+      // Docked, the tab bar beside it stays usable: not modal, then.
+      aria-modal={docked ? undefined : 'true'}
+      aria-label={title}
+      tabIndex={-1}
+      ref={ref}
+    >
+      <div className="sheet__grab" aria-hidden="true" {...handle} />
+      <div
+        className={`sheet__header${head ? ' sheet__header--tabs' : ''}`}
+        {...(head ? {} : handle)}
+      >
+        {head ?? <span className="sheet__title">{title}</span>}
+        <button className="icon-btn" onClick={close} aria-label={t('common.close')}>
+          <IconClose />
+        </button>
+      </div>
+      <SheetCloseContext.Provider value={close}>
+        <div className="sheet__body">{children}</div>
+      </SheetCloseContext.Provider>
+    </div>
+  );
   return createPortal(
     <>
-      <div ref={backdrop} className="sheet-backdrop" onClick={close} aria-hidden="true" />
       <div
-        className="sheet"
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        tabIndex={-1}
-        ref={ref}
-      >
-        <div className="sheet__grab" aria-hidden="true" {...handle} />
-        <div
-          className={`sheet__header${head ? ' sheet__header--tabs' : ''}`}
-          {...(head ? {} : handle)}
-        >
-          {head ?? <span className="sheet__title">{title}</span>}
-          <button className="icon-btn" onClick={close} aria-label={t('common.close')}>
-            <IconClose />
-          </button>
-        </div>
-        <SheetCloseContext.Provider value={close}>
-          <div className="sheet__body">{children}</div>
-        </SheetCloseContext.Provider>
-      </div>
+        ref={backdrop}
+        className={`sheet-backdrop${docked ? ' sheet-backdrop--docked' : ''}`}
+        onClick={close}
+        aria-hidden="true"
+      />
+      {/* Docked, the sheet moves inside a frame that ends at the tab bar, so
+          it rises out from behind the bar and goes back behind it. */}
+      {docked ? <div className="sheet-dock">{panel}</div> : panel}
     </>,
     document.body,
   );

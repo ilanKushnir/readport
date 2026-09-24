@@ -95,11 +95,17 @@ function useWideShell(): boolean {
  * opens - a drawer with room for it, a bottom sheet on a phone, which is the
  * object this app already uses for everything that slides in.
  */
-function ShelfOverlay({ onClose }: { onClose: () => void }) {
+function ShelfOverlay({
+  onClose,
+  closeRef,
+}: {
+  onClose: () => void;
+  closeRef: React.RefObject<(() => void) | null>;
+}) {
   const t = useT();
   const narrow = !useWideShell();
   return narrow ? (
-    <Sheet title={t('nav.shelves')} onClose={onClose}>
+    <Sheet title={t('nav.shelves')} onClose={onClose} docked closeRef={closeRef}>
       <SheetShelves />
     </Sheet>
   ) : (
@@ -181,6 +187,9 @@ function Shell() {
   );
   const [collapsed, setCollapsed] = useSidebarCollapsed();
   const [overlay, setOverlay] = useState(false);
+  // The shelves sheet's own animated close, for the tab that opened it.
+  const closeShelves = useRef<(() => void) | null>(null);
+  const tabbar = useRef<HTMLElement>(null);
   const wide = useWideShell();
   const shell = useRef<HTMLDivElement>(null);
   const immersive = /^\/(read|listen)\//.test(location.pathname);
@@ -225,6 +234,27 @@ function Shell() {
   }, [immersive, phase, needsLibraries, setupSkipped]);
 
   useEffect(() => startProgressLifecycle(), []);
+
+  // The tab bar's height, for the shelves sheet that stands on it.
+  useLayoutEffect(() => {
+    const bar = tabbar.current;
+    if (!bar || typeof ResizeObserver === 'undefined') return;
+    const root = document.documentElement;
+    const set = () => root.style.setProperty('--tabbar-h', `${bar.offsetHeight}px`);
+    set();
+    const watch = new ResizeObserver(set);
+    watch.observe(bar);
+    return () => watch.disconnect();
+  }, [immersive, phase, needsLibraries, setupSkipped]);
+
+  // Going somewhere else - a tab, now within reach under the open shelves -
+  // takes the shelves away with it.
+  const shownAt = useRef(location.key);
+  useEffect(() => {
+    if (shownAt.current === location.key) return;
+    shownAt.current = location.key;
+    closeShelves.current?.();
+  }, [location.key]);
 
   // A tab tapped on the page it opens takes that page back to its top, the
   // way a phone's tab bar does. Tapped from anywhere else, the page starts
@@ -363,14 +393,16 @@ function Shell() {
           <Outlet />
         </div>
       )}
-      {overlay && !immersive && <ShelfOverlay onClose={() => setOverlay(false)} />}
+      {overlay && !immersive && (
+        <ShelfOverlay onClose={() => setOverlay(false)} closeRef={closeShelves} />
+      )}
       {/* Never over a book: an interruption is tolerable on the way in, and
           not at all once somebody is reading or listening. */}
       {!immersive && <WhatsNew />}
       {!immersive && <DownloadsPill />}
       {!immersive && <UpdateCard />}
       {!immersive && (
-        <nav className="tabbar" aria-label={t('nav.primary')}>
+        <nav className="tabbar" aria-label={t('nav.primary')} ref={tabbar}>
           {/* Shelves is a button rather than a link because it opens the same
               overlay the header button does. On a phone the rail is not on
               screen, so without this the whole sidebar - shelves, the reading
@@ -378,7 +410,13 @@ function Shell() {
           <button
             type="button"
             className="tabbar__shelves"
-            onClick={() => setOverlay(true)}
+            // The same button closes them: on a phone the tab bar stays in
+            // reach under the open shelves.
+            onClick={() => {
+              if (!overlay) setOverlay(true);
+              else if (closeShelves.current) closeShelves.current();
+              else setOverlay(false);
+            }}
             aria-haspopup="dialog"
             aria-expanded={overlay}
           >

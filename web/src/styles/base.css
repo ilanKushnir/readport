@@ -1640,6 +1640,52 @@ body:has(.app-body) {
     transform: translateY(100%);
   }
 }
+/* The shelves on a phone (Sheet's `docked`): standing on the tab bar and
+   reaching nearly to the top, with the tab bar left uncovered - in reach,
+   and dressed in the sheet's colour so the two read as one panel - so
+   Shelves closes what Shelves opened. The sheet moves inside a frame that
+   ends at the bar: it rises from behind the bar and goes back behind it.
+   With the keyboard up it all stands on the keyboard, as every sheet does.
+   A card on anything wider: the frame is no box at all there. */
+.sheet-dock {
+  display: contents;
+}
+@media (max-width: 743.98px) {
+  .sheet-dock {
+    --dock-bottom: max(
+      var(--tabbar-h, 64px),
+      calc(100dvh - var(--app-viewport-top, 0px) - var(--app-viewport-height, 100dvh))
+    );
+    display: block;
+    position: fixed;
+    z-index: 41;
+    inset-inline: 0;
+    top: 0;
+    bottom: var(--dock-bottom);
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .sheet-dock > .sheet--docked {
+    position: absolute;
+    top: calc(var(--app-viewport-top, 0px) + max(var(--rp-safe-top), 12px) + 10px);
+    bottom: 0;
+    max-height: none;
+    padding-block-end: 0;
+    pointer-events: auto;
+  }
+  .sheet-backdrop--docked {
+    bottom: max(
+      var(--tabbar-h, 64px),
+      calc(100dvh - var(--app-viewport-top, 0px) - var(--app-viewport-height, 100dvh))
+    );
+  }
+  body:has(.sheet--docked) .tabbar {
+    background: var(--rp-surface-raised);
+    border-block-start-color: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .sheet,
   .sheet-backdrop {
