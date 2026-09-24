@@ -170,8 +170,14 @@ describe('Reading Now contract', () => {
     expect(rail).not.toContain('audio');
     expect(rail).not.toContain('missing');
     expect(rail).not.toContain('done');
-    // Narrowed views do not carry the band.
-    expect((await request('/api/library?kind=ebook')).json().continueRail).toEqual([]);
+    // Narrowing the open library by format, language or a search keeps the
+    // band as it was; a shelf of its own does not carry it.
+    for (const narrowed of ['kind=ebook', 'kind=audio', 'lang=en', 'query=zz'])
+      expect(
+        (await request(`/api/library?${narrowed}`))
+          .json()
+          .continueRail.map((b: { id: string }) => b.id),
+      ).toEqual(rail);
     expect((await request('/api/library?filter=finished')).json().continueRail).toEqual([]);
   });
   it('a book the scanner lost is neither listed nor counted, and cannot be reset if it never existed', async () => {

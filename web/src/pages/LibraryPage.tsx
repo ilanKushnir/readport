@@ -432,8 +432,12 @@ export function LibraryPage() {
   const continueBooks = data?.continueRail ?? [];
   const hero = continueBooks[0] ?? null;
   const rail = continueBooks.slice(1);
-  const unfiltered = kind === 'all' && !query && langs.length === 0;
-  const showContinue = showing.kind === 'library' && unfiltered && continueBooks.length > 0;
+  // The home's top - what you are reading, your week, the library's totals -
+  // stays put whatever the list below is narrowed to. It used to go the
+  // moment a format, a language or a search was chosen, and everything under
+  // it jumped up the screen, the control just pressed included: the reader
+  // lost their place for the sake of a filter that only ever meant the books.
+  const showContinue = showing.kind === 'library' && continueBooks.length > 0;
   // The band shows the eight most recent; the number beside "All in progress"
   // is how many there are, which is what the sidebar already counts.
   const readingNowCount =
@@ -578,8 +582,8 @@ export function LibraryPage() {
       )}
 
       {/* This week so far, one tap from the whole picture. Home only: a
-          shelf or a search is a question about books, not about the reader. */}
-      {showing.kind === 'library' && unfiltered && <StatsStrip />}
+          shelf is a question about books, not about the reader. */}
+      {showing.kind === 'library' && <StatsStrip />}
 
       <section className="band band--library" aria-labelledby="library-h">
         <div className="band__head">
@@ -589,7 +593,7 @@ export function LibraryPage() {
               <span className="section-title__count">{f.number(books.length)}</span>
             )}
           </h2>
-          {showing.kind === 'library' && unfiltered && data && (
+          {showing.kind === 'library' && data && (
             <span className="band__stats">
               {t('library.stats', {
                 ebooks: stats.ebooks,

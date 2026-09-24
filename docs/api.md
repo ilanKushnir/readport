@@ -455,7 +455,9 @@ list above it, because the list above it answers a different question. It is
 collapsed to one card per settled pair like every other shelf, and the
 edition that survives is the one touched most recently, so the card resumes
 where the reader actually is rather than at page one of the other format. It
-is filled only for the open library (no query, kind, filter or facet).
+is filled for the open library - no `filter` and no `facet` - and is the same
+whatever `query`, `kind` or `lang` narrow the list to: those narrow the books,
+not what the reader is in the middle of.
 
 A facet narrows EDITIONS, before a pair collapses to one card, so a French
 audiobook paired with an English ebook is under `language:fr`. The language

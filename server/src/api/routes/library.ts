@@ -465,13 +465,11 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
     // shelf) and collapsed to one card per pair - and a paired audiobook at
     // 40% was vanishing behind its untouched ebook, so the sidebar said
     // "Reading now 1" while the home page showed nothing to continue. Only
-    // the open library shows the band, so only the open library pays for it.
-    const home =
-      q.filter === undefined &&
-      q.facet === undefined &&
-      !q.query &&
-      q.kind === undefined &&
-      q.lang === undefined;
+    // the open library shows the band, so only the open library pays for it
+    // - and it stays the open library whatever its list is narrowed to: a
+    // format, a language or a search only ever meant the books below, and
+    // taking the band away with them jumped the page up under the reader.
+    const home = q.filter === undefined && q.facet === undefined;
     const continueRail = home
       ? onePerPair(
           (
