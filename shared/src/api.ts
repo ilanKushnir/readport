@@ -250,6 +250,8 @@ export const userDtoSchema = z.object({
   status: z.enum(['active', 'disabled']),
   createdAt: z.string(),
   lastLoginAt: z.string().nullable(),
+  /** When they last used ReadPort at all: any signed-in request, not only a login. */
+  lastSeenAt: z.string().nullable().optional(),
   /** Signs in through the reverse proxy (no local password). */
   proxyManaged: z.boolean(),
   sessions: z.number().int(),

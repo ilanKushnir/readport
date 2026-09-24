@@ -238,7 +238,11 @@ export function PeoplePage() {
                     {u.proxyManaged && (
                       <span className="badge badge--muted">{t('people.accounts.proxySignIn')}</span>
                     )}
-                    <span>{t('people.accounts.lastSeen', { when: f.ago(u.lastLoginAt) })}</span>
+                    <span>
+                      {t('people.accounts.lastSeen', {
+                        when: f.ago(u.lastSeenAt ?? u.lastLoginAt),
+                      })}
+                    </span>
                     {u.booksInProgress > 0 && (
                       <span>
                         · {t('people.accounts.booksInProgress', { n: u.booksInProgress })}

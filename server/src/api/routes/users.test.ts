@@ -6,6 +6,7 @@ import { buildApp } from '../app.js';
 import { loadConfig } from '../../config.js';
 import { openMemoryDatabase } from '../../db/index.js';
 import { createJoinRequest, deriveInviteToken } from '../../share/service.js';
+import { createSession } from '../../auth/sessions.js';
 
 /**
  * The admin's side of a join request: who may see and decide them, what a
@@ -196,5 +197,41 @@ describe('deciding', () => {
       deriveInviteToken(SECRET, 'jr_one'),
     );
     expect(deriveInviteToken(SECRET, 'jr_one')).toMatch(/^[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}$/);
+  });
+});
+
+describe('last seen', () => {
+  const seenOf = async (id: string) =>
+    (
+      (await as('astra', '/api/users')).json() as {
+        users: { id: string; lastSeenAt: string | null; lastLoginAt: string | null }[];
+      }
+    ).users.find((u) => u.id === id)!;
+
+  it('is when they last used ReadPort, not when they last typed a password', async () => {
+    // Joined by invitation: an account with a session and no login, ever.
+    const at = new Date().toISOString();
+    db.prepare(
+      `INSERT INTO users (id, username, password_hash, role, status, created_at)
+       VALUES ('user_dora', 'dora', 'x', 'reader', 'active', ?)`,
+    ).run(at);
+    const { token } = createSession(db, SECRET, 'user_dora', 30);
+    const before = await seenOf('user_dora');
+    expect(before.lastLoginAt).toBeNull();
+    expect(before.lastSeenAt).toBeNull();
+    const me = await app.inject({ url: '/api/auth/me', cookies: { rp_session: token } });
+    expect(me.statusCode).toBe(200);
+    const after = await seenOf('user_dora');
+    expect(after.lastLoginAt).toBeNull();
+    expect(Date.now() - Date.parse(after.lastSeenAt!)).toBeLessThan(60_000);
+  });
+
+  it('outlives the session it came from', async () => {
+    db.prepare("DELETE FROM sessions WHERE user_id = 'user_dora'").run();
+    expect((await seenOf('user_dora')).lastSeenAt).not.toBeNull();
+  });
+
+  it('counts a request through the sign-in proxy too', async () => {
+    expect(Date.now() - Date.parse((await seenOf(ids.bob!)).lastSeenAt!)).toBeLessThan(60_000);
   });
 });

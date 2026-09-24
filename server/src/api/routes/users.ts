@@ -39,6 +39,7 @@ interface UserRow {
   status: string;
   created_at: string;
   last_login_at: string | null;
+  last_seen_at: string | null;
   can_export: number;
   sessions: number;
   books_in_progress: number;
@@ -46,7 +47,7 @@ interface UserRow {
 
 const USER_SELECT = `
   SELECT u.id, u.username, u.password_hash, u.role, u.display_name, u.status, u.created_at,
-         u.last_login_at, u.can_export,
+         u.last_login_at, u.last_seen_at, u.can_export,
          (SELECT COUNT(*) FROM sessions s WHERE s.user_id = u.id AND s.expires_at > ?) AS sessions,
          (SELECT COUNT(*) FROM progress_state p WHERE p.user_id = u.id AND p.finished = 0)
            AS books_in_progress
@@ -63,6 +64,7 @@ export function toUserDto(r: UserRow): UserDto {
     status: r.status === 'disabled' ? 'disabled' : 'active',
     createdAt: r.created_at,
     lastLoginAt: r.last_login_at,
+    lastSeenAt: r.last_seen_at ?? r.last_login_at,
     proxyManaged: r.password_hash === UNUSABLE_PASSWORD,
     sessions: Number(r.sessions),
     booksInProgress: Number(r.books_in_progress),

@@ -22,6 +22,19 @@ function hmacToken(secret: string, token: string): string {
   return createHmac('sha256', secret).update(token).digest('hex');
 }
 
+/** How stale an account's "last seen" may get before a request writes it again. */
+const SEEN_EVERY_MS = 5 * 60_000;
+
+/**
+ * Note that someone used ReadPort just now: what People shows as "last
+ * seen". Written at most every few minutes, not once per request.
+ */
+export function markSeen(db: DB, userId: string, now = nowIso()): void {
+  db.prepare(
+    'UPDATE users SET last_seen_at = ? WHERE id = ? AND (last_seen_at IS NULL OR last_seen_at < ?)',
+  ).run(now, userId, new Date(Date.parse(now) - SEEN_EVERY_MS).toISOString());
+}
+
 export function createSession(
   db: DB,
   secret: string,
@@ -84,9 +97,11 @@ export function resolveSession(
   const remaining = Date.parse(row.expires_at) - Date.now();
   const full = sessionDays * 86_400_000;
   const renewed = remaining < full - 86_400_000 ? new Date(Date.now() + full).toISOString() : null;
+  const now = nowIso();
   db.prepare(
     'UPDATE sessions SET last_seen_at = ?, expires_at = COALESCE(?, expires_at) WHERE id = ?',
-  ).run(nowIso(), renewed, row.session_id);
+  ).run(now, renewed, row.session_id);
+  markSeen(db, row.id, now);
   return {
     id: row.id,
     username: row.username,

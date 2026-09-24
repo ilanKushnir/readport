@@ -1,7 +1,7 @@
 import { BlockList, isIP } from 'node:net';
 import { type FastifyRequest } from 'fastify';
 import { type AppContext } from '../context.js';
-import { type SessionUser } from './sessions.js';
+import { markSeen, type SessionUser } from './sessions.js';
 import { newId } from '../util/ids.js';
 import { nowIso, type DB } from '../db/index.js';
 import { stampWhatsNewSeen } from '../api/routes/prefs.js';
@@ -98,6 +98,7 @@ export function proxyAuthUser(
     if (Date.now() - last > 15 * 60_000) {
       db.prepare('UPDATE users SET last_login_at = ? WHERE id = ?').run(nowIso(), existing.id);
     }
+    markSeen(db, existing.id);
     return {
       id: existing.id,
       username: existing.username,

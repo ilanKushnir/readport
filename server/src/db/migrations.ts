@@ -789,4 +789,19 @@ CREATE TABLE cover_lookups (
 );
 `,
   },
+  {
+    version: 26,
+    sql: `
+-- When each person last used ReadPort, for People. The last LOGIN said
+-- "never" of anyone who had only ever joined by invitation, and "last month"
+-- of anyone whose session had simply lasted - a session outlives a login by
+-- weeks. Kept on the account so it outlives the session too: signing out
+-- deletes the session, not the fact that it was used.
+ALTER TABLE users ADD COLUMN last_seen_at TEXT;
+UPDATE users SET last_seen_at = NULLIF(MAX(
+  COALESCE(last_login_at, ''),
+  COALESCE((SELECT MAX(s.last_seen_at) FROM sessions s WHERE s.user_id = users.id), '')
+), '');
+`,
+  },
 ];

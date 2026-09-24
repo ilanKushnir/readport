@@ -232,7 +232,12 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
     }
     if (row.status !== 'active') return reply.code(403).send({ error: 'account-disabled' });
     accountThrottle.reset(acctKey);
-    db.prepare('UPDATE users SET last_login_at = ? WHERE id = ?').run(nowIso(), row.id);
+    const at = nowIso();
+    db.prepare('UPDATE users SET last_login_at = ?, last_seen_at = ? WHERE id = ?').run(
+      at,
+      at,
+      row.id,
+    );
     const session = createSession(
       db,
       config.sessionSecret,
