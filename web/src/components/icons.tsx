@@ -328,6 +328,14 @@ export const IconMoon = (p: P) => (
     <path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z" />
   </I>
 );
+/** A circled "i": facts about a thing, as opposed to things to do with it. */
+export const IconInfo = (p: P) => (
+  <I {...p}>
+    <circle cx="12" cy="12" r="8.6" />
+    <path d="M12 11v5.2" />
+    <circle cx="12" cy="7.9" r="0.9" fill="currentColor" stroke="none" />
+  </I>
+);
 export const IconAlert = (p: P) => (
   <I {...p}>
     <path d="M12 4 2.8 19.5h18.4z" />

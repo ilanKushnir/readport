@@ -21,6 +21,7 @@ import { registerShelfRoutes } from './routes/shelves.js';
 import { registerPairRoutes } from './routes/pairs.js';
 import { registerTranslationRoutes } from './routes/translations.js';
 import { registerCoverRoutes } from './routes/covers.js';
+import { registerMetadataRoutes } from './routes/metadata.js';
 import { registerJobRoutes, registerOfflineRoutes, registerSettingsRoutes } from './routes/misc.js';
 import { registerModelRoutes } from './routes/models.js';
 import { registerPreflightRoutes } from './routes/preflight.js';
@@ -313,6 +314,7 @@ export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyIn
   registerPairRoutes(app, ctx);
   registerTranslationRoutes(app, ctx);
   registerCoverRoutes(app, ctx);
+  registerMetadataRoutes(app, ctx);
   registerJobRoutes(app, ctx);
   registerSettingsRoutes(app, ctx);
   registerKeyRoutes(app, ctx);

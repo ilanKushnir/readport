@@ -5668,6 +5668,108 @@ body[data-rp-dragging] * {
   margin-inline-start: calc(-1 * var(--sp-3));
 }
 
+/* ---------------------------------------------------------------- book metadata */
+/* An admin's look behind a book (BookMetadataSheet): three plain lists of
+   label and value. Paths are set as code - exact, left to right in any
+   interface, broken anywhere rather than off the edge. */
+.bookmeta {
+  display: grid;
+  gap: var(--sp-5);
+}
+.bookmeta__section {
+  display: grid;
+  gap: var(--sp-2);
+}
+.bookmeta__title {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rp-text-soft);
+}
+.bookmeta__rows {
+  display: grid;
+  margin: 0;
+}
+.bookmeta__row {
+  display: grid;
+  grid-template-columns: minmax(6.5em, 30%) 1fr;
+  gap: var(--sp-3);
+  padding-block: var(--sp-2);
+  border-block-end: 1px solid var(--rp-border);
+  font-size: 14px;
+}
+.bookmeta__row:last-child {
+  border-block-end: 0;
+}
+.bookmeta__row dt {
+  color: var(--rp-text-soft);
+}
+.bookmeta__row dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px var(--sp-2);
+  min-width: 0;
+  margin: 0;
+}
+.bookmeta__path {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+.bookmeta__aside {
+  color: var(--rp-text-soft);
+  font-size: 12.5px;
+}
+.bookmeta__error {
+  flex-basis: 100%;
+  color: var(--rp-danger);
+  font-size: 12.5px;
+}
+.bookmeta__copy {
+  padding: 2px 8px;
+  border: 1px solid var(--rp-border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--rp-interactive);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.bookmeta__warn {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--rp-danger) 12%, transparent);
+  font-size: 13px;
+}
+.bookmeta__list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bookmeta__tracks summary {
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--rp-interactive);
+}
+.bookmeta__tracks ol {
+  display: grid;
+  gap: 4px;
+  margin: var(--sp-2) 0 0;
+  padding-inline-start: 1.6em;
+}
+.bookmeta__tracks li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px var(--sp-2);
+}
+
 /* ---------------------------------------------------------------- cover picker */
 /* A book's cover on its page, and for a curator the cover it could have.
    What is offered stands in the cover's own frame, marked as a suggestion,

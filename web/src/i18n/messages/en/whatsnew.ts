@@ -23,6 +23,12 @@ export const whatsnew = {
   'whatsnew.update.refreshing': 'Refreshing…',
   'whatsnew.update.later': 'Not now',
 
+  // ---------------------------------------------------------------- 0.27.0
+  'whatsnew.release.audiobookNames':
+    'Audiobooks are named after their folders when their files disagree: author, series and volume number, no more books called after their first track.',
+  'whatsnew.release.bookMetadata':
+    'Admins can open a book\u2019s metadata from its page: the file, where it is on the server, and what ReadPort made of it.',
+
   // ---------------------------------------------------------------- 0.26.0
   'whatsnew.release.coverSuggestions':
     'A book without a cover can get one: curators pick from its other format\u2019s cover or what Apple Books, Audible, Google Books and Open Library have for it.',

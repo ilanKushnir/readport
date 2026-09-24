@@ -486,3 +486,71 @@ export type RichBlock =
   | { t: 'ul' | 'ol'; items: RichBlock[][] }
   | { t: 'quote'; c: RichBlock[] }
   | { t: 'hr' };
+
+/**
+ * Everything ReadPort knows about one book, for an admin: where its file is,
+ * what the file says about itself, and what ReadPort made of it. Paths are
+ * as the server sees them - inside its container, when it runs in one.
+ */
+export interface BookMetadata {
+  file: {
+    /** The file's name - or, for an audiobook, its folder's. */
+    name: string;
+    /** The folder it is in, within its library; '' at the library's top. */
+    folder: string;
+    /** The library folder it was found in. */
+    library: string;
+    /** The whole path, library and all. */
+    path: string;
+    isFolder: boolean;
+    format: string;
+    sizeBytes: number;
+    /** When the file last changed on disk; null when it is not there now. */
+    modifiedAt: string | null;
+    present: boolean;
+    /** A fingerprint of the content, as ReadPort took it at its last index. */
+    contentHash: string | null;
+  };
+  /** An audiobook's files, in play order, named within its folder. */
+  tracks: {
+    name: string;
+    format: string;
+    sizeBytes: number;
+    durationMs: number;
+    title: string | null;
+  }[];
+  /** What the file says about itself. */
+  embedded: {
+    title: string;
+    author: string | null;
+    series: string | null;
+    seriesIdx: number | null;
+    language: string | null;
+    publisher: string | null;
+    identifiers: Record<string, string>;
+    /** The library's own groupings read from the file: genre, narrator, year, rating. */
+    tags: { kind: string; value: string }[];
+    description: boolean;
+  };
+  /** What ReadPort made of it. */
+  readport: {
+    id: string;
+    addedAt: string;
+    indexedAt: string | null;
+    state: string;
+    error: string | null;
+    language: {
+      value: string | null;
+      source: string | null;
+      manual: string | null;
+      detected: string | null;
+    };
+    cover: 'own' | 'picked' | 'none';
+    coverSource: string | null;
+    chapters: number;
+    characters: number | null;
+    durationMs: number | null;
+    pair: { title: string; kind: 'ebook' | 'audio'; status: string } | null;
+    hidden: { at: string; by: string | null } | null;
+  };
+}

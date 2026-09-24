@@ -23,6 +23,7 @@ import {
   IconDownload,
   IconEye,
   IconEyeOff,
+  IconInfo,
   IconHeadphones,
   IconLanguages,
   IconReadAlong,
@@ -60,6 +61,7 @@ import { useDownloadState } from '../offline/useDownloads';
 import { OtherLanguagesRow } from '../translations/OtherLanguagesRow';
 import { RichText } from '../components/RichText';
 import { CoverPicker } from '../components/CoverPicker';
+import { BookMetadataSheet } from '../components/BookMetadataSheet';
 import { LinkTranslationsSheet } from '../translations/LinkTranslationsSheet';
 
 /** The paired edition, as far as the offline sheet needs to describe it. */
@@ -94,6 +96,7 @@ export function BookPage() {
   /** The other edition's detail, for its row in that sheet; null when it could not be read. */
   const [otherDetail, setOtherDetail] = useState<BookDetail | null | undefined>(undefined);
   const [hideSheet, setHideSheet] = useState(false);
+  const [metaSheet, setMetaSheet] = useState(false);
   const [hiding, setHiding] = useState(false);
   /** The sheet a curator links this book to its other languages in. */
   const [languagesSheet, setLanguagesSheet] = useState(false);
@@ -636,6 +639,17 @@ export function BookPage() {
                 <span>{t('library.hidden.tool')}</span>
               </button>
             )}
+            {user?.role === 'admin' && (
+              <button
+                type="button"
+                className="btn btn--ghost book-tool"
+                title={t('library.meta.toolHint')}
+                onClick={() => setMetaSheet(true)}
+              >
+                <IconInfo size={17} />
+                <span>{t('library.meta.tool')}</span>
+              </button>
+            )}
           </div>
           {(pairUntimed || pairOffline) && (
             // One quiet line, not a card, and only when switching will not
@@ -797,6 +811,7 @@ export function BookPage() {
           onClose={() => setLanguagesSheet(false)}
         />
       )}
+      {metaSheet && <BookMetadataSheet bookId={book.id} onClose={() => setMetaSheet(false)} />}
       {hideSheet && (
         <Sheet title={t('library.hidden.askTitle')} onClose={() => setHideSheet(false)}>
           <p className="sheet__lede">{t('library.hidden.askLede', { title: book.title })}</p>
