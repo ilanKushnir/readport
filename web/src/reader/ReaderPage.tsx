@@ -732,7 +732,19 @@ export function ReaderPage() {
     if (prefs.mode === 'paginated') {
       const layout = measureLayout();
       if (!layout) return 1;
-      const count = pageCountFor(content.scrollWidth, layout);
+      // The printer's flower is set after a chapter's last line, but never
+      // on a page of its own: a chapter that is one full-page picture - a
+      // cover, a frontispiece - or whose text ends at a page's foot would
+      // otherwise end on a blank page with a flower at its top, a page that
+      // looks like the book has gone dark. Measured with and without it.
+      delete content.dataset.flowerless;
+      let count = pageCountFor(content.scrollWidth, layout);
+      if (count > 1) {
+        content.dataset.flowerless = '';
+        const bare = pageCountFor(content.scrollWidth, layout);
+        if (bare < count) count = bare;
+        else delete content.dataset.flowerless;
+      }
       setPageCount(count);
       return count;
     }
@@ -3760,6 +3772,49 @@ export function ReaderPage() {
             <div
               className={`reader-pages ${paginationFailed ? 'is-unpaginated' : ''}`}
               ref={pagesRef}
+              // Taps and swipes are read here, on the page box, not on the
+              // text inside it. The text is one long strip of columns slid
+              // sideways to show a page, and the box of that strip is its
+              // first page only: from the second page on, a finger on empty
+              // paper - below a chapter's last line, beside a picture - met
+              // the page box underneath, and no handler at all. A page with
+              // nothing but a picture could not be turned, by a swipe or an
+              // edge, in either direction.
+              onPointerDown={(e) => {
+                swipeRef.current = { x: e.clientX, y: e.clientY, t: Date.now() };
+                handoffCleanupRef.current?.();
+              }}
+              onPointerUp={(e) => {
+                const sw = swipeRef.current;
+                swipeRef.current = null;
+                if (!sw) return;
+                const dx = e.clientX - sw.x;
+                const dy = e.clientY - sw.y;
+                if (Math.abs(dx) > 48 && Math.abs(dy) < 60 && Date.now() - sw.t < 600) {
+                  const backward = rtl ? dx < 0 : dx > 0;
+                  if (backward) prevPage();
+                  else nextPage();
+                } else if (
+                  Math.abs(dx) < 8 &&
+                  Math.abs(dy) < 8 &&
+                  !(e.target as Element).closest('a')
+                ) {
+                  const sel = document.getSelection();
+                  if (sel && !sel.isCollapsed) {
+                    // A tap on the selected words brings the platform's own
+                    // menu up on a phone: ours steps aside, and comes back
+                    // with the next tap.
+                    if (tapInSelection(sel, e.clientX, e.clientY)) setToolbarHidden((h) => !h);
+                    return;
+                  }
+                  // Armed to continue a selection: this tap is where it ends.
+                  if (extendSelectionTo(e.clientX, e.clientY)) return;
+                  if (openMarkAt(e.clientX, e.clientY)) return;
+                  if (seekVoiceAt(e.clientX, e.clientY)) return;
+                  if (edgeTap(e.clientX)) return;
+                  setChrome((c) => !c);
+                }
+              }}
             >
               <div
                 ref={contentRef}
@@ -3771,41 +3826,6 @@ export function ReaderPage() {
                   // travel (the dip is applied below); slide is the default.
                   transition: pageTurn === 'slide' ? 'transform 200ms var(--rp-ease)' : 'none',
                   padding: `${chromeInset.top + 8}px ${margins.padding}px ${chromeInset.bottom + 8}px`,
-                }}
-                onPointerDown={(e) => {
-                  swipeRef.current = { x: e.clientX, y: e.clientY, t: Date.now() };
-                  handoffCleanupRef.current?.();
-                }}
-                onPointerUp={(e) => {
-                  const sw = swipeRef.current;
-                  swipeRef.current = null;
-                  if (!sw) return;
-                  const dx = e.clientX - sw.x;
-                  const dy = e.clientY - sw.y;
-                  if (Math.abs(dx) > 48 && Math.abs(dy) < 60 && Date.now() - sw.t < 600) {
-                    const backward = rtl ? dx < 0 : dx > 0;
-                    if (backward) prevPage();
-                    else nextPage();
-                  } else if (
-                    Math.abs(dx) < 8 &&
-                    Math.abs(dy) < 8 &&
-                    !(e.target as Element).closest('a')
-                  ) {
-                    const sel = document.getSelection();
-                    if (sel && !sel.isCollapsed) {
-                      // A tap on the selected words brings the platform's own
-                      // menu up on a phone: ours steps aside, and comes back
-                      // with the next tap.
-                      if (tapInSelection(sel, e.clientX, e.clientY)) setToolbarHidden((h) => !h);
-                      return;
-                    }
-                    // Armed to continue a selection: this tap is where it ends.
-                    if (extendSelectionTo(e.clientX, e.clientY)) return;
-                    if (openMarkAt(e.clientX, e.clientY)) return;
-                    if (seekVoiceAt(e.clientX, e.clientY)) return;
-                    if (edgeTap(e.clientX)) return;
-                    setChrome((c) => !c);
-                  }
                 }}
                 onClick={(e) => interceptLink(e, manifest, spineIdx, gotoChapter)}
                 lang={language ?? undefined}

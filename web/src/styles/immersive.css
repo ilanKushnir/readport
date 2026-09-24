@@ -150,6 +150,11 @@
   left: 0;
   width: 100%;
   overflow: hidden;
+  /* A sideways swipe is a page turn, the reader's to handle: a browser left
+     to decide took some for a pan of its own and cancelled the pointer, so
+     the swipe never arrived. Up and down still scroll a chapter that fell
+     back to scrolling, and two fingers still zoom. */
+  touch-action: pan-y pinch-zoom;
 }
 .reader-content--paginated {
   height: 100%;
@@ -476,6 +481,10 @@
   -webkit-mask: url('../assets/art/fleuron.webp') center / contain no-repeat;
   mask: url('../assets/art/fleuron.webp') center / contain no-repeat;
   break-inside: avoid;
+}
+/* ...unless it would stand on a page by itself (ReaderPage.applyPagination). */
+.reader-content--paginated[data-flowerless]::after {
+  display: none;
 }
 @media (forced-colors: active) {
   .reader-chapter-end::before,

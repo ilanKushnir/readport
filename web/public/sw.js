@@ -46,10 +46,18 @@ let cacheOwnedByViewer = true;
    in docs/security.md). */
 const authGate = self.rpAuth.createAuthGate({
   fetchFn: async () => {
+    // Every book request waits on this check, so it must not wait for long:
+    // a connection that stalls instead of failing - a phone between masts -
+    // held the next chapter back with it, and the reader, still showing the
+    // last one, could not be turned. A check that runs out of time counts as
+    // no network, which keeps the last verdict.
     const res = await fetch('/api/auth/me', {
       credentials: 'same-origin',
       cache: 'no-store',
       headers: { 'x-rp-csrf': '1' },
+      // Where there is no timeout to be had (Safari before 16), waiting is
+      // better than never checking at all.
+      signal: typeof AbortSignal.timeout === 'function' ? AbortSignal.timeout(5000) : undefined,
     });
     // WHO is signed in decides this, not merely THAT someone is.
     if (res.ok) {
