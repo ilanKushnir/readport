@@ -4,6 +4,24 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.26.5 - 2026-09-24
+
+### Fixed
+
+- **"Last seen" is when someone last used ReadPort.** People showed the
+  last password login, which is "never" for anyone who joined by
+  invitation and weeks out of date for anyone whose session simply lasted.
+  It now follows use: any signed-in visit, through the sign-in proxy too,
+  and it stays after signing out. Migration 26 fills it in from what the
+  server already knew.
+
+### Changed
+
+- **The shelves stand on the tab bar on a phone.** The shelves sheet
+  reaches nearly to the top of the screen and leaves the tab bar in reach,
+  in the sheet's colour, so tapping Shelves again closes it. Another tab
+  goes there and takes the shelves away.
+
 ## 0.26.4 - 2026-09-24
 
 ### Fixed
