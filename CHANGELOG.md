@@ -4,6 +4,15 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.26.6 - 2026-09-24
+
+### Fixed
+
+- **The shelves open with their background on an iPhone.** The sheet rose
+  without its colour, which appeared only once it had stopped. It now
+  rises whole from behind the tab bar, and a rule above the bar keeps the
+  two apart while the shelves are open.
+
 ## 0.26.5 - 2026-09-24
 
 ### Fixed
