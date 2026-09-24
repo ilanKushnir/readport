@@ -4,6 +4,53 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.26.0 - 2026-09-24
+
+### Added
+
+- **Covers for books without one.** On the page of a book with no cover, a
+  curator is offered one: the cover of the same book's other format straight
+  away, and what the catalogues have for its ISBN, title and author when they
+  press _Find a cover_. The suggestion stands in the cover's own frame,
+  marked as one, with _Use this cover_, a way through the others, and _No
+  thanks_. A picked cover is kept in ReadPort's data volume, goes to the
+  book's other format too when that has none, and can be changed or removed;
+  the library's files are never touched.
+- **An admin chooses where covers come from.** Settings → Libraries → Book
+  covers lists Apple Books (sharp store covers in many languages), Audible
+  (audiobooks only), Google Books (by ISBN, and by title too with
+  `RP_GOOGLE_BOOKS_KEY`) and Open Library, each on or off; with none ticked,
+  no lookup ever leaves the server. _Suggest covers automatically_ (off by
+  default) looks a coverless book up as soon as a curator opens it.
+- **About sections laid out.** A book's description is shown as its
+  formatting - paragraphs, emphasis, lists, headings, links - rather than as
+  the HTML or Markdown it was written in, with entities decoded. Nothing in
+  it can run; links open outside ReadPort. A long one folds under _More_.
+- **Languages to search.** The library's language button opens a panel
+  like the reader's search: the languages the shelf holds, each with its
+  flag, its own name and its number of books, found by typing a name in any
+  of them - "рус", "Russian" or "ru". The format control beside it has its
+  icons back, its labels centred, and drops the icons only where a label
+  would not otherwise fit.
+- **Sheets you can pull down.** On a phone every bottom sheet rises out of
+  the bottom edge and goes back the same way, and its handle - the whole
+  strip above the title, and the title row - drags it: let go far enough
+  down, or flick it, and it closes; anything less settles back. Choosing a
+  shelf slides the Shelves sheet away as the shelf opens.
+- **The Shelves tab looks like what it does.** It opens a menu over the page
+  you are on rather than going somewhere, so it is drawn as a control: its
+  icon on a tile, a rule between it and the tabs that are places.
+- **An ebook's own folder cover.** An EPUB with no cover inside it takes the
+  `cover.jpg` beside it when the folder is that book's alone, as Calibre lays
+  a library out.
+
+### Upgrading
+
+- Nothing to do. A migration adds the columns and table the cover picker
+  keeps its work in. Cover lookups reach the network only when a curator asks
+  or an admin turns automatic suggestions on; see docs/security.md for what
+  is sent and to where.
+
 ## 0.25.0 - 2026-09-23
 
 ### Added
