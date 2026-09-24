@@ -69,6 +69,20 @@ export const settings = {
   'settings.libraries.saveAndRescan': 'Save folders & rescan',
   'settings.libraries.foldersSaved': 'Folders saved - rescanning',
   'settings.libraries.couldNotSaveFolders': 'Could not save folders',
+  'settings.covers.title': 'Book covers',
+  'settings.covers.lede':
+    'For a book with no cover of its own, a curator can look one up and pick it. Picked covers are kept in ReadPort’s data folder; your library files are never changed.',
+  'settings.covers.where': 'Where to look',
+  'settings.covers.appleHint': 'Sharp store covers for ebooks and audiobooks, in many languages.',
+  'settings.covers.audibleHint': 'Audiobook covers as they are sold. Used for audiobooks only.',
+  'settings.covers.googleHint':
+    'A very large catalogue, matched by ISBN (and by title too, with an API key set on the server). Some covers are small.',
+  'settings.covers.openlibraryHint': 'An open, non-profit catalogue. Strongest for older books.',
+  'settings.covers.none':
+    'With no source chosen, a book is offered only its other format’s cover, and nothing is looked up online.',
+  'settings.covers.auto': 'Suggest covers automatically',
+  'settings.covers.autoHint':
+    'When a curator opens a book without a cover, look one up right away instead of waiting for Find a cover.',
 
   // Appearance (the interface-language picker uses the shared `language.*` keys)
   'settings.appearance.title': 'Appearance',

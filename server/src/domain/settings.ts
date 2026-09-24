@@ -19,6 +19,8 @@ const DEFAULTS: Settings = {
   alignPrecision: 'standard',
   autoAlign: true,
   importSavedAlignments: true,
+  coverSuggestions: false,
+  coverSources: ['apple', 'audible', 'google', 'openlibrary'],
   alignSpeedRatio: 0,
 };
 

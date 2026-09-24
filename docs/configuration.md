@@ -42,6 +42,7 @@ bundled `docker-compose.yml` reads.
 | `RP_PROXY_AUTH_HEADER`     | -                                  | Reverse-proxy SSO: header carrying the signed-in username (e.g. `x-authentik-username`). Empty = disabled. See docs/security.md.                                                                                                                                                                                                           |
 | `RP_PROXY_AUTH_SOURCES`    | -                                  | Comma-separated proxy IPs/CIDRs whose header is trusted (checked on the TCP peer). Required for proxy SSO.                                                                                                                                                                                                                                 |
 | `RP_PROXY_AUTH_ADMINS`     | -                                  | Comma-separated usernames (as sent by the proxy) that get the admin role. On an empty instance the first proxied user is admin regardless.                                                                                                                                                                                                 |
+| `RP_GOOGLE_BOOKS_KEY`      | unset                              | Optional Google Books API key for cover lookups. Without one, Google Books is asked by ISBN only; with one, by title and author too. `_FILE` works. Never shown in Settings, which every reader can see.                                                                                                                                   |
 | `RP_LOG_LEVEL`             | `info`                             | fatal/error/warn/info/debug/trace.                                                                                                                                                                                                                                                                                                         |
 | `RP_ORT_DIR`               | unset                              | Escape hatch: an extra directory to resolve `onnxruntime-node` from when the native runtime lives outside the app tree. Unset in every supported deployment - the image installs it where a plain import finds it.                                                                                                                         |
 | `PUID` / `PGID` / `TZ`     | `1000`/`1000`/`Etc/UTC`            | Container user mapping and timezone (entrypoint).                                                                                                                                                                                                                                                                                          |
@@ -69,19 +70,42 @@ not cost a container restart, so they live in the database only.
 
 ## In-app settings
 
-Seven keys, the whole of `settingsSchema`. `GET /api/settings` returns them
+Twelve keys, the whole of `settingsSchema`. `GET /api/settings` returns them
 with the list of those an environment variable has pinned; `PUT` writes the
 rest, admin only.
 
-| Setting           | Default    | Set in                               | Pinned by             |
-| ----------------- | ---------- | ------------------------------------ | --------------------- |
-| `defaultLanguage` | `en`       | Settings → Alignment → Language      | `RP_DEFAULT_LANGUAGE` |
-| `ebookDirs`       | none       | Settings → Libraries, and the wizard | `RP_EBOOK_DIRS`       |
-| `audiobookDirs`   | none       | Settings → Libraries, and the wizard | `RP_AUDIOBOOK_DIRS`   |
-| `alignmentDirs`   | none       | Settings → Libraries, and the wizard | `RP_ALIGNMENT_DIRS`   |
-| `alignPrecision`  | `standard` | Settings → Alignment                 | -                     |
-| `autoAlign`       | `true`     | Settings → Alignment, and the wizard | -                     |
-| `alignSpeedRatio` | `0`        | nowhere - the worker measures it     | -                     |
+| Setting                 | Default    | Set in                                  | Pinned by             |
+| ----------------------- | ---------- | --------------------------------------- | --------------------- |
+| `defaultLanguage`       | `en`       | Settings → Alignment → Language         | `RP_DEFAULT_LANGUAGE` |
+| `ebookDirs`             | none       | Settings → Libraries, and the wizard    | `RP_EBOOK_DIRS`       |
+| `audiobookDirs`         | none       | Settings → Libraries, and the wizard    | `RP_AUDIOBOOK_DIRS`   |
+| `alignmentDirs`         | none       | Settings → Libraries, and the wizard    | `RP_ALIGNMENT_DIRS`   |
+| `importSavedAlignments` | `true`     | Settings → Libraries → Alignment folder | -                     |
+| `coverSources`          | all four   | Settings → Libraries → Book covers      | -                     |
+| `coverSuggestions`      | `false`    | Settings → Libraries → Book covers      | -                     |
+| `publicUrl`             | none       | Settings → Sharing                      | -                     |
+| `apps`                  | none       | Settings → Connected apps               | -                     |
+| `alignPrecision`        | `standard` | Settings → Alignment                    | -                     |
+| `autoAlign`             | `true`     | Settings → Alignment, and the wizard    | -                     |
+| `alignSpeedRatio`       | `0`        | nowhere - the worker measures it        | -                     |
+
+### Covers for books without one
+
+A book's own cover comes from its file, or from the `cover.jpg` (or `.png`)
+beside it when the book has a folder of its own - Calibre's layout, and
+Audiobookshelf's. For a book with neither, a curator can pick one on the
+book's page, and ReadPort keeps it in the data volume (`found-covers/`); the
+library is never written.
+
+What is offered: the cover of the same book's other format, when it has one
+(nothing is asked of anyone for that), and what the catalogues ticked in
+`coverSources` have for the book's ISBN, title and first author - `apple`
+(Apple Books: sharp store covers in many languages), `audible` (audiobooks
+only), `google` (Google Books: by ISBN; by title too when `RP_GOOGLE_BOOKS_KEY`
+is set) and `openlibrary`. Untick all four and no cover lookup ever leaves the
+server. They are asked only when a curator presses Find a cover, unless
+`coverSuggestions` is on, when a curator opening a coverless book is shown
+what turned up straight away.
 
 `alignSpeedRatio` is how many seconds of audio this machine aligns per second
 of wall clock, and it is the only setting nobody is meant to touch: the Pairing

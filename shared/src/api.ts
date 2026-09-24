@@ -13,6 +13,9 @@ export type ScanState = z.infer<typeof scanStateSchema>;
 export const pairStatusSchema = z.enum(['candidate', 'auto', 'confirmed', 'rejected']);
 export type PairStatus = z.infer<typeof pairStatusSchema>;
 
+/** The catalogues a cover can be looked up in, in the order they are offered to an admin. */
+export const COVER_SOURCES = ['apple', 'audible', 'google', 'openlibrary'] as const;
+
 export const bookSummarySchema = z.object({
   id: z.string(),
   kind: bookKindSchema,
@@ -29,6 +32,8 @@ export const bookSummarySchema = z.object({
   durationMs: z.number().nullable(),
   sizeBytes: z.number(),
   hasCover: z.boolean(),
+  /** Which version of the cover to ask for; changes when the cover does. */
+  coverV: z.string().optional(),
   addedAt: z.string(),
   /**
    * Hidden from everyone but the admins: when, and by whom (their name as
@@ -37,6 +42,12 @@ export const bookSummarySchema = z.object({
    * summary cached by an older build still parses.
    */
   hidden: z.object({ at: z.string(), by: z.string().nullable() }).nullable().optional(),
+  /**
+   * The cover shown is one a curator picked for a book whose file had none,
+   * not the book's own - and where it came from: the book's other format,
+   * or a catalogue. Absent for a book's own cover.
+   */
+  coverFound: z.enum(['edition', ...COVER_SOURCES]).optional(),
   pair: z
     .object({
       pairId: z.string(),
@@ -431,9 +442,45 @@ export const settingsSchema = z.object({
    */
   importSavedAlignments: z.boolean().default(true),
   /**
+   * Look for a cover for every book without one, when a curator opens its
+   * page: its ISBN, title and author are asked of the sources below. Off,
+   * nothing is asked until a curator presses Find a cover - which is why it
+   * is off until an admin turns it on.
+   */
+  coverSuggestions: z.boolean().default(false),
+  /**
+   * Where covers are looked for. None at all: a book is offered only its
+   * other format's cover, and nothing is ever asked of anyone.
+   */
+  coverSources: z
+    .array(z.enum(COVER_SOURCES))
+    .max(COVER_SOURCES.length)
+    .default([...COVER_SOURCES]),
+  /**
    * Measured throughput: seconds of audio aligned per second of wall clock.
    * Written by the worker from real runs, never guessed; 0 = not yet known.
    */
   alignSpeedRatio: z.number().min(0).max(500).default(0),
 });
 export type Settings = z.infer<typeof settingsSchema>;
+export type CoverSourceName = (typeof COVER_SOURCES)[number];
+
+/**
+ * A book's description as something to lay out rather than a string to
+ * print: what the file wrote as HTML or Markdown, kept to the few shapes a
+ * description has - paragraphs, emphasis, lists, quotes, links - and
+ * nothing that could run. The server turns the file's text into this; the
+ * page renders it as elements, never as markup.
+ */
+export type RichMark = 'b' | 'i' | 'u' | 's' | 'code' | 'sup' | 'sub';
+export type RichInline =
+  | { t: 'text'; v: string }
+  | { t: 'br' }
+  | { t: RichMark; c: RichInline[] }
+  | { t: 'a'; href: string; c: RichInline[] };
+export type RichBlock =
+  | { t: 'p'; c: RichInline[] }
+  | { t: 'h'; c: RichInline[] }
+  | { t: 'ul' | 'ol'; items: RichBlock[][] }
+  | { t: 'quote'; c: RichBlock[] }
+  | { t: 'hr' };

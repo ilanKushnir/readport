@@ -37,6 +37,7 @@ import { seesHidden, setHidden, visiblePairSql, visibleSql } from '../../library
 import { realResolveWithin } from '../../util/paths.js';
 import { zipStream, type ZipEntry } from '../../util/zip.js';
 import { translationTitles } from '../../translations/editions.js';
+import { richDescription } from '../../library/rich-text.js';
 
 /**
  * @param sees whether the person asking may see hidden books (see
@@ -111,6 +112,9 @@ export function bookRowToSummary(
           : null,
       }
     : null;
+  const cover = row.cover_path
+    ? fs.statSync(String(row.cover_path), { throwIfNoEntry: false })
+    : undefined;
   return {
     id,
     kind: String(row.kind) as BookSummary['kind'],
@@ -125,7 +129,14 @@ export function bookRowToSummary(
     scanError: (row.scan_error as string) ?? null,
     durationMs: (row.duration_ms as number) ?? null,
     sizeBytes: Number(row.size_bytes ?? 0),
-    hasCover: Boolean(row.cover_path) && fs.existsSync(String(row.cover_path)),
+    hasCover: Boolean(cover),
+    // Changes whenever the cover file does, so a new cover is not hidden
+    // behind the old one's cached copy.
+    coverV: cover ? Math.round(cover.mtimeMs).toString(36) : undefined,
+    coverFound:
+      row.found_cover_path && row.cover_path === row.found_cover_path
+        ? ((row.found_cover_source as BookSummary['coverFound']) ?? 'edition')
+        : undefined,
     addedAt: String(row.added_at),
     hidden,
     pair,
@@ -610,6 +621,9 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
       // The same book in other languages, as this reader may see them.
       translations: translationTitles(ctx, req.user!.id, id, seesHidden(req)),
       description: meta.description ?? null,
+      // The same description, as blocks to lay out: its HTML or Markdown
+      // read, and nothing that could run kept (library/rich-text.ts).
+      about: richDescription(meta.description ?? null),
       direction: meta.direction ?? 'ltr',
       totalChars: meta.totalChars ?? null,
       chapters: chapters.map((c) => ({

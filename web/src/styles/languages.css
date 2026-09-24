@@ -3,30 +3,33 @@
    the truth - so it sits small and never carries meaning alone. Imported by
    the library page and the sidebar's Browse groups. */
 
-/* The format control beside it keeps whole words at every width. A phone
-   rule further down trims every segmented control's padding so four labels
-   fit on the Notes page, and it left "All" three letters wide between two
-   padded neighbours here. */
+/* What to show, in one row: the format control at the start - every
+   segment with its icon, its label in the middle of it - and the language
+   button at the end. */
+.toolbar__filters {
+  display: flex;
+  align-items: stretch;
+  gap: var(--sp-2);
+  min-width: 0;
+}
 .toolbar .kind-seg > button {
+  justify-content: center;
   padding-inline: 12px;
 }
-.toolbar .kind-seg > button:first-child {
-  min-width: 56px;
-}
 
-/* One language at a time: a button that reads like the control beside it,
-   stretched to the height of the row it is in, and a card of languages
-   that opens under it. */
+/* One language at a time: a button the height of the format control, the
+   globe or the chosen language's flag, that opens the languages in a
+   floating panel (LanguagePicker.tsx). */
 .langpick {
-  position: relative;
   flex: 0 0 auto;
-  align-self: stretch;
   display: flex;
 }
 .langpick__btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 7px;
+  min-width: 44px;
   min-height: 44px;
   padding: 0 12px;
   border: 1px solid var(--rp-border);
@@ -75,7 +78,7 @@
   line-height: 1;
 }
 .langpick__flag {
-  font-size: 16px;
+  font-size: 17px;
 }
 .langpick__code {
   display: none;
@@ -83,142 +86,121 @@
   font-weight: 700;
   letter-spacing: 0.04em;
 }
-.langpick__chev {
-  margin-inline-start: -1px;
+.langpick__bubble {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--rp-surface);
+  font-size: 18px;
+  color: var(--rp-text-soft);
+}
+.langpick__count {
+  color: var(--rp-text-soft);
+  font-size: 13px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
 }
 
-.langpick__pop {
-  position: absolute;
-  top: calc(100% + 6px);
-  inset-inline-start: 0;
-  z-index: 30;
-  width: max-content;
-  min-width: 236px;
-  max-width: min(320px, calc(100vw - 32px));
-  max-height: min(60vh, 440px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 6px;
-  border: 1px solid var(--rp-border);
-  border-radius: 14px;
-  background: var(--rp-surface-raised);
-  box-shadow: var(--rp-shadow-2);
-  animation: langpick-in var(--rp-duration-quick) var(--rp-ease);
+/* The panel: the reader's search panel (.spot, immersive.css), narrower,
+   with the library's languages under its field. */
+.langspot {
+  width: min(440px, calc(100% - 24px));
 }
-.langpick__pop.is-end {
-  inset-inline-start: auto;
-  inset-inline-end: 0;
-}
-.langpick__title {
-  margin: 6px 10px 6px;
+.langspot__title {
+  margin: 4px 10px 6px;
   font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--rp-text-soft);
 }
-.langpick__item {
+.langspot__list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.langspot__item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  width: 100%;
-  min-height: 44px;
-  padding: 0 10px;
-  border: 0;
-  border-radius: 10px;
-  background: transparent;
-  color: var(--rp-text);
-  font: inherit;
-  font-size: 14.5px;
-  font-weight: 500;
-  text-align: start;
+  gap: 12px;
+  min-height: 52px;
+  padding: 6px 10px;
+  border-radius: 12px;
   cursor: pointer;
 }
-.langpick__item:focus-visible {
-  outline: none;
-  box-shadow: inset 0 0 0 2px var(--rp-primary);
-}
-@media (hover: hover) {
-  .langpick__item:hover {
-    background: var(--rp-surface);
-  }
-}
-.langpick__item[aria-checked='true'] {
-  background: color-mix(in srgb, var(--rp-primary) 10%, transparent);
-  font-weight: 650;
-}
-.langpick__bubble {
-  display: inline-grid;
-  place-items: center;
-  flex: none;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
+.langspot__item.is-active {
   background: var(--rp-surface);
-  font-size: 16px;
-  color: var(--rp-text-soft);
 }
-.langpick__item[aria-checked='true'] .langpick__bubble {
+.langspot__item[aria-selected='true'] {
+  background: color-mix(in srgb, var(--rp-primary) 10%, transparent);
+}
+.langspot__item[aria-selected='true'].is-active {
+  background: color-mix(in srgb, var(--rp-primary) 16%, transparent);
+}
+.langspot__item[aria-selected='true'] .langpick__bubble {
   background: color-mix(in srgb, var(--rp-primary) 16%, var(--rp-surface));
   color: var(--rp-interactive);
 }
-.langpick__label {
+.langspot__names {
   flex: 1;
   min-width: 0;
+  display: grid;
+}
+.langspot__name,
+.langspot__own {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.langpick__count {
-  color: var(--rp-text-soft);
-  font-size: 12.5px;
-  font-weight: 400;
-  font-variant-numeric: tabular-nums;
+.langspot__name {
+  font-size: 15px;
+  font-weight: 550;
 }
-.langpick__tick {
+.langspot__item[aria-selected='true'] .langspot__name {
+  font-weight: 650;
+}
+.langspot__own {
+  font-size: 12.5px;
+  color: var(--rp-text-soft);
+}
+.langspot__tick {
   flex: none;
   color: var(--rp-interactive);
   visibility: hidden;
 }
-.langpick__item[aria-checked='true'] .langpick__tick {
+.langspot__item[aria-selected='true'] .langspot__tick {
   visibility: visible;
 }
-@keyframes langpick-in {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .langpick__pop {
-    animation: none;
-  }
-}
 @media (forced-colors: active) {
-  .langpick__item[aria-checked='true'] {
+  .langspot__item.is-active,
+  .langspot__item[aria-selected='true'] {
     outline: 1px solid Highlight;
   }
 }
 
-/* A phone: the format control fills the row, words only, and the language
-   button sits at its end as a glyph - the globe, or the chosen language's
-   flag and code. Its name stays its accessible label. */
-@media (max-width: 480px) {
+/* A phone: the format control fills the row up to the language button,
+   and the button is a glyph - the globe, or the chosen language's flag and
+   code. Its name stays its accessible label. */
+@media (max-width: 640px) {
+  .toolbar__filters {
+    flex: 1 1 100%;
+  }
   .toolbar .kind-seg {
     flex: 1 1 auto;
+    min-width: 0;
   }
   .toolbar .kind-seg > button {
-    padding-inline: 8px;
-  }
-  .toolbar .kind-seg > button > svg {
-    display: none;
-  }
-  .toolbar .kind-seg > button:first-child {
-    min-width: 48px;
+    gap: 5px;
+    padding-inline: 6px;
   }
   .langpick__btn {
     gap: 5px;
-    padding: 0 10px;
+    padding: 0 12px;
   }
   .langpick__name {
     display: none;
@@ -227,8 +209,12 @@
     display: inline;
   }
 }
-/* The narrowest phones: the chosen language's flag alone, or the row
-   would not hold the button beside the format control. */
+/* A row too narrow for every label beside its icon keeps the words
+   (LibraryPage measures it). */
+.toolbar .kind-seg[data-tight] > button > svg {
+  display: none;
+}
+/* The narrowest phones: the chosen language's flag alone. */
 @media (max-width: 374px) {
   .langpick__btn.is-on .langpick__code {
     display: none;

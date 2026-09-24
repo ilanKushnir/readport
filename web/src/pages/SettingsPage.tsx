@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { DEFAULT_UI_LOCALE, suggestUiLocale, type Job, type Settings } from '@readport/shared';
+import {
+  COVER_SOURCES,
+  DEFAULT_UI_LOCALE,
+  suggestUiLocale,
+  type CoverSourceName,
+  type Job,
+  type Settings,
+} from '@readport/shared';
 import { api, ApiError, failureMessage } from '../api/client';
 import { useSession } from '../state/session';
 import { useToast } from '../components/ui';
@@ -22,6 +29,7 @@ import { openWhatsNew } from '../whatsnew/open';
 import { Link } from 'react-router-dom';
 import { folderApi, LibraryFolders } from '../components/LibraryFolders';
 import { AccountMenu } from '../components/AccountMenu';
+import { COVER_SOURCE_NAME } from '../lib/cover';
 
 interface DashboardStats {
   ebooks: number;
@@ -351,6 +359,13 @@ export function SettingsPage() {
               {t('settings.libraries.rescanNow')}
             </button>
           </div>
+        )}
+        {isAdmin && (
+          <CoverSources
+            sources={s.coverSources}
+            auto={s.coverSuggestions}
+            onSave={(patch) => void save(patch)}
+          />
         )}
       </section>
 
@@ -879,6 +894,70 @@ function LibrariesEditor({
           {saving ? t('common.saving') : t('settings.libraries.saveAndRescan')}
         </button>
       )}
+    </div>
+  );
+}
+
+const COVER_SOURCE_HINT: Record<CoverSourceName, MessageKey> = {
+  apple: 'settings.covers.appleHint',
+  audible: 'settings.covers.audibleHint',
+  google: 'settings.covers.googleHint',
+  openlibrary: 'settings.covers.openlibraryHint',
+};
+
+/**
+ * Where covers for books without one are looked up, and whether that
+ * happens by itself. Each source is a choice an admin makes knowingly -
+ * what it is good at is said beside it - and choosing none means covers
+ * come only from a book's other format, with nothing asked of anyone.
+ */
+function CoverSources({
+  sources,
+  auto,
+  onSave,
+}: {
+  sources: readonly CoverSourceName[];
+  auto: boolean;
+  onSave: (patch: Partial<Settings>) => void;
+}) {
+  const t = useT();
+  const on = new Set(sources);
+  const toggle = (source: CoverSourceName) =>
+    onSave({
+      coverSources: COVER_SOURCES.filter((x) => (x === source ? !on.has(x) : on.has(x))),
+    });
+  return (
+    <div className="cover-sources">
+      <h3 className="settings-h3">{t('settings.covers.title')}</h3>
+      <p className="hint">{t('settings.covers.lede')}</p>
+      <fieldset className="cover-sources__list">
+        <legend className="cover-sources__legend">{t('settings.covers.where')}</legend>
+        {COVER_SOURCES.map((source) => (
+          <label key={source} className="cover-source">
+            <input type="checkbox" checked={on.has(source)} onChange={() => toggle(source)} />
+            <span>
+              <span className="cover-source__name">{COVER_SOURCE_NAME[source]}</span>
+              <span className="hint">{t(COVER_SOURCE_HINT[source])}</span>
+            </span>
+          </label>
+        ))}
+      </fieldset>
+      {on.size === 0 && <p className="hint">{t('settings.covers.none')}</p>}
+      <label className="rs-toggle" style={{ maxWidth: 620 }}>
+        <span>
+          {t('settings.covers.auto')}
+          <span className="hint" style={{ display: 'block' }}>
+            {t('settings.covers.autoHint')}
+          </span>
+        </span>
+        <input
+          type="checkbox"
+          role="switch"
+          disabled={on.size === 0}
+          checked={auto && on.size > 0}
+          onChange={(e) => onSave({ coverSuggestions: e.target.checked })}
+        />
+      </label>
     </div>
   );
 }

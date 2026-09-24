@@ -10,8 +10,18 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { type BookSummary } from '@readport/shared';
+import { coverSrc } from '../lib/cover';
 import { useT } from '../i18n';
 import { IconClose } from './icons';
+import {
+  dragDismisses,
+  dragOffset,
+  NARROW_SHEET,
+  SHEET_EASE_IN,
+  SHEET_EASE_OUT,
+  SHEET_EXIT_MS,
+  SHEET_SETTLE_MS,
+} from './sheetMotion';
 import { Art, type ArtName } from './Art';
 import clothOchre from '../assets/art/cloth-ochre.webp';
 import clothOlive from '../assets/art/cloth-olive.webp';
@@ -131,6 +141,27 @@ export function useFocusTrap(ref: { current: HTMLElement | null }, onClose: () =
   }, [ref]);
 }
 
+/**
+ * The open sheet's own way of closing: animated, as its close button's is.
+ * For a control inside a sheet that closes it as a side effect - a link to a
+ * shelf, say - which would otherwise pull it off the screen in one frame.
+ */
+const SheetCloseContext = createContext<(() => void) | null>(null);
+export const useSheetClose = () => useContext(SheetCloseContext);
+
+const reducedMotion = () =>
+  typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const narrowSheet = () => typeof matchMedia === 'function' && matchMedia(NARROW_SHEET).matches;
+
+/**
+ * A bottom sheet on a phone, a card at the corner on anything wider.
+ *
+ * On a phone it rises out of the bottom edge and goes back down into it -
+ * from the close button, Escape, a tap outside, or a finger: the handle and
+ * the title row can be dragged, and a sheet let go of far enough down, or
+ * flicked, closes; anything less settles back. The owner's `onClose` runs
+ * once it has gone, so the owner never has to know it moved at all.
+ */
 export function Sheet({
   title,
   onClose,
@@ -145,11 +176,110 @@ export function Sheet({
 }) {
   const t = useT();
   const ref = useRef<HTMLDivElement>(null);
-  useFocusTrap(ref, onClose);
+  const backdrop = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const leaving = useRef(false);
+
+  const close = useCallback(() => {
+    if (leaving.current) return;
+    leaving.current = true;
+    const sheet = ref.current;
+    if (!sheet || reducedMotion()) {
+      onCloseRef.current();
+      return;
+    }
+    const narrow = narrowSheet();
+    // Whatever it is doing - arriving, or following a finger - it leaves
+    // from where it is now.
+    sheet.style.animation = 'none';
+    sheet.style.transition = `transform ${SHEET_EXIT_MS}ms ${SHEET_EASE_OUT}, opacity ${SHEET_EXIT_MS}ms linear`;
+    void sheet.offsetHeight;
+    sheet.style.transform = narrow ? 'translateY(100%)' : 'translateY(24px)';
+    if (!narrow) sheet.style.opacity = '0';
+    const scrim = backdrop.current;
+    if (scrim) {
+      scrim.style.animation = 'none';
+      scrim.style.pointerEvents = 'none';
+      scrim.style.transition = `opacity ${SHEET_EXIT_MS}ms linear`;
+      scrim.style.opacity = '0';
+    }
+    window.setTimeout(() => onCloseRef.current(), SHEET_EXIT_MS);
+  }, []);
+
+  useFocusTrap(ref, close);
   useScrollLock();
+
+  // A finger on the handle or the title row. Followed directly - no React
+  // render per move - and judged on letting go (sheetMotion.ts).
+  const drag = useRef<{
+    id: number;
+    y: number;
+    lastY: number;
+    lastT: number;
+    speed: number;
+  } | null>(null);
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (e.button !== 0 || leaving.current || !narrowSheet()) return;
+    if ((e.target as Element).closest('button, a, input, select, textarea, [role="tab"]')) return;
+    const sheet = ref.current;
+    if (!sheet) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    drag.current = {
+      id: e.pointerId,
+      y: e.clientY,
+      lastY: e.clientY,
+      lastT: e.timeStamp,
+      speed: 0,
+    };
+    sheet.style.animation = 'none';
+    sheet.style.transition = 'none';
+    if (backdrop.current) {
+      backdrop.current.style.animation = 'none';
+      backdrop.current.style.transition = 'none';
+    }
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    const d = drag.current;
+    const sheet = ref.current;
+    if (!d || e.pointerId !== d.id || !sheet) return;
+    const dy = dragOffset(e.clientY - d.y);
+    sheet.style.transform = `translateY(${dy}px)`;
+    if (backdrop.current)
+      backdrop.current.style.opacity = String(1 - Math.max(0, dy) / sheet.offsetHeight);
+    const dt = e.timeStamp - d.lastT;
+    if (dt > 0) d.speed = (e.clientY - d.lastY) / dt;
+    d.lastY = e.clientY;
+    d.lastT = e.timeStamp;
+  };
+  const onPointerUp = (e: React.PointerEvent) => {
+    const d = drag.current;
+    const sheet = ref.current;
+    if (!d || e.pointerId !== d.id || !sheet) return;
+    drag.current = null;
+    // A long pause before letting go is not a flick, whatever the last move was.
+    const speed = e.timeStamp - d.lastT > 90 ? 0 : d.speed;
+    if (dragDismisses(e.clientY - d.y, sheet.offsetHeight, speed)) {
+      close();
+      return;
+    }
+    sheet.style.transition = `transform ${SHEET_SETTLE_MS}ms ${SHEET_EASE_IN}`;
+    sheet.style.transform = '';
+    if (backdrop.current) {
+      backdrop.current.style.transition = `opacity ${SHEET_SETTLE_MS}ms linear`;
+      backdrop.current.style.opacity = '';
+    }
+  };
+  const handle = {
+    onPointerDown,
+    onPointerMove,
+    onPointerUp,
+    onPointerCancel: onPointerUp,
+  };
+
   return createPortal(
     <>
-      <div className="sheet-backdrop" onClick={onClose} aria-hidden="true" />
+      <div ref={backdrop} className="sheet-backdrop" onClick={close} aria-hidden="true" />
       <div
         className="sheet"
         role="dialog"
@@ -158,14 +288,19 @@ export function Sheet({
         tabIndex={-1}
         ref={ref}
       >
-        <div className="sheet__grab" aria-hidden="true" />
-        <div className={`sheet__header${head ? ' sheet__header--tabs' : ''}`}>
+        <div className="sheet__grab" aria-hidden="true" {...handle} />
+        <div
+          className={`sheet__header${head ? ' sheet__header--tabs' : ''}`}
+          {...(head ? {} : handle)}
+        >
           {head ?? <span className="sheet__title">{title}</span>}
-          <button className="icon-btn" onClick={onClose} aria-label={t('common.close')}>
+          <button className="icon-btn" onClick={close} aria-label={t('common.close')}>
             <IconClose />
           </button>
         </div>
-        <div className="sheet__body">{children}</div>
+        <SheetCloseContext.Provider value={close}>
+          <div className="sheet__body">{children}</div>
+        </SheetCloseContext.Provider>
       </div>
     </>,
     document.body,
@@ -309,7 +444,7 @@ export function Cover({
   book,
   className,
 }: {
-  book: Pick<BookSummary, 'id' | 'title' | 'author' | 'hasCover' | 'kind'>;
+  book: Pick<BookSummary, 'id' | 'title' | 'author' | 'hasCover' | 'kind' | 'coverV'>;
   className?: string;
 }) {
   const [failed, setFailed] = useState(false);
@@ -328,7 +463,7 @@ export function Cover({
         // every place a cover appears.
         className={`cover-img ${loaded ? 'is-loaded' : ''} ${className ?? ''}`}
         style={{ backgroundColor: tint }}
-        src={`/api/books/${book.id}/cover`}
+        src={coverSrc(book)}
         alt=""
         loading="lazy"
         decoding="async"

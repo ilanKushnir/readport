@@ -133,6 +133,8 @@ await check('a selection is shown as the other language has it', async () => {
   // The paragraph it matches is marked on the page behind.
   assert.equal(await page.evaluate(() => CSS.highlights.get('rp-peek')?.size), 1);
   await page.keyboard.press('Escape');
+  // The sheet slides away first; the mark goes with it.
+  await page.waitForSelector('.peek', { state: 'detached' });
   assert.equal(await page.evaluate(() => CSS.highlights.get('rp-peek')?.size ?? 0), 0);
 });
 

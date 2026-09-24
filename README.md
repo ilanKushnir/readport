@@ -108,6 +108,10 @@ read-along only works inside ReadPort.
   compared only with yourself.
 - **Highlights you can hand over** - every mark by book and chapter, sorted
   by place or colour, exported as a clean PDF with the cover on the front.
+- **A cover for every book** - one without a cover is offered its other
+  format's, or what Apple Books, Audible, Google Books or Open Library have
+  for it, from the catalogues an admin chose. A curator picks; ReadPort keeps
+  it, and the library's files stay exactly as they were.
 - **The apps beside it** - Calibre-Web Automated, Audiobookshelf, Shelfmark,
   ReadMeABook, Kavita or anything else, one tap away under the shelves.
 
@@ -161,8 +165,9 @@ The published image is **amd64 only** - on arm64, build from source.
 
 No library management, no metadata editing, no renaming, no transcoding, no DRM
 removal, no acquiring books. No PDF, MOBI or comics. No cloud, no account, no
-telemetry - the single outbound request in the whole app is the optional model
-download. PWA install needs HTTPS, so that part wants a reverse proxy.
+telemetry - the only outbound requests in the whole app are the optional model
+download and the cover lookups a curator asks for, to the catalogues an admin
+chose. PWA install needs HTTPS, so that part wants a reverse proxy.
 
 ## Documentation
 

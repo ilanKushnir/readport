@@ -6,6 +6,7 @@ import {
   type TrackInfo,
   type Locator,
   type TranslationTitle,
+  type RichBlock,
 } from '@readport/shared';
 
 export interface BookDetail {
@@ -13,6 +14,8 @@ export interface BookDetail {
   /** The same book in other languages. Optional: a detail cached by an older build has none. */
   translations?: TranslationTitle[];
   description: string | null;
+  /** The description laid out: paragraphs, emphasis, lists. Absent from an older server. */
+  about?: RichBlock[] | null;
   direction: 'ltr' | 'rtl';
   totalChars: number | null;
   chapters: ChapterInfo[];

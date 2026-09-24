@@ -292,13 +292,33 @@ strict allowlist over a spec-compliant HTML parser (parse5):
   thumbnails, a cover extraction's temporary file - lives under its own data
   and cache volumes. The aligner itself writes nothing at all while it works:
   the narration is streamed through memory in chunks, never staged on disk.
-- **The alignment model is the only thing fetched from the network, and its
-  URL is a constant in the image rather than a setting.** No web session can
-  aim the downloader anywhere else; an admin can start the download or delete
-  the files, and that is the whole of it. The transfer is HTTPS to the
-  published repository and the finished file is accepted on its size rather
-  than a signature, so the trust here is trust in that repository and in TLS -
-  one more reason nothing is downloaded until someone asks for it.
+- **Two things ever reach out to the network, and neither by itself.** The
+  first is the alignment model, whose URL is a constant in the image rather
+  than a setting. No web session can aim the downloader anywhere else; an
+  admin can start the download or delete the files, and that is the whole of
+  it. The transfer is HTTPS to the published repository and the finished file
+  is accepted on its size rather than a signature, so the trust here is trust
+  in that repository and in TLS - one more reason nothing is downloaded until
+  someone asks for it.
+- **The second is a cover lookup, for a book that has none.** It happens when
+  a curator presses Find a cover, or - only once an admin has turned on
+  automatic suggestions - when a curator opens such a book. What is sent is
+  the book's title, first author and ISBN, to the catalogues an admin ticked
+  (Apple Books, Audible, Google Books, Open Library; any or none - with none,
+  nothing is ever asked). The hosts are a fixed list in the code
+  (`server/src/covers/fetch.ts`), HTTPS only, with no user, password or port
+  in the address; redirects are followed one at a time by ReadPort itself and
+  every hop is checked against the same list, so no answer can send the
+  server into its own network or to a metadata service. Each answer has a few
+  seconds and a size cap, and stops being read the moment it passes it. A
+  picture is believed about nothing - not its content type, not its extension
+  - until its own bytes say it is a JPEG, PNG or WebP big enough to be a
+    cover; an SVG is only ever accepted from the book's own other format. The
+    page is shown pictures from ReadPort's own disk, sent with `nosniff` and
+    `default-src 'none'`, never linked from where they were found. A picked
+    cover is written to the data volume; the library itself is never written.
+    An optional Google Books key is read from the environment and never sent to
+    a browser.
 - `ffprobe` and `ffmpeg` are the only subprocesses left. Both are invoked with
   argument arrays and no shell - `execFile` for metadata and cover extraction,
   `spawn` with `-nostdin` and no stdin for the decode stream - always on

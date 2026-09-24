@@ -72,6 +72,12 @@ const envSchema = z.object({
   /** Usernames (from the header) that are admins. */
   proxyAuthAdmins: z.array(z.string()).default([]),
   logLevel: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+  /**
+   * A Google Books API key (RP_GOOGLE_BOOKS_KEY / _FILE). Optional: without
+   * one, Google Books is asked for covers by ISBN only; with one, by title
+   * and author too. Kept out of the settings, which every reader can see.
+   */
+  googleBooksKey: z.string().trim().min(10).max(200).optional(),
 });
 
 export type EnvConfig = z.infer<typeof envSchema> & {
@@ -137,6 +143,7 @@ export function loadConfig(overrides: Partial<Record<string, unknown>> = {}): En
     clientIpSources: splitDirs(readEnv('RP_CLIENT_IP_SOURCES')),
     proxyAuthAdmins: splitDirs(readEnv('RP_PROXY_AUTH_ADMINS')),
     logLevel: readEnv('RP_LOG_LEVEL'),
+    googleBooksKey: readEnv('RP_GOOGLE_BOOKS_KEY'),
   };
   const envPinned = Object.entries(raw)
     .filter(([, v]) => v !== undefined)

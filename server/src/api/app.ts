@@ -20,6 +20,7 @@ import { registerAnnotationRoutes } from './routes/annotations.js';
 import { registerShelfRoutes } from './routes/shelves.js';
 import { registerPairRoutes } from './routes/pairs.js';
 import { registerTranslationRoutes } from './routes/translations.js';
+import { registerCoverRoutes } from './routes/covers.js';
 import { registerJobRoutes, registerOfflineRoutes, registerSettingsRoutes } from './routes/misc.js';
 import { registerModelRoutes } from './routes/models.js';
 import { registerPreflightRoutes } from './routes/preflight.js';
@@ -311,6 +312,7 @@ export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyIn
   registerShelfRoutes(app, ctx);
   registerPairRoutes(app, ctx);
   registerTranslationRoutes(app, ctx);
+  registerCoverRoutes(app, ctx);
   registerJobRoutes(app, ctx);
   registerSettingsRoutes(app, ctx);
   registerKeyRoutes(app, ctx);

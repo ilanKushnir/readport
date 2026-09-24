@@ -18,7 +18,7 @@ import { resumeInterruptedDownloads } from './offline/downloads';
 import { FriendsPage } from './pages/FriendsPage';
 import { ShelvesProvider, useShelves } from './state/shelves';
 import { FacetsProvider } from './state/facets';
-import { Drawer, Sheet, ToastProvider } from './components/ui';
+import { Drawer, Sheet, ToastProvider, useSheetClose } from './components/ui';
 import { Sidebar } from './components/Sidebar';
 import {
   IconChevronRight,
@@ -98,16 +98,21 @@ function useWideShell(): boolean {
 function ShelfOverlay({ onClose }: { onClose: () => void }) {
   const t = useT();
   const narrow = !useWideShell();
-  const body = <Sidebar onNavigate={onClose} />;
   return narrow ? (
     <Sheet title={t('nav.shelves')} onClose={onClose}>
-      {body}
+      <SheetShelves />
     </Sheet>
   ) : (
     <Drawer title={t('nav.shelves')} onClose={onClose}>
-      {body}
+      <Sidebar onNavigate={onClose} />
     </Drawer>
   );
+}
+
+/** The shelves in the phone's sheet: choosing one slides the sheet away as the shelf opens behind it. */
+function SheetShelves() {
+  const close = useSheetClose();
+  return <Sidebar onNavigate={close ?? undefined} />;
 }
 
 /**
@@ -355,8 +360,12 @@ function Shell() {
             className="tabbar__shelves"
             onClick={() => setOverlay(true)}
             aria-haspopup="dialog"
+            aria-expanded={overlay}
           >
-            <IconShelf size={18} /> {t('nav.shelves')}
+            <span className="tabbar__tile">
+              <IconShelf size={18} />
+            </span>{' '}
+            {t('nav.shelves')}
           </button>
           {nav}
         </nav>

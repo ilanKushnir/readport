@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { type Annotation, type BookSummary } from '@readport/shared';
+import { coverSrc } from '../lib/cover';
 import { IconBookmark, ReadPortMark } from '../components/icons';
 import { useT } from '../i18n';
 import { useFormat } from '../i18n/useFormat';
@@ -87,7 +88,7 @@ export function ExportDocument({
             <span className="print-doc__coverwrap">
               <img
                 className="print-doc__cover"
-                src={`/api/books/${book.id}/cover`}
+                src={coverSrc(book)}
                 alt=""
                 decoding="sync"
                 onLoad={onCoverReady}

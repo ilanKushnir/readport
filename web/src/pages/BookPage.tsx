@@ -1,14 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   BOOK_LANGUAGES,
+  type RichBlock,
   type AudioLocator,
   type BookSummary,
   type EbookLocator,
 } from '@readport/shared';
 import { api, ApiError, failureMessage, isOffline } from '../api/client';
 import { type Annotation, type BookDetail, type ResolveResponse } from '../lib/types';
-import { Cover, EmptyState, Sheet, useToast } from '../components/ui';
+import { EmptyState, Sheet, useToast } from '../components/ui';
 import { AddToSheet } from '../components/AddToSheet';
 import { HiddenMark } from '../components/HiddenMark';
 import { BookFriendsRow } from './FriendsPage';
@@ -53,9 +54,12 @@ import {
 } from '../offline/downloads';
 import { bookAudioSupport } from '../lib/audioSupport';
 import { ambientColorFromImage } from '../lib/ambient';
+import { coverSrc } from '../lib/cover';
 import { recordCheckpoint } from '../progress/engine';
 import { useDownloadState } from '../offline/useDownloads';
 import { OtherLanguagesRow } from '../translations/OtherLanguagesRow';
+import { RichText } from '../components/RichText';
+import { CoverPicker } from '../components/CoverPicker';
 import { LinkTranslationsSheet } from '../translations/LinkTranslationsSheet';
 
 /** The paired edition, as far as the offline sheet needs to describe it. */
@@ -155,7 +159,7 @@ export function BookPage() {
   useEffect(() => {
     if (!detail?.book.hasCover) return;
     let cancelled = false;
-    ambientColorFromImage(`/api/books/${id}/cover`).then((c) => {
+    ambientColorFromImage(coverSrc(detail.book)).then((c) => {
       if (!cancelled && c) setAmbient(c);
     });
     return () => {
@@ -393,10 +397,16 @@ export function BookPage() {
     >
       <div className="book-hero__backdrop" aria-hidden="true" />
       <div className="book-hero">
-        <span className={`book-hero__coverwrap ${book.hidden ? 'is-hidden' : ''}`}>
-          <Cover book={book} className="book-hero__cover" />
+        <CoverPicker
+          book={book}
+          canCurate={user?.role === 'admin' || user?.role === 'curator'}
+          onChanged={(changed) => {
+            setDetail((d) => (d ? { ...d, book: changed } : d));
+            void refreshShelves();
+          }}
+        >
           {book.hidden && <HiddenMark />}
-        </span>
+        </CoverPicker>
         <div className="book-hero__body">
           <div className="book-hero__eyebrow">
             {isEbook ? <IconBookOpen size={14} /> : <IconHeadphones size={14} />}
@@ -747,10 +757,10 @@ export function BookPage() {
         </section>
       )}
 
-      {detail.description && (
-        <section style={{ maxWidth: '65ch' }}>
+      {(detail.about?.length || detail.description) && (
+        <section className="about" style={{ maxWidth: '65ch' }}>
           <h2 className="section-title">{t('library.book.about')}</h2>
-          <p style={{ color: 'var(--rp-text-soft)' }}>{detail.description}</p>
+          <About about={detail.about ?? null} description={detail.description} />
         </section>
       )}
       {detail.chapters.length === 0 && annotations.length === 0 && !detail.description && (
@@ -1250,6 +1260,58 @@ function OfflineSheet({
  * say otherwise. A rescan cannot undo what is set here; the file's own tag,
  * a verified pair and the prose all rank below it.
  */
+/** Past this height a description folds away behind More, so the chapters stay in reach. */
+const ABOUT_FOLD_EM = 15;
+
+/**
+ * A book's description: laid out from the HTML or Markdown its file carried
+ * (see components/RichText), or as it came from a server too old to lay it
+ * out. A long one is folded to its first lines with More beneath; the fold
+ * is measured, so a short description never offers a More that shows
+ * nothing.
+ */
+function About({ about, description }: { about: RichBlock[] | null; description: string | null }) {
+  const t = useT();
+  const body = useRef<HTMLDivElement | null>(null);
+  const [long, setLong] = useState(false);
+  const [open, setOpen] = useState(false);
+  useLayoutEffect(() => {
+    const el = body.current;
+    if (!el) return;
+    const measure = () => {
+      const em = parseFloat(getComputedStyle(el).fontSize) || 16;
+      setLong(el.scrollHeight > em * ABOUT_FOLD_EM * 1.2);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [about, description]);
+  return (
+    <>
+      <div
+        ref={body}
+        id="about-body"
+        className={`about__body${long && !open ? ' is-folded' : ''}`}
+        style={{ '--about-fold': `${ABOUT_FOLD_EM}em` } as React.CSSProperties}
+      >
+        {about ? <RichText blocks={about} /> : <p>{description}</p>}
+      </div>
+      {long && (
+        <button
+          type="button"
+          className="btn btn--ghost btn--sm about__more"
+          aria-expanded={open}
+          aria-controls="about-body"
+          onClick={() => setOpen((o) => !o)}
+        >
+          {open ? t('library.book.aboutLess') : t('library.book.aboutMore')}
+        </button>
+      )}
+    </>
+  );
+}
+
 function LanguageChip({
   book,
   canEdit,

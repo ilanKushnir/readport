@@ -128,32 +128,37 @@ step.
 
 ## Library & books
 
-| Method | Path                                  | Notes                                            |
-| ------ | ------------------------------------- | ------------------------------------------------ |
-| GET    | `/api/library?query&kind&filter&sort` | `{books, continueRail, scanActive}`              |
-| GET    | `/api/library?collapse=none`          | both halves of every pair, for the device shelf  |
-| POST   | `/api/books/:id/language`             | curator; `{language}` or `{language: null}`      |
-| GET    | `/api/library?filter=both-formats`    | one row per paired title (see Shelves)           |
-| GET    | `/api/library?filter=recently-added`  | arrivals of the last 30 days, capped at 60       |
-| GET    | `/api/library?facet=kind:value`       | one grouping the library itself carries          |
-| GET    | `/api/library?lang=he,en`             | only these languages; `unknown` for none         |
-| GET    | `/api/library?filter=hidden`          | admin; the books hidden from everyone else       |
-| POST   | `/api/books/:id/hidden`               | admin; `{hidden}` → `{book, ids}` (see below)    |
-| GET    | `/api/facets`                         | every grouping this library supports, counted    |
-| POST   | `/api/library/rescan`                 | admin                                            |
-| GET    | `/api/library/roots`                  | admin; the configured read-only roots            |
-| GET    | `/api/books/:id`                      | detail: chapters, tracks, pair, progress         |
-| GET    | `/api/books/:id/cover`                | image                                            |
-| GET    | `/api/books/:id/manifest`             | ebook derived manifest (spine/toc/pct math)      |
-| GET    | `/api/books/:id/chapter/:idx`         | sanitized chapter HTML fragment                  |
-| GET    | `/api/books/:id/sentences/:idx`       | sentence index (ids + char offsets)              |
-| GET    | `/api/books/:id/asset/*`              | sanitized-referenced images only                 |
-| GET    | `/api/books/:id/search?q`             | in-book text search                              |
-| GET    | `/api/books/:id/track/:idx`           | audio stream, HTTP Range                         |
-| GET    | `/api/books/:id/offline-manifest`     | URLs + sizes + integrity for the PWA download    |
-| GET    | `/api/books/:id/offline-switch`       | precomputed switch answers for that download     |
-| GET    | `/api/books/:id/export?track`         | export permission; the book's own file           |
-| GET    | `/api/books/:id/archive`              | export permission; an audiobook's files, one ZIP |
+| Method | Path                                         | Notes                                            |
+| ------ | -------------------------------------------- | ------------------------------------------------ |
+| GET    | `/api/library?query&kind&filter&sort`        | `{books, continueRail, scanActive}`              |
+| GET    | `/api/library?collapse=none`                 | both halves of every pair, for the device shelf  |
+| POST   | `/api/books/:id/language`                    | curator; `{language}` or `{language: null}`      |
+| GET    | `/api/library?filter=both-formats`           | one row per paired title (see Shelves)           |
+| GET    | `/api/library?filter=recently-added`         | arrivals of the last 30 days, capped at 60       |
+| GET    | `/api/library?facet=kind:value`              | one grouping the library itself carries          |
+| GET    | `/api/library?lang=he,en`                    | only these languages; `unknown` for none         |
+| GET    | `/api/library?filter=hidden`                 | admin; the books hidden from everyone else       |
+| POST   | `/api/books/:id/hidden`                      | admin; `{hidden}` → `{book, ids}` (see below)    |
+| GET    | `/api/facets`                                | every grouping this library supports, counted    |
+| POST   | `/api/library/rescan`                        | admin                                            |
+| GET    | `/api/library/roots`                         | admin; the configured read-only roots            |
+| GET    | `/api/books/:id`                             | detail: chapters, tracks, pair, progress         |
+| GET    | `/api/books/:id/cover`                       | image; `?v=` from the summary's `coverV`         |
+| GET    | `/api/books/:id/cover-suggestions`           | curator; `?look=1` asks the catalogues now       |
+| GET    | `/api/books/:id/cover-suggestions/:n/image`  | curator; candidate `n`, from ReadPort's disk     |
+| POST   | `/api/books/:id/cover-suggestions/:n/accept` | curator; → `{book, ids}`                         |
+| POST   | `/api/books/:id/cover-suggestions/dismiss`   | curator; nothing offered until asked again       |
+| DELETE | `/api/books/:id/found-cover`                 | curator; → `{book}`, coverless again             |
+| GET    | `/api/books/:id/manifest`                    | ebook derived manifest (spine/toc/pct math)      |
+| GET    | `/api/books/:id/chapter/:idx`                | sanitized chapter HTML fragment                  |
+| GET    | `/api/books/:id/sentences/:idx`              | sentence index (ids + char offsets)              |
+| GET    | `/api/books/:id/asset/*`                     | sanitized-referenced images only                 |
+| GET    | `/api/books/:id/search?q`                    | in-book text search                              |
+| GET    | `/api/books/:id/track/:idx`                  | audio stream, HTTP Range                         |
+| GET    | `/api/books/:id/offline-manifest`            | URLs + sizes + integrity for the PWA download    |
+| GET    | `/api/books/:id/offline-switch`              | precomputed switch answers for that download     |
+| GET    | `/api/books/:id/export?track`                | export permission; the book's own file           |
+| GET    | `/api/books/:id/archive`                     | export permission; an audiobook's files, one ZIP |
 
 **Hidden books.** An admin can hide a book from everyone but the admins
 signed in to ReadPort: not curators, and not API keys, even an admin's. To
@@ -169,6 +174,27 @@ summary carries `hidden: {at, by}` for an admin, and nothing is deleted:
 readers' progress, marks, shelves and recommendations are all there again
 when it is shown again. `/api/shelves` adds `hidden` (a count, per title) for
 admins.
+
+**Covers for books without one.** `GET …/cover-suggestions` answers
+`{state, auto, canLook, suggestions: [{n, source, title, author, width,
+height}]}`. `state` is `found`, `ask` (never looked up), `none` (looked, found
+nothing), `dismissed` (a curator said no) or `has-cover`. `source` is
+`edition` - the same book's other format, offered without asking anyone - or
+the catalogue it came from: `apple`, `audible`, `google`, `openlibrary`. Only
+the catalogues in the `coverSources` setting are asked, and a lookup is asked
+again after a fortnight or when a catalogue has been ticked since. `canLook`
+is false when none are. Accepting gives the cover to the book's other format
+too when that has none of its own; `ids` names every book that changed. A
+summary's `coverFound` says the cover shown is a picked one and where it came
+from; `coverV` changes whenever the cover file does, so a client that puts it
+in the cover's address never shows a stale one.
+
+A book's detail also carries `about`: its description as blocks to lay out -
+`{t: 'p' | 'h', c}` paragraphs and headings, `{t: 'ul' | 'ol', items}`,
+`{t: 'quote', c}` and `{t: 'hr'}`, with inline `text`, `br`, `b`, `i`, `u`,
+`s`, `code`, `sup`, `sub` and `a` (http, https and mailto only). It is made on
+the server from whatever the file wrote, HTML or Markdown, and holds nothing
+that could run; `description` keeps the text as the file had it.
 
 **The audiobook ZIP** is written as it is sent: stored rather than
 compressed, one pass over each file with its CRC in a data descriptor, the
@@ -729,10 +755,12 @@ round trip), `paths` (`dataDir`, `cacheDir`, `modelsDir` and the folder lists),
 the `alignments` summary described above, and a one-line `precedence` string
 saying which layer wins.
 
-There are seven settings: `defaultLanguage`, `ebookDirs`, `audiobookDirs`,
-`alignmentDirs`, `alignPrecision` (`standard` or `exact`), `autoAlign` and
-`alignSpeedRatio`. The first four can be pinned by environment variables and
-then appear in `envPinned`; the rest exist only here. One is readable but not
+There are twelve settings: `defaultLanguage`, `ebookDirs`, `audiobookDirs`,
+`alignmentDirs`, `importSavedAlignments`, `coverSources` (any of `apple`,
+`audible`, `google`, `openlibrary`), `coverSuggestions`, `publicUrl`, `apps`,
+`alignPrecision` (`standard` or `exact`), `autoAlign` and `alignSpeedRatio`.
+The first four can be pinned by environment variables and then appear in
+`envPinned`; the rest exist only here. One is readable but not
 settable: `alignSpeedRatio` is written by the worker from real runs, so a
 client that sends it is overwriting a measurement with a guess.
 

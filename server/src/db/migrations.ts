@@ -765,4 +765,28 @@ CREATE TABLE translation_alignments (
 );
 `,
   },
+  {
+    version: 25,
+    sql: `
+-- Covers for books whose files have none (covers/lookup.ts). A curator picks
+-- one - the book's other format's, or what Open Library or Apple's book
+-- search has - and it is kept on ReadPort's own data volume: the library is
+-- never written. It is only ever the fallback: indexing puts a book's own
+-- cover first whenever the file or its folder has one.
+ALTER TABLE books ADD COLUMN found_cover_path TEXT;
+ALTER TABLE books ADD COLUMN found_cover_source TEXT;
+
+-- What a lookup found for a book, and whether a curator said no to it: a
+-- book is not offered the same covers every time its page is opened.
+CREATE TABLE cover_lookups (
+  book_id TEXT PRIMARY KEY REFERENCES books(id) ON DELETE CASCADE,
+  looked_at TEXT,
+  candidates_json TEXT NOT NULL DEFAULT '[]',
+  dismissed_at TEXT,
+  dismissed_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+  -- The sources that lookup asked (a JSON list): one asked since is news.
+  looked_sources TEXT
+);
+`,
+  },
 ];

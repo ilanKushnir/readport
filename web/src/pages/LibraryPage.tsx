@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, useParams, useSearchParams } from 'react-router-dom';
 import {
   AUTO_SHELVES,
@@ -163,6 +163,8 @@ export function LibraryPage() {
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebounced(query, 220);
   const [kind, setKind] = useState<Kind>('all');
+  const kindSeg = useRef<HTMLDivElement>(null);
+  useSegmentsFit(kindSeg);
   const [sort, setSort] = useState<Sort>('title');
   const [addTo, setAddTo] = useState<BookSummary | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -611,28 +613,33 @@ export function LibraryPage() {
                 onChange={(e) => setQuery(e.target.value)}
               />
             </div>
-            <div
-              className="segmented segmented--inline kind-seg"
-              role="group"
-              aria-label={t('library.kindGroup')}
-            >
-              <button aria-pressed={kind === 'all'} onClick={() => setKind('all')}>
-                {t('library.kind.all')}
-              </button>
-              <button aria-pressed={kind === 'ebook'} onClick={() => setKind('ebook')}>
-                <IconBookOpen size={15} /> {t('library.kind.ebooks')}
-              </button>
-              <button aria-pressed={kind === 'audio'} onClick={() => setKind('audio')}>
-                <IconHeadphones size={15} /> {t('library.kind.audiobooks')}
-              </button>
+            {/* What to show: the format on the left, the language at the end
+                of the same row. */}
+            <div className="toolbar__filters">
+              <div
+                ref={kindSeg}
+                className="segmented segmented--inline kind-seg"
+                role="group"
+                aria-label={t('library.kindGroup')}
+              >
+                <button aria-pressed={kind === 'all'} onClick={() => setKind('all')}>
+                  <IconLibrary size={15} /> {t('library.kind.all')}
+                </button>
+                <button aria-pressed={kind === 'ebook'} onClick={() => setKind('ebook')}>
+                  <IconBookOpen size={15} /> {t('library.kind.ebooks')}
+                </button>
+                <button aria-pressed={kind === 'audio'} onClick={() => setKind('audio')}>
+                  <IconHeadphones size={15} /> {t('library.kind.audiobooks')}
+                </button>
+              </div>
+              {showLanguages && (
+                <LanguagePicker
+                  options={languageOptions}
+                  selected={langs[0] ?? null}
+                  onSelect={(value) => setLangs(value ? [value] : [])}
+                />
+              )}
             </div>
-            {showLanguages && (
-              <LanguagePicker
-                options={languageOptions}
-                selected={langs[0] ?? null}
-                onSelect={(value) => setLangs(value ? [value] : [])}
-              />
-            )}
             <label className="visually-hidden" htmlFor="lib-sort">
               {t('library.sortBy')}
             </label>
@@ -1199,4 +1206,36 @@ function BookCard({
       </button>
     </div>
   );
+}
+
+/**
+ * A segmented control whose labels do not all fit beside their icons drops
+ * the icons (`data-tight`) rather than cut a word short: "Электронные книги"
+ * on a 375px phone. Measured with the icons in, whenever the labels change
+ * (another language) or the control's size does (a rotation), so they come
+ * back when there is room - and not on every render of the page around it.
+ */
+function useSegmentsFit(ref: React.RefObject<HTMLElement | null>) {
+  const watched = useRef<{ el: HTMLElement; text: string; observer: ResizeObserver } | null>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const text = el.textContent ?? '';
+    if (watched.current?.el === el && watched.current.text === text) return;
+    fitSegments(el);
+    if (watched.current?.el === el) {
+      watched.current.text = text;
+      return;
+    }
+    watched.current?.observer.disconnect();
+    const observer = new ResizeObserver(() => fitSegments(el));
+    observer.observe(el);
+    watched.current = { el, text, observer };
+  });
+  useEffect(() => () => watched.current?.observer.disconnect(), []);
+}
+
+function fitSegments(el: HTMLElement) {
+  delete el.dataset.tight;
+  if (Array.from(el.children).some((b) => b.scrollWidth > b.clientWidth + 1)) el.dataset.tight = '';
 }

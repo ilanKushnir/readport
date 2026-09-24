@@ -36,6 +36,7 @@ import {
 } from '../components/icons';
 import { formatDuration } from '../lib/format';
 import { ambientColorFromImage } from '../lib/ambient';
+import { coverSrc } from '../lib/cover';
 import { useT } from '../i18n';
 import { useFormat } from '../i18n/useFormat';
 import { type MessageKey } from '../i18n/messages/en';
@@ -333,7 +334,7 @@ export function PlayerPage() {
   useEffect(() => {
     if (!detail?.book.hasCover) return;
     let cancelled = false;
-    ambientColorFromImage(`/api/books/${id}/cover`).then((c) => {
+    ambientColorFromImage(coverSrc(detail.book)).then((c) => {
       if (!cancelled && c) setAmbient(c);
     });
     return () => {
@@ -544,7 +545,7 @@ export function PlayerPage() {
       artist: detail.book.author ?? 'ReadPort',
       album: detail.book.title,
       artwork: detail.book.hasCover
-        ? [{ src: `${location.origin}/api/books/${id}/cover`, sizes: '512x512' }]
+        ? [{ src: `${location.origin}${coverSrc(detail.book)}`, sizes: '512x512' }]
         : [],
     });
   }, [detail, currentChapter, id]);

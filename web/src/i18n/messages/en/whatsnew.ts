@@ -23,6 +23,16 @@ export const whatsnew = {
   'whatsnew.update.refreshing': 'Refreshing…',
   'whatsnew.update.later': 'Not now',
 
+  // ---------------------------------------------------------------- 0.26.0
+  'whatsnew.release.coverSuggestions':
+    'A book without a cover can get one: curators pick from its other format\u2019s cover or what Apple Books, Audible, Google Books and Open Library have for it.',
+  'whatsnew.release.languageSearch':
+    'The language button in the library opens a list you can search, with each language\u2019s own name and how many books it has.',
+  'whatsnew.release.dragSheets':
+    'On a phone, panels like Shelves slide up from the bottom and close again when you pull their handle down.',
+  'whatsnew.release.aboutLaidOut':
+    'A book\u2019s About section shows its formatting instead of its tags, and a long one folds away under More.',
+
   // ---------------------------------------------------------------- 0.25.0
   'whatsnew.release.otherLanguages':
     'Link a book to its translation: a friend reading it in another language is on your bar, and you can carry on in the other language from the same paragraph.',

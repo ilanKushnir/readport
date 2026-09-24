@@ -53,6 +53,7 @@ import {
   runTranslationAlign,
   TRANSLATION_ALIGN_JOB,
 } from '../translations/store.js';
+import { foundCoverOf, ownFolderOf } from '../covers/lookup.js';
 import {
   enqueueJob,
   jobProgress,
@@ -304,6 +305,8 @@ export async function runScan(ctx: AppContext, job: JobRow, guard: LeaseGuard): 
   const report = scanRoots(roots.ebookDirs, roots.audiobookDirs);
   guard.assertHeld();
   const result = applyScan(db, report);
+  const covered = giveFolderCovers(ctx);
+  if (covered > 0) ctx.log.info(`Found folder covers for ${covered} ebook(s)`);
   jobProgress(
     db,
     job.id,
@@ -404,6 +407,38 @@ export function copyFallbackCover(
     }
   }
   return null;
+}
+
+/**
+ * Ebooks indexed before indexing looked beside them: each one with no cover,
+ * in a folder of its own with a cover.jpg in it, gets that cover now. Cheap
+ * for a settled library - only the coverless are looked at - and run with
+ * every scan, so a cover added to a book's folder turns up by itself.
+ */
+export function giveFolderCovers(ctx: AppContext): number {
+  const rows = ctx.db
+    .prepare(
+      `SELECT id, root_dir, rel_path, cover_path, found_cover_path FROM books
+        WHERE kind = 'ebook' AND scan_state = 'ready'
+          AND (cover_path IS NULL OR cover_path = found_cover_path)`,
+    )
+    .all() as {
+    id: string;
+    root_dir: string;
+    rel_path: string;
+    cover_path: string | null;
+    found_cover_path: string | null;
+  }[];
+  let n = 0;
+  for (const row of rows) {
+    const ownDir = ownFolderOf(row.root_dir, row.rel_path);
+    if (!ownDir) continue;
+    const cover = copyFallbackCover(ctx, row.root_dir, ownDir, row.id);
+    if (!cover) continue;
+    ctx.db.prepare('UPDATE books SET cover_path = ? WHERE id = ?').run(cover, row.id);
+    n++;
+  }
+  return n;
 }
 
 function getBook(ctx: AppContext, bookId: string): Record<string, unknown> {
@@ -609,6 +644,13 @@ export async function runIndexEbook(
         fs.rmSync(tmpCover, { force: true });
       }
     }
+    // No cover in the file: the cover.jpg beside it, when the folder is this
+    // book's own (Calibre's layout), and failing that one a curator picked.
+    if (!coverPath) {
+      const ownDir = ownFolderOf(String(book.root_dir), String(book.rel_path));
+      if (ownDir) coverPath = copyFallbackCover(ctx, String(book.root_dir), ownDir, bookId);
+    }
+    if (!coverPath) coverPath = foundCoverOf(db, bookId);
 
     // Atomic pointer switch: chapters and book metadata (including
     // derived_rev) commit together, revalidated against the lease
@@ -848,6 +890,8 @@ export async function runIndexAudio(
       const firstRel = String(trackRows[0]!.rel_path);
       coverPath = copyFallbackCover(ctx, String(book.root_dir), path.dirname(firstRel), bookId);
     }
+    // Neither: the cover a curator picked for it, if there is one.
+    if (!coverPath) coverPath = foundCoverOf(db, bookId);
 
     guard.assertHeld();
     db.prepare('DELETE FROM chapters WHERE book_id = ?').run(bookId);
