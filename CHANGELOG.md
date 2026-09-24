@@ -4,6 +4,16 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.26.2 - 2026-09-24
+
+### Fixed
+
+- **A tab takes you to the top.** Tapping Library (or any tab) on the page
+  it opens scrolls that page smoothly back to its top, as a phone's tab bar
+  does, and arriving from elsewhere starts at the top: the library, its
+  shelves and its groupings share one page, and the scroll used to carry
+  over from whichever of them was open before.
+
 ## 0.26.1 - 2026-09-24
 
 ### Fixed
