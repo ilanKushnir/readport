@@ -4,6 +4,26 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.26.7 - 2026-09-24
+
+### Fixed
+
+- **Audiobooks named after their folders when their files disagree.** A
+  multi-file audiobook took its title from its first file's own title tag,
+  which names that file's chapter: a shelf of books called "01 - …01", with
+  no author. A tag now names the book only when most of its files agree on
+  it, and otherwise its folders do, laid out as Audiobookshelf lays them -
+  `Author/Book` or `Author/Series/Book`, with the series and its volume
+  number ("Book 2", "Vol. IV", Roman numerals too) read from the folders.
+  Audiobooks already in the library are named again by the first scan after
+  the upgrade, and stay playable while they are.
+- **Russian tags from old taggers read as Russian.** Text written in a
+  Windows Cyrillic code page arrived as Latin letters ("Ðèâêà"); it is read
+  as Cyrillic.
+- **Moving a book keeps it.** A book moved or renamed between two scans came
+  back as a new book - its progress, marks and shelves left with the old one,
+  now missing. It is recognised by its contents and kept.
+
 ## 0.26.6 - 2026-09-24
 
 ### Fixed
