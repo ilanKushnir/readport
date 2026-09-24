@@ -1879,5 +1879,53 @@ const messages: Record<string, string> = {
   'translations.review.title': 'Stejná kniha, jiný jazyk',
   'translations.review.lede':
     'Vypadá to na stejnou knihu ve dvou jazycích. Po propojení se přátelé čtoucí jednu z nich objeví u druhé a čtenář může přejít mezi nimi od stejného odstavce.',
+  // library
+  'library.lang.search': 'Hledat jazyky',
+  'library.lang.clear': 'Vymazat hledání',
+  'library.lang.noMatch': 'V této knihovně není žádný jazyk s takovým názvem.',
+  'library.book.aboutMore': 'Zobrazit více',
+  'library.book.aboutLess': 'Zobrazit méně',
+  'library.cover.suggested': 'Navrženo',
+  'library.cover.suggestedAlt': 'Navržená obálka knihy „{title}“',
+  'library.cover.from': 'Zdroj: {source}',
+  'library.cover.fromAudiobook': 'Obálka audioknihy',
+  'library.cover.fromEbook': 'Obálka e-knihy',
+  'library.cover.use': 'Použít tuto obálku',
+  'library.cover.saving': 'Ukládání…',
+  'library.cover.previous': 'Předchozí návrh',
+  'library.cover.next': 'Další návrh',
+  'library.cover.of': '{n} z {total}',
+  'library.cover.notThese': 'Ne, díky',
+  'library.cover.keep': 'Ponechat současnou obálku',
+  'library.cover.find': 'Najít obálku',
+  'library.cover.finding': 'Hledání…',
+  'library.cover.nothing': 'Pro tuto knihu se nenašla žádná obálka.',
+  'library.cover.lookFailed': 'Teď se nepodařilo najít obálky. Zkuste to znovu později.',
+  'library.cover.failed': 'Teď se nepodařilo změnit obálku.',
+  'library.cover.saved': 'Obálka uložena. Soubory vaší knihovny zůstávají beze změny.',
+  'library.cover.dismissed': 'Pro tuto knihu už nebudou navrhovány žádné obálky.',
+  'library.cover.removed': 'Obálka odebrána.',
+  'library.cover.pickedFrom': 'Obálka: {source}.',
+  'library.cover.pickedFromAudiobook': 'Obálka audioknihy.',
+  'library.cover.pickedFromEbook': 'Obálka e-knihy.',
+  'library.cover.change': 'Změnit',
+  'library.cover.remove': 'Odebrat',
+
+  // settings
+  'settings.covers.title': 'Obálky knih',
+  'settings.covers.lede':
+    'Pokud kniha nemá vlastní obálku, může ji kurátor najít a vybrat. Vybrané obálky se ukládají do datové složky ReadPortu. Soubory vaší knihovny se přitom nikdy nemění.',
+  'settings.covers.where': 'Kde hledat',
+  'settings.covers.appleHint': 'Ostré obálky z obchodu pro e-knihy a audioknihy, v mnoha jazycích.',
+  'settings.covers.audibleHint':
+    'Obálky audioknih v podobě, v jaké se prodávají. Používá se jen pro audioknihy.',
+  'settings.covers.googleHint':
+    'Velmi rozsáhlý katalog: vyhledává podle ISBN, a pokud je na serveru nastavený klíč API, i podle názvu. Některé obálky jsou malé.',
+  'settings.covers.openlibraryHint': 'Otevřený neziskový katalog. Nejlépe funguje u starších knih.',
+  'settings.covers.none':
+    'Když není vybraný žádný zdroj, knize se nabídne jen obálka jejího druhého formátu. Online se nic nevyhledává.',
+  'settings.covers.auto': 'Automaticky navrhovat obálky',
+  'settings.covers.autoHint':
+    'Když kurátor otevře knihu bez obálky, obálka se vyhledá hned, místo čekání na tlačítko „Najít obálku“.',
 };
 export default messages;

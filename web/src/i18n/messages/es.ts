@@ -1892,6 +1892,57 @@ const messages: Record<string, string> = {
   'translations.review.title': 'Mismo libro, otros idiomas',
   'translations.review.lede':
     'Esto parece un mismo libro en dos idiomas. Una vez vinculados, los amigos que leen uno aparecen en el otro, y se puede continuar de uno a otro por el mismo párrafo.',
+  // library
+  'library.lang.search': 'Buscar idiomas',
+  'library.lang.clear': 'Borrar la búsqueda',
+  'library.lang.noMatch': 'Ningún idioma con ese nombre en esta biblioteca.',
+  'library.book.aboutMore': 'Ver más',
+  'library.book.aboutLess': 'Ver menos',
+  'library.cover.suggested': 'Sugerida',
+  'library.cover.suggestedAlt': 'Una portada sugerida para {title}',
+  'library.cover.from': 'De {source}',
+  'library.cover.fromAudiobook': 'La portada del audiolibro',
+  'library.cover.fromEbook': 'La portada del ebook',
+  'library.cover.use': 'Usar esta portada',
+  'library.cover.saving': 'Guardando…',
+  'library.cover.previous': 'Sugerencia anterior',
+  'library.cover.next': 'Sugerencia siguiente',
+  'library.cover.of': '{n} de {total}',
+  'library.cover.notThese': 'No, gracias',
+  'library.cover.keep': 'Conservar la portada actual',
+  'library.cover.find': 'Buscar portada',
+  'library.cover.finding': 'Buscando…',
+  'library.cover.nothing': 'No apareció ninguna portada para este libro.',
+  'library.cover.lookFailed':
+    'No se pudo buscar portadas ahora mismo. Vuelve a intentarlo más tarde.',
+  'library.cover.failed': 'No se pudo cambiar la portada ahora mismo.',
+  'library.cover.saved': 'Portada guardada. Tus archivos de biblioteca no se modifican.',
+  'library.cover.dismissed': 'No más sugerencias de portada para este libro.',
+  'library.cover.removed': 'Portada quitada.',
+  'library.cover.pickedFrom': 'Portada de {source}.',
+  'library.cover.pickedFromAudiobook': 'Portada del audiolibro.',
+  'library.cover.pickedFromEbook': 'Portada del ebook.',
+  'library.cover.change': 'Cambiar',
+  'library.cover.remove': 'Quitar',
+
+  // settings
+  'settings.covers.title': 'Portadas de libros',
+  'settings.covers.lede':
+    'Para un libro sin portada propia, un curador puede buscar una y elegirla. Las portadas elegidas se guardan en la carpeta de datos de ReadPort; tus archivos de biblioteca nunca se modifican.',
+  'settings.covers.where': 'Dónde buscar',
+  'settings.covers.appleHint':
+    'Portadas nítidas de la tienda, para ebooks y audiolibros, en muchos idiomas.',
+  'settings.covers.audibleHint':
+    'Portadas de audiolibro tal como se venden. Se usa solo para audiolibros.',
+  'settings.covers.googleHint':
+    'Un catálogo muy grande, encontrado por ISBN (y también por título, con una clave de API configurada en el servidor). Algunas portadas son pequeñas.',
+  'settings.covers.openlibraryHint':
+    'Un catálogo abierto y sin ánimo de lucro. Destaca en libros antiguos.',
+  'settings.covers.none':
+    'Si no se elige ninguna fuente, al libro solo se le ofrece la portada de su otra edición, y no se busca nada en línea.',
+  'settings.covers.auto': 'Sugerir portadas automáticamente',
+  'settings.covers.autoHint':
+    'Cuando un curador abre un libro sin portada, se busca una enseguida en vez de esperar a «Buscar portada».',
 };
 
 export default messages;

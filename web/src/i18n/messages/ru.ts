@@ -1886,6 +1886,56 @@ const messages: Record<string, string> = {
   'translations.review.title': 'Одна книга, разные языки',
   'translations.review.lede':
     'Похоже, это одна книга на двух языках. После связывания друзья, читающие одно издание, появляются в другом, а читатель может продолжить чтение в другом издании с того же абзаца.',
+  // library
+  'library.lang.search': 'Поиск языков',
+  'library.lang.clear': 'Очистить поиск',
+  'library.lang.noMatch': 'В этой библиотеке нет языка с таким названием.',
+  'library.book.aboutMore': 'Развернуть',
+  'library.book.aboutLess': 'Свернуть',
+  'library.cover.suggested': 'Предложено',
+  'library.cover.suggestedAlt': 'Предложенная обложка для «{title}»',
+  'library.cover.from': 'Источник: {source}',
+  'library.cover.fromAudiobook': 'Обложка аудиокниги',
+  'library.cover.fromEbook': 'Обложка электронной книги',
+  'library.cover.use': 'Использовать эту обложку',
+  'library.cover.saving': 'Сохранение…',
+  'library.cover.previous': 'Предыдущий вариант',
+  'library.cover.next': 'Следующий вариант',
+  'library.cover.of': '{n} из {total}',
+  'library.cover.notThese': 'Нет, спасибо',
+  'library.cover.keep': 'Оставить текущую обложку',
+  'library.cover.find': 'Найти обложку',
+  'library.cover.finding': 'Поиск…',
+  'library.cover.nothing': 'Обложек для этой книги не нашлось.',
+  'library.cover.lookFailed': 'Не удалось найти обложки прямо сейчас. Попробуйте позже.',
+  'library.cover.failed': 'Не удалось изменить обложку прямо сейчас.',
+  'library.cover.saved': 'Обложка сохранена. Файлы вашей библиотеки не изменились.',
+  'library.cover.dismissed': 'Обложки для этой книги больше не будут предлагаться.',
+  'library.cover.removed': 'Обложка убрана.',
+  'library.cover.pickedFrom': 'Обложка: {source}.',
+  'library.cover.pickedFromAudiobook': 'Обложка аудиокниги.',
+  'library.cover.pickedFromEbook': 'Обложка электронной книги.',
+  'library.cover.change': 'Сменить',
+  'library.cover.remove': 'Убрать',
+
+  // settings
+  'settings.covers.title': 'Обложки книг',
+  'settings.covers.lede':
+    'Если у книги нет собственной обложки, куратор может найти подходящую и выбрать её. Выбранные обложки хранятся в папке данных ReadPort. Файлы вашей библиотеки при этом не меняются.',
+  'settings.covers.where': 'Где искать',
+  'settings.covers.appleHint':
+    'Чёткие обложки из магазина для электронных и аудиокниг, на многих языках.',
+  'settings.covers.audibleHint':
+    'Обложки аудиокниг в том виде, в каком они продаются. Используется только для аудиокниг.',
+  'settings.covers.googleHint':
+    'Огромный каталог: ищет по ISBN, а также по названию, если на сервере задан ключ API. Некоторые обложки маленькие.',
+  'settings.covers.openlibraryHint':
+    'Открытый некоммерческий каталог. Лучше всего подходит для старых книг.',
+  'settings.covers.none':
+    'Если источник не выбран, книге будет предложена только обложка её другого формата. Поиск в интернете при этом не выполняется.',
+  'settings.covers.auto': 'Предлагать обложки автоматически',
+  'settings.covers.autoHint':
+    'Когда куратор открывает книгу без обложки, обложка ищется сразу, а не только по кнопке «Найти обложку».',
 };
 
 export default messages;

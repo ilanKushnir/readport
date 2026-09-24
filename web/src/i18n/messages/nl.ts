@@ -1900,5 +1900,55 @@ const messages: Record<string, string> = {
   'translations.review.title': 'Zelfde boek, andere talen',
   'translations.review.lede':
     'Dit lijkt hetzelfde boek in twee talen. Eenmaal gekoppeld verschijnen vrienden die het ene lezen bij het andere, en kun je van de ene naar de andere overstappen op dezelfde alinea.',
+  // library
+  'library.lang.search': 'Zoek talen',
+  'library.lang.clear': 'Zoeken wissen',
+  'library.lang.noMatch': 'Geen taal met die naam in deze mediatheek.',
+  'library.book.aboutMore': 'Meer tonen',
+  'library.book.aboutLess': 'Minder tonen',
+  'library.cover.suggested': 'Voorgesteld',
+  'library.cover.suggestedAlt': 'Een voorgestelde omslag voor {title}',
+  'library.cover.from': 'Van {source}',
+  'library.cover.fromAudiobook': 'De omslag van het luisterboek',
+  'library.cover.fromEbook': 'De omslag van het e-book',
+  'library.cover.use': 'Deze omslag gebruiken',
+  'library.cover.saving': 'Wordt bewaard…',
+  'library.cover.previous': 'Vorig voorstel',
+  'library.cover.next': 'Volgend voorstel',
+  'library.cover.of': '{n} van {total}',
+  'library.cover.notThese': 'Nee, bedankt',
+  'library.cover.keep': 'Huidige omslag behouden',
+  'library.cover.find': 'Omslag zoeken',
+  'library.cover.finding': 'Zoeken…',
+  'library.cover.nothing': 'Geen omslag gevonden voor dit boek.',
+  'library.cover.lookFailed': 'Kon zojuist niet naar omslagen zoeken. Probeer het later opnieuw.',
+  'library.cover.failed': 'De omslag kon zojuist niet worden gewijzigd.',
+  'library.cover.saved': 'Omslag bewaard. Je bibliotheekbestanden blijven ongewijzigd.',
+  'library.cover.dismissed': 'Geen omslagvoorstellen meer voor dit boek.',
+  'library.cover.removed': 'Omslag verwijderd.',
+  'library.cover.pickedFrom': 'Omslag van {source}.',
+  'library.cover.pickedFromAudiobook': 'Omslag van het luisterboek.',
+  'library.cover.pickedFromEbook': 'Omslag van het e-book.',
+  'library.cover.change': 'Wijzigen',
+  'library.cover.remove': 'Weghalen',
+
+  // settings
+  'settings.covers.title': 'Boekomslagen',
+  'settings.covers.lede':
+    'Voor een boek zonder eigen omslag kan een curator er een opzoeken en kiezen. Gekozen omslagen worden bewaard in de datamap van ReadPort; je bibliotheekbestanden worden nooit gewijzigd.',
+  'settings.covers.where': 'Zoeken in',
+  'settings.covers.appleHint':
+    'Scherpe omslagen uit de store, voor e-books en luisterboeken, in veel talen.',
+  'settings.covers.audibleHint':
+    'Omslagen van luisterboeken zoals ze worden verkocht. Wordt alleen gebruikt voor luisterboeken.',
+  'settings.covers.googleHint':
+    'Een heel grote catalogus, gevonden via ISBN (en ook via titel, met een op de server ingestelde API-sleutel). Sommige omslagen zijn klein.',
+  'settings.covers.openlibraryHint':
+    'Een open catalogus zonder winstoogmerk. Het sterkst bij oudere boeken.',
+  'settings.covers.none':
+    'Als er geen bron is gekozen, krijgt een boek alleen de omslag van de andere editie aangeboden, en wordt er niets online opgezocht.',
+  'settings.covers.auto': 'Omslagen automatisch voorstellen',
+  'settings.covers.autoHint':
+    'Als een curator een boek zonder omslag opent, wordt er meteen een opgezocht in plaats van te wachten op „Omslag zoeken”.',
 } as const;
 export default messages;

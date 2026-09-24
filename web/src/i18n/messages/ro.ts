@@ -1890,5 +1890,55 @@ const messages: Record<string, string> = {
   'translations.review.title': 'Aceeași carte, alte limbi',
   'translations.review.lede':
     'Acestea par a fi aceeași carte în două limbi. Odată legate, prietenii care citesc una apar în cealaltă, iar un cititor poate continua dintr-una în cealaltă la același paragraf.',
+  // library
+  'library.lang.search': 'Caută limbi',
+  'library.lang.clear': 'Golește căutarea',
+  'library.lang.noMatch': 'Nicio limbă cu acest nume în această bibliotecă.',
+  'library.book.aboutMore': 'Arată mai mult',
+  'library.book.aboutLess': 'Arată mai puțin',
+  'library.cover.suggested': 'Sugerată',
+  'library.cover.suggestedAlt': 'Copertă sugerată pentru {title}',
+  'library.cover.from': 'Sursă: {source}',
+  'library.cover.fromAudiobook': 'Coperta cărții audio',
+  'library.cover.fromEbook': 'Coperta cărții electronice',
+  'library.cover.use': 'Folosește această copertă',
+  'library.cover.saving': 'Se salvează…',
+  'library.cover.previous': 'Sugestia anterioară',
+  'library.cover.next': 'Sugestia următoare',
+  'library.cover.of': '{n} din {total}',
+  'library.cover.notThese': 'Nu, mulțumesc',
+  'library.cover.keep': 'Păstrează coperta actuală',
+  'library.cover.find': 'Găsește o copertă',
+  'library.cover.finding': 'Se caută…',
+  'library.cover.nothing': 'Nu s-a găsit nicio copertă pentru această carte.',
+  'library.cover.lookFailed': 'Nu s-a putut căuta coperte chiar acum. Încearcă din nou mai târziu.',
+  'library.cover.failed': 'Nu s-a putut schimba coperta chiar acum.',
+  'library.cover.saved': 'Copertă salvată. Fișierele bibliotecii tale rămân neschimbate.',
+  'library.cover.dismissed': 'Nu vor mai fi sugerate coperte pentru această carte.',
+  'library.cover.removed': 'Copertă eliminată.',
+  'library.cover.pickedFrom': 'Copertă: {source}.',
+  'library.cover.pickedFromAudiobook': 'Coperta cărții audio.',
+  'library.cover.pickedFromEbook': 'Coperta cărții electronice.',
+  'library.cover.change': 'Schimbă',
+  'library.cover.remove': 'Elimină',
+
+  // settings
+  'settings.covers.title': 'Coperte de cărți',
+  'settings.covers.lede':
+    'Pentru o carte fără copertă proprie, un curator poate căuta una și o poate alege. Copertele alese sunt păstrate în folderul de date ReadPort. Fișierele bibliotecii tale nu sunt niciodată modificate.',
+  'settings.covers.where': 'Surse',
+  'settings.covers.appleHint':
+    'Coperte clare din magazin, pentru cărți electronice și audio, în multe limbi.',
+  'settings.covers.audibleHint':
+    'Coperte de cărți audio așa cum sunt vândute. Folosit doar pentru cărți audio.',
+  'settings.covers.googleHint':
+    'Un catalog foarte mare, care caută după ISBN (și după titlu, dacă serverul are o cheie API setată). Unele coperte sunt mici.',
+  'settings.covers.openlibraryHint':
+    'Un catalog deschis, non-profit. Cel mai bun pentru cărți mai vechi.',
+  'settings.covers.none':
+    'Dacă nu e aleasă nicio sursă, cărții i se oferă doar coperta celuilalt format. Nu se caută nimic pe internet.',
+  'settings.covers.auto': 'Sugerează automat coperte',
+  'settings.covers.autoHint':
+    'Când un curator deschide o carte fără copertă, se caută una imediat, în loc să aștepte butonul „Găsește o copertă”.',
 };
 export default messages;

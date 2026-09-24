@@ -1884,5 +1884,52 @@ const messages: Record<string, string> = {
   'translations.review.title': 'אותו ספר, שפות אחרות',
   'translations.review.lede':
     'אלה נראים כמו ספר אחד בשתי שפות. לאחר קישור, חברים שקוראים באחת מופיעים באחרת, והקורא יכול להמשיך מאחת לשנייה מאותה פסקה.',
+  // library
+  'library.lang.search': 'חיפוש בשפות',
+  'library.lang.clear': 'ניקוי החיפוש',
+  'library.lang.noMatch': 'אין שפה בשם הזה בספרייה הזו.',
+  'library.book.aboutMore': 'הצג עוד',
+  'library.book.aboutLess': 'הצג פחות',
+  'library.cover.suggested': 'מוצעת',
+  'library.cover.suggestedAlt': 'כריכה מוצעת ל{title}',
+  'library.cover.from': 'מ-{source}',
+  'library.cover.fromAudiobook': 'כריכת ספר הקול',
+  'library.cover.fromEbook': 'כריכת הספר האלקטרוני',
+  'library.cover.use': 'שימוש בכריכה הזו',
+  'library.cover.saving': 'שומר…',
+  'library.cover.previous': 'ההצעה הקודמת',
+  'library.cover.next': 'ההצעה הבאה',
+  'library.cover.of': '{n} מתוך {total}',
+  'library.cover.notThese': 'לא, תודה',
+  'library.cover.keep': 'שמירה על הכריכה הנוכחית',
+  'library.cover.find': 'חיפוש כריכה',
+  'library.cover.finding': 'מחפש…',
+  'library.cover.nothing': 'לא נמצאה כריכה לספר הזה.',
+  'library.cover.lookFailed': 'לא ניתן היה לחפש כריכות כרגע. יש לנסות שוב מאוחר יותר.',
+  'library.cover.failed': 'לא ניתן היה לשנות את הכריכה כרגע.',
+  'library.cover.saved': 'הכריכה נשמרה. קובצי הספרייה שלך לא השתנו.',
+  'library.cover.dismissed': 'לא יוצעו עוד כריכות לספר הזה.',
+  'library.cover.removed': 'הכריכה הוסרה.',
+  'library.cover.pickedFrom': 'כריכה מ-{source}.',
+  'library.cover.pickedFromAudiobook': 'כריכה מספר הקול.',
+  'library.cover.pickedFromEbook': 'כריכה מהספר האלקטרוני.',
+  'library.cover.change': 'שינוי',
+  'library.cover.remove': 'הסרה',
+
+  // settings
+  'settings.covers.title': 'כריכות ספרים',
+  'settings.covers.lede':
+    'לספר בלי כריכה משלו, אוצר יכול לחפש כריכה ולבחור אותה. כריכות שנבחרו נשמרות בתיקיית הנתונים של ReadPort; קובצי הספרייה שלך אף פעם לא משתנים.',
+  'settings.covers.where': 'היכן לחפש',
+  'settings.covers.appleHint': 'כריכות חנות חדות לספרים אלקטרוניים ולספרי קול, בשפות רבות.',
+  'settings.covers.audibleHint': 'כריכות ספרי קול כפי שהן נמכרות. משמש לספרי קול בלבד.',
+  'settings.covers.googleHint':
+    'קטלוג גדול מאוד, מותאם לפי ISBN (וגם לפי כותר, עם מפתח API שהוגדר בשרת). חלק מהכריכות קטנות.',
+  'settings.covers.openlibraryHint': 'קטלוג פתוח, ללא מטרות רווח. הכי חזק בספרים ישנים.',
+  'settings.covers.none':
+    'בלי מקור נבחר, לספר מוצעת רק כריכת הפורמט האחר שלו, ולא מתבצע חיפוש באינטרנט.',
+  'settings.covers.auto': 'הצעת כריכות אוטומטית',
+  'settings.covers.autoHint':
+    'כשאוצר פותח ספר בלי כריכה, מחפשים לו כריכה מיד במקום להמתין ל„חיפוש כריכה”.',
 };
 export default messages;

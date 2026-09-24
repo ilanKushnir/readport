@@ -1897,5 +1897,55 @@ const messages: Record<string, string> = {
   'translations.review.title': 'Ta sama książka, inny język',
   'translations.review.lede':
     'Wyglądają jak ta sama książka w dwóch językach. Po połączeniu znajomi czytający jedną z nich pojawią się przy drugiej, a czytelnik będzie mógł przejść między nimi od tego samego akapitu.',
+  // library
+  'library.lang.search': 'Szukaj języków',
+  'library.lang.clear': 'Wyczyść wyszukiwanie',
+  'library.lang.noMatch': 'W tej bibliotece nie ma języka o takiej nazwie.',
+  'library.book.aboutMore': 'Pokaż więcej',
+  'library.book.aboutLess': 'Pokaż mniej',
+  'library.cover.suggested': 'Sugerowane',
+  'library.cover.suggestedAlt': 'Sugerowana okładka dla „{title}”',
+  'library.cover.from': 'Źródło: {source}',
+  'library.cover.fromAudiobook': 'Okładka audiobooka',
+  'library.cover.fromEbook': 'Okładka e-booka',
+  'library.cover.use': 'Użyj tej okładki',
+  'library.cover.saving': 'Zapisywanie…',
+  'library.cover.previous': 'Poprzednia sugestia',
+  'library.cover.next': 'Następna sugestia',
+  'library.cover.of': '{n} z {total}',
+  'library.cover.notThese': 'Nie, dziękuję',
+  'library.cover.keep': 'Zachowaj obecną okładkę',
+  'library.cover.find': 'Znajdź okładkę',
+  'library.cover.finding': 'Wyszukiwanie…',
+  'library.cover.nothing': 'Nie znaleziono okładki dla tej książki.',
+  'library.cover.lookFailed': 'Nie udało się teraz znaleźć okładek. Spróbuj ponownie później.',
+  'library.cover.failed': 'Nie udało się teraz zmienić okładki.',
+  'library.cover.saved': 'Zapisano okładkę. Pliki twojej biblioteki nigdy nie są zmieniane.',
+  'library.cover.dismissed': 'Okładki nie będą już sugerowane dla tej książki.',
+  'library.cover.removed': 'Usunięto okładkę.',
+  'library.cover.pickedFrom': 'Okładka: {source}.',
+  'library.cover.pickedFromAudiobook': 'Okładka audiobooka.',
+  'library.cover.pickedFromEbook': 'Okładka e-booka.',
+  'library.cover.change': 'Zmień',
+  'library.cover.remove': 'Usuń',
+
+  // settings
+  'settings.covers.title': 'Okładki książek',
+  'settings.covers.lede':
+    'Jeśli książka nie ma własnej okładki, kurator może ją znaleźć i wybrać. Wybrane okładki są przechowywane w folderze danych ReadPort. Pliki twojej biblioteki nigdy nie są zmieniane.',
+  'settings.covers.where': 'Gdzie szukać',
+  'settings.covers.appleHint':
+    'Wyraźne okładki ze sklepu, dla e-booków i audiobooków, w wielu językach.',
+  'settings.covers.audibleHint':
+    'Okładki audiobooków w wersji, w jakiej są sprzedawane. Używane tylko dla audiobooków.',
+  'settings.covers.googleHint':
+    'Bardzo duży katalog: wyszukiwanie po ISBN, a także po tytule, jeśli na serwerze skonfigurowano klucz API. Niektóre okładki są małe.',
+  'settings.covers.openlibraryHint':
+    'Otwarty, niekomercyjny katalog. Najlepiej sprawdza się przy starszych książkach.',
+  'settings.covers.none':
+    'Gdy nie wybrano żadnego źródła, książce proponowana jest tylko okładka jej drugiego formatu. Wyszukiwanie w internecie się wtedy nie odbywa.',
+  'settings.covers.auto': 'Automatycznie sugeruj okładki',
+  'settings.covers.autoHint':
+    'Gdy kurator otworzy książkę bez okładki, okładka jest wyszukiwana od razu, zamiast czekać na kliknięcie „Znajdź okładkę”.',
 };
 export default messages;

@@ -1902,6 +1902,57 @@ const messages: Record<string, string> = {
   'translations.review.title': 'Même livre, autres langues',
   'translations.review.lede':
     "On dirait un seul livre en deux langues. Une fois liés, les amis qui lisent l'un apparaissent dans l'autre, et il est possible de reprendre de l'un à l'autre au même paragraphe.",
+  // library
+  'library.lang.search': 'Rechercher des langues',
+  'library.lang.clear': 'Effacer la recherche',
+  'library.lang.noMatch': 'Aucune langue de ce nom dans cette bibliothèque.',
+  'library.book.aboutMore': 'Voir plus',
+  'library.book.aboutLess': 'Voir moins',
+  'library.cover.suggested': 'Suggérée',
+  'library.cover.suggestedAlt': 'Une couverture suggérée pour {title}',
+  'library.cover.from': 'De {source}',
+  'library.cover.fromAudiobook': 'La couverture du livre audio',
+  'library.cover.fromEbook': 'La couverture du livre numérique',
+  'library.cover.use': 'Utiliser cette couverture',
+  'library.cover.saving': 'Enregistrement…',
+  'library.cover.previous': 'Suggestion précédente',
+  'library.cover.next': 'Suggestion suivante',
+  'library.cover.of': '{n} sur {total}',
+  'library.cover.notThese': 'Non merci',
+  'library.cover.keep': 'Garder la couverture actuelle',
+  'library.cover.find': 'Trouver une couverture',
+  'library.cover.finding': 'Recherche…',
+  'library.cover.nothing': 'Aucune couverture trouvée pour ce livre.',
+  'library.cover.lookFailed':
+    'Impossible de chercher des couvertures pour le moment. Réessayez plus tard.',
+  'library.cover.failed': 'Impossible de modifier la couverture pour le moment.',
+  'library.cover.saved': 'Couverture enregistrée. Vos fichiers de bibliothèque restent inchangés.',
+  'library.cover.dismissed': 'Plus aucune suggestion de couverture pour ce livre.',
+  'library.cover.removed': 'Couverture retirée.',
+  'library.cover.pickedFrom': 'Couverture de {source}.',
+  'library.cover.pickedFromAudiobook': 'Couverture du livre audio.',
+  'library.cover.pickedFromEbook': 'Couverture du livre numérique.',
+  'library.cover.change': 'Changer',
+  'library.cover.remove': 'Retirer',
+
+  // settings
+  'settings.covers.title': 'Couvertures de livres',
+  'settings.covers.lede':
+    'Pour un livre sans couverture, un conservateur peut en chercher une et la choisir. Les couvertures choisies sont conservées dans le dossier de données de ReadPort ; vos fichiers de bibliothèque ne sont jamais modifiés.',
+  'settings.covers.where': 'Où chercher',
+  'settings.covers.appleHint':
+    'Couvertures nettes de la boutique, pour livres numériques et livres audio, en plusieurs langues.',
+  'settings.covers.audibleHint':
+    "Couvertures de livres audio telles qu'elles sont vendues. Utilisé uniquement pour les livres audio.",
+  'settings.covers.googleHint':
+    'Un très grand catalogue, mis en correspondance par ISBN (et aussi par titre, avec une clé API définie sur le serveur). Certaines couvertures sont petites.',
+  'settings.covers.openlibraryHint':
+    'Un catalogue ouvert, à but non lucratif. Le plus complet pour les livres anciens.',
+  'settings.covers.none':
+    "Si aucune source n'est choisie, seule la couverture de l'autre édition du livre est proposée, et rien n'est recherché en ligne.",
+  'settings.covers.auto': 'Suggérer automatiquement des couvertures',
+  'settings.covers.autoHint':
+    "Quand un conservateur ouvre un livre sans couverture, une couverture est recherchée aussitôt, plutôt que d'attendre « Trouver une couverture ».",
 };
 
 export default messages;

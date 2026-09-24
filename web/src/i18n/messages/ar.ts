@@ -1921,5 +1921,52 @@ const messages: Record<string, string> = {
   'translations.review.title': 'نفس الكتاب، لغات أخرى',
   'translations.review.lede':
     'يبدو أن هذين كتاب واحد بلغتين. بعد الربط، يظهر الأصدقاء الذين يقرؤون إحداهما في الأخرى، ويمكن للقارئ متابعة القراءة من إحداهما إلى الأخرى من الفقرة نفسها.',
+  // library
+  'library.lang.search': 'البحث في اللغات',
+  'library.lang.clear': 'مسح البحث',
+  'library.lang.noMatch': 'لا توجد لغة بهذا الاسم في هذه المكتبة.',
+  'library.book.aboutMore': 'عرض المزيد',
+  'library.book.aboutLess': 'عرض أقل',
+  'library.cover.suggested': 'مقترح',
+  'library.cover.suggestedAlt': 'غلاف مقترح لـ{title}',
+  'library.cover.from': 'من {source}',
+  'library.cover.fromAudiobook': 'غلاف الكتاب الصوتي',
+  'library.cover.fromEbook': 'غلاف الكتاب الإلكتروني',
+  'library.cover.use': 'استخدام هذا الغلاف',
+  'library.cover.saving': 'جارٍ الحفظ…',
+  'library.cover.previous': 'الاقتراح السابق',
+  'library.cover.next': 'الاقتراح التالي',
+  'library.cover.of': '{n} من {total}',
+  'library.cover.notThese': 'لا شكرًا',
+  'library.cover.keep': 'الاحتفاظ بالغلاف الحالي',
+  'library.cover.find': 'البحث عن غلاف',
+  'library.cover.finding': 'جارٍ البحث…',
+  'library.cover.nothing': 'لم يُعثر على غلاف لهذا الكتاب.',
+  'library.cover.lookFailed': 'تعذّر البحث عن الأغلفة الآن. يُرجى المحاولة لاحقًا.',
+  'library.cover.failed': 'تعذّر تغيير الغلاف الآن.',
+  'library.cover.saved': 'تم حفظ الغلاف. ملفات مكتبتك لم تتغيّر.',
+  'library.cover.dismissed': 'لن تظهر اقتراحات أغلفة أخرى لهذا الكتاب.',
+  'library.cover.removed': 'أُزيل الغلاف.',
+  'library.cover.pickedFrom': 'غلاف من {source}.',
+  'library.cover.pickedFromAudiobook': 'غلاف من الكتاب الصوتي.',
+  'library.cover.pickedFromEbook': 'غلاف من الكتاب الإلكتروني.',
+  'library.cover.change': 'تغيير',
+  'library.cover.remove': 'إزالة',
+
+  // settings
+  'settings.covers.title': 'أغلفة الكتب',
+  'settings.covers.lede':
+    'للكتاب الذي لا غلاف له، يمكن للمنسّق البحث عن غلاف واختياره. تُحفظ الأغلفة المختارة في مجلد بيانات ReadPort؛ ملفات مكتبتك لا تتغيّر أبدًا.',
+  'settings.covers.where': 'مصادر البحث',
+  'settings.covers.appleHint': 'أغلفة متجر عالية الدقة للكتب الإلكترونية والصوتية، بلغات عديدة.',
+  'settings.covers.audibleHint': 'أغلفة الكتب الصوتية كما تُباع. تُستخدم للكتب الصوتية فقط.',
+  'settings.covers.googleHint':
+    'فهرس ضخم جدًا، يُطابَق برقم ISBN (وبالعنوان أيضًا، إن ضُبط مفتاح API على الخادم). بعض الأغلفة صغيرة الحجم.',
+  'settings.covers.openlibraryHint': 'فهرس مفتوح غير ربحي. الأقوى في الكتب القديمة.',
+  'settings.covers.none':
+    'بلا مصدر مُختار، لا يُعرض على الكتاب سوى غلاف صيغته الأخرى، ولا يُبحث عن شيء عبر الإنترنت.',
+  'settings.covers.auto': 'اقتراح الأغلفة تلقائيًا',
+  'settings.covers.autoHint':
+    'عندما يفتح منسّق كتابًا بلا غلاف، يُبحث عن غلاف له فورًا بدلاً من انتظار «البحث عن غلاف».',
 };
 export default messages;

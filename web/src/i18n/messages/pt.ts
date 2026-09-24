@@ -1889,6 +1889,57 @@ const messages: Record<string, string> = {
   'translations.review.title': 'Mesmo livro, outros idiomas',
   'translations.review.lede':
     'Isto parece ser o mesmo livro em dois idiomas. Depois de associados, os amigos que leem um aparecem no outro, e dá para continuar de um para o outro no mesmo parágrafo.',
+  // library
+  'library.lang.search': 'Pesquisar idiomas',
+  'library.lang.clear': 'Limpar a pesquisa',
+  'library.lang.noMatch': 'Nenhum idioma com esse nome nesta biblioteca.',
+  'library.book.aboutMore': 'Ver mais',
+  'library.book.aboutLess': 'Ver menos',
+  'library.cover.suggested': 'Sugerida',
+  'library.cover.suggestedAlt': 'Uma capa sugerida para {title}',
+  'library.cover.from': 'De {source}',
+  'library.cover.fromAudiobook': 'A capa do audiolivro',
+  'library.cover.fromEbook': 'A capa do ebook',
+  'library.cover.use': 'Usar esta capa',
+  'library.cover.saving': 'A guardar…',
+  'library.cover.previous': 'Sugestão anterior',
+  'library.cover.next': 'Sugestão seguinte',
+  'library.cover.of': '{n} de {total}',
+  'library.cover.notThese': 'Dispensar',
+  'library.cover.keep': 'Manter a capa atual',
+  'library.cover.find': 'Encontrar capa',
+  'library.cover.finding': 'A procurar…',
+  'library.cover.nothing': 'Não apareceu nenhuma capa para este livro.',
+  'library.cover.lookFailed':
+    'Não foi possível procurar capas agora mesmo. Tenta novamente mais tarde.',
+  'library.cover.failed': 'Não foi possível mudar a capa agora mesmo.',
+  'library.cover.saved': 'Capa guardada. Os teus ficheiros da biblioteca não são alterados.',
+  'library.cover.dismissed': 'Sem mais sugestões de capa para este livro.',
+  'library.cover.removed': 'Capa removida.',
+  'library.cover.pickedFrom': 'Capa de {source}.',
+  'library.cover.pickedFromAudiobook': 'Capa do audiolivro.',
+  'library.cover.pickedFromEbook': 'Capa do ebook.',
+  'library.cover.change': 'Mudar',
+  'library.cover.remove': 'Remover',
+
+  // settings
+  'settings.covers.title': 'Capas dos livros',
+  'settings.covers.lede':
+    'Para um livro sem capa própria, um curador pode procurar uma e escolhê-la. As capas escolhidas ficam guardadas na pasta de dados do ReadPort; os teus ficheiros da biblioteca nunca são alterados.',
+  'settings.covers.where': 'Onde procurar',
+  'settings.covers.appleHint':
+    'Capas nítidas da loja, para ebooks e audiolivros, em muitos idiomas.',
+  'settings.covers.audibleHint':
+    'Capas de audiolivro tal como são vendidas. Usa-se apenas para audiolivros.',
+  'settings.covers.googleHint':
+    'Um catálogo muito grande, encontrado pelo ISBN (e também pelo título, com uma chave de API definida no servidor). Algumas capas são pequenas.',
+  'settings.covers.openlibraryHint':
+    'Um catálogo aberto e sem fins lucrativos. Destaca-se em livros mais antigos.',
+  'settings.covers.none':
+    'Sem nenhuma fonte escolhida, ao livro só é oferecida a capa da sua outra edição, e nada é procurado online.',
+  'settings.covers.auto': 'Sugerir capas automaticamente',
+  'settings.covers.autoHint':
+    'Quando um curador abre um livro sem capa, procura-se logo uma em vez de esperar por «Encontrar capa».',
 };
 
 export default messages;

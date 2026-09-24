@@ -1868,5 +1868,55 @@ const messages: Record<string, string> = {
   'translations.review.title': 'Sama kirja, muut kielet',
   'translations.review.lede':
     'Nämä näyttävät samalta kirjalta kahdella kielellä. Kun ne on yhdistetty, toista lukevat ystävät näkyvät toisessa, ja lukija voi jatkaa kummasta tahansa samasta kappaleesta.',
+  // library
+  'library.lang.search': 'Hae kieliä',
+  'library.lang.clear': 'Tyhjennä haku',
+  'library.lang.noMatch': 'Tässä kirjastossa ei ole sen nimistä kieltä.',
+  'library.book.aboutMore': 'Näytä lisää',
+  'library.book.aboutLess': 'Näytä vähemmän',
+  'library.cover.suggested': 'Ehdotettu',
+  'library.cover.suggestedAlt': 'Ehdotettu kansi kirjalle {title}',
+  'library.cover.from': 'Lähde: {source}',
+  'library.cover.fromAudiobook': 'Äänikirjan kansi',
+  'library.cover.fromEbook': 'E-kirjan kansi',
+  'library.cover.use': 'Käytä tätä kantta',
+  'library.cover.saving': 'Tallennetaan…',
+  'library.cover.previous': 'Edellinen ehdotus',
+  'library.cover.next': 'Seuraava ehdotus',
+  'library.cover.of': '{n}/{total}',
+  'library.cover.notThese': 'Ei kiitos',
+  'library.cover.keep': 'Säilytä nykyinen kansi',
+  'library.cover.find': 'Etsi kansi',
+  'library.cover.finding': 'Etsitään…',
+  'library.cover.nothing': 'Tälle kirjalle ei löytynyt kantta.',
+  'library.cover.lookFailed': 'Kansia ei voitu etsiä juuri nyt. Yritä uudelleen myöhemmin.',
+  'library.cover.failed': 'Kantta ei voitu vaihtaa juuri nyt.',
+  'library.cover.saved': 'Kansi tallennettu. Kirjastotiedostojasi ei koskaan muuteta.',
+  'library.cover.dismissed': 'Ei enää kansiehdotuksia tälle kirjalle.',
+  'library.cover.removed': 'Kansi poistettu.',
+  'library.cover.pickedFrom': 'Kansi. Lähde: {source}.',
+  'library.cover.pickedFromAudiobook': 'Kansi äänikirjasta.',
+  'library.cover.pickedFromEbook': 'Kansi e-kirjasta.',
+  'library.cover.change': 'Vaihda',
+  'library.cover.remove': 'Poista',
+
+  // settings
+  'settings.covers.title': 'Kirjankannet',
+  'settings.covers.lede':
+    'Kirjalle, jolla ei ole omaa kantta, kuraattori voi etsiä kannen ja valita sen. Valitut kannet säilytetään ReadPortin datakansiossa; kirjastotiedostojasi ei koskaan muuteta.',
+  'settings.covers.where': 'Lähteet',
+  'settings.covers.appleHint':
+    'Terävät kauppakannet e-kirjoille ja äänikirjoille, monilla kielillä.',
+  'settings.covers.audibleHint':
+    'Äänikirjojen kannet sellaisina kuin ne myydään. Käytetään vain äänikirjoille.',
+  'settings.covers.googleHint':
+    'Erittäin laaja luettelo, joka täsmää ISBN:n perusteella (ja myös nimekkeen perusteella, jos palvelimelle on asetettu API-avain). Jotkin kannet ovat pieniä.',
+  'settings.covers.openlibraryHint':
+    'Avoin, voittoa tavoittelematon luettelo. Parhaimmillaan vanhemmissa kirjoissa.',
+  'settings.covers.none':
+    'Jos lähdettä ei ole valittu, kirjalle tarjotaan vain sen toisen formaatin kantta, eikä mitään haeta verkosta.',
+  'settings.covers.auto': 'Ehdota kansia automaattisesti',
+  'settings.covers.autoHint':
+    'Kun kuraattori avaa kirjan ilman kantta, ReadPort etsii sen heti eikä odota Etsi kansi -painiketta.',
 };
 export default messages;

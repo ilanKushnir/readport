@@ -1890,6 +1890,56 @@ const messages: Record<string, string> = {
   'translations.review.title': 'Одна книга, різні мови',
   'translations.review.lede':
     'Схоже, це одна книга двома мовами. Після зв’язування друзі, що читають одне видання, з’являються в іншому, а читач може продовжити читання в іншому виданні з того самого абзацу.',
+  // library
+  'library.lang.search': 'Пошук мов',
+  'library.lang.clear': 'Очистити пошук',
+  'library.lang.noMatch': 'У цій бібліотеці немає мови з такою назвою.',
+  'library.book.aboutMore': 'Розгорнути',
+  'library.book.aboutLess': 'Згорнути',
+  'library.cover.suggested': 'Запропоновано',
+  'library.cover.suggestedAlt': 'Запропонована обкладинка для «{title}»',
+  'library.cover.from': 'Джерело: {source}',
+  'library.cover.fromAudiobook': 'Обкладинка аудіокниги',
+  'library.cover.fromEbook': 'Обкладинка електронної книги',
+  'library.cover.use': 'Використати цю обкладинку',
+  'library.cover.saving': 'Збереження…',
+  'library.cover.previous': 'Попередній варіант',
+  'library.cover.next': 'Наступний варіант',
+  'library.cover.of': '{n} з {total}',
+  'library.cover.notThese': 'Ні, дякую',
+  'library.cover.keep': 'Залишити поточну обкладинку',
+  'library.cover.find': 'Знайти обкладинку',
+  'library.cover.finding': 'Пошук…',
+  'library.cover.nothing': 'Обкладинок для цієї книги не знайшлося.',
+  'library.cover.lookFailed': 'Зараз не вдалося знайти обкладинки. Спробуйте пізніше.',
+  'library.cover.failed': 'Зараз не вдалося змінити обкладинку.',
+  'library.cover.saved': 'Обкладинку збережено. Файли вашої бібліотеки не змінилися.',
+  'library.cover.dismissed': 'Для цієї книги більше не буде пропоновано обкладинок.',
+  'library.cover.removed': 'Обкладинку прибрано.',
+  'library.cover.pickedFrom': 'Обкладинка: {source}.',
+  'library.cover.pickedFromAudiobook': 'Обкладинка аудіокниги.',
+  'library.cover.pickedFromEbook': 'Обкладинка електронної книги.',
+  'library.cover.change': 'Змінити',
+  'library.cover.remove': 'Прибрати',
+
+  // settings
+  'settings.covers.title': 'Обкладинки книг',
+  'settings.covers.lede':
+    'Якщо в книги немає власної обкладинки, куратор може знайти підходящу і вибрати її. Вибрані обкладинки зберігаються в папці даних ReadPort. Файли вашої бібліотеки при цьому не змінюються.',
+  'settings.covers.where': 'Де шукати',
+  'settings.covers.appleHint':
+    'Чіткі обкладинки з магазину для електронних і аудіокниг, багатьма мовами.',
+  'settings.covers.audibleHint':
+    'Обкладинки аудіокниг у тому вигляді, в якому їх продають. Використовується лише для аудіокниг.',
+  'settings.covers.googleHint':
+    'Дуже великий каталог: пошук за ISBN, а також за назвою, якщо на сервері задано ключ API. Деякі обкладинки маленькі.',
+  'settings.covers.openlibraryHint':
+    'Відкритий некомерційний каталог. Найкраще підходить для старих книг.',
+  'settings.covers.none':
+    'Якщо жодне джерело не вибрано, книзі пропонується лише обкладинка її іншого формату. Пошук в інтернеті при цьому не виконується.',
+  'settings.covers.auto': 'Пропонувати обкладинки автоматично',
+  'settings.covers.autoHint':
+    'Коли куратор відкриває книгу без обкладинки, обкладинку шукають одразу, а не лише за кнопкою «Знайти обкладинку».',
 };
 
 export default messages;

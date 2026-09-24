@@ -1873,6 +1873,56 @@ const messages: Record<string, string> = {
   'translations.review.title': 'Aynı kitap, farklı diller',
   'translations.review.lede':
     'Bunlar iki dilde aynı kitaba benziyor. Bağlandığında, birini okuyan arkadaşlar diğerinde de görünür ve okuyucu aynı paragraftan birinden diğerine geçerek devam edebilir.',
+  // library
+  'library.lang.search': 'Dil ara',
+  'library.lang.clear': 'Aramayı temizle',
+  'library.lang.noMatch': 'Bu kitaplıkta bu adda bir dil yok.',
+  'library.book.aboutMore': 'Daha fazla göster',
+  'library.book.aboutLess': 'Daha az göster',
+  'library.cover.suggested': 'Önerilen',
+  'library.cover.suggestedAlt': '{title} için önerilen bir kapak',
+  'library.cover.from': 'Kaynak: {source}',
+  'library.cover.fromAudiobook': 'Sesli kitabın kapağı',
+  'library.cover.fromEbook': 'E-kitabın kapağı',
+  'library.cover.use': 'Bu kapağı kullan',
+  'library.cover.saving': 'Kaydediliyor…',
+  'library.cover.previous': 'Önceki öneri',
+  'library.cover.next': 'Sonraki öneri',
+  'library.cover.of': '{n} / {total}',
+  'library.cover.notThese': 'Hayır, teşekkürler',
+  'library.cover.keep': 'Mevcut kapağı koru',
+  'library.cover.find': 'Kapak bul',
+  'library.cover.finding': 'Aranıyor…',
+  'library.cover.nothing': 'Bu kitap için kapak bulunamadı.',
+  'library.cover.lookFailed': 'Kapaklar şu anda aranamadı. Daha sonra tekrar deneyin.',
+  'library.cover.failed': 'Kapak şu anda değiştirilemedi.',
+  'library.cover.saved': 'Kapak kaydedildi. Kitaplık dosyalarınız değişmedi.',
+  'library.cover.dismissed': 'Bu kitap için başka kapak önerisi yok.',
+  'library.cover.removed': 'Kapak kaldırıldı.',
+  'library.cover.pickedFrom': 'Kapak. Kaynak: {source}.',
+  'library.cover.pickedFromAudiobook': 'Kapak sesli kitaptan.',
+  'library.cover.pickedFromEbook': 'Kapak e-kitaptan.',
+  'library.cover.change': 'Değiştir',
+  'library.cover.remove': 'Kaldır',
+
+  // settings
+  'settings.covers.title': 'Kitap kapakları',
+  'settings.covers.lede':
+    "Kendi kapağı olmayan bir kitap için bir küratör bir kapak arayıp seçebilir. Seçilen kapaklar ReadPort'un veri klasöründe tutulur; kitaplık dosyalarınız asla değiştirilmez.",
+  'settings.covers.where': 'Kaynaklar',
+  'settings.covers.appleHint':
+    'E-kitaplar ve sesli kitaplar için birçok dilde net mağaza kapakları.',
+  'settings.covers.audibleHint':
+    'Satıldıkları haliyle sesli kitap kapakları. Yalnızca sesli kitaplar için kullanılır.',
+  'settings.covers.googleHint':
+    "ISBN'ye göre eşleştirilen çok büyük bir katalog (sunucuda bir API anahtarı ayarlanmışsa başlığa göre de). Bazı kapaklar küçüktür.",
+  'settings.covers.openlibraryHint':
+    'Açık, kâr amacı gütmeyen bir katalog. Eski kitaplarda en güçlüsü.',
+  'settings.covers.none':
+    'Hiçbir kaynak seçilmediğinde, bir kitaba yalnızca diğer formatının kapağı sunulur ve çevrimiçi hiçbir şey aranmaz.',
+  'settings.covers.auto': 'Kapakları otomatik olarak öner',
+  'settings.covers.autoHint':
+    'Bir küratör kapaksız bir kitap açtığında, ReadPort Kapak bul düğmesini beklemek yerine hemen bir tane arar.',
 };
 
 export default messages;

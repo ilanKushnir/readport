@@ -1828,5 +1828,52 @@ const messages: Record<string, string> = {
   'translations.review.title': '같은 책, 다른 언어',
   'translations.review.lede':
     '같은 책의 두 언어판으로 보입니다. 연결하면 한쪽을 읽는 친구가 다른 쪽에도 표시되고, 독자는 같은 문단에서 어느 쪽으로든 이어서 볼 수 있게 됩니다.',
+  // library
+  'library.lang.search': '언어 검색',
+  'library.lang.clear': '검색어 지우기',
+  'library.lang.noMatch': '이 라이브러리에는 그런 이름의 언어가 없습니다.',
+  'library.book.aboutMore': '더보기',
+  'library.book.aboutLess': '접기',
+  'library.cover.suggested': '제안됨',
+  'library.cover.suggestedAlt': '{title}의 제안된 표지',
+  'library.cover.from': '{source}에서',
+  'library.cover.fromAudiobook': '오디오북판 표지',
+  'library.cover.fromEbook': '전자책판 표지',
+  'library.cover.use': '이 표지 사용',
+  'library.cover.saving': '저장 중…',
+  'library.cover.previous': '이전 제안',
+  'library.cover.next': '다음 제안',
+  'library.cover.of': '{n}/{total}',
+  'library.cover.notThese': '아니요, 괜찮습니다',
+  'library.cover.keep': '현재 표지 유지',
+  'library.cover.find': '표지 찾기',
+  'library.cover.finding': '찾는 중…',
+  'library.cover.nothing': '이 책의 표지를 찾지 못했습니다.',
+  'library.cover.lookFailed': '지금은 표지를 찾을 수 없습니다. 나중에 다시 시도하세요.',
+  'library.cover.failed': '지금은 표지를 변경할 수 없습니다.',
+  'library.cover.saved': '표지가 저장되었습니다. 라이브러리 파일은 변경되지 않습니다.',
+  'library.cover.dismissed': '이 책에는 표지가 다시 제안되지 않습니다.',
+  'library.cover.removed': '표지가 제거되었습니다.',
+  'library.cover.pickedFrom': '{source} 표지.',
+  'library.cover.pickedFromAudiobook': '오디오북판 표지.',
+  'library.cover.pickedFromEbook': '전자책판 표지.',
+  'library.cover.change': '변경',
+  'library.cover.remove': '제거',
+
+  // settings
+  'settings.covers.title': '책 표지',
+  'settings.covers.lede':
+    '표지가 없는 책은 큐레이터가 표지를 찾아 선택할 수 있습니다. 선택한 표지는 ReadPort의 데이터 폴더에 보관되며, 라이브러리 파일은 절대 변경되지 않습니다.',
+  'settings.covers.where': '검색 위치',
+  'settings.covers.appleHint': '전자책과 오디오북의 선명한 스토어 표지를 다양한 언어로 제공합니다.',
+  'settings.covers.audibleHint': '판매되는 그대로의 오디오북 표지입니다. 오디오북에만 사용됩니다.',
+  'settings.covers.googleHint':
+    'ISBN으로 대조하는 매우 큰 카탈로그입니다(서버에 API 키가 설정되어 있으면 제목으로도 대조합니다). 일부 표지는 작습니다.',
+  'settings.covers.openlibraryHint': '비영리 개방형 카탈로그입니다. 오래된 책에 특히 강합니다.',
+  'settings.covers.none':
+    '선택된 검색 위치가 없으면 책에는 다른 형식의 표지만 제공되며, 온라인 검색은 이루어지지 않습니다.',
+  'settings.covers.auto': '표지 자동 제안',
+  'settings.covers.autoHint':
+    '큐레이터가 표지 없는 책을 열면, “표지 찾기”를 기다리지 않고 바로 표지를 찾습니다.',
 };
 export default messages;

@@ -1866,6 +1866,57 @@ const messages: Record<string, string> = {
   'translations.review.title': '同じ本、別の言語',
   'translations.review.lede':
     'これらは同じ本の2つの言語版のようです。リンクすると、どちらかを読んでいる友達はもう一方にも表示され、読者はどちらからでも同じ段落で続きを読めるようになります。',
+  // library
+  'library.lang.search': '言語を検索',
+  'library.lang.clear': '検索をクリア',
+  'library.lang.noMatch': 'このライブラリにその名前の言語はありません。',
+  'library.book.aboutMore': 'もっと見る',
+  'library.book.aboutLess': '閉じる',
+  'library.cover.suggested': '候補',
+  'library.cover.suggestedAlt': '『{title}』の表紙の候補',
+  'library.cover.from': '{source}より',
+  'library.cover.fromAudiobook': 'オーディオブック版の表紙',
+  'library.cover.fromEbook': '電子書籍版の表紙',
+  'library.cover.use': 'この表紙を使う',
+  'library.cover.saving': '保存中…',
+  'library.cover.previous': '前の候補',
+  'library.cover.next': '次の候補',
+  'library.cover.of': '{n} / {total}',
+  'library.cover.notThese': 'いいえ、結構です',
+  'library.cover.keep': '今の表紙のままにする',
+  'library.cover.find': '表紙を検索',
+  'library.cover.finding': '検索中…',
+  'library.cover.nothing': 'この本の表紙は見つかりませんでした。',
+  'library.cover.lookFailed':
+    '今は表紙を検索できませんでした。しばらくしてからもう一度お試しください。',
+  'library.cover.failed': '今は表紙を変更できませんでした。',
+  'library.cover.saved': '表紙を保存しました。ライブラリのファイルは変更されていません。',
+  'library.cover.dismissed': 'この本には今後、表紙の候補を表示しません。',
+  'library.cover.removed': '表紙を削除しました。',
+  'library.cover.pickedFrom': '{source}の表紙。',
+  'library.cover.pickedFromAudiobook': 'オーディオブック版の表紙。',
+  'library.cover.pickedFromEbook': '電子書籍版の表紙。',
+  'library.cover.change': '変更',
+  'library.cover.remove': '削除',
+
+  // settings
+  'settings.covers.title': '本の表紙',
+  'settings.covers.lede':
+    '表紙のない本については、キュレーターが表紙を検索して選ぶことができます。選んだ表紙はReadPortのデータフォルダに保存され、ライブラリのファイルが変更されることはありません。',
+  'settings.covers.where': '検索先',
+  'settings.covers.appleHint':
+    '電子書籍・オーディオブックの鮮明なストア表紙を、多数の言語で提供します。',
+  'settings.covers.audibleHint':
+    '販売されているままのオーディオブックの表紙です。オーディオブックのみに使用されます。',
+  'settings.covers.googleHint':
+    '非常に大規模なカタログで、ISBNで照合します(サーバーにAPIキーが設定されていればタイトルでも照合します)。表紙が小さいこともあります。',
+  'settings.covers.openlibraryHint':
+    '非営利のオープンなカタログです。古い本で特に強みを発揮します。',
+  'settings.covers.none':
+    '検索先を選んでいない場合、本にはもう一方の形式の表紙のみが提示され、オンラインでの検索は行われません。',
+  'settings.covers.auto': '表紙を自動的に提案',
+  'settings.covers.autoHint':
+    'キュレーターが表紙のない本を開いたとき、「表紙を検索」を待たずにすぐ表紙を検索します。',
 };
 
 export default messages;

@@ -1848,5 +1848,52 @@ const messages: Record<string, string> = {
   'translations.review.title': 'Samme bok, andre språk',
   'translations.review.lede':
     'Dette ligner én bok på to språk. Når de er koblet sammen, vises venner som leser den ene, i den andre, og en leser kan fortsette fra den ene til den andre ved samme avsnitt.',
+  // library
+  'library.lang.search': 'Søk språk',
+  'library.lang.clear': 'Tøm søket',
+  'library.lang.noMatch': 'Ingen språk med det navnet i dette biblioteket.',
+  'library.book.aboutMore': 'Vis mer',
+  'library.book.aboutLess': 'Vis mindre',
+  'library.cover.suggested': 'Foreslått',
+  'library.cover.suggestedAlt': 'Et foreslått omslag til {title}',
+  'library.cover.from': 'Fra {source}',
+  'library.cover.fromAudiobook': 'Lydbokens omslag',
+  'library.cover.fromEbook': 'E-bokens omslag',
+  'library.cover.use': 'Bruk dette omslaget',
+  'library.cover.saving': 'Lagrer…',
+  'library.cover.previous': 'Forrige forslag',
+  'library.cover.next': 'Neste forslag',
+  'library.cover.of': '{n} av {total}',
+  'library.cover.notThese': 'Nei takk',
+  'library.cover.keep': 'Behold det nåværende omslaget',
+  'library.cover.find': 'Finn et omslag',
+  'library.cover.finding': 'Søker…',
+  'library.cover.nothing': 'Intet omslag dukket opp for denne boken.',
+  'library.cover.lookFailed': 'Kunne ikke søke etter omslag akkurat nå. Prøv igjen senere.',
+  'library.cover.failed': 'Kunne ikke endre omslaget akkurat nå.',
+  'library.cover.saved': 'Omslag lagret. Bibliotekfilene dine er uendret.',
+  'library.cover.dismissed': 'Ingen flere omslagsforslag for denne boken.',
+  'library.cover.removed': 'Omslag fjernet.',
+  'library.cover.pickedFrom': 'Omslag fra {source}.',
+  'library.cover.pickedFromAudiobook': 'Omslag fra lydboken.',
+  'library.cover.pickedFromEbook': 'Omslag fra e-boken.',
+  'library.cover.change': 'Endre',
+  'library.cover.remove': 'Fjern',
+
+  // settings
+  'settings.covers.title': 'Bokomslag',
+  'settings.covers.lede':
+    'For en bok uten eget omslag kan en kurator finne et og velge det. Valgte omslag lagres i ReadPorts datamappe; bibliotekfilene dine endres aldri.',
+  'settings.covers.where': 'Kilder',
+  'settings.covers.appleHint': 'Skarpe butikkomslag for e-bøker og lydbøker, på mange språk.',
+  'settings.covers.audibleHint': 'Lydbokomslag slik de selges. Brukes bare for lydbøker.',
+  'settings.covers.googleHint':
+    'En veldig stor katalog, matchet med ISBN (og med tittel også, med en API-nøkkel satt opp på serveren). Noen omslag er små.',
+  'settings.covers.openlibraryHint': 'En åpen, ideell katalog. Sterkest på eldre bøker.',
+  'settings.covers.none':
+    'Uten en valgt kilde tilbys en bok bare det andre formatets omslag, og ingenting slås opp på nettet.',
+  'settings.covers.auto': 'Foreslå omslag automatisk',
+  'settings.covers.autoHint':
+    'Når en kurator åpner en bok uten omslag, finner ReadPort et med en gang i stedet for å vente på Finn et omslag.',
 };
 export default messages;

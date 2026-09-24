@@ -1902,5 +1902,57 @@ const messages: Record<string, string> = {
   'translations.review.title': 'Ίδιο βιβλίο, άλλες γλώσσες',
   'translations.review.lede':
     'Αυτά μοιάζουν με ένα βιβλίο σε δύο γλώσσες. Μετά τη σύνδεση, οι φίλοι που διαβάζουν το ένα εμφανίζονται στο άλλο, και ο αναγνώστης μπορεί να συνεχίσει από το ένα στο άλλο από την ίδια παράγραφο.',
+  // library
+  'library.lang.search': 'Αναζήτηση γλωσσών',
+  'library.lang.clear': 'Απαλοιφή αναζήτησης',
+  'library.lang.noMatch': 'Καμία γλώσσα με αυτό το όνομα σε αυτή τη βιβλιοθήκη.',
+  'library.book.aboutMore': 'Εμφάνιση περισσότερων',
+  'library.book.aboutLess': 'Εμφάνιση λιγότερων',
+  'library.cover.suggested': 'Προτεινόμενο',
+  'library.cover.suggestedAlt': 'Προτεινόμενο εξώφυλλο για το {title}',
+  'library.cover.from': 'Πηγή: {source}',
+  'library.cover.fromAudiobook': 'Το εξώφυλλο του ηχητικού βιβλίου',
+  'library.cover.fromEbook': 'Το εξώφυλλο του ηλεκτρονικού βιβλίου',
+  'library.cover.use': 'Χρήση αυτού του εξωφύλλου',
+  'library.cover.saving': 'Αποθήκευση…',
+  'library.cover.previous': 'Προηγούμενη πρόταση',
+  'library.cover.next': 'Επόμενη πρόταση',
+  'library.cover.of': '{n} από {total}',
+  'library.cover.notThese': 'Όχι, ευχαριστώ',
+  'library.cover.keep': 'Διατήρηση του τρέχοντος εξωφύλλου',
+  'library.cover.find': 'Αναζήτηση εξωφύλλου',
+  'library.cover.finding': 'Αναζήτηση…',
+  'library.cover.nothing': 'Δεν βρέθηκε εξώφυλλο για αυτό το βιβλίο.',
+  'library.cover.lookFailed':
+    'Δεν ήταν δυνατή η αναζήτηση εξωφύλλων αυτή τη στιγμή. Δοκίμασε ξανά αργότερα.',
+  'library.cover.failed': 'Δεν ήταν δυνατή η αλλαγή του εξωφύλλου αυτή τη στιγμή.',
+  'library.cover.saved':
+    'Το εξώφυλλο αποθηκεύτηκε. Τα αρχεία της βιβλιοθήκης σου παραμένουν αμετάβλητα.',
+  'library.cover.dismissed': 'Καμία άλλη πρόταση εξωφύλλου για αυτό το βιβλίο.',
+  'library.cover.removed': 'Το εξώφυλλο αφαιρέθηκε.',
+  'library.cover.pickedFrom': 'Εξώφυλλο. Πηγή: {source}.',
+  'library.cover.pickedFromAudiobook': 'Εξώφυλλο από το ηχητικό βιβλίο.',
+  'library.cover.pickedFromEbook': 'Εξώφυλλο από το ηλεκτρονικό βιβλίο.',
+  'library.cover.change': 'Αλλαγή',
+  'library.cover.remove': 'Αφαίρεση',
+
+  // settings
+  'settings.covers.title': 'Εξώφυλλα βιβλίων',
+  'settings.covers.lede':
+    'Για ένα βιβλίο χωρίς δικό του εξώφυλλο, ένας επιμελητής μπορεί να αναζητήσει ένα και να το επιλέξει. Τα επιλεγμένα εξώφυλλα αποθηκεύονται στον φάκελο δεδομένων του ReadPort. Τα αρχεία της βιβλιοθήκης σου δεν αλλάζουν ποτέ.',
+  'settings.covers.where': 'Πηγές',
+  'settings.covers.appleHint':
+    'Ευκρινή εξώφυλλα καταστήματος για ηλεκτρονικά και ηχητικά βιβλία, σε πολλές γλώσσες.',
+  'settings.covers.audibleHint':
+    'Εξώφυλλα ηχητικών βιβλίων όπως πωλούνται. Χρησιμοποιείται μόνο για ηχητικά βιβλία.',
+  'settings.covers.googleHint':
+    'Πολύ μεγάλος κατάλογος, με αντιστοίχιση μέσω ISBN (και μέσω τίτλου επίσης, αν έχει οριστεί κλειδί API στον διακομιστή). Μερικά εξώφυλλα είναι μικρά.',
+  'settings.covers.openlibraryHint':
+    'Ανοιχτός κατάλογος χωρίς κερδοσκοπικό σκοπό. Πιο δυνατός σε παλιότερα βιβλία.',
+  'settings.covers.none':
+    'Χωρίς επιλεγμένη πηγή, σε ένα βιβλίο προσφέρεται μόνο το εξώφυλλο της άλλης μορφής του, και τίποτα δεν αναζητείται διαδικτυακά.',
+  'settings.covers.auto': 'Αυτόματη πρόταση εξωφύλλων',
+  'settings.covers.autoHint':
+    'Όταν ένας επιμελητής ανοίγει ένα βιβλίο χωρίς εξώφυλλο, το ReadPort αναζητά ένα αμέσως, αντί να περιμένει το «Αναζήτηση εξωφύλλου».',
 };
 export default messages;

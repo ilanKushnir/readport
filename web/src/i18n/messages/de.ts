@@ -1912,5 +1912,55 @@ const messages: Record<string, string> = {
   'translations.review.title': 'Gleiches Buch, andere Sprachen',
   'translations.review.lede':
     'Das sieht nach einem Buch in zwei Sprachen aus. Verknüpft erscheinen Freunde, die eine der beiden lesen, jeweils bei der anderen, und man kann von einer Ausgabe zur anderen an derselben Stelle wechseln.',
+  // library
+  'library.lang.search': 'Sprachen suchen',
+  'library.lang.clear': 'Suche leeren',
+  'library.lang.noMatch': 'Keine Sprache mit diesem Namen in dieser Mediathek.',
+  'library.book.aboutMore': 'Mehr anzeigen',
+  'library.book.aboutLess': 'Weniger anzeigen',
+  'library.cover.suggested': 'Vorgeschlagen',
+  'library.cover.suggestedAlt': 'Ein vorgeschlagenes Cover für {title}',
+  'library.cover.from': 'Von {source}',
+  'library.cover.fromAudiobook': 'Das Cover des Hörbuchs',
+  'library.cover.fromEbook': 'Das Cover des E-Books',
+  'library.cover.use': 'Dieses Cover verwenden',
+  'library.cover.saving': 'Wird gesichert…',
+  'library.cover.previous': 'Vorheriger Vorschlag',
+  'library.cover.next': 'Nächster Vorschlag',
+  'library.cover.of': '{n} von {total}',
+  'library.cover.notThese': 'Nein, danke',
+  'library.cover.keep': 'Das aktuelle Cover behalten',
+  'library.cover.find': 'Cover finden',
+  'library.cover.finding': 'Wird gesucht…',
+  'library.cover.nothing': 'Kein Cover für dieses Buch gefunden.',
+  'library.cover.lookFailed':
+    'Konnte gerade nicht nach Covern gesucht werden. Später erneut versuchen.',
+  'library.cover.failed': 'Das Cover konnte gerade nicht geändert werden.',
+  'library.cover.saved': 'Cover gesichert. Die eigenen Bibliotheksdateien bleiben unverändert.',
+  'library.cover.dismissed': 'Für dieses Buch werden keine weiteren Cover vorgeschlagen.',
+  'library.cover.removed': 'Cover entfernt.',
+  'library.cover.pickedFrom': 'Cover von {source}.',
+  'library.cover.pickedFromAudiobook': 'Cover vom Hörbuch.',
+  'library.cover.pickedFromEbook': 'Cover vom E-Book.',
+  'library.cover.change': 'Ändern',
+  'library.cover.remove': 'Entfernen',
+
+  // settings
+  'settings.covers.title': 'Buchcover',
+  'settings.covers.lede':
+    'Hat ein Buch kein eigenes Cover, kann ein Kurator eines suchen und auswählen. Ausgewählte Cover werden im Datenordner von ReadPort aufbewahrt; die eigenen Bibliotheksdateien werden nie geändert.',
+  'settings.covers.where': 'Suchen in',
+  'settings.covers.appleHint': 'Scharfe Store-Cover für E-Books und Hörbücher, in vielen Sprachen.',
+  'settings.covers.audibleHint':
+    'Hörbuch-Cover, wie sie verkauft werden. Wird nur für Hörbücher verwendet.',
+  'settings.covers.googleHint':
+    'Ein sehr großer Katalog, per ISBN abgeglichen (und, mit einem auf dem Server hinterlegten API-Schlüssel, auch per Titel). Manche Cover sind klein.',
+  'settings.covers.openlibraryHint':
+    'Ein offener, gemeinnütziger Katalog. Am stärksten bei älteren Büchern.',
+  'settings.covers.none':
+    'Ist keine Quelle ausgewählt, wird einem Buch nur das Cover seiner anderen Ausgabe angeboten, und online wird nichts gesucht.',
+  'settings.covers.auto': 'Cover automatisch vorschlagen',
+  'settings.covers.autoHint':
+    'Öffnet ein Kurator ein Buch ohne Cover, wird sofort eines gesucht, statt auf „Cover finden“ zu warten.',
 } as const;
 export default messages;

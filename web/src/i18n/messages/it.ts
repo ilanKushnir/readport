@@ -1889,6 +1889,56 @@ const messages: Record<string, string> = {
   'translations.review.title': 'Stesso libro, altre lingue',
   'translations.review.lede':
     "Sembrano lo stesso libro in due lingue. Una volta collegati, gli amici che ne leggono uno compaiono nell'altro, e si può continuare da uno all'altro dallo stesso paragrafo.",
+  // library
+  'library.lang.search': 'Cerca lingue',
+  'library.lang.clear': 'Cancella la ricerca',
+  'library.lang.noMatch': 'Nessuna lingua con questo nome in questa biblioteca.',
+  'library.book.aboutMore': 'Mostra altro',
+  'library.book.aboutLess': 'Mostra meno',
+  'library.cover.suggested': 'Suggerita',
+  'library.cover.suggestedAlt': 'Una copertina suggerita per {title}',
+  'library.cover.from': 'Da {source}',
+  'library.cover.fromAudiobook': "La copertina dell'audiolibro",
+  'library.cover.fromEbook': "La copertina dell'ebook",
+  'library.cover.use': 'Usa questa copertina',
+  'library.cover.saving': 'Salvataggio…',
+  'library.cover.previous': 'Suggerimento precedente',
+  'library.cover.next': 'Suggerimento successivo',
+  'library.cover.of': '{n} di {total}',
+  'library.cover.notThese': 'No, grazie',
+  'library.cover.keep': 'Mantieni la copertina attuale',
+  'library.cover.find': 'Trova copertina',
+  'library.cover.finding': 'Ricerca…',
+  'library.cover.nothing': 'Nessuna copertina trovata per questo libro.',
+  'library.cover.lookFailed': 'Impossibile cercare copertine al momento. Riprova più tardi.',
+  'library.cover.failed': 'Impossibile modificare la copertina al momento.',
+  'library.cover.saved': 'Copertina salvata. I tuoi file della biblioteca non vengono modificati.',
+  'library.cover.dismissed': 'Niente più suggerimenti di copertina per questo libro.',
+  'library.cover.removed': 'Copertina rimossa.',
+  'library.cover.pickedFrom': 'Copertina da {source}.',
+  'library.cover.pickedFromAudiobook': "Copertina dall'audiolibro.",
+  'library.cover.pickedFromEbook': "Copertina dall'ebook.",
+  'library.cover.change': 'Cambia',
+  'library.cover.remove': 'Rimuovi',
+
+  // settings
+  'settings.covers.title': 'Copertine dei libri',
+  'settings.covers.lede':
+    'Per un libro senza copertina propria, un curatore può cercarne una e sceglierla. Le copertine scelte vengono conservate nella cartella dati di ReadPort; i tuoi file della biblioteca non vengono mai modificati.',
+  'settings.covers.where': 'Dove cercare',
+  'settings.covers.appleHint':
+    'Copertine nitide dello store, per ebook e audiolibri, in molte lingue.',
+  'settings.covers.audibleHint':
+    'Copertine degli audiolibri come vengono vendute. Si usa solo per gli audiolibri.',
+  'settings.covers.googleHint':
+    'Un catalogo molto ampio, trovato tramite ISBN (e anche tramite titolo, con una chiave API impostata sul server). Alcune copertine sono piccole.',
+  'settings.covers.openlibraryHint':
+    'Un catalogo aperto e senza scopo di lucro. Il migliore per i libri più vecchi.',
+  'settings.covers.none':
+    "Se non si sceglie nessuna fonte, al libro viene offerta solo la copertina dell'altra edizione, e non si cerca nulla online.",
+  'settings.covers.auto': 'Suggerisci automaticamente le copertine',
+  'settings.covers.autoHint':
+    'Quando un curatore apre un libro senza copertina, ne viene cercata subito una, invece di aspettare «Trova copertina».',
 };
 
 export default messages;
