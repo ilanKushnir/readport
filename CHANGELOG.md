@@ -4,6 +4,15 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.26.1 - 2026-09-24
+
+### Fixed
+
+- `.env.example` lists `RP_GOOGLE_BOOKS_KEY`. 0.26.0 was tagged but never
+  published - the release check that every variable the server reads is
+  documented stopped it - so this is the first build of everything in
+  0.26.0 below.
+
 ## 0.26.0 - 2026-09-24
 
 ### Added
