@@ -28,7 +28,8 @@ import { nowIso } from '../../db/index.js';
 import { newId } from '../../util/ids.js';
 import { between } from '../../util/rank.js';
 import { bookRowToSummary } from './library.js';
-import { bookVisible, seesHidden, visibleSql } from '../../library/visibility.js';
+import { bookVisible, seesHidden, visiblePairSql, visibleSql } from '../../library/visibility.js';
+import { hasRole } from '../../auth/roles.js';
 
 /**
  * Shelves and the reading list: the furniture each reader arranges for
@@ -304,6 +305,14 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
                    AND e.hidden_at IS NOT NULL AND e.scan_state != 'missing'))`,
         )
       : 0;
+    // Suggestions waiting on a decision, counted beside Pairing for the
+    // people who can make one.
+    const pairsToReview = hasRole(req.user?.role, 'curator')
+      ? one(
+          `SELECT COUNT(*) AS c FROM pairs p
+            WHERE p.status = 'candidate' AND ${visiblePairSql(sees, 'p')}`,
+        )
+      : null;
 
     return {
       auto: [
@@ -319,6 +328,7 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
         nextTitle: next?.title ?? null,
       },
       ...(sees ? { hidden } : {}),
+      ...(pairsToReview !== null ? { pairsToReview } : {}),
     };
   });
 

@@ -4081,15 +4081,75 @@ body:has(.app-body) {
   flex-direction: column;
   gap: 2px;
 }
-/* Stats and Pairing live in the header nav on a wide screen and in this
-   group on a phone, where the tab bar holds five and the header is gone. */
+/* Stats and Pairing live in the header nav on a wide screen and at the top
+   of the shelves on a phone, where the tab bar holds five and the header is
+   gone: two tiles under the thumb as the sheet opens. */
 .sidebar__phonenav {
   display: none;
 }
 @media (max-width: 743px) {
   .sidebar__phonenav {
-    display: block;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-2);
+    margin-block-end: var(--sp-3);
   }
+}
+.sidebar__jump {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--rp-border);
+  border-radius: var(--radius-control);
+  background: var(--rp-surface);
+  color: var(--rp-text);
+  font-size: 14.5px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.sidebar__jump > svg {
+  flex-shrink: 0;
+  color: var(--rp-interactive);
+}
+.sidebar__jump:hover {
+  border-color: var(--rp-border-strong);
+}
+.sidebar__jump.is-active {
+  border-color: var(--rp-primary);
+  background: var(--rp-primary);
+  color: var(--rp-on-primary);
+}
+.sidebar__jump.is-active > svg {
+  color: inherit;
+}
+.sidebar__jumplabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Suggestions waiting on a decision: a number worth a colour. */
+.sidebar__badge {
+  flex-shrink: 0;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--rp-primary);
+  color: var(--rp-on-primary);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 20px;
+  text-align: center;
+}
+.sidebar__jump.is-active .sidebar__badge {
+  background: var(--rp-on-primary);
+  color: var(--rp-interactive);
 }
 .sidebar__group--queue {
   padding-block-end: var(--sp-3);

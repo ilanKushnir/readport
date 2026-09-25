@@ -302,6 +302,48 @@ export const library = {
     'Choose an ebook and an audiobook of the same work. Alignment runs after linking; switching between editions is unavailable until alignment completes.',
   'library.pair.switchUnaligned':
     'You own {kind, select, ebook {the audiobook} other {the ebook}} too. Timing the two together has not finished, so moving between them will start at the beginning for now.',
+
+  // ---------------------------------------------------------------- pairing a book from its page
+  'library.pairing.tool': 'Pair',
+  'library.pairing.toolHint':
+    '{kind, select, ebook {Pair this ebook with its audiobook} other {Pair this audiobook with its ebook}}',
+  'library.pairing.title':
+    '{kind, select, ebook {Pair with an audiobook} other {Pair with an ebook}}',
+  'library.pairing.lede':
+    '{kind, select, ebook {Choose the audiobook of this same book. The two are then timed together, so switching between reading and listening picks up at the same place.} other {Choose the ebook of this same book. The two are then timed together, so switching between listening and reading picks up at the same place.}}',
+  'library.pairing.linked': 'Paired with',
+  'library.pairing.aligned': 'Timed together: switching lands in the same place',
+  'library.pairing.notAligned': 'Not timed together yet',
+  'library.pairing.open': 'Open',
+  'library.pairing.unpair': 'Unpair',
+  'library.pairing.unpairAsk': 'Unpair these two?',
+  'library.pairing.unpairYes': 'Unpair',
+  'library.pairing.suggested': 'Suggested',
+  'library.pairing.suggestedNote': 'Found by the library scan',
+  'library.pairing.notMatch': 'Not a match',
+  'library.pairing.choose': '{kind, select, ebook {Choose the audiobook} other {Choose the ebook}}',
+  'library.pairing.search': 'Title or author',
+  'library.pairing.noMatch': 'Nothing here matches “{query}”.',
+  'library.pairing.none':
+    '{kind, select, ebook {There are no audiobooks in the library yet.} other {There are no ebooks in the library yet.}}',
+  'library.pairing.noOthers':
+    '{kind, select, ebook {There are no other audiobooks in the library.} other {There are no other ebooks in the library.}}',
+  'library.pairing.likely': 'Likely match',
+  'library.pairing.pairedWith': 'Paired with “{title}”',
+  'library.pairing.dismissed': 'Marked not a match before',
+  'library.pairing.pair': 'Pair',
+  'library.pairing.pairing': 'Pairing…',
+  'library.pairing.pairInstead': 'Pair instead',
+  'library.pairing.moveAsk': 'It is paired with “{title}”. Pair it with this book instead?',
+  'library.pairing.replaceAsk':
+    'This book is paired with “{title}”. Pair it with this one instead?',
+  'library.pairing.showAll': 'Show all {n}',
+  'library.pairing.allPairs': 'Every pair in the library, on the Pairing page',
+  'library.pairing.loadFailed': 'Could not load the books to pair with.',
+  'library.pairing.toast.paired': 'Paired with “{title}”. Timing them together is queued.',
+  'library.pairing.toast.unpaired': 'Unpaired',
+  'library.pairing.toast.dismissed': 'Marked not a match',
+  'library.pairing.toast.failed': 'Could not change the pairing.',
   'library.download.inProgress': 'Downloads in progress',
   'library.download.title': 'Downloads',
   'library.download.downloadingN': 'Downloading {n}',

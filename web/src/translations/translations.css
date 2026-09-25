@@ -284,6 +284,32 @@
 .edition-search + .edition-list {
   margin-block-start: var(--sp-3);
 }
+/* "Are you sure?" in a row's own actions, beside the answer. */
+.edition-row__ask {
+  max-width: 24ch;
+  color: var(--rp-text);
+  font-size: 13px;
+  line-height: 1.35;
+}
+@media (max-width: 520px) {
+  .edition-row__actions {
+    flex-wrap: wrap;
+  }
+  .edition-row__ask {
+    flex-basis: 100%;
+    max-width: none;
+    text-align: end;
+  }
+}
+
+/* ---------------------------------------------- pairing a book from its page */
+.pair-sheet__more {
+  margin-block-start: var(--sp-2);
+}
+.pair-sheet__foot {
+  margin: var(--sp-5) 0 0;
+  font-size: 14px;
+}
 
 /* ------------------------------------------ friends reading a translation */
 .friends-strip__lang {

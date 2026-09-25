@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   type BookSummary,
   type TranslationEvidence,
@@ -6,7 +6,8 @@ import {
   type TranslationTitle,
 } from '@readport/shared';
 import { api, ApiError, failureMessage } from '../api/client';
-import { Cover, Sheet, useToast } from '../components/ui';
+import { Sheet, useToast } from '../components/ui';
+import { EditionRow } from '../components/EditionRow';
 import { IconLink, IconSearch } from '../components/icons';
 import { useT } from '../i18n';
 import { useFormat } from '../i18n/useFormat';
@@ -33,57 +34,6 @@ const EVIDENCE: [keyof TranslationEvidence, MessageKey][] = [
   ['length', 'translations.evidence.length'],
   ['chapters', 'translations.evidence.chapters'],
 ];
-
-/** One edition in a list: its cover, its language, its title, and what can be done with it. */
-function EditionRow({
-  id,
-  kind,
-  hasCover,
-  title,
-  author,
-  language,
-  formats,
-  note,
-  children,
-  dimmed = false,
-}: {
-  id: string;
-  kind: 'ebook' | 'audio';
-  hasCover: boolean;
-  title: string;
-  author: string | null;
-  language: string | null;
-  formats: string;
-  note?: ReactNode;
-  children?: ReactNode;
-  dimmed?: boolean;
-}) {
-  const f = useFormat();
-  return (
-    <li className={`edition-row${dimmed ? ' is-dimmed' : ''}`}>
-      <span className="edition-cover edition-cover--sm">
-        <Cover book={{ id, kind, hasCover, title, author }} />
-      </span>
-      <div className="edition-row__body">
-        <span className="edition-row__meta">
-          <strong>{f.languageName(language)}</strong>
-          <span aria-hidden="true"> · </span>
-          {formats}
-        </span>
-        <bdi className="edition-row__title" lang={language ?? undefined}>
-          {title}
-        </bdi>
-        {author && (
-          <bdi className="edition-row__author" lang={language ?? undefined}>
-            {author}
-          </bdi>
-        )}
-        {note && <span className="edition-row__note">{note}</span>}
-      </div>
-      {children && <div className="edition-row__actions">{children}</div>}
-    </li>
-  );
-}
 
 /**
  * Where a curator links a book to its editions in other languages: what is

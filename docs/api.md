@@ -144,6 +144,7 @@ step.
 | GET    | `/api/library/roots`                         | admin; the configured read-only roots                      |
 | GET    | `/api/books/:id`                             | detail: chapters, tracks, pair, progress                   |
 | GET    | `/api/books/:id/metadata`                    | admin; the file, where it is, and what ReadPort made of it |
+| GET    | `/api/books/:id/pairing`                     | curator; its pair, a suggestion, the other format to pick  |
 | GET    | `/api/books/:id/cover`                       | image; `?v=` from the summary's `coverV`                   |
 | GET    | `/api/books/:id/cover-suggestions`           | curator; `?look=1` asks the catalogues now                 |
 | GET    | `/api/books/:id/cover-suggestions/:n/image`  | curator; candidate `n`, from ReadPort's disk               |
@@ -178,15 +179,14 @@ admins.
 
 **A book's metadata** (`GET …/metadata`, admins only, since it names the
 server's disk) answers `{file, tracks, embedded, readport}`: the file's name
-
-- or an audiobook's folder's - its folder within the library, the library
-  folder and the whole path as the server sees them, its size, format and last
-  change on disk (`null`, with `present: false`, when it is gone); an
-  audiobook's files in play order; the book's title, author, series, language,
-  publisher, identifiers and tags; and ReadPort's own record - id, when it was
-  added and last indexed, its state and any error, its language and where that
-  came from, where its cover came from, its length, its pair and whether it is
-  hidden.
+(or an audiobook's folder's), its folder within the library, the library
+folder and the whole path as the server sees them, its size, format and last
+change on disk (`null`, with `present: false`, when it is gone); an
+audiobook's files in play order; the book's title, author, series, language,
+publisher, identifiers and tags; and ReadPort's own record - id, when it was
+added and last indexed, its state and any error, its language and where that
+came from, where its cover came from, its length, its pair and whether it is
+hidden.
 
 **Covers for books without one.** `GET …/cover-suggestions` answers
 `{state, auto, canLook, suggestions: [{n, source, title, author, width,
@@ -346,13 +346,12 @@ hour a person reads at are the client's arithmetic.
 joined from the library and from the caller's own progress. A book that has
 since left the library still gets an entry, with `title: null` and the medium
 it was read in as its `kind`. `totalChars` is the ebook's indexed text length
-
-- the figure the reader's manifest is built on - and `null` until the book has
-  been indexed; `durationMs` is the audiobook's length. `pct` is the current
-  position, 0 when there is none. `finishedAt` is the time of the finishing
-  event while the history still holds it, else the time the state was last
-  written; `lastReadAt` is the end of the latest session with that book, in any
-  window.
+(the figure the reader's manifest is built on), `null` until the book has been
+indexed; `durationMs` is the audiobook's length. `pct` is the current
+position, 0 when there is none. `finishedAt` is the time of the finishing
+event while the history still holds it, else the time the state was last
+written; `lastReadAt` is the end of the latest session with that book, in any
+window.
 
 `allTime` is `{seconds, sessions, firstSessionAt, booksFinished, rereads}`
 over the whole diary regardless of `days`; `booksFinished` counts every
@@ -558,7 +557,7 @@ rank without pushing the visible numbers along.
 | ------ | ------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
 | GET    | `/api/pairs`                                     | `{pairs, summary}` - evidence, compat, handoff, last job                                         |
 | GET    | `/api/pairs/:id` / `/api/pairs/:id/alignment`    | detail; per-minute confidence                                                                    |
-| POST   | `/api/pairs/link`                                | curator; manual link `{ebookId, audioId}`                                                        |
+| POST   | `/api/pairs/link`                                | curator; manual link `{ebookId, audioId, replace?}` → `{pair, released}`                         |
 | POST   | `/api/pairs/:id/confirm` \| `reject` \| `unlink` | curator; decisions are durable                                                                   |
 | POST   | `/api/pairs/:id/language`                        | curator; `{language}` or `{language: null}` to clear                                             |
 | POST   | `/api/pairs/:id/align`                           | curator; queue this pair → `{jobId, queued}`                                                     |
@@ -566,6 +565,19 @@ rank without pushing the visible numbers along.
 | POST   | `/api/pairs/:id/resolve`                         | `{from: Locator}` → `{to, resolution}` - the two-way switch                                      |
 | GET    | `/api/pairs/:id/segments/:spineIdx`              | one chapter's timings - what read-along reads                                                    |
 | GET    | `/api/pairs/:id/chapters`                        | `{chapters: [{spineIdx, firstMs, lastMs, segments}]}` - where each chapter sits in the narration |
+
+**Pairing one book** (`GET /api/books/:id/pairing`, curators) answers
+`{linked, suggested, options}`: the editions the book is paired with (with
+`switchable` once they are timed together), what the pair scan suggested for
+it, and every book of the other format the caller can see, each with the pair
+scan's own `score`, `likely` when the scan would suggest it by itself,
+`pairedWith` when it is paired with another book already, and `dismissed` when
+it was marked not a match for this one. The likely matches come first. A link
+posted with `replace: true`, as the book page posts it, lets go of every other
+pair and suggestion either book had (they become `rejected`, and `released`
+names them); without it a link only adds, which is how an ebook keeps two
+narrations. `/api/shelves` adds `pairsToReview`, the suggestions waiting on a
+decision, for curators and admins.
 
 Each pair reports its `language` as three values rather than one, because the
 useful thing to show is not just the answer but where it came from: `override`

@@ -184,6 +184,8 @@ function ShelfHeaderButton({
 function Shell() {
   const t = useT();
   const { phase, needsLibraries, friendsAttention, joinRequests } = useSession();
+  // Pair suggestions waiting on a decision; counted for curators and admins only.
+  const pairsToReview = useShelves().overview?.pairsToReview ?? 0;
   const location = useLocation();
   const [setupSkipped, setSetupSkipped] = useState(
     () => localStorage.getItem('rp-setup-libraries-skipped') === '1',
@@ -334,8 +336,8 @@ function Shell() {
         <IconNotes size={18} /> {t('nav.notes')}
       </NavLink>
       {/* Stats and Pairing sit out of the phone tab bar: five tabs is what a
-          narrow screen holds, and both stay reachable elsewhere (the library
-          home's stats strip, and the settings and book pages for pairing). */}
+          narrow screen holds, and a phone has both at the top of the Shelves
+          sheet instead. */}
       <NavLink to="/stats" className="nav-wide" onClick={tabClick('/stats')}>
         <IconStats size={18} /> {t('nav.stats')}
       </NavLink>
@@ -349,7 +351,16 @@ function Shell() {
         {t('nav.friends')}
       </NavLink>
       <NavLink to="/pairs" className="nav-wide" onClick={tabClick('/pairs')}>
-        <IconLink size={18} /> {t('nav.pairing')}
+        <span className="nav-mark">
+          <IconLink size={18} />
+          {pairsToReview > 0 && (
+            <span
+              className="nav-mark__dot"
+              aria-label={t('nav.pairsToReview', { n: pairsToReview })}
+            />
+          )}
+        </span>{' '}
+        {t('nav.pairing')}
       </NavLink>
       <NavLink to="/settings" onClick={tabClick('/settings')}>
         <span className="nav-mark">

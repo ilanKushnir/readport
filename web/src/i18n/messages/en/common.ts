@@ -34,6 +34,8 @@ export const common = {
   'nav.library': 'Library',
   'nav.notes': 'Notes',
   'nav.pairing': 'Pairing',
+  'nav.pairsToReview':
+    '{n, plural, one {# pair suggestion to review} other {# pair suggestions to review}}',
   'nav.settings': 'Settings',
   'nav.friends': 'Friends',
   'nav.more': 'More',

@@ -82,6 +82,11 @@ export const shelvesOverviewSchema = z.object({
    * admin's own Hidden shelf. Sent to admins only; nobody else has one.
    */
   hidden: z.number().int().optional(),
+  /**
+   * Pair suggestions nobody has decided on yet, for the count beside
+   * Pairing. Sent to curators and admins only: they are the ones who decide.
+   */
+  pairsToReview: z.number().int().optional(),
 });
 export type ShelvesOverview = z.infer<typeof shelvesOverviewSchema>;
 

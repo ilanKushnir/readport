@@ -23,6 +23,12 @@ export const whatsnew = {
   'whatsnew.update.refreshing': 'Refreshing…',
   'whatsnew.update.later': 'Not now',
 
+  // ---------------------------------------------------------------- 0.28.0
+  'whatsnew.release.pairFromBook':
+    'Pair a book from its own page: Pair lists the books of the other format, the likeliest match first, and your pick replaces a pairing that was wrong.',
+  'whatsnew.release.pairingOnPhone':
+    'On a phone, Pairing and Stats sit at the top of the Shelves sheet, with a count of the suggestions waiting for review.',
+
   // ---------------------------------------------------------------- 0.27.0
   'whatsnew.release.audiobookNames':
     'Audiobooks are named after their folders when their files disagree: author, series and volume number, no more books called after their first track.',

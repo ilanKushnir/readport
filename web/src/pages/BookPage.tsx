@@ -63,6 +63,7 @@ import { RichText } from '../components/RichText';
 import { CoverPicker } from '../components/CoverPicker';
 import { BookMetadataSheet } from '../components/BookMetadataSheet';
 import { LinkTranslationsSheet } from '../translations/LinkTranslationsSheet';
+import { PairSheet } from '../components/PairSheet';
 
 /** The paired edition, as far as the offline sheet needs to describe it. */
 interface Companion {
@@ -100,7 +101,10 @@ export function BookPage() {
   const [hiding, setHiding] = useState(false);
   /** The sheet a curator links this book to its other languages in. */
   const [languagesSheet, setLanguagesSheet] = useState(false);
+  /** And the one they pair it with its other format in. */
+  const [pairSheet, setPairSheet] = useState(false);
   const { user } = useSession();
+  const canCurate = user?.role === 'admin' || user?.role === 'curator';
   const [member, setMember] = useState<{
     shelfIds: string[];
     onReadingList: boolean;
@@ -402,7 +406,7 @@ export function BookPage() {
       <div className="book-hero">
         <CoverPicker
           book={book}
-          canCurate={user?.role === 'admin' || user?.role === 'curator'}
+          canCurate={canCurate}
           onChanged={(changed) => {
             setDetail((d) => (d ? { ...d, book: changed } : d));
             void refreshShelves();
@@ -617,7 +621,18 @@ export function BookPage() {
                   <span>{t('library.book.downloadFile')}</span>
                 </a>
               ))}
-            {(user?.role === 'admin' || user?.role === 'curator') && (
+            {canCurate && (
+              <button
+                type="button"
+                className="btn btn--ghost book-tool"
+                title={t('library.pairing.toolHint', { kind: book.kind })}
+                onClick={() => setPairSheet(true)}
+              >
+                <IconLink size={17} />
+                <span>{t('library.pairing.tool')}</span>
+              </button>
+            )}
+            {canCurate && (
               <button
                 type="button"
                 className="btn btn--ghost book-tool"
@@ -700,9 +715,21 @@ export function BookPage() {
         <div className="banner" role="note">
           <IconLink size={16} />
           <span style={{ flex: 1 }}>{t('library.book.candidateFound', { kind: book.kind })}</span>
-          <Link to="/pairs" className="btn btn--ghost" style={{ minHeight: 36 }}>
-            {t('library.book.review')}
-          </Link>
+          {/* Decided here, beside the book, by someone who can decide. */}
+          {canCurate ? (
+            <button
+              type="button"
+              className="btn btn--ghost"
+              style={{ minHeight: 36 }}
+              onClick={() => setPairSheet(true)}
+            >
+              {t('library.book.review')}
+            </button>
+          ) : (
+            <Link to="/pairs" className="btn btn--ghost" style={{ minHeight: 36 }}>
+              {t('library.book.review')}
+            </Link>
+          )}
         </div>
       )}
 
@@ -812,6 +839,16 @@ export function BookPage() {
         />
       )}
       {metaSheet && <BookMetadataSheet bookId={book.id} onClose={() => setMetaSheet(false)} />}
+      {pairSheet && (
+        <PairSheet
+          book={book}
+          onChanged={() => {
+            void load();
+            void refreshShelves();
+          }}
+          onClose={() => setPairSheet(false)}
+        />
+      )}
       {hideSheet && (
         <Sheet title={t('library.hidden.askTitle')} onClose={() => setHideSheet(false)}>
           <p className="sheet__lede">{t('library.hidden.askLede', { title: book.title })}</p>

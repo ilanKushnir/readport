@@ -554,3 +554,34 @@ export interface BookMetadata {
     hidden: { at: string; by: string | null } | null;
   };
 }
+
+/**
+ * A book's pairing, as its page offers it to a curator
+ * (`GET /api/books/:id/pairing`): the edition it is paired with, what the
+ * pair scan suggested for it, and every book of the other format to choose
+ * from instead.
+ */
+export interface BookPairing {
+  /** The other editions it is paired with; the one its page switches to first. */
+  linked: {
+    pairId: string;
+    status: 'auto' | 'confirmed';
+    /** Timed together, so switching lands in the same place. */
+    switchable: boolean;
+    book: BookSummary;
+  }[];
+  /** What the pair scan suggested for it and nobody has decided on yet. */
+  suggested: { pairId: string; book: BookSummary }[];
+  /** Every other book of the other format, the likeliest match first. */
+  options: {
+    book: BookSummary;
+    /** The pair scan's own score for the two, 0 to 1. */
+    score: number;
+    /** Whether the pair scan would suggest the two by itself. */
+    likely: boolean;
+    /** The book it is paired with already, if any. */
+    pairedWith: { id: string; title: string } | null;
+    /** Marked "not a match" for this book before. */
+    dismissed: boolean;
+  }[];
+}

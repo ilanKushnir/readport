@@ -203,9 +203,41 @@ export function Sidebar({
   };
 
   const queue = overview?.readingList;
+  const toReview = overview?.pairsToReview ?? 0;
 
   return (
     <nav className="sidebar" aria-label={t('nav.shelves')}>
+      {/* On a phone the header nav is gone and the tab bar holds five, so
+          Pairing and Stats open the shelves, first thing, where a thumb
+          finds them without scrolling past every shelf and browse group.
+          Where the header shows, it has them and this row is hidden. */}
+      <div className="sidebar__phonenav" role="group" aria-label={t('nav.more')}>
+        <NavLink
+          to="/pairs"
+          className={({ isActive }) => `sidebar__jump${isActive ? ' is-active' : ''}`}
+          onClick={onNavigate}
+        >
+          <IconLink size={18} />
+          <span className="sidebar__jumplabel">{t('nav.pairing')}</span>
+          {toReview > 0 && (
+            <>
+              <span className="sidebar__badge" aria-hidden="true">
+                {f.number(toReview)}
+              </span>
+              <span className="visually-hidden">{t('nav.pairsToReview', { n: toReview })}</span>
+            </>
+          )}
+        </NavLink>
+        <NavLink
+          to="/stats"
+          className={({ isActive }) => `sidebar__jump${isActive ? ' is-active' : ''}`}
+          onClick={onNavigate}
+        >
+          <IconStats size={18} />
+          <span className="sidebar__jumplabel">{t('nav.stats')}</span>
+        </NavLink>
+      </div>
+
       <ul className="sidebar__group sidebar__group--queue">
         <Row
           to="/reading-list"
@@ -477,29 +509,6 @@ export function Sidebar({
       {/* Last, because it is the library describing itself rather than
           anything the reader made: shelves they built come first. */}
       <BrowseGroups onNavigate={onNavigate} />
-
-      {/* On a phone the header nav is gone and the tab bar holds five, so
-          the rest of the app is reached from here; where the header shows,
-          this group is hidden and the header has them. */}
-      <section className="sidebar__phonenav" aria-label={t('nav.more')}>
-        <h2 className="sidebar__heading">{t('nav.more')}</h2>
-        <ul className="sidebar__group">
-          <Row
-            to="/stats"
-            icon={<IconStats size={18} />}
-            label={t('nav.stats')}
-            count={null}
-            onNavigate={onNavigate}
-          />
-          <Row
-            to="/pairs"
-            icon={<IconLink size={18} />}
-            label={t('nav.pairing')}
-            count={null}
-            onNavigate={onNavigate}
-          />
-        </ul>
-      </section>
 
       {/* After the library and before the way out: the other apps in this
           household, when the admin has named any. */}

@@ -1,5 +1,5 @@
 import { type FastifyInstance } from 'fastify';
-import { alignManySchema, locatorSchema } from '@readport/shared';
+import { alignManySchema, locatorSchema, type BookPairing } from '@readport/shared';
 import { z } from 'zod';
 import { requireRole } from '../../auth/roles.js';
 import { resolveSettings } from '../../domain/settings.js';
@@ -16,9 +16,21 @@ import {
   type ResolveContext,
 } from '../../alignment/service.js';
 import { loadManifest, loadSentences } from '../../epub/extract.js';
-import { languageCode } from '../../pairing/score.js';
+import {
+  CANDIDATE_THRESHOLD,
+  languageCode,
+  scorePair,
+  type PairInputs,
+} from '../../pairing/score.js';
 import { LANGUAGES, parseModelMissing } from '../../alignment/model.js';
-import { bookVisible, pairVisible, seesHidden, visiblePairSql } from '../../library/visibility.js';
+import {
+  bookVisible,
+  pairVisible,
+  seesHidden,
+  visiblePairSql,
+  visibleSql,
+} from '../../library/visibility.js';
+import { bookRowToSummary } from './library.js';
 import { healTitleGroups } from '../../translations/groups.js';
 import { ensureMatches } from '../../translations/store.js';
 
@@ -241,45 +253,179 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
     return { pair: pairDto(row) };
   });
 
-  /** Manual link between an ebook and an audiobook. */
+  /**
+   * Manual link between an ebook and an audiobook.
+   *
+   * With `replace`, as a book's own page links: the pick is THE other
+   * edition, so whatever either book was paired with, or suggested for, is
+   * let go in the same step - a book has one audiobook. The Pairing page
+   * links without it, and an ebook can keep two narrations that way.
+   */
   app.post('/api/pairs/link', async (req, reply) => {
     if (!requireRole(req, reply, 'curator')) return reply;
-    const parsed = z.object({ ebookId: z.string(), audioId: z.string() }).safeParse(req.body);
+    const parsed = z
+      .object({ ebookId: z.string(), audioId: z.string(), replace: z.boolean().optional() })
+      .safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: 'invalid' });
-    const { ebookId, audioId } = parsed.data;
+    const { ebookId, audioId, replace = false } = parsed.data;
     const ebook = db.prepare("SELECT id FROM books WHERE id = ? AND kind = 'ebook'").get(ebookId);
     const audio = db.prepare("SELECT id FROM books WHERE id = ? AND kind = 'audio'").get(audioId);
     const sees = seesHidden(req);
     if (!ebook || !audio || !bookVisible(db, ebookId, sees) || !bookVisible(db, audioId, sees))
       return reply.code(404).send({ error: 'not-found' });
     const id = stableId('pair', ebookId, audioId);
-    const existing = db.prepare('SELECT id FROM pairs WHERE id = ?').get(id);
-    if (existing) {
-      db.prepare('UPDATE pairs SET status = ?, decided_at = ?, decided_by = ? WHERE id = ?').run(
-        'confirmed',
-        nowIso(),
-        req.user!.id,
-        id,
+    const at = nowIso();
+    const by = req.user!.id;
+    const released = replace
+      ? (
+          db
+            .prepare(
+              `SELECT id FROM pairs WHERE id != ? AND (ebook_id = ? OR audio_id = ?)
+                AND status IN ('auto','confirmed','candidate')`,
+            )
+            .all(id, ebookId, audioId) as { id: string }[]
+        ).map((r) => String(r.id))
+      : [];
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      const decide = db.prepare(
+        'UPDATE pairs SET status = ?, decided_at = ?, decided_by = ? WHERE id = ?',
       );
-    } else {
-      db.prepare(
-        `INSERT INTO pairs (id, ebook_id, audio_id, status, score, evidence_json, created_at, decided_at, decided_by)
-         VALUES (?, ?, ?, 'confirmed', 0, ?, ?, ?, ?)`,
-      ).run(
-        id,
-        ebookId,
-        audioId,
-        JSON.stringify({ notes: ['Manually linked by user.'] }),
-        nowIso(),
-        nowIso(),
-        req.user!.id,
-      );
+      for (const other of released) decide.run('rejected', at, by, other);
+      if (db.prepare('SELECT id FROM pairs WHERE id = ?').get(id)) {
+        decide.run('confirmed', at, by, id);
+      } else {
+        db.prepare(
+          `INSERT INTO pairs (id, ebook_id, audio_id, status, score, evidence_json, created_at, decided_at, decided_by)
+           VALUES (?, ?, ?, 'confirmed', 0, ?, ?, ?, ?)`,
+        ).run(
+          id,
+          ebookId,
+          audioId,
+          JSON.stringify({ notes: ['Manually linked by user.'] }),
+          at,
+          at,
+          by,
+        );
+      }
+      db.exec('COMMIT');
+    } catch (err) {
+      db.exec('ROLLBACK');
+      throw err;
     }
+    // A pair let go takes back the language it lent; the new one lends its own.
+    for (const other of released) recomputePairLanguages(db, other);
     recomputePairLanguages(db, id);
     joinedTitle(id);
     enqueueJob(db, 'align', { pairId: id }, { dedupeKey: `align:${id}` });
     const row = db.prepare('SELECT * FROM pairs WHERE id = ?').get(id) as Record<string, unknown>;
-    return { pair: pairDto(row) };
+    return { pair: pairDto(row), released };
+  });
+
+  /**
+   * What a book's page needs to pair it by hand: the edition it is paired
+   * with, what the pair scan suggested for it, and every book of the other
+   * format - scored the way the pair scan scores them, so the right one is
+   * at the top of the list more often than not.
+   */
+  app.get('/api/books/:id/pairing', async (req, reply) => {
+    if (!requireRole(req, reply, 'curator')) return reply;
+    const { id } = req.params as { id: string };
+    const sees = seesHidden(req);
+    const book = db
+      .prepare("SELECT * FROM books WHERE id = ? AND scan_state != 'missing'")
+      .get(id) as Record<string, unknown> | undefined;
+    if (!book || !bookVisible(db, id, sees)) return reply.code(404).send({ error: 'not-found' });
+    const isEbook = book.kind === 'ebook';
+    const userId = req.user!.id;
+    const summary = (row: Record<string, unknown>) => bookRowToSummary(ctx, userId, row, sees);
+
+    // This book's pairs, decided or not, by the book on the other side.
+    const mine = new Map<string, Record<string, unknown>>();
+    for (const p of db
+      .prepare(
+        `SELECT * FROM pairs p WHERE (p.ebook_id = ? OR p.audio_id = ?) AND ${visiblePairSql(sees, 'p')}`,
+      )
+      .all(id, id) as Record<string, unknown>[]) {
+      mine.set(String(isEbook ? p.audio_id : p.ebook_id), p);
+    }
+    // Which book every book of the other format is paired with already.
+    const partners = new Map<string, { id: string; title: string }>();
+    for (const p of db
+      .prepare(
+        `SELECT p.ebook_id, p.audio_id, e.title AS ebook_title, a.title AS audio_title
+           FROM pairs p JOIN books e ON e.id = p.ebook_id JOIN books a ON a.id = p.audio_id
+          WHERE p.status IN ('auto','confirmed') AND ${visiblePairSql(sees, 'p')}`,
+      )
+      .all() as Record<string, string>[]) {
+      if (isEbook) partners.set(p.audio_id!, { id: p.ebook_id!, title: p.ebook_title! });
+      else partners.set(p.ebook_id!, { id: p.audio_id!, title: p.audio_title! });
+    }
+
+    const side = (row: Record<string, unknown>) => ({
+      title: String(row.title),
+      author: (row.author as string) ?? null,
+      language: (row.language as string) ?? null,
+      series: (row.series as string) ?? null,
+      identifiers: JSON.parse(String(row.identifiers_json ?? '{}')) as Record<string, string>,
+    });
+    const asEbook = (row: Record<string, unknown>): PairInputs['ebook'] => ({
+      ...side(row),
+      totalChars:
+        (JSON.parse(String(row.meta_json ?? '{}')) as { totalChars?: number }).totalChars ?? null,
+    });
+    const asAudio = (row: Record<string, unknown>): PairInputs['audio'] => ({
+      ...side(row),
+      durationMs: (row.duration_ms as number) ?? null,
+    });
+
+    const out: BookPairing = { linked: [], suggested: [], options: [] };
+    for (const other of db
+      .prepare(
+        `SELECT * FROM books b WHERE b.kind = ? AND b.scan_state != 'missing' AND ${visibleSql(sees)}
+          ORDER BY b.title COLLATE NOCASE`,
+      )
+      .all(isEbook ? 'audio' : 'ebook') as Record<string, unknown>[]) {
+      const pair = mine.get(String(other.id));
+      const status = pair ? String(pair.status) : null;
+      if (pair && (status === 'auto' || status === 'confirmed')) {
+        out.linked.push({
+          pairId: String(pair.id),
+          status,
+          switchable: isSwitchable(latestAlignment(db, String(pair.id))),
+          book: summary(other),
+        });
+        continue;
+      }
+      if (pair && status === 'candidate') {
+        out.suggested.push({ pairId: String(pair.id), book: summary(other) });
+        continue;
+      }
+      const { score } = scorePair(
+        isEbook
+          ? { ebook: asEbook(book), audio: asAudio(other) }
+          : { ebook: asEbook(other), audio: asAudio(book) },
+      );
+      out.options.push({
+        book: summary(other),
+        score: Math.round(score * 1000) / 1000,
+        likely: score >= CANDIDATE_THRESHOLD,
+        pairedWith: partners.get(String(other.id)) ?? null,
+        dismissed: status === 'rejected',
+      });
+    }
+    // The page switches to a confirmed partner before an automatic one.
+    out.linked.sort((a, b) => Number(a.status === 'auto') - Number(b.status === 'auto'));
+    // The likely matches first - even one paired elsewhere, since that pair
+    // may be the mistake being put right - then the books still free.
+    out.options.sort(
+      (a, b) =>
+        Number(b.likely) - Number(a.likely) ||
+        Number(a.pairedWith !== null) - Number(b.pairedWith !== null) ||
+        b.score - a.score ||
+        a.book.title.localeCompare(b.book.title),
+    );
+    return out;
   });
 
   app.post('/api/pairs/:id/align', async (req, reply) => {

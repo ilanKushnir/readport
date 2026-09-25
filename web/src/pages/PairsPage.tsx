@@ -5,6 +5,7 @@ import { api, failureMessage } from '../api/client';
 import { type BookSummary, type PairDto, type ProcessingSummary } from '../lib/types';
 import { Cover, EmptyState, Sheet, useToast } from '../components/ui';
 import { useSession } from '../state/session';
+import { useShelves } from '../state/shelves';
 import {
   IconAlert,
   IconBookOpen,
@@ -174,6 +175,14 @@ export function PairsPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // The count of suggestions beside Pairing follows what is decided here -
+  // and what a scan finds while the page is open.
+  const { refresh: refreshShelves } = useShelves();
+  const suggestionCount = pairs?.filter((p) => p.status === 'candidate').length;
+  useEffect(() => {
+    if (suggestionCount !== undefined) void refreshShelves();
+  }, [suggestionCount, refreshShelves]);
 
   // Live progress while any alignment runs.
   const active = pairs?.some(
