@@ -2019,5 +2019,51 @@ const messages: Record<string, string> = {
   'library.meta.copyId': 'Buch-ID kopieren',
   'library.meta.copied': 'Kopiert',
   'library.meta.copyFailed': 'Konnte nicht kopiert werden.',
+  // nav
+  'nav.pairsToReview':
+    '{n, plural, one {# Paarvorschlag zu prüfen} other {# Paarvorschläge zu prüfen}}',
+
+  // library
+  'library.pairing.tool': 'Verknüpfen',
+  'library.pairing.toolHint':
+    '{kind, select, ebook {Dieses E-Book mit seinem Hörbuch verknüpfen} other {Dieses Hörbuch mit seinem E-Book verknüpfen}}',
+  'library.pairing.title':
+    '{kind, select, ebook {Mit einem Hörbuch verknüpfen} other {Mit einem E-Book verknüpfen}}',
+  'library.pairing.lede':
+    '{kind, select, ebook {Das Hörbuch dieses Buchs wählen. Die beiden werden dann synchronisiert: Der Wechsel zwischen Lesen und Hören landet an derselben Stelle.} other {Das E-Book dieses Buchs wählen. Die beiden werden dann synchronisiert: Der Wechsel zwischen Hören und Lesen landet an derselben Stelle.}}',
+  'library.pairing.linked': 'Verknüpft mit',
+  'library.pairing.aligned': 'Synchronisiert: Der Wechsel landet an derselben Stelle',
+  'library.pairing.notAligned': 'Noch nicht synchronisiert',
+  'library.pairing.open': 'Öffnen',
+  'library.pairing.unpair': 'Verknüpfung lösen',
+  'library.pairing.unpairAsk': 'Verknüpfung dieser beiden lösen?',
+  'library.pairing.unpairYes': 'Verknüpfung lösen',
+  'library.pairing.suggested': 'Vorgeschlagen',
+  'library.pairing.suggestedNote': 'Vom Mediathek-Scan gefunden',
+  'library.pairing.notMatch': 'Kein Treffer',
+  'library.pairing.choose': '{kind, select, ebook {Hörbuch wählen} other {E-Book wählen}}',
+  'library.pairing.search': 'Titel oder Autor',
+  'library.pairing.noMatch': 'Nichts hier entspricht „{query}“.',
+  'library.pairing.none':
+    '{kind, select, ebook {Es gibt noch keine Hörbücher in der Mediathek.} other {Es gibt noch keine E-Books in der Mediathek.}}',
+  'library.pairing.noOthers':
+    '{kind, select, ebook {Es gibt keine weiteren Hörbücher in der Mediathek.} other {Es gibt keine weiteren E-Books in der Mediathek.}}',
+  'library.pairing.likely': 'Wahrscheinlicher Treffer',
+  'library.pairing.pairedWith': 'Verknüpft mit „{title}“',
+  'library.pairing.dismissed': 'Zuvor als kein Treffer markiert',
+  'library.pairing.pair': 'Verknüpfen',
+  'library.pairing.pairing': 'Wird verknüpft…',
+  'library.pairing.pairInstead': 'Stattdessen verknüpfen',
+  'library.pairing.moveAsk':
+    'Es ist verknüpft mit „{title}“. Stattdessen mit diesem Buch verknüpfen?',
+  'library.pairing.replaceAsk':
+    'Dieses Buch ist verknüpft mit „{title}“. Stattdessen mit diesem verknüpfen?',
+  'library.pairing.showAll': 'Alle {n} anzeigen',
+  'library.pairing.allPairs': 'Alle Paare der Mediathek, auf der Seite „Zuordnung“',
+  'library.pairing.loadFailed': 'Die Bücher zum Verknüpfen konnten nicht geladen werden.',
+  'library.pairing.toast.paired': 'Verknüpft mit „{title}“. Synchronisierung eingereiht.',
+  'library.pairing.toast.unpaired': 'Verknüpfung gelöst',
+  'library.pairing.toast.dismissed': 'Als kein Treffer markiert',
+  'library.pairing.toast.failed': 'Die Verknüpfung konnte nicht geändert werden.',
 } as const;
 export default messages;

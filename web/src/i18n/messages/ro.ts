@@ -1998,5 +1998,51 @@ const messages: Record<string, string> = {
   'library.meta.copyId': 'Copiază ID-ul cărții',
   'library.meta.copied': 'Copiat',
   'library.meta.copyFailed': 'Nu a putut fi copiat.',
+  // nav
+  'nav.pairsToReview':
+    '{n, plural, one {# sugestie de asociere de revizuit} few {# sugestii de asociere de revizuit} other {# de sugestii de asociere de revizuit}}',
+
+  // library
+  'library.pairing.tool': 'Leagă',
+  'library.pairing.toolHint':
+    '{kind, select, ebook {Leagă această carte electronică de ediția ei audio} other {Leagă această carte audio de ediția ei electronică}}',
+  'library.pairing.title':
+    '{kind, select, ebook {Leagă de o carte audio} other {Leagă de o carte electronică}}',
+  'library.pairing.lede':
+    '{kind, select, ebook {Alege cartea audio a aceleiași cărți. Cele două devin aliniate, așa că trecerea între citit și ascultat continuă în același loc.} other {Alege cartea electronică a aceleiași cărți. Cele două devin aliniate, așa că trecerea între ascultat și citit continuă în același loc.}}',
+  'library.pairing.linked': 'Asociată cu',
+  'library.pairing.aligned': 'Aliniată: trecerea între ediții se face în același loc',
+  'library.pairing.notAligned': 'Încă nealiniată',
+  'library.pairing.open': 'Deschide',
+  'library.pairing.unpair': 'Dezleagă',
+  'library.pairing.unpairAsk': 'Dezlegi această pereche?',
+  'library.pairing.unpairYes': 'Da, dezleagă',
+  'library.pairing.suggested': 'Sugerate',
+  'library.pairing.suggestedNote': 'Găsită la analiza bibliotecii',
+  'library.pairing.notMatch': 'Nu se potrivesc',
+  'library.pairing.choose':
+    '{kind, select, ebook {Alege cartea audio} other {Alege cartea electronică}}',
+  'library.pairing.search': 'Titlu sau autor',
+  'library.pairing.noMatch': 'Nimic de aici nu se potrivește cu „{query}”.',
+  'library.pairing.none':
+    '{kind, select, ebook {Încă nu există cărți audio în bibliotecă.} other {Încă nu există cărți electronice în bibliotecă.}}',
+  'library.pairing.noOthers':
+    '{kind, select, ebook {Nu există alte cărți audio în bibliotecă.} other {Nu există alte cărți electronice în bibliotecă.}}',
+  'library.pairing.likely': 'Potrivire probabilă',
+  'library.pairing.pairedWith': 'Asociată cu „{title}”',
+  'library.pairing.dismissed': 'Deja marcat drept „Nu se potrivesc”',
+  'library.pairing.pair': 'Leagă',
+  'library.pairing.pairing': 'Se leagă…',
+  'library.pairing.pairInstead': 'Leagă în schimb',
+  'library.pairing.moveAsk': 'Este asociată cu „{title}”. O legi de cartea aceasta în schimb?',
+  'library.pairing.replaceAsk':
+    'Cartea aceasta este asociată cu „{title}”. O legi de aceasta în schimb?',
+  'library.pairing.showAll': 'Arată toate {n}',
+  'library.pairing.allPairs': 'Toate perechile din bibliotecă, pe pagina de Asociere',
+  'library.pairing.loadFailed': 'Cărțile de legat nu au putut fi încărcate.',
+  'library.pairing.toast.paired': 'Asociat cu „{title}”. Aliniere în așteptare.',
+  'library.pairing.toast.unpaired': 'Dezlegat',
+  'library.pairing.toast.dismissed': 'Marcat drept „Nu se potrivesc”',
+  'library.pairing.toast.failed': 'Asocierea nu a putut fi modificată.',
 };
 export default messages;

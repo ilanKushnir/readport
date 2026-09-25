@@ -2012,5 +2012,52 @@ const messages: Record<string, string> = {
   'library.meta.copyId': 'Αντιγραφή αναγνωριστικού βιβλίου',
   'library.meta.copied': 'Αντιγράφηκε',
   'library.meta.copyFailed': 'Δεν ήταν δυνατή η αντιγραφή του.',
+  // nav
+  'nav.pairsToReview':
+    '{n, plural, one {# πρόταση αντιστοίχισης προς έλεγχο} other {# προτάσεις αντιστοίχισης προς έλεγχο}}',
+
+  // library
+  'library.pairing.tool': 'Σύνδεση',
+  'library.pairing.toolHint':
+    '{kind, select, ebook {Σύνδεση αυτού του ηλεκτρονικού βιβλίου με το ηχητικό βιβλίο του} other {Σύνδεση αυτού του ηχητικού βιβλίου με το ηλεκτρονικό βιβλίο του}}',
+  'library.pairing.title':
+    '{kind, select, ebook {Σύνδεση με ηχητικό βιβλίο} other {Σύνδεση με ηλεκτρονικό βιβλίο}}',
+  'library.pairing.lede':
+    '{kind, select, ebook {Επίλεξε το ηχητικό βιβλίο αυτού του ίδιου βιβλίου. Τα δύο ευθυγραμμίζονται στη συνέχεια, ώστε η εναλλαγή ανάμεσα σε ανάγνωση και ακρόαση να συνεχίζει από το ίδιο σημείο.} other {Επίλεξε το ηλεκτρονικό βιβλίο αυτού του ίδιου βιβλίου. Τα δύο ευθυγραμμίζονται στη συνέχεια, ώστε η εναλλαγή ανάμεσα σε ακρόαση και ανάγνωση να συνεχίζει από το ίδιο σημείο.}}',
+  'library.pairing.linked': 'Αντιστοιχισμένο με',
+  'library.pairing.aligned': 'Ευθυγραμμισμένο: η εναλλαγή γίνεται στο ίδιο σημείο',
+  'library.pairing.notAligned': 'Όχι ακόμα ευθυγραμμισμένο',
+  'library.pairing.open': 'Άνοιγμα',
+  'library.pairing.unpair': 'Αποσύνδεση',
+  'library.pairing.unpairAsk': 'Αποσύνδεση αυτών των δύο;',
+  'library.pairing.unpairYes': 'Ναι, αποσύνδεση',
+  'library.pairing.suggested': 'Προτεινόμενα',
+  'library.pairing.suggestedNote': 'Βρέθηκε από την ανάλυση της βιβλιοθήκης',
+  'library.pairing.notMatch': 'Δεν ταιριάζουν',
+  'library.pairing.choose':
+    '{kind, select, ebook {Επίλεξε το ηχητικό βιβλίο} other {Επίλεξε το ηλεκτρονικό βιβλίο}}',
+  'library.pairing.search': 'Τίτλος ή συγγραφέας',
+  'library.pairing.noMatch': 'Τίποτα εδώ δεν ταιριάζει με «{query}».',
+  'library.pairing.none':
+    '{kind, select, ebook {Δεν υπάρχουν ακόμα ηχητικά βιβλία στη βιβλιοθήκη.} other {Δεν υπάρχουν ακόμα ηλεκτρονικά βιβλία στη βιβλιοθήκη.}}',
+  'library.pairing.noOthers':
+    '{kind, select, ebook {Δεν υπάρχουν άλλα ηχητικά βιβλία στη βιβλιοθήκη.} other {Δεν υπάρχουν άλλα ηλεκτρονικά βιβλία στη βιβλιοθήκη.}}',
+  'library.pairing.likely': 'Πιθανή αντιστοίχιση',
+  'library.pairing.pairedWith': 'Αντιστοιχισμένο με «{title}»',
+  'library.pairing.dismissed': 'Ήδη επισημασμένο ως «Δεν ταιριάζουν»',
+  'library.pairing.pair': 'Σύνδεση',
+  'library.pairing.pairing': 'Σύνδεση…',
+  'library.pairing.pairInstead': "Σύνδεση αντ' αυτού",
+  'library.pairing.moveAsk':
+    "Είναι αντιστοιχισμένο με «{title}». Σύνδεση με αυτό το βιβλίο αντ' αυτού;",
+  'library.pairing.replaceAsk':
+    "Αυτό το βιβλίο είναι αντιστοιχισμένο με «{title}». Σύνδεση με αυτό αντ' αυτού;",
+  'library.pairing.showAll': 'Εμφάνιση όλων ({n})',
+  'library.pairing.allPairs': 'Όλα τα ζεύγη της βιβλιοθήκης, στη σελίδα Αντιστοίχιση',
+  'library.pairing.loadFailed': 'Δεν ήταν δυνατή η φόρτωση των βιβλίων προς σύνδεση.',
+  'library.pairing.toast.paired': 'Αντιστοιχισμένο με «{title}». Η ευθυγράμμιση μπήκε σε αναμονή.',
+  'library.pairing.toast.unpaired': 'Αποσυνδέθηκε',
+  'library.pairing.toast.dismissed': 'Επισημάνθηκε ως «Δεν ταιριάζουν»',
+  'library.pairing.toast.failed': 'Δεν ήταν δυνατή η αλλαγή της αντιστοίχισης.',
 };
 export default messages;

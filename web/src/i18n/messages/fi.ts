@@ -1975,5 +1975,50 @@ const messages: Record<string, string> = {
   'library.meta.copyId': 'Kopioi kirjan tunnus',
   'library.meta.copied': 'Kopioitu',
   'library.meta.copyFailed': 'Sitä ei voitu kopioida.',
+  // nav
+  'nav.pairsToReview':
+    '{n, plural, one {# pariehdotus tarkistettavana} other {# pariehdotusta tarkistettavana}}',
+
+  // library
+  'library.pairing.tool': 'Yhdistä',
+  'library.pairing.toolHint':
+    '{kind, select, ebook {Yhdistä tämä e-kirja äänikirjaansa} other {Yhdistä tämä äänikirja e-kirjaansa}}',
+  'library.pairing.title': '{kind, select, ebook {Yhdistä äänikirjaan} other {Yhdistä e-kirjaan}}',
+  'library.pairing.lede':
+    '{kind, select, ebook {Valitse tämän kirjan äänikirja. Ne synkronoidaan sitten: lukemisen ja kuuntelun välillä vaihtaminen osuu samaan kohtaan.} other {Valitse tämän kirjan e-kirja. Ne synkronoidaan sitten: kuuntelun ja lukemisen välillä vaihtaminen osuu samaan kohtaan.}}',
+  'library.pairing.linked': 'Pari',
+  'library.pairing.aligned': 'Synkronoitu: vaihto osuu samaan kohtaan',
+  'library.pairing.notAligned': 'Ei vielä synkronoitu',
+  'library.pairing.open': 'Avaa',
+  'library.pairing.unpair': 'Pura yhdistäminen',
+  'library.pairing.unpairAsk': 'Puretaanko näiden kahden yhdistäminen?',
+  'library.pairing.unpairYes': 'Pura yhdistäminen',
+  'library.pairing.suggested': 'Ehdotukset',
+  'library.pairing.suggestedNote': 'Kirjaston skannauksen löytämä',
+  'library.pairing.notMatch': 'Ei osuma',
+  'library.pairing.choose': '{kind, select, ebook {Valitse äänikirja} other {Valitse e-kirja}}',
+  'library.pairing.search': 'Nimeke tai tekijä',
+  'library.pairing.noMatch': 'Mikään täällä ei vastaa hakusanaa ”{query}”.',
+  'library.pairing.none':
+    '{kind, select, ebook {Kirjastossa ei ole vielä äänikirjoja.} other {Kirjastossa ei ole vielä e-kirjoja.}}',
+  'library.pairing.noOthers':
+    '{kind, select, ebook {Kirjastossa ei ole muita äänikirjoja.} other {Kirjastossa ei ole muita e-kirjoja.}}',
+  'library.pairing.likely': 'Todennäköinen osuma',
+  'library.pairing.pairedWith': 'Yhdistetty kohteeseen ”{title}”',
+  'library.pairing.dismissed': 'Hylätty aiemmin',
+  'library.pairing.pair': 'Yhdistä',
+  'library.pairing.pairing': 'Yhdistetään…',
+  'library.pairing.pairInstead': 'Yhdistä sen sijaan',
+  'library.pairing.moveAsk':
+    'Se on yhdistetty kohteeseen ”{title}”. Yhdistetäänkö se sen sijaan tähän kirjaan?',
+  'library.pairing.replaceAsk':
+    'Tämä kirja on yhdistetty kohteeseen ”{title}”. Yhdistetäänkö se sen sijaan tähän?',
+  'library.pairing.showAll': 'Näytä kaikki {n}',
+  'library.pairing.allPairs': 'Kaikki kirjaston parit sivulla ”Pariliitos”',
+  'library.pairing.loadFailed': 'Yhdistettäviä kirjoja ei voitu ladata.',
+  'library.pairing.toast.paired': 'Yhdistetty kohteeseen ”{title}”. Synkronointi jonossa.',
+  'library.pairing.toast.unpaired': 'Purettu',
+  'library.pairing.toast.dismissed': 'Ehdotus hylätty',
+  'library.pairing.toast.failed': 'Pariliitosta ei voitu muuttaa.',
 };
 export default messages;

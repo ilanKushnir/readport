@@ -1981,6 +1981,51 @@ const messages: Record<string, string> = {
   'library.meta.copyId': 'Kitap kimliğini kopyala',
   'library.meta.copied': 'Kopyalandı',
   'library.meta.copyFailed': 'Bu kopyalanamadı.',
+  // nav
+  'nav.pairsToReview':
+    '{n, plural, one {# önerilen eş inceleme bekliyor} other {# önerilen eş inceleme bekliyor}}',
+
+  // library
+  'library.pairing.tool': 'Bağla',
+  'library.pairing.toolHint':
+    '{kind, select, ebook {Bu e-kitabı kendi sesli kitabıyla bağla} other {Bu sesli kitabı kendi e-kitabıyla bağla}}',
+  'library.pairing.title':
+    '{kind, select, ebook {Bir sesli kitapla bağla} other {Bir e-kitapla bağla}}',
+  'library.pairing.lede':
+    '{kind, select, ebook {Bu kitabın sesli kitabını seçin. Böylece hizalanır ve okuma ile dinleme arasında geçiş aynı yerden devam eder.} other {Bu kitabın e-kitabını seçin. Böylece hizalanır ve dinleme ile okuma arasında geçiş aynı yerden devam eder.}}',
+  'library.pairing.linked': 'Eşleştirilen baskı',
+  'library.pairing.aligned': 'Hizalandı: geçiş aynı yerden devam eder',
+  'library.pairing.notAligned': 'Henüz hizalanmadı',
+  'library.pairing.open': 'Aç',
+  'library.pairing.unpair': 'Bağlantıyı kaldır',
+  'library.pairing.unpairAsk': 'Bağlantı kaldırılsın mı?',
+  'library.pairing.unpairYes': 'Bağlantıyı kaldır',
+  'library.pairing.suggested': 'Önerilenler',
+  'library.pairing.suggestedNote': 'Kitaplık taramasında bulundu',
+  'library.pairing.notMatch': 'Eşleşme değil',
+  'library.pairing.choose':
+    '{kind, select, ebook {Bir sesli kitap seçin} other {Bir e-kitap seçin}}',
+  'library.pairing.search': 'Başlık veya yazar',
+  'library.pairing.noMatch': 'Burada {query} ile eşleşen bir şey yok.',
+  'library.pairing.none':
+    '{kind, select, ebook {Kitaplıkta henüz sesli kitap yok.} other {Kitaplıkta henüz e-kitap yok.}}',
+  'library.pairing.noOthers':
+    '{kind, select, ebook {Kitaplıkta başka sesli kitap yok.} other {Kitaplıkta başka e-kitap yok.}}',
+  'library.pairing.likely': 'Olası eşleşme',
+  'library.pairing.pairedWith': '{title} ile eşleşmiş',
+  'library.pairing.dismissed': 'Daha önce reddedildi',
+  'library.pairing.pair': 'Bağla',
+  'library.pairing.pairing': 'Bağlanıyor…',
+  'library.pairing.pairInstead': 'Yerine bağla',
+  'library.pairing.moveAsk': '{title} ile eşleşmiş. Onun yerine bu kitapla bağlansın mı?',
+  'library.pairing.replaceAsk': 'Bu kitap {title} ile eşleşmiş. Onun yerine bununla bağlansın mı?',
+  'library.pairing.showAll': 'Tümünü göster ({n})',
+  'library.pairing.allPairs': 'Kitaplıktaki tüm eşler Eşleştirme sayfasında',
+  'library.pairing.loadFailed': 'Eşleştirilecek kitaplar yüklenemedi.',
+  'library.pairing.toast.paired': '{title} ile bağlandı. Hizalama sıraya alındı.',
+  'library.pairing.toast.unpaired': 'Bağlantı kaldırıldı',
+  'library.pairing.toast.dismissed': 'İşaretlendi: eşleşme değil',
+  'library.pairing.toast.failed': 'Eşleştirme değiştirilemedi.',
 };
 
 export default messages;

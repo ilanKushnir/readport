@@ -1974,6 +1974,50 @@ const messages: Record<string, string> = {
   'library.meta.copyId': '本のIDをコピー',
   'library.meta.copied': 'コピーしました',
   'library.meta.copyFailed': 'コピーできませんでした。',
+  // nav
+  'nav.pairsToReview': '{n, plural, other {ペア候補#組が確認待ち}}',
+
+  // library
+  'library.pairing.tool': 'リンク',
+  'library.pairing.toolHint':
+    '{kind, select, ebook {この電子書籍を対応するオーディオブックとリンク} other {このオーディオブックを対応する電子書籍とリンク}}',
+  'library.pairing.title':
+    '{kind, select, ebook {オーディオブックとリンク} other {電子書籍とリンク}}',
+  'library.pairing.lede':
+    '{kind, select, ebook {この本と同じ作品のオーディオブックを選んでください。その後2冊は同期され、読書とリスニングの切り替えが同じ位置から続けられます。} other {この本と同じ作品の電子書籍を選んでください。その後2冊は同期され、リスニングと読書の切り替えが同じ位置から続けられます。}}',
+  'library.pairing.linked': 'ペア相手',
+  'library.pairing.aligned': '同期済み：切り替えても同じ位置から続きます',
+  'library.pairing.notAligned': 'まだ同期していません',
+  'library.pairing.open': '開く',
+  'library.pairing.unpair': 'リンク解除',
+  'library.pairing.unpairAsk': 'この2冊のリンクを解除しますか?',
+  'library.pairing.unpairYes': 'リンク解除',
+  'library.pairing.suggested': '候補',
+  'library.pairing.suggestedNote': 'ライブラリのスキャンで見つかりました',
+  'library.pairing.notMatch': '一致しない',
+  'library.pairing.choose': '{kind, select, ebook {オーディオブックを選択} other {電子書籍を選択}}',
+  'library.pairing.search': 'タイトルまたは著者',
+  'library.pairing.noMatch': '{query}に一致するものがありません。',
+  'library.pairing.none':
+    '{kind, select, ebook {ライブラリにオーディオブックはまだありません。} other {ライブラリに電子書籍はまだありません。}}',
+  'library.pairing.noOthers':
+    '{kind, select, ebook {ライブラリに他のオーディオブックはありません。} other {ライブラリに他の電子書籍はありません。}}',
+  'library.pairing.likely': '有力候補',
+  'library.pairing.pairedWith': '「{title}」とペアリング済み',
+  'library.pairing.dismissed': '以前「一致しない」と設定済み',
+  'library.pairing.pair': 'リンク',
+  'library.pairing.pairing': 'リンク中…',
+  'library.pairing.pairInstead': '代わりにリンク',
+  'library.pairing.moveAsk': '「{title}」とペアリング済みです。代わりにこの本とリンクしますか?',
+  'library.pairing.replaceAsk':
+    'この本は「{title}」とペアリング済みです。代わりにこちらとリンクしますか?',
+  'library.pairing.showAll': 'すべて表示({n})',
+  'library.pairing.allPairs': 'ライブラリ内のすべてのペア(ペアリングページ)',
+  'library.pairing.loadFailed': 'リンクする本を読み込めませんでした。',
+  'library.pairing.toast.paired': '「{title}」とリンクしました - 整合を待機中。',
+  'library.pairing.toast.unpaired': 'ペアのリンクを解除しました',
+  'library.pairing.toast.dismissed': '「一致しない」にしました',
+  'library.pairing.toast.failed': 'ペアリングを変更できませんでした。',
 };
 
 export default messages;

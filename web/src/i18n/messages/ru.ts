@@ -1994,6 +1994,51 @@ const messages: Record<string, string> = {
   'library.meta.copyId': 'Скопировать ID книги',
   'library.meta.copied': 'Скопировано',
   'library.meta.copyFailed': 'Не удалось это скопировать.',
+  // nav
+  'nav.pairsToReview':
+    '{n, plural, one {# предложенная пара на проверку} few {# предложенные пары на проверку} many {# предложенных пар на проверку} other {# предложенные пары на проверку}}',
+
+  // library
+  'library.pairing.tool': 'Связать',
+  'library.pairing.toolHint':
+    '{kind, select, ebook {Связать эту электронную книгу с её аудиокнигой} other {Связать эту аудиокнигу с её электронной книгой}}',
+  'library.pairing.title':
+    '{kind, select, ebook {Связать с аудиокнигой} other {Связать с электронной книгой}}',
+  'library.pairing.lede':
+    '{kind, select, ebook {Выберите аудиокнигу этой же книги. После этого они будут выровнены, чтобы переключение между чтением и прослушиванием продолжалось с того же места.} other {Выберите электронную книгу этой же книги. После этого они будут выровнены, чтобы переключение между прослушиванием и чтением продолжалось с того же места.}}',
+  'library.pairing.linked': 'В паре с',
+  'library.pairing.aligned': 'Выровнено: переключение продолжается с того же места',
+  'library.pairing.notAligned': 'Пока не выровнено',
+  'library.pairing.open': 'Открыть',
+  'library.pairing.unpair': 'Разорвать связь',
+  'library.pairing.unpairAsk': 'Разорвать эту связь?',
+  'library.pairing.unpairYes': 'Разорвать связь',
+  'library.pairing.suggested': 'Предложенные',
+  'library.pairing.suggestedNote': 'Найдено при сканировании библиотеки',
+  'library.pairing.notMatch': 'Не совпадение',
+  'library.pairing.choose':
+    '{kind, select, ebook {Выберите аудиокнигу} other {Выберите электронную книгу}}',
+  'library.pairing.search': 'Название или автор',
+  'library.pairing.noMatch': 'Здесь ничего не соответствует «{query}».',
+  'library.pairing.none':
+    '{kind, select, ebook {В библиотеке пока нет аудиокниг.} other {В библиотеке пока нет электронных книг.}}',
+  'library.pairing.noOthers':
+    '{kind, select, ebook {В библиотеке нет других аудиокниг.} other {В библиотеке нет других электронных книг.}}',
+  'library.pairing.likely': 'Вероятное совпадение',
+  'library.pairing.pairedWith': 'В паре с «{title}»',
+  'library.pairing.dismissed': 'Ранее отклонено',
+  'library.pairing.pair': 'Связать',
+  'library.pairing.pairing': 'Связывание…',
+  'library.pairing.pairInstead': 'Связать вместо этого',
+  'library.pairing.moveAsk': 'Она в паре с «{title}». Связать её с этой книгой вместо этого?',
+  'library.pairing.replaceAsk': 'Эта книга в паре с «{title}». Связать её с этой вместо этого?',
+  'library.pairing.showAll': 'Показать все {n}',
+  'library.pairing.allPairs': 'Все пары библиотеки на странице «Пары»',
+  'library.pairing.loadFailed': 'Не удалось загрузить книги для связывания.',
+  'library.pairing.toast.paired': 'Связано с «{title}». Выравнивание в очереди.',
+  'library.pairing.toast.unpaired': 'Связь разорвана',
+  'library.pairing.toast.dismissed': 'Отмечено как несовпадение',
+  'library.pairing.toast.failed': 'Не удалось изменить пару.',
 };
 
 export default messages;

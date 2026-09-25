@@ -1996,6 +1996,50 @@ const messages: Record<string, string> = {
   'library.meta.copyId': "Copia l'ID del libro",
   'library.meta.copied': 'Copiato',
   'library.meta.copyFailed': 'Impossibile copiare.',
+  // nav
+  'nav.pairsToReview':
+    '{n, plural, one {# suggerimento di abbinamento da rivedere} other {# suggerimenti di abbinamento da rivedere}}',
+
+  // library
+  'library.pairing.tool': 'Collega',
+  'library.pairing.toolHint':
+    '{kind, select, ebook {Collega questo ebook al suo audiolibro} other {Collega questo audiolibro al suo ebook}}',
+  'library.pairing.title':
+    '{kind, select, ebook {Collega a un audiolibro} other {Collega a un ebook}}',
+  'library.pairing.lede':
+    "{kind, select, ebook {Scegli l'audiolibro di questo stesso libro. I due vengono allineati, così passare dalla lettura all'ascolto riprende nello stesso punto.} other {Scegli l'ebook di questo stesso libro. I due vengono allineati, così passare dall'ascolto alla lettura riprende nello stesso punto.}}",
+  'library.pairing.linked': 'Abbinata a',
+  'library.pairing.aligned': "Allineato: si passa dall'uno all'altro nello stesso punto",
+  'library.pairing.notAligned': 'Non ancora allineato',
+  'library.pairing.open': 'Apri',
+  'library.pairing.unpair': 'Scollega',
+  'library.pairing.unpairAsk': 'Scollegare questi due?',
+  'library.pairing.unpairYes': 'Sì, scollega',
+  'library.pairing.suggested': 'Suggerita',
+  'library.pairing.suggestedNote': 'Trovato analizzando la biblioteca',
+  'library.pairing.notMatch': 'Non corrisponde',
+  'library.pairing.choose': "{kind, select, ebook {Scegli l'audiolibro} other {Scegli l'ebook}}",
+  'library.pairing.search': 'Titolo o autore',
+  'library.pairing.noMatch': 'Niente qui corrisponde a «{query}».',
+  'library.pairing.none':
+    '{kind, select, ebook {Non ci sono ancora audiolibri in biblioteca.} other {Non ci sono ancora ebook in biblioteca.}}',
+  'library.pairing.noOthers':
+    '{kind, select, ebook {Non ci sono altri audiolibri in biblioteca.} other {Non ci sono altri ebook in biblioteca.}}',
+  'library.pairing.likely': 'Corrispondenza probabile',
+  'library.pairing.pairedWith': 'Abbinata a «{title}»',
+  'library.pairing.dismissed': 'Già segnato come «Non corrisponde»',
+  'library.pairing.pair': 'Collega',
+  'library.pairing.pairing': 'Collegamento…',
+  'library.pairing.pairInstead': 'Collega invece',
+  'library.pairing.moveAsk': 'È abbinato a «{title}». Collegarlo a questo libro invece?',
+  'library.pairing.replaceAsk': 'Questo libro è abbinato a «{title}». Collegarlo a questo invece?',
+  'library.pairing.showAll': 'Mostra tutti ({n})',
+  'library.pairing.allPairs': 'Ogni coppia della biblioteca, nella pagina Abbinamento',
+  'library.pairing.loadFailed': 'Impossibile caricare i libri da collegare.',
+  'library.pairing.toast.paired': 'Abbinato a «{title}». Allineamento in coda.',
+  'library.pairing.toast.unpaired': 'Scollegato',
+  'library.pairing.toast.dismissed': 'Segnato come «Non corrisponde»',
+  'library.pairing.toast.failed': "Impossibile modificare l'abbinamento.",
 };
 
 export default messages;

@@ -1987,5 +1987,48 @@ const messages: Record<string, string> = {
   'library.meta.copyId': 'העתקת מזהה הספר',
   'library.meta.copied': 'הועתק',
   'library.meta.copyFailed': 'לא ניתן היה להעתיק את זה.',
+  // nav
+  'nav.pairsToReview':
+    '{n, plural, one {# זוג מוצע ממתין לסקירה} two {# זוגות מוצעים ממתינים לסקירה} other {# זוגות מוצעים ממתינים לסקירה}}',
+
+  // library
+  'library.pairing.tool': 'קישור',
+  'library.pairing.toolHint':
+    '{kind, select, ebook {קישור הספר האלקטרוני הזה לספר הקול שלו} other {קישור ספר הקול הזה לספר האלקטרוני שלו}}',
+  'library.pairing.title': '{kind, select, ebook {קישור לספר קול} other {קישור לספר אלקטרוני}}',
+  'library.pairing.lede':
+    '{kind, select, ebook {יש לבחור את ספר הקול של הספר הזה עצמו. השניים יסונכרנו לאחר מכן, כך שמעבר בין קריאה להאזנה יתחיל באותו מקום.} other {יש לבחור את הספר האלקטרוני של הספר הזה עצמו. השניים יסונכרנו לאחר מכן, כך שמעבר בין האזנה לקריאה יתחיל באותו מקום.}}',
+  'library.pairing.linked': 'מזווג עם',
+  'library.pairing.aligned': 'מסונכרן: המעבר ממשיך מאותו מקום',
+  'library.pairing.notAligned': 'עדיין לא מסונכרן',
+  'library.pairing.open': 'פתיחה',
+  'library.pairing.unpair': 'ביטול קישור',
+  'library.pairing.unpairAsk': 'לבטל את הקישור בין שני הספרים האלה?',
+  'library.pairing.unpairYes': 'ביטול קישור',
+  'library.pairing.suggested': 'מוצעים',
+  'library.pairing.suggestedNote': 'נמצא בסריקת הספרייה',
+  'library.pairing.notMatch': 'לא התאמה',
+  'library.pairing.choose': '{kind, select, ebook {בחירת ספר קול} other {בחירת ספר אלקטרוני}}',
+  'library.pairing.search': 'כותרת או מחבר',
+  'library.pairing.noMatch': 'שום דבר כאן לא תואם את „{query}”.',
+  'library.pairing.none':
+    '{kind, select, ebook {עדיין אין ספרי קול בספרייה.} other {עדיין אין ספרים אלקטרוניים בספרייה.}}',
+  'library.pairing.noOthers':
+    '{kind, select, ebook {אין ספרי קול אחרים בספרייה.} other {אין ספרים אלקטרוניים אחרים בספרייה.}}',
+  'library.pairing.likely': 'התאמה אפשרית',
+  'library.pairing.pairedWith': 'מזווג עם „{title}”',
+  'library.pairing.dismissed': 'סומן בעבר כלא התאמה',
+  'library.pairing.pair': 'קישור',
+  'library.pairing.pairing': 'מקשר…',
+  'library.pairing.pairInstead': 'קישור במקום זאת',
+  'library.pairing.moveAsk': 'הוא מזווג עם „{title}”. לקשר אותו לספר הזה במקום זאת?',
+  'library.pairing.replaceAsk': 'הספר הזה מזווג עם „{title}”. לקשר אותו לזה במקום זאת?',
+  'library.pairing.showAll': 'הצג הכול ({n})',
+  'library.pairing.allPairs': 'כל זוג בספרייה, בעמוד הזיווג',
+  'library.pairing.loadFailed': 'לא ניתן היה לטעון את הספרים לקישור.',
+  'library.pairing.toast.paired': 'קושר עם „{title}” - הסנכרון בתור.',
+  'library.pairing.toast.unpaired': 'הזיווג בוטל',
+  'library.pairing.toast.dismissed': 'סומן כלא התאמה',
+  'library.pairing.toast.failed': 'לא ניתן היה לשנות את הזיווג.',
 };
 export default messages;

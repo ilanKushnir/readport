@@ -2010,6 +2010,52 @@ const messages: Record<string, string> = {
   'library.meta.copyId': "Copier l'ID du livre",
   'library.meta.copied': 'Copié',
   'library.meta.copyFailed': 'Impossible de copier.',
+  // nav
+  'nav.pairsToReview':
+    "{n, plural, one {# suggestion d'association à vérifier} other {# suggestions d'association à vérifier}}",
+
+  // library
+  'library.pairing.tool': 'Lier',
+  'library.pairing.toolHint':
+    '{kind, select, ebook {Lier ce livre numérique à son livre audio} other {Lier ce livre audio à son livre numérique}}',
+  'library.pairing.title':
+    '{kind, select, ebook {Lier à un livre audio} other {Lier à un livre numérique}}',
+  'library.pairing.lede':
+    "{kind, select, ebook {Choisissez le livre audio de ce même livre. Les deux sont ensuite alignés, afin que le passage de la lecture à l'écoute reprenne au même endroit.} other {Choisissez le livre numérique de ce même livre. Les deux sont ensuite alignés, afin que le passage de l'écoute à la lecture reprenne au même endroit.}}",
+  'library.pairing.linked': 'Associée à',
+  'library.pairing.aligned': 'Aligné : la bascule reprend au même endroit',
+  'library.pairing.notAligned': 'Pas encore aligné',
+  'library.pairing.open': 'Ouvrir',
+  'library.pairing.unpair': 'Délier',
+  'library.pairing.unpairAsk': 'Délier ces deux éditions ?',
+  'library.pairing.unpairYes': 'Oui, délier',
+  'library.pairing.suggested': 'Suggérée',
+  'library.pairing.suggestedNote': 'Trouvé en analysant la bibliothèque',
+  'library.pairing.notMatch': 'Pas une correspondance',
+  'library.pairing.choose':
+    '{kind, select, ebook {Choisir le livre audio} other {Choisir le livre numérique}}',
+  'library.pairing.search': 'Titre ou auteur',
+  'library.pairing.noMatch': 'Rien ici ne correspond à « {query} ».',
+  'library.pairing.none':
+    "{kind, select, ebook {Il n'y a pas encore de livre audio dans la bibliothèque.} other {Il n'y a pas encore de livre numérique dans la bibliothèque.}}",
+  'library.pairing.noOthers':
+    "{kind, select, ebook {Il n'y a pas d'autre livre audio dans la bibliothèque.} other {Il n'y a pas d'autre livre numérique dans la bibliothèque.}}",
+  'library.pairing.likely': 'Correspondance probable',
+  'library.pairing.pairedWith': 'Associée à « {title} »',
+  'library.pairing.dismissed': 'Déjà marqué comme « Pas une correspondance »',
+  'library.pairing.pair': 'Lier',
+  'library.pairing.pairing': 'Liaison…',
+  'library.pairing.pairInstead': 'Lier à la place',
+  'library.pairing.moveAsk': 'Il est associé à « {title} ». Le lier à ce livre à la place ?',
+  'library.pairing.replaceAsk':
+    'Ce livre est associé à « {title} ». Le lier à celui-ci à la place ?',
+  'library.pairing.showAll': 'Tout afficher ({n})',
+  'library.pairing.allPairs': 'Toutes les paires de la bibliothèque, sur la page Association',
+  'library.pairing.loadFailed': 'Impossible de charger les livres à lier.',
+  'library.pairing.toast.paired': 'Associé à « {title} ». Alignement en file.',
+  'library.pairing.toast.unpaired': 'Délié',
+  'library.pairing.toast.dismissed': 'Marqué comme « Pas une correspondance »',
+  'library.pairing.toast.failed': "Impossible de modifier l'association.",
 };
 
 export default messages;

@@ -1952,5 +1952,51 @@ const messages: Record<string, string> = {
   'library.meta.copyId': 'Kopier bok-ID',
   'library.meta.copied': 'Kopiert',
   'library.meta.copyFailed': 'Kunne ikke kopiere det.',
+  // nav
+  'nav.pairsToReview':
+    '{n, plural, one {# parforslag å gjennomgå} other {# parforslag å gjennomgå}}',
+
+  // library
+  'library.pairing.tool': 'Koble sammen',
+  'library.pairing.toolHint':
+    '{kind, select, ebook {Koble sammen denne e-boken med sin lydbok} other {Koble sammen denne lydboken med sin e-bok}}',
+  'library.pairing.title':
+    '{kind, select, ebook {Koble sammen med en lydbok} other {Koble sammen med en e-bok}}',
+  'library.pairing.lede':
+    '{kind, select, ebook {Velg lydboken til denne boken. De to blir da synkronisert: bytte mellom lesing og lytting lander på samme sted.} other {Velg e-boken til denne boken. De to blir da synkronisert: bytte mellom lytting og lesing lander på samme sted.}}',
+  'library.pairing.linked': 'Paret med',
+  'library.pairing.aligned': 'Synkronisert: byttet lander på samme sted',
+  'library.pairing.notAligned': 'Ikke synkronisert ennå',
+  'library.pairing.open': 'Åpne',
+  'library.pairing.unpair': 'Koble fra',
+  'library.pairing.unpairAsk': 'Koble fra disse to?',
+  'library.pairing.unpairYes': 'Koble fra',
+  'library.pairing.suggested': 'Foreslåtte',
+  'library.pairing.suggestedNote': 'Funnet av biblioteksskanningen',
+  'library.pairing.notMatch': 'Ikke et treff',
+  'library.pairing.choose': '{kind, select, ebook {Velg lydboken} other {Velg e-boken}}',
+  'library.pairing.search': 'Tittel eller forfatter',
+  'library.pairing.noMatch': 'Ingenting her matcher «{query}».',
+  'library.pairing.none':
+    '{kind, select, ebook {Det finnes ingen lydbøker i biblioteket ennå.} other {Det finnes ingen e-bøker i biblioteket ennå.}}',
+  'library.pairing.noOthers':
+    '{kind, select, ebook {Det finnes ingen andre lydbøker i biblioteket.} other {Det finnes ingen andre e-bøker i biblioteket.}}',
+  'library.pairing.likely': 'Sannsynlig treff',
+  'library.pairing.pairedWith': 'Paret med «{title}»',
+  'library.pairing.dismissed': 'Tidligere merket som ikke et treff',
+  'library.pairing.pair': 'Koble sammen',
+  'library.pairing.pairing': 'Kobler sammen…',
+  'library.pairing.pairInstead': 'Koble sammen i stedet',
+  'library.pairing.moveAsk':
+    'Den er koblet sammen med «{title}». Koble den sammen med denne boken i stedet?',
+  'library.pairing.replaceAsk':
+    'Denne boken er koblet sammen med «{title}». Koble den sammen med denne i stedet?',
+  'library.pairing.showAll': 'Vis alle {n}',
+  'library.pairing.allPairs': 'Alle par i biblioteket, på siden «Paring»',
+  'library.pairing.loadFailed': 'Kunne ikke laste inn bøkene for paring.',
+  'library.pairing.toast.paired': 'Paret med «{title}». Synkronisering i kø.',
+  'library.pairing.toast.unpaired': 'Koblet fra',
+  'library.pairing.toast.dismissed': 'Merket som ikke et treff',
+  'library.pairing.toast.failed': 'Kunne ikke endre paringen.',
 };
 export default messages;

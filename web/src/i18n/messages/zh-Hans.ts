@@ -1855,5 +1855,47 @@ const messages: Record<string, string> = {
   'library.meta.copyId': '复制书籍 ID',
   'library.meta.copied': '已复制',
   'library.meta.copyFailed': '无法复制。',
+  // nav
+  'nav.pairsToReview': '{n, plural, other {#个配对建议待查看}}',
+
+  // library
+  'library.pairing.tool': '链接',
+  'library.pairing.toolHint':
+    '{kind, select, ebook {将这本电子书与其有声书链接} other {将这本有声书与其电子书链接}}',
+  'library.pairing.title': '{kind, select, ebook {与有声书链接} other {与电子书链接}}',
+  'library.pairing.lede':
+    '{kind, select, ebook {请选择与这本书同一作品的有声书。之后两者会同步，这样在阅读和收听之间切换时会停在同一位置。} other {请选择与这本书同一作品的电子书。之后两者会同步，这样在收听和阅读之间切换时会停在同一位置。}}',
+  'library.pairing.linked': '配对版本',
+  'library.pairing.aligned': '已同步：切换后会停在同一位置',
+  'library.pairing.notAligned': '尚未同步',
+  'library.pairing.open': '打开',
+  'library.pairing.unpair': '取消链接',
+  'library.pairing.unpairAsk': '要取消这两本书的链接吗？',
+  'library.pairing.unpairYes': '取消链接',
+  'library.pairing.suggested': '建议中',
+  'library.pairing.suggestedNote': '书库扫描发现的',
+  'library.pairing.notMatch': '不匹配',
+  'library.pairing.choose': '{kind, select, ebook {选择有声书} other {选择电子书}}',
+  'library.pairing.search': '书名或作者',
+  'library.pairing.noMatch': '没有与“{query}”匹配的内容。',
+  'library.pairing.none':
+    '{kind, select, ebook {书库中还没有有声书。} other {书库中还没有电子书。}}',
+  'library.pairing.noOthers':
+    '{kind, select, ebook {书库中没有其他有声书。} other {书库中没有其他电子书。}}',
+  'library.pairing.likely': '可能匹配',
+  'library.pairing.pairedWith': '已与“{title}”配对',
+  'library.pairing.dismissed': '之前已标记为不匹配',
+  'library.pairing.pair': '链接',
+  'library.pairing.pairing': '链接中…',
+  'library.pairing.pairInstead': '改为链接',
+  'library.pairing.moveAsk': '它已与“{title}”配对。要改为与这本书链接吗？',
+  'library.pairing.replaceAsk': '这本书已与“{title}”配对。要改为与这一本链接吗？',
+  'library.pairing.showAll': '显示全部{n}项',
+  'library.pairing.allPairs': '在配对页面查看书库中的每一对',
+  'library.pairing.loadFailed': '无法加载可链接的书籍。',
+  'library.pairing.toast.paired': '已与“{title}”链接。已加入对齐队列。',
+  'library.pairing.toast.unpaired': '配对已取消链接',
+  'library.pairing.toast.dismissed': '已标记为不匹配',
+  'library.pairing.toast.failed': '无法更改配对。',
 };
 export default messages;

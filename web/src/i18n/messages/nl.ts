@@ -2007,5 +2007,51 @@ const messages: Record<string, string> = {
   'library.meta.copyId': 'Boek-ID kopiëren',
   'library.meta.copied': 'Gekopieerd',
   'library.meta.copyFailed': 'Kon niet worden gekopieerd.',
+  // nav
+  'nav.pairsToReview':
+    '{n, plural, one {# koppelvoorstel om te controleren} other {# koppelvoorstellen om te controleren}}',
+
+  // library
+  'library.pairing.tool': 'Koppelen',
+  'library.pairing.toolHint':
+    '{kind, select, ebook {Dit e-book koppelen met zijn luisterboek} other {Dit luisterboek koppelen met zijn e-book}}',
+  'library.pairing.title':
+    '{kind, select, ebook {Koppelen met een luisterboek} other {Koppelen met een e-book}}',
+  'library.pairing.lede':
+    '{kind, select, ebook {Kies het luisterboek van dit boek. De twee worden dan gesynchroniseerd: wisselen tussen lezen en luisteren komt uit op dezelfde plek.} other {Kies het e-book van dit boek. De twee worden dan gesynchroniseerd: wisselen tussen luisteren en lezen komt uit op dezelfde plek.}}',
+  'library.pairing.linked': 'Gekoppeld met',
+  'library.pairing.aligned': 'Gesynchroniseerd: wisselen komt uit op dezelfde plek',
+  'library.pairing.notAligned': 'Nog niet gesynchroniseerd',
+  'library.pairing.open': 'Openen',
+  'library.pairing.unpair': 'Ontkoppelen',
+  'library.pairing.unpairAsk': 'Deze twee ontkoppelen?',
+  'library.pairing.unpairYes': 'Ontkoppelen',
+  'library.pairing.suggested': 'Voorgesteld',
+  'library.pairing.suggestedNote': 'Gevonden door de mediatheekscan',
+  'library.pairing.notMatch': 'Geen overeenkomst',
+  'library.pairing.choose': '{kind, select, ebook {Kies het luisterboek} other {Kies het e-book}}',
+  'library.pairing.search': 'Titel of auteur',
+  'library.pairing.noMatch': 'Niets hier komt overeen met „{query}”.',
+  'library.pairing.none':
+    '{kind, select, ebook {Er zijn nog geen luisterboeken in de mediatheek.} other {Er zijn nog geen e-books in de mediatheek.}}',
+  'library.pairing.noOthers':
+    '{kind, select, ebook {Er zijn geen andere luisterboeken in de mediatheek.} other {Er zijn geen andere e-books in de mediatheek.}}',
+  'library.pairing.likely': 'Waarschijnlijke overeenkomst',
+  'library.pairing.pairedWith': 'Gekoppeld met „{title}”',
+  'library.pairing.dismissed': 'Eerder als geen overeenkomst gemarkeerd',
+  'library.pairing.pair': 'Koppelen',
+  'library.pairing.pairing': 'Wordt gekoppeld…',
+  'library.pairing.pairInstead': 'In plaats daarvan koppelen',
+  'library.pairing.moveAsk':
+    'Het is gekoppeld met „{title}”. In plaats daarvan met dit boek koppelen?',
+  'library.pairing.replaceAsk':
+    'Dit boek is gekoppeld met „{title}”. In plaats daarvan hiermee koppelen?',
+  'library.pairing.showAll': 'Alle {n} tonen',
+  'library.pairing.allPairs': 'Alle paren in de mediatheek, op de pagina „Koppelen”',
+  'library.pairing.loadFailed': 'De boeken om mee te koppelen konden niet worden geladen.',
+  'library.pairing.toast.paired': 'Gekoppeld met „{title}”. Synchronisatie in wachtrij.',
+  'library.pairing.toast.unpaired': 'Ontkoppeld',
+  'library.pairing.toast.dismissed': 'Als geen overeenkomst gemarkeerd',
+  'library.pairing.toast.failed': 'De koppeling kon niet worden gewijzigd.',
 } as const;
 export default messages;

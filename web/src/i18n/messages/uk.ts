@@ -1999,6 +1999,51 @@ const messages: Record<string, string> = {
   'library.meta.copyId': 'Копіювати ID книги',
   'library.meta.copied': 'Скопійовано',
   'library.meta.copyFailed': 'Не вдалося це скопіювати.',
+  // nav
+  'nav.pairsToReview':
+    '{n, plural, one {# запропонована пара на перевірку} few {# запропоновані пари на перевірку} many {# запропонованих пар на перевірку} other {# запропоновані пари на перевірку}}',
+
+  // library
+  'library.pairing.tool': 'Зв’язати',
+  'library.pairing.toolHint':
+    '{kind, select, ebook {Зв’язати цю електронну книгу з її аудіокнигою} other {Зв’язати цю аудіокнигу з її електронною книгою}}',
+  'library.pairing.title':
+    '{kind, select, ebook {Зв’язати з аудіокнигою} other {Зв’язати з електронною книгою}}',
+  'library.pairing.lede':
+    '{kind, select, ebook {Виберіть аудіокнигу цієї ж книги. Після цього їх буде вирівняно, щоб перемикання між читанням і слуханням продовжувалося з того самого місця.} other {Виберіть електронну книгу цієї ж книги. Після цього їх буде вирівняно, щоб перемикання між слуханням і читанням продовжувалося з того самого місця.}}',
+  'library.pairing.linked': 'У парі з',
+  'library.pairing.aligned': 'Вирівняно: перемикання продовжується з того самого місця',
+  'library.pairing.notAligned': 'Ще не вирівняно',
+  'library.pairing.open': 'Відкрити',
+  'library.pairing.unpair': 'Розірвати зв’язок',
+  'library.pairing.unpairAsk': 'Розірвати цей зв’язок?',
+  'library.pairing.unpairYes': 'Розірвати зв’язок',
+  'library.pairing.suggested': 'Запропоновані',
+  'library.pairing.suggestedNote': 'Знайдено під час сканування бібліотеки',
+  'library.pairing.notMatch': 'Не збіг',
+  'library.pairing.choose':
+    '{kind, select, ebook {Виберіть аудіокнигу} other {Виберіть електронну книгу}}',
+  'library.pairing.search': 'Назва або автор',
+  'library.pairing.noMatch': 'Тут ніщо не відповідає «{query}».',
+  'library.pairing.none':
+    '{kind, select, ebook {У бібліотеці поки немає аудіокниг.} other {У бібліотеці поки немає електронних книг.}}',
+  'library.pairing.noOthers':
+    '{kind, select, ebook {У бібліотеці немає інших аудіокниг.} other {У бібліотеці немає інших електронних книг.}}',
+  'library.pairing.likely': 'Ймовірний збіг',
+  'library.pairing.pairedWith': 'У парі з «{title}»',
+  'library.pairing.dismissed': 'Раніше відхилено',
+  'library.pairing.pair': 'Зв’язати',
+  'library.pairing.pairing': 'Зв’язування…',
+  'library.pairing.pairInstead': 'Зв’язати замість цього',
+  'library.pairing.moveAsk': 'Вона у парі з «{title}». Зв’язати її з цією книгою замість цього?',
+  'library.pairing.replaceAsk': 'Ця книга у парі з «{title}». Зв’язати її з цією замість цього?',
+  'library.pairing.showAll': 'Показати всі {n}',
+  'library.pairing.allPairs': 'Усі пари бібліотеки на сторінці «Пари»',
+  'library.pairing.loadFailed': 'Не вдалося завантажити книги для зв’язування.',
+  'library.pairing.toast.paired': 'Зв’язано з «{title}». Вирівнювання в черзі.',
+  'library.pairing.toast.unpaired': 'Зв’язок розірвано',
+  'library.pairing.toast.dismissed': 'Позначено як не збіг',
+  'library.pairing.toast.failed': 'Не вдалося змінити пару.',
 };
 
 export default messages;

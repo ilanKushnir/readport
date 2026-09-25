@@ -1987,5 +1987,50 @@ const messages: Record<string, string> = {
   'library.meta.copyId': 'Kopírovat ID knihy',
   'library.meta.copied': 'Zkopírováno',
   'library.meta.copyFailed': 'Toto se nepodařilo zkopírovat.',
+  // nav
+  'nav.pairsToReview':
+    '{n, plural, one {# navržený pár ke kontrole} few {# navržené páry ke kontrole} many {# navrženého páru ke kontrole} other {# navržených párů ke kontrole}}',
+
+  // library
+  'library.pairing.tool': 'Propojit',
+  'library.pairing.toolHint':
+    '{kind, select, ebook {Propojit tuto e-knihu s její audioknihou} other {Propojit tuto audioknihu s její e-knihou}}',
+  'library.pairing.title':
+    '{kind, select, ebook {Propojit s audioknihou} other {Propojit s e-knihou}}',
+  'library.pairing.lede':
+    '{kind, select, ebook {Vyberte audioknihu téže knihy. Poté budou zarovnány, aby přepínání mezi čtením a poslechem pokračovalo od stejného místa.} other {Vyberte e-knihu téže knihy. Poté budou zarovnány, aby přepínání mezi poslechem a čtením pokračovalo od stejného místa.}}',
+  'library.pairing.linked': 'Spárováno s',
+  'library.pairing.aligned': 'Zarovnáno: přepnutí pokračuje od stejného místa',
+  'library.pairing.notAligned': 'Ještě nezarovnáno',
+  'library.pairing.open': 'Otevřít',
+  'library.pairing.unpair': 'Zrušit propojení',
+  'library.pairing.unpairAsk': 'Zrušit toto propojení?',
+  'library.pairing.unpairYes': 'Zrušit propojení',
+  'library.pairing.suggested': 'Navrženo',
+  'library.pairing.suggestedNote': 'Nalezeno skenem knihovny',
+  'library.pairing.notMatch': 'Neshoda',
+  'library.pairing.choose': '{kind, select, ebook {Vyberte audioknihu} other {Vyberte e-knihu}}',
+  'library.pairing.search': 'Název nebo autor',
+  'library.pairing.noMatch': 'Ničemu tady neodpovídá „{query}“.',
+  'library.pairing.none':
+    '{kind, select, ebook {V knihovně zatím nejsou žádné audioknihy.} other {V knihovně zatím nejsou žádné e-knihy.}}',
+  'library.pairing.noOthers':
+    '{kind, select, ebook {V knihovně nejsou žádné jiné audioknihy.} other {V knihovně nejsou žádné jiné e-knihy.}}',
+  'library.pairing.likely': 'Pravděpodobná shoda',
+  'library.pairing.pairedWith': 'Spárováno s „{title}“',
+  'library.pairing.dismissed': 'Dříve odmítnuto',
+  'library.pairing.pair': 'Propojit',
+  'library.pairing.pairing': 'Propojování…',
+  'library.pairing.pairInstead': 'Propojit místo toho',
+  'library.pairing.moveAsk': 'Je spárována s „{title}“. Propojit ji s touto knihou místo toho?',
+  'library.pairing.replaceAsk':
+    'Tato kniha je spárována s „{title}“. Propojit ji s touto místo toho?',
+  'library.pairing.showAll': 'Zobrazit všech {n}',
+  'library.pairing.allPairs': 'Všechny páry v knihovně na stránce Párování',
+  'library.pairing.loadFailed': 'Knihy k propojení se nepodařilo načíst.',
+  'library.pairing.toast.paired': 'Propojeno s „{title}“. Zarovnání ve frontě.',
+  'library.pairing.toast.unpaired': 'Propojení zrušeno',
+  'library.pairing.toast.dismissed': 'Označeno jako neshoda',
+  'library.pairing.toast.failed': 'Pár se nepodařilo změnit.',
 };
 export default messages;

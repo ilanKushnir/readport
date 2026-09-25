@@ -1997,6 +1997,52 @@ const messages: Record<string, string> = {
   'library.meta.copyId': 'Copiar o ID do livro',
   'library.meta.copied': 'Copiado',
   'library.meta.copyFailed': 'Não foi possível copiar.',
+  // nav
+  'nav.pairsToReview':
+    '{n, plural, one {# sugestão de emparelhamento para rever} other {# sugestões de emparelhamento para rever}}',
+
+  // library
+  'library.pairing.tool': 'Associar',
+  'library.pairing.toolHint':
+    '{kind, select, ebook {Associar este ebook ao seu audiolivro} other {Associar este audiolivro ao seu ebook}}',
+  'library.pairing.title':
+    '{kind, select, ebook {Associar a um audiolivro} other {Associar a um ebook}}',
+  'library.pairing.lede':
+    '{kind, select, ebook {Escolhe o audiolivro deste mesmo livro. Os dois ficam alinhados, para que mudar entre ler e ouvir retome no mesmo sítio.} other {Escolhe o ebook deste mesmo livro. Os dois ficam alinhados, para que mudar entre ouvir e ler retome no mesmo sítio.}}',
+  'library.pairing.linked': 'Emparelhada com',
+  'library.pairing.aligned': 'Alinhado: a mudança entre os dois retoma no mesmo sítio',
+  'library.pairing.notAligned': 'Ainda não alinhado',
+  'library.pairing.open': 'Abrir',
+  'library.pairing.unpair': 'Desassociar',
+  'library.pairing.unpairAsk': 'Desassociar estes dois?',
+  'library.pairing.unpairYes': 'Sim, desassociar',
+  'library.pairing.suggested': 'Sugeridos',
+  'library.pairing.suggestedNote': 'Encontrado ao analisar a biblioteca',
+  'library.pairing.notMatch': 'Não corresponde',
+  'library.pairing.choose': '{kind, select, ebook {Escolhe o audiolivro} other {Escolhe o ebook}}',
+  'library.pairing.search': 'Título ou autor',
+  'library.pairing.noMatch': 'Nada aqui corresponde a «{query}».',
+  'library.pairing.none':
+    '{kind, select, ebook {Ainda não há audiolivros na biblioteca.} other {Ainda não há ebooks na biblioteca.}}',
+  'library.pairing.noOthers':
+    '{kind, select, ebook {Não há outros audiolivros na biblioteca.} other {Não há outros ebooks na biblioteca.}}',
+  'library.pairing.likely': 'Correspondência provável',
+  'library.pairing.pairedWith': 'Emparelhada com «{title}»',
+  'library.pairing.dismissed': 'Já marcado como «Não corresponde»',
+  'library.pairing.pair': 'Associar',
+  'library.pairing.pairing': 'A associar…',
+  'library.pairing.pairInstead': 'Associar em vez disso',
+  'library.pairing.moveAsk':
+    'Está emparelhado com «{title}». Associá-lo a este livro em vez disso?',
+  'library.pairing.replaceAsk':
+    'Este livro está emparelhado com «{title}». Associá-lo a este em vez disso?',
+  'library.pairing.showAll': 'Mostrar os {n}',
+  'library.pairing.allPairs': 'Todos os pares da biblioteca, na página de Emparelhamento',
+  'library.pairing.loadFailed': 'Não foi possível carregar os livros para associar.',
+  'library.pairing.toast.paired': 'Emparelhado com «{title}». Alinhamento em fila.',
+  'library.pairing.toast.unpaired': 'Desassociado',
+  'library.pairing.toast.dismissed': 'Marcado como «Não corresponde»',
+  'library.pairing.toast.failed': 'Não foi possível alterar o emparelhamento.',
 };
 
 export default messages;

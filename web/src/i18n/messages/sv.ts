@@ -1953,5 +1953,50 @@ const messages: Record<string, string> = {
   'library.meta.copyId': 'Kopiera bok-ID',
   'library.meta.copied': 'Kopierat',
   'library.meta.copyFailed': 'Kunde inte kopiera det.',
+  // nav
+  'nav.pairsToReview':
+    '{n, plural, one {# parförslag att granska} other {# parförslag att granska}}',
+
+  // library
+  'library.pairing.tool': 'Länka',
+  'library.pairing.toolHint':
+    '{kind, select, ebook {Länka denna e-bok med sin ljudbok} other {Länka denna ljudbok med sin e-bok}}',
+  'library.pairing.title':
+    '{kind, select, ebook {Länka med en ljudbok} other {Länka med en e-bok}}',
+  'library.pairing.lede':
+    '{kind, select, ebook {Välj ljudboken till den här boken. De två synkas sedan: växling mellan läsning och lyssnande landar på samma ställe.} other {Välj e-boken till den här boken. De två synkas sedan: växling mellan lyssnande och läsning landar på samma ställe.}}',
+  'library.pairing.linked': 'Parad med',
+  'library.pairing.aligned': 'Synkad: växlingen landar på samma ställe',
+  'library.pairing.notAligned': 'Inte synkad än',
+  'library.pairing.open': 'Öppna',
+  'library.pairing.unpair': 'Avlänka',
+  'library.pairing.unpairAsk': 'Avlänka dessa två?',
+  'library.pairing.unpairYes': 'Avlänka',
+  'library.pairing.suggested': 'Föreslagna',
+  'library.pairing.suggestedNote': 'Hittad av biblioteksskanningen',
+  'library.pairing.notMatch': 'Ingen matchning',
+  'library.pairing.choose': '{kind, select, ebook {Välj ljudboken} other {Välj e-boken}}',
+  'library.pairing.search': 'Titel eller författare',
+  'library.pairing.noMatch': 'Inget här matchar ”{query}”.',
+  'library.pairing.none':
+    '{kind, select, ebook {Det finns inga ljudböcker i biblioteket än.} other {Det finns inga e-böcker i biblioteket än.}}',
+  'library.pairing.noOthers':
+    '{kind, select, ebook {Det finns inga andra ljudböcker i biblioteket.} other {Det finns inga andra e-böcker i biblioteket.}}',
+  'library.pairing.likely': 'Sannolik matchning',
+  'library.pairing.pairedWith': 'Parad med ”{title}”',
+  'library.pairing.dismissed': 'Tidigare markerad som ingen matchning',
+  'library.pairing.pair': 'Länka',
+  'library.pairing.pairing': 'Länkar…',
+  'library.pairing.pairInstead': 'Länka i stället',
+  'library.pairing.moveAsk': 'Den är länkad med ”{title}”. Länka den med den här boken i stället?',
+  'library.pairing.replaceAsk':
+    'Den här boken är länkad med ”{title}”. Länka den med den här i stället?',
+  'library.pairing.showAll': 'Visa alla {n}',
+  'library.pairing.allPairs': 'Alla par i biblioteket, på sidan ”Parning”',
+  'library.pairing.loadFailed': 'Kunde inte läsa in böckerna för parning.',
+  'library.pairing.toast.paired': 'Parad med ”{title}”. Synkronisering i kö.',
+  'library.pairing.toast.unpaired': 'Avlänkad',
+  'library.pairing.toast.dismissed': 'Markerad som ingen matchning',
+  'library.pairing.toast.failed': 'Kunde inte ändra parningen.',
 };
 export default messages;

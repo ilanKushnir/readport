@@ -2028,5 +2028,49 @@ const messages: Record<string, string> = {
   'library.meta.copyId': 'نسخ معرّف الكتاب',
   'library.meta.copied': 'تم النسخ',
   'library.meta.copyFailed': 'تعذّر نسخ ذلك.',
+  // nav
+  'nav.pairsToReview':
+    '{n, plural, zero {لا أزواج مقترحة بانتظار المراجعة} one {زوج مقترح واحد بانتظار المراجعة} two {زوجان مقترحان بانتظار المراجعة} few {# أزواج مقترحة بانتظار المراجعة} many {# زوجًا مقترحًا بانتظار المراجعة} other {# زوج مقترح بانتظار المراجعة}}',
+
+  // library
+  'library.pairing.tool': 'ربط',
+  'library.pairing.toolHint':
+    '{kind, select, ebook {ربط هذا الكتاب الإلكتروني بكتابه الصوتي} other {ربط هذا الكتاب الصوتي بكتابه الإلكتروني}}',
+  'library.pairing.title': '{kind, select, ebook {ربط بكتاب صوتي} other {ربط بكتاب إلكتروني}}',
+  'library.pairing.lede':
+    '{kind, select, ebook {اختر الكتاب الصوتي لهذا الكتاب نفسه. تتم بعدها مزامنة الكتابين، فينقلك التبديل بين القراءة والاستماع إلى الموضع نفسه.} other {اختر الكتاب الإلكتروني لهذا الكتاب نفسه. تتم بعدها مزامنة الكتابين، فينقلك التبديل بين الاستماع والقراءة إلى الموضع نفسه.}}',
+  'library.pairing.linked': 'مقترن بـ',
+  'library.pairing.aligned': 'مُزامَن: ينقلك التبديل إلى الموضع نفسه',
+  'library.pairing.notAligned': 'لم تتم المزامنة بعد',
+  'library.pairing.open': 'فتح',
+  'library.pairing.unpair': 'فصل الربط',
+  'library.pairing.unpairAsk': 'فصل الربط بين هذين الكتابين؟',
+  'library.pairing.unpairYes': 'فصل الربط',
+  'library.pairing.suggested': 'مُقترَح',
+  'library.pairing.suggestedNote': 'وجده فحص المكتبة',
+  'library.pairing.notMatch': 'ليس تطابقًا',
+  'library.pairing.choose':
+    '{kind, select, ebook {اختيار الكتاب الصوتي} other {اختيار الكتاب الإلكتروني}}',
+  'library.pairing.search': 'العنوان أو المؤلف',
+  'library.pairing.noMatch': 'لا شيء هنا يطابق «{query}».',
+  'library.pairing.none':
+    '{kind, select, ebook {لا كتب صوتية في المكتبة بعد.} other {لا كتب إلكترونية في المكتبة بعد.}}',
+  'library.pairing.noOthers':
+    '{kind, select, ebook {لا كتب صوتية أخرى في المكتبة.} other {لا كتب إلكترونية أخرى في المكتبة.}}',
+  'library.pairing.likely': 'تطابق محتمل',
+  'library.pairing.pairedWith': 'مقترن بـ «{title}»',
+  'library.pairing.dismissed': 'سبق تمييزه بأنه ليس تطابقًا',
+  'library.pairing.pair': 'ربط',
+  'library.pairing.pairing': 'جارٍ الربط…',
+  'library.pairing.pairInstead': 'الربط بدلًا من ذلك',
+  'library.pairing.moveAsk': 'هو مقترن بـ «{title}». ربطه بهذا الكتاب بدلًا من ذلك؟',
+  'library.pairing.replaceAsk': 'هذا الكتاب مقترن بـ «{title}». ربطه بهذا بدلًا من ذلك؟',
+  'library.pairing.showAll': 'عرض الكل ({n})',
+  'library.pairing.allPairs': 'كل زوج في المكتبة، في صفحة الإقران',
+  'library.pairing.loadFailed': 'تعذّر تحميل الكتب المتاحة للربط.',
+  'library.pairing.toast.paired': 'رُبط بـ «{title}». المزامنة في قائمة الانتظار.',
+  'library.pairing.toast.unpaired': 'فُصل الربط',
+  'library.pairing.toast.dismissed': 'مُيِّز بأنه ليس تطابقًا',
+  'library.pairing.toast.failed': 'تعذّر تغيير الإقران.',
 };
 export default messages;

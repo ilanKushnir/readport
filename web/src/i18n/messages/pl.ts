@@ -2006,5 +2006,50 @@ const messages: Record<string, string> = {
   'library.meta.copyId': 'Kopiuj ID książki',
   'library.meta.copied': 'Skopiowano',
   'library.meta.copyFailed': 'Nie udało się tego skopiować.',
+  // nav
+  'nav.pairsToReview':
+    '{n, plural, one {# sugerowana para do sprawdzenia} few {# sugerowane pary do sprawdzenia} many {# sugerowanych par do sprawdzenia} other {# sugerowane pary do sprawdzenia}}',
+
+  // library
+  'library.pairing.tool': 'Połącz',
+  'library.pairing.toolHint':
+    '{kind, select, ebook {Połącz tego e-booka z jego audiobookiem} other {Połącz ten audiobook z jego e-bookiem}}',
+  'library.pairing.title':
+    '{kind, select, ebook {Połącz z audiobookiem} other {Połącz z e-bookiem}}',
+  'library.pairing.lede':
+    '{kind, select, ebook {Wybierz audiobook tej samej książki. Zostaną wtedy wyrównane, aby przełączanie między czytaniem a słuchaniem następowało w tym samym miejscu.} other {Wybierz e-booka tej samej książki. Zostaną wtedy wyrównane, aby przełączanie między słuchaniem a czytaniem następowało w tym samym miejscu.}}',
+  'library.pairing.linked': 'W parze z',
+  'library.pairing.aligned': 'Wyrównane: przełączanie następuje w tym samym miejscu',
+  'library.pairing.notAligned': 'Jeszcze nie wyrównane',
+  'library.pairing.open': 'Otwórz',
+  'library.pairing.unpair': 'Rozłącz',
+  'library.pairing.unpairAsk': 'Rozłączyć to połączenie?',
+  'library.pairing.unpairYes': 'Rozłącz',
+  'library.pairing.suggested': 'Sugerowane',
+  'library.pairing.suggestedNote': 'Znalezione podczas skanowania biblioteki',
+  'library.pairing.notMatch': 'To nie jest dopasowanie',
+  'library.pairing.choose': '{kind, select, ebook {Wybierz audiobook} other {Wybierz e-booka}}',
+  'library.pairing.search': 'Tytuł lub autor',
+  'library.pairing.noMatch': 'Nic tu nie pasuje do „{query}”.',
+  'library.pairing.none':
+    '{kind, select, ebook {W bibliotece nie ma jeszcze żadnych audiobooków.} other {W bibliotece nie ma jeszcze żadnych e-booków.}}',
+  'library.pairing.noOthers':
+    '{kind, select, ebook {W bibliotece nie ma innych audiobooków.} other {W bibliotece nie ma innych e-booków.}}',
+  'library.pairing.likely': 'Prawdopodobne dopasowanie',
+  'library.pairing.pairedWith': 'W parze z „{title}”',
+  'library.pairing.dismissed': 'Wcześniej odrzucone',
+  'library.pairing.pair': 'Połącz',
+  'library.pairing.pairing': 'Łączenie…',
+  'library.pairing.pairInstead': 'Połącz zamiast tego',
+  'library.pairing.moveAsk': 'Jest w parze z „{title}”. Połączyć ją z tą książką zamiast tego?',
+  'library.pairing.replaceAsk':
+    'Ta książka jest w parze z „{title}”. Połączyć ją z tą zamiast tego?',
+  'library.pairing.showAll': 'Pokaż wszystkie {n}',
+  'library.pairing.allPairs': 'Wszystkie pary w bibliotece na stronie Parowanie',
+  'library.pairing.loadFailed': 'Nie udało się wczytać książek do połączenia.',
+  'library.pairing.toast.paired': 'Połączono z „{title}”. Wyrównanie w kolejce.',
+  'library.pairing.toast.unpaired': 'Rozłączono',
+  'library.pairing.toast.dismissed': 'Oznaczone jako niedopasowanie',
+  'library.pairing.toast.failed': 'Nie udało się zmienić pary.',
 };
 export default messages;

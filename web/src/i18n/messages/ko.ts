@@ -1932,5 +1932,48 @@ const messages: Record<string, string> = {
   'library.meta.copyId': '책 ID 복사',
   'library.meta.copied': '복사됨',
   'library.meta.copyFailed': '복사할 수 없습니다.',
+  // nav
+  'nav.pairsToReview': '{n, plural, other {페어 제안 #개 검토 대기}}',
+
+  // library
+  'library.pairing.tool': '연결',
+  'library.pairing.toolHint':
+    '{kind, select, ebook {이 전자책을 해당 오디오북과 연결} other {이 오디오북을 해당 전자책과 연결}}',
+  'library.pairing.title': '{kind, select, ebook {오디오북과 연결} other {전자책과 연결}}',
+  'library.pairing.lede':
+    '{kind, select, ebook {이 책과 같은 작품의 오디오북을 선택하세요. 이후 두 판이 동기화되어, 읽기와 듣기 사이의 전환이 같은 위치에서 이어집니다.} other {이 책과 같은 작품의 전자책을 선택하세요. 이후 두 판이 동기화되어, 듣기와 읽기 사이의 전환이 같은 위치에서 이어집니다.}}',
+  'library.pairing.linked': '페어링 상대',
+  'library.pairing.aligned': '동기화됨 - 전환 시 같은 위치로 이동합니다',
+  'library.pairing.notAligned': '아직 동기화되지 않았습니다',
+  'library.pairing.open': '열기',
+  'library.pairing.unpair': '연결 해제',
+  'library.pairing.unpairAsk': '이 두 책의 연결을 해제할까요?',
+  'library.pairing.unpairYes': '연결 해제',
+  'library.pairing.suggested': '제안됨',
+  'library.pairing.suggestedNote': '라이브러리 스캔에서 찾음',
+  'library.pairing.notMatch': '일치하지 않음',
+  'library.pairing.choose': '{kind, select, ebook {오디오북 선택} other {전자책 선택}}',
+  'library.pairing.search': '제목 또는 저자',
+  'library.pairing.noMatch': '“{query}”와 일치하는 책이 없습니다.',
+  'library.pairing.none':
+    '{kind, select, ebook {아직 라이브러리에 오디오북이 없습니다.} other {아직 라이브러리에 전자책이 없습니다.}}',
+  'library.pairing.noOthers':
+    '{kind, select, ebook {라이브러리에 다른 오디오북이 없습니다.} other {라이브러리에 다른 전자책이 없습니다.}}',
+  'library.pairing.likely': '가능성 있는 일치',
+  'library.pairing.pairedWith': '“{title}”과(와) 페어링됨',
+  'library.pairing.dismissed': '이전에 일치하지 않음으로 표시됨',
+  'library.pairing.pair': '연결',
+  'library.pairing.pairing': '연결 중…',
+  'library.pairing.pairInstead': '대신 연결',
+  'library.pairing.moveAsk': '“{title}”과(와) 페어링되어 있습니다. 대신 이 책과 연결할까요?',
+  'library.pairing.replaceAsk':
+    '이 책은 “{title}”과(와) 페어링되어 있습니다. 대신 이것과 연결할까요?',
+  'library.pairing.showAll': '{n}개 모두 보기',
+  'library.pairing.allPairs': '페어링 페이지에서 라이브러리의 모든 페어 보기',
+  'library.pairing.loadFailed': '연결할 책을 불러올 수 없습니다.',
+  'library.pairing.toast.paired': '“{title}”과(와) 연결됨 - 정렬 대기열에 추가됨',
+  'library.pairing.toast.unpaired': '페어 연결 해제됨',
+  'library.pairing.toast.dismissed': '일치하지 않음으로 표시됨',
+  'library.pairing.toast.failed': '페어링을 변경할 수 없습니다.',
 };
 export default messages;
