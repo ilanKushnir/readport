@@ -4,6 +4,24 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.28.0 - 2026-09-25
+
+### Added
+
+- **Pair a book from its own page.** Curators and admins have a Pair tool
+  beside Languages on the book page. It shows the edition the book is paired
+  with (to open, or to unpair), a match the library scan suggested (to take,
+  or to mark not a match), and every book of the other format, found by
+  title or author and ranked by the pair scan's own score, so the right one
+  is usually at the top. A pick becomes the book's one other edition: what
+  either book was paired with before is let go, after asking when that takes
+  a book from its pair, and timing the two together is queued. The notice
+  about a suggested match on a book's page opens it too. For the API:
+  `GET /api/books/:id/pairing`, and `replace` on `POST /api/pairs/link`.
+- **Pairing on a phone.** Pairing and Stats sit at the top of the Shelves
+  sheet instead of at its very bottom, and Pairing shows how many
+  suggestions are waiting for review.
+
 ## 0.27.0 - 2026-09-24
 
 ### Added
