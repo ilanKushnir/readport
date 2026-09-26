@@ -2044,5 +2044,53 @@ const messages: Record<string, string> = {
   'library.pairing.toast.unpaired': 'Dezlegat',
   'library.pairing.toast.dismissed': 'Marcat drept „Nu se potrivesc”',
   'library.pairing.toast.failed': 'Asocierea nu a putut fi modificată.',
+  // library
+  'library.edit.button': 'Editează',
+  'library.edit.buttonHint': 'Alege mai multe cărți și modifică-le împreună',
+  'library.edit.toolbar':
+    '{n, plural, one {Se editează # carte} few {Se editează # cărți} other {Se editează # de cărți}}',
+  'library.edit.pick': 'Atinge cărțile pentru a le selecta',
+  'library.edit.selected':
+    '{n, plural, one {# carte selectată} few {# cărți selectate} other {# de cărți selectate}}',
+  'library.edit.selectAll': 'Selectează tot',
+  'library.edit.selectNone': 'Deselectează tot',
+  'library.edit.language': 'Limbă',
+  'library.edit.remove': 'Scoate de pe raft',
+  'library.edit.hide': 'Ascunde',
+  'library.edit.show': 'Afișează',
+  'library.edit.languageTitle':
+    '{n, plural, one {Limba pentru # carte} few {Limba pentru # cărți} other {Limba pentru # de cărți}}',
+  'library.edit.languageAuto': 'Automat',
+  'library.edit.languageAutoHint': 'Fișierul și textul fiecărei cărți decid',
+  'library.edit.languageDone':
+    '{n, plural, one {# carte este acum în {name}} few {# cărți sunt acum în {name}} other {# de cărți sunt acum în {name}}}',
+  'library.edit.languageAutoDone':
+    '{n, plural, one {# carte este din nou în limba proprie} few {# cărți sunt din nou în limba proprie} other {# de cărți sunt din nou în limba proprie}}',
+  'library.edit.addTitle':
+    '{n, plural, one {Adaugă # carte pe…} few {Adaugă # cărți pe…} other {Adaugă # de cărți pe…}}',
+  'library.edit.addedTo':
+    '{n, plural, one {# carte adăugată pe {shelf}} few {# cărți adăugate pe {shelf}} other {# de cărți adăugate pe {shelf}}}',
+  'library.edit.queued':
+    '{n, plural, one {# carte adăugată pe lista ta de lectură} few {# cărți adăugate pe lista ta de lectură} other {# de cărți adăugate pe lista ta de lectură}}',
+  'library.edit.alreadyThere':
+    '{n, plural, one {# era deja acolo} few {# erau deja acolo} other {# erau deja acolo}}',
+  'library.edit.removed':
+    '{n, plural, one {# carte scoasă de pe {shelf}} few {# cărți scoase de pe {shelf}} other {# de cărți scoase de pe {shelf}}}',
+  'library.edit.hideTitle':
+    '{n, plural, one {Ascunzi # carte de cititori?} few {Ascunzi # cărți de cititori?} other {Ascunzi # de cărți de cititori?}}',
+  'library.edit.hideConfirm':
+    '{n, plural, one {Ascunde # carte} few {Ascunde # cărți} other {Ascunde # de cărți}}',
+  'library.edit.hideShelves':
+    '{n, plural, one {Dispare din biblioteca, căutarea, rafturile și listele de lectură ale tuturor celorlalți.} few {Dispar din biblioteca, căutarea, rafturile și listele de lectură ale tuturor celorlalți.} other {Dispar din biblioteca, căutarea, rafturile și listele de lectură ale tuturor celorlalți.}}',
+  'library.edit.hideLinks':
+    '{n, plural, one {Linkurile lui distribuite nu se mai deschid, iar prietenii nu-l mai văd în lectura prietenilor lor.} few {Linkurile lor distribuite nu se mai deschid, iar prietenii nu le mai văd în lectura prietenilor lor.} other {Linkurile lor distribuite nu se mai deschid, iar prietenii nu le mai văd în lectura prietenilor lor.}}',
+  'library.edit.hideKept':
+    '{n, plural, one {Nimic nu este șters. Progresul, notițele și rafturile cititorilor revin când îl afișezi din nou.} few {Nimic nu este șters. Progresul, notițele și rafturile cititorilor revin când le afișezi din nou.} other {Nimic nu este șters. Progresul, notițele și rafturile cititorilor revin când le afișezi din nou.}}',
+  'library.edit.hidePairs': 'Cartea electronică și cartea audio sunt ascunse împreună.',
+  'library.edit.hidden':
+    '{n, plural, one {# carte ascunsă. Acum doar administratorii o pot vedea.} few {# cărți ascunse. Acum doar administratorii le pot vedea.} other {# de cărți ascunse. Acum doar administratorii le pot vedea.}}',
+  'library.edit.shown':
+    '{n, plural, one {# carte este din nou vizibilă tuturor} few {# cărți sunt din nou vizibile tuturor} other {# de cărți sunt din nou vizibile tuturor}}',
+  'library.edit.failed': 'Acele cărți nu au putut fi schimbate.',
 };
 export default messages;

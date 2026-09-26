@@ -2026,6 +2026,48 @@ const messages: Record<string, string> = {
   'library.pairing.toast.unpaired': 'Bağlantı kaldırıldı',
   'library.pairing.toast.dismissed': 'İşaretlendi: eşleşme değil',
   'library.pairing.toast.failed': 'Eşleştirme değiştirilemedi.',
+  // library
+  'library.edit.button': 'Düzenle',
+  'library.edit.buttonHint': 'Birkaç kitap seçin ve birlikte düzenleyin',
+  'library.edit.toolbar': '{n, plural, one {# kitap düzenleniyor} other {# kitap düzenleniyor}}',
+  'library.edit.pick': 'Seçmek için kitaplara dokunun',
+  'library.edit.selected': '{n, plural, one {# kitap seçildi} other {# kitap seçildi}}',
+  'library.edit.selectAll': 'Tümünü seç',
+  'library.edit.selectNone': 'Seçimi kaldır',
+  'library.edit.language': 'Dil',
+  'library.edit.remove': 'Raftan çıkar',
+  'library.edit.hide': 'Gizle',
+  'library.edit.show': 'Herkese göster',
+  'library.edit.languageTitle': '{n, plural, one {# kitabın dili} other {# kitabın dili}}',
+  'library.edit.languageAuto': 'Otomatik',
+  'library.edit.languageAutoHint': 'Kitabın kendi dosyasına ve metnine göre belirlenir',
+  'library.edit.languageDone':
+    '{n, plural, one {# kitabın dili artık {name}} other {# kitabın dili artık {name}}}',
+  'library.edit.languageAutoDone':
+    '{n, plural, one {# kitabın dili yeniden kendi dosyasına göre belirleniyor} other {# kitabın dili yeniden kendi dosyasına göre belirleniyor}}',
+  'library.edit.addTitle': '{n, plural, one {# kitabı ekle…} other {# kitabı ekle…}}',
+  'library.edit.addedTo':
+    '{n, plural, one {# kitap {shelf} rafına eklendi} other {# kitap {shelf} rafına eklendi}}',
+  'library.edit.queued':
+    '{n, plural, one {# kitap okuma listenize eklendi} other {# kitap okuma listenize eklendi}}',
+  'library.edit.alreadyThere': '{n, plural, one {# zaten oradaydı} other {# zaten oradaydı}}',
+  'library.edit.removed':
+    '{n, plural, one {# kitap {shelf} rafından çıkarıldı} other {# kitap {shelf} rafından çıkarıldı}}',
+  'library.edit.hideTitle':
+    '{n, plural, one {# kitap okuyuculardan gizlensin mi?} other {# kitap okuyuculardan gizlensin mi?}}',
+  'library.edit.hideConfirm': '{n, plural, one {# kitabı gizle} other {# kitabı gizle}}',
+  'library.edit.hideShelves':
+    '{n, plural, one {Herkesin kitaplığından, aramadan, raflarından ve okuma listelerinden kaybolur.} other {Herkesin kitaplığından, aramadan, raflarından ve okuma listelerinden kaybolur.}}',
+  'library.edit.hideLinks':
+    '{n, plural, one {Paylaşım bağlantıları açılmaz olur, arkadaşlar da birbirlerinin okumalarında onu görmez olur.} other {Paylaşım bağlantıları açılmaz olur, arkadaşlar da birbirlerinin okumalarında onları görmez olur.}}',
+  'library.edit.hideKept':
+    '{n, plural, one {Hiçbir şey silinmez. Okuyucuların ilerlemesi, notları ve rafları, tekrar gösterdiğinizde geri döner.} other {Hiçbir şey silinmez. Okuyucuların ilerlemesi, notları ve rafları, tekrar gösterdiğinizde geri döner.}}',
+  'library.edit.hidePairs': 'Aynı başlığın e-kitap ve sesli kitap sürümü birlikte gizlenir.',
+  'library.edit.hidden':
+    '{n, plural, one {# kitap gizlendi. Artık sadece yöneticiler görebilir.} other {# kitap gizlendi. Artık sadece yöneticiler görebilir.}}',
+  'library.edit.shown':
+    '{n, plural, one {# kitap herkese tekrar gösterildi} other {# kitap herkese tekrar gösterildi}}',
+  'library.edit.failed': 'Bu kitaplar değiştirilemedi.',
 };
 
 export default messages;

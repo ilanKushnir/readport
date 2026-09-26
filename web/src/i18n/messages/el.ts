@@ -2059,5 +2059,48 @@ const messages: Record<string, string> = {
   'library.pairing.toast.unpaired': 'Αποσυνδέθηκε',
   'library.pairing.toast.dismissed': 'Επισημάνθηκε ως «Δεν ταιριάζουν»',
   'library.pairing.toast.failed': 'Δεν ήταν δυνατή η αλλαγή της αντιστοίχισης.',
+  // library
+  'library.edit.button': 'Επεξεργασία',
+  'library.edit.buttonHint': 'Επίλεξε πολλά βιβλία και άλλαξέ τα μαζί',
+  'library.edit.toolbar': '{n, plural, one {Επεξεργασία # βιβλίου} other {Επεξεργασία # βιβλίων}}',
+  'library.edit.pick': 'Πάτησε τα βιβλία για να τα επιλέξεις',
+  'library.edit.selected': '{n, plural, one {# βιβλίο επιλεγμένο} other {# βιβλία επιλεγμένα}}',
+  'library.edit.selectAll': 'Επιλογή όλων',
+  'library.edit.selectNone': 'Απαλοιφή επιλογής',
+  'library.edit.language': 'Γλώσσα',
+  'library.edit.remove': 'Αφαίρεση από το ράφι',
+  'library.edit.hide': 'Απόκρυψη',
+  'library.edit.show': 'Εμφάνιση',
+  'library.edit.languageTitle': '{n, plural, one {Γλώσσα # βιβλίου} other {Γλώσσα # βιβλίων}}',
+  'library.edit.languageAuto': 'Αυτόματο',
+  'library.edit.languageAutoHint': 'Το αρχείο και το κείμενο κάθε βιβλίου αποφασίζουν',
+  'library.edit.languageDone':
+    '{n, plural, one {# βιβλίο είναι πλέον σε {name}} other {# βιβλία είναι πλέον σε {name}}}',
+  'library.edit.languageAutoDone':
+    '{n, plural, one {# βιβλίο είναι ξανά στη δική του γλώσσα} other {# βιβλία είναι ξανά στη δική τους γλώσσα}}',
+  'library.edit.addTitle':
+    '{n, plural, one {Προσθήκη # βιβλίου σε…} other {Προσθήκη # βιβλίων σε…}}',
+  'library.edit.addedTo':
+    '{n, plural, one {# βιβλίο προστέθηκε σε {shelf}} other {# βιβλία προστέθηκαν σε {shelf}}}',
+  'library.edit.queued':
+    '{n, plural, one {# βιβλίο προστέθηκε στη λίστα ανάγνωσής σου} other {# βιβλία προστέθηκαν στη λίστα ανάγνωσής σου}}',
+  'library.edit.alreadyThere': '{n, plural, one {# ήταν ήδη εκεί} other {# ήταν ήδη εκεί}}',
+  'library.edit.removed':
+    '{n, plural, one {# βιβλίο αφαιρέθηκε από {shelf}} other {# βιβλία αφαιρέθηκαν από {shelf}}}',
+  'library.edit.hideTitle':
+    '{n, plural, one {Απόκρυψη # βιβλίου από αναγνώστες;} other {Απόκρυψη # βιβλίων από αναγνώστες;}}',
+  'library.edit.hideConfirm': '{n, plural, one {Απόκρυψη # βιβλίου} other {Απόκρυψη # βιβλίων}}',
+  'library.edit.hideShelves':
+    '{n, plural, one {Εξαφανίζεται από τη βιβλιοθήκη, την αναζήτηση, τα ράφια και τις λίστες ανάγνωσης όλων των άλλων.} other {Εξαφανίζονται από τη βιβλιοθήκη, την αναζήτηση, τα ράφια και τις λίστες ανάγνωσης όλων των άλλων.}}',
+  'library.edit.hideLinks':
+    '{n, plural, one {Οι σύνδεσμοι κοινής χρήσης του σταματούν να ανοίγουν, και οι φίλοι σταματούν να το βλέπουν στην ανάγνωση ο ένας του άλλου.} other {Οι σύνδεσμοι κοινής χρήσης τους σταματούν να ανοίγουν, και οι φίλοι σταματούν να τα βλέπουν στην ανάγνωση ο ένας του άλλου.}}',
+  'library.edit.hideKept':
+    '{n, plural, one {Τίποτα δεν διαγράφεται. Η πρόοδος, οι σημειώσεις και τα ράφια των αναγνωστών επιστρέφουν όταν το εμφανίσεις ξανά.} other {Τίποτα δεν διαγράφεται. Η πρόοδος, οι σημειώσεις και τα ράφια των αναγνωστών επιστρέφουν όταν τα εμφανίσεις ξανά.}}',
+  'library.edit.hidePairs': 'Το ηλεκτρονικό βιβλίο και το ηχητικό βιβλίο κρύβονται μαζί.',
+  'library.edit.hidden':
+    '{n, plural, one {# βιβλίο κρύφτηκε. Μόνο οι διαχειριστές το βλέπουν πια.} other {# βιβλία κρύφτηκαν. Μόνο οι διαχειριστές τα βλέπουν πια.}}',
+  'library.edit.shown':
+    '{n, plural, one {# βιβλίο είναι ξανά ορατό σε όλους} other {# βιβλία είναι ξανά ορατά σε όλους}}',
+  'library.edit.failed': 'Δεν ήταν δυνατή η αλλαγή αυτών των βιβλίων.',
 };
 export default messages;

@@ -2065,5 +2065,50 @@ const messages: Record<string, string> = {
   'library.pairing.toast.unpaired': 'Verknüpfung gelöst',
   'library.pairing.toast.dismissed': 'Als kein Treffer markiert',
   'library.pairing.toast.failed': 'Die Verknüpfung konnte nicht geändert werden.',
+  // library
+  'library.edit.button': 'Bearbeiten',
+  'library.edit.buttonHint': 'Mehrere Bücher auswählen und gemeinsam ändern',
+  'library.edit.toolbar':
+    '{n, plural, one {Bearbeitung von # Buch} other {Bearbeitung von # Büchern}}',
+  'library.edit.pick': 'Bücher antippen, um sie auszuwählen',
+  'library.edit.selected': '{n, plural, one {# Buch ausgewählt} other {# Bücher ausgewählt}}',
+  'library.edit.selectAll': 'Alle auswählen',
+  'library.edit.selectNone': 'Keine auswählen',
+  'library.edit.language': 'Sprache',
+  'library.edit.remove': 'Vom Regal entfernen',
+  'library.edit.hide': 'Verbergen',
+  'library.edit.show': 'Zeigen',
+  'library.edit.languageTitle':
+    '{n, plural, one {Sprache von # Buch} other {Sprache von # Büchern}}',
+  'library.edit.languageAuto': 'Automatisch',
+  'library.edit.languageAutoHint': 'Datei und Text des jeweiligen Buchs entscheiden',
+  'library.edit.languageDone':
+    '{n, plural, one {# Buch ist jetzt auf {name}} other {# Bücher sind jetzt auf {name}}}',
+  'library.edit.languageAutoDone':
+    '{n, plural, one {# Buch ist wieder in seiner eigenen Sprache} other {# Bücher sind wieder in ihrer eigenen Sprache}}',
+  'library.edit.addTitle':
+    '{n, plural, one {# Buch hinzufügen zu…} other {# Bücher hinzufügen zu…}}',
+  'library.edit.addedTo':
+    '{n, plural, one {# Buch zu {shelf} hinzugefügt} other {# Bücher zu {shelf} hinzugefügt}}',
+  'library.edit.queued':
+    '{n, plural, one {# Buch zur Leseliste hinzugefügt} other {# Bücher zur Leseliste hinzugefügt}}',
+  'library.edit.alreadyThere': '{n, plural, one {# war schon da} other {# waren schon da}}',
+  'library.edit.removed':
+    '{n, plural, one {# Buch von {shelf} entfernt} other {# Bücher von {shelf} entfernt}}',
+  'library.edit.hideTitle':
+    '{n, plural, one {# Buch vor Lesern verbergen?} other {# Bücher vor Lesern verbergen?}}',
+  'library.edit.hideConfirm': '{n, plural, one {# Buch verbergen} other {# Bücher verbergen}}',
+  'library.edit.hideShelves':
+    '{n, plural, one {Es verschwindet aus Mediathek, Suche, Regalen und Leseliste aller anderen.} other {Sie verschwinden aus Mediathek, Suche, Regalen und Leseliste aller anderen.}}',
+  'library.edit.hideLinks':
+    '{n, plural, one {Seine Freigabelinks funktionieren nicht mehr, und Freunde sehen nicht mehr, dass andere es gerade lesen.} other {Ihre Freigabelinks funktionieren nicht mehr, und Freunde sehen nicht mehr, dass andere sie gerade lesen.}}',
+  'library.edit.hideKept':
+    '{n, plural, one {Nichts wird gelöscht. Der Fortschritt, die Notizen und die Regale der Leser sind wieder da, sobald es wieder gezeigt wird.} other {Nichts wird gelöscht. Der Fortschritt, die Notizen und die Regale der Leser sind wieder da, sobald sie wieder gezeigt werden.}}',
+  'library.edit.hidePairs': 'Ein Titel mit E-Book und Hörbuch wird ganz verborgen.',
+  'library.edit.hidden':
+    '{n, plural, one {# Buch verborgen. Nur noch Administratoren können es sehen.} other {# Bücher verborgen. Nur noch Administratoren können sie sehen.}}',
+  'library.edit.shown':
+    '{n, plural, one {# Buch allen wieder gezeigt} other {# Bücher allen wieder gezeigt}}',
+  'library.edit.failed': 'Diese Bücher konnten nicht geändert werden.',
 } as const;
 export default messages;

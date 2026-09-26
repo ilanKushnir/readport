@@ -2018,6 +2018,40 @@ const messages: Record<string, string> = {
   'library.pairing.toast.unpaired': 'ペアのリンクを解除しました',
   'library.pairing.toast.dismissed': '「一致しない」にしました',
   'library.pairing.toast.failed': 'ペアリングを変更できませんでした。',
+  // library
+  'library.edit.button': '編集',
+  'library.edit.buttonHint': '複数の本を選んでまとめて変更',
+  'library.edit.toolbar': '{n, plural, other {#冊を編集中}}',
+  'library.edit.pick': '本をタップして選択します',
+  'library.edit.selected': '{n, plural, other {#冊を選択中}}',
+  'library.edit.selectAll': 'すべて選択',
+  'library.edit.selectNone': '選択を解除',
+  'library.edit.language': '言語',
+  'library.edit.remove': 'シェルフから削除',
+  'library.edit.hide': '隠す',
+  'library.edit.show': '表示',
+  'library.edit.languageTitle': '{n, plural, other {言語: #冊}}',
+  'library.edit.languageAuto': '自動',
+  'library.edit.languageAutoHint': '各本のファイルとテキストが決めます',
+  'library.edit.languageDone': '{n, plural, other {#冊が{name}になりました}}',
+  'library.edit.languageAutoDone': '{n, plural, other {#冊が元の言語に戻りました}}',
+  'library.edit.addTitle': '{n, plural, other {#冊を追加…}}',
+  'library.edit.addedTo': '{n, plural, other {{shelf}に#冊を追加しました}}',
+  'library.edit.queued': '{n, plural, other {読書リストに#冊を追加しました}}',
+  'library.edit.alreadyThere': '{n, plural, other {#冊はすでにありました}}',
+  'library.edit.removed': '{n, plural, other {{shelf}から#冊を削除しました}}',
+  'library.edit.hideTitle': '{n, plural, other {読者から#冊を隠しますか?}}',
+  'library.edit.hideConfirm': '{n, plural, other {#冊を隠す}}',
+  'library.edit.hideShelves':
+    '{n, plural, other {他の人のライブラリ、検索、シェルフ、読書リストから消えます。}}',
+  'library.edit.hideLinks':
+    '{n, plural, other {共有リンクは開けなくなり、友達同士でも読書に表示されなくなります。}}',
+  'library.edit.hideKept':
+    '{n, plural, other {何も削除されません。もう一度表示すると、読者の進捗、ノート、シェルフは元に戻ります。}}',
+  'library.edit.hidePairs': '電子書籍とオーディオブックの両方がある作品は、まとめて隠されます。',
+  'library.edit.hidden': '{n, plural, other {#冊を隠しました。これで管理者だけが見られます。}}',
+  'library.edit.shown': '{n, plural, other {#冊を全員に再び表示しました}}',
+  'library.edit.failed': 'それらの本を変更できませんでした。',
 };
 
 export default messages;

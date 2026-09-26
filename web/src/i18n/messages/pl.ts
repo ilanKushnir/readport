@@ -2051,5 +2051,53 @@ const messages: Record<string, string> = {
   'library.pairing.toast.unpaired': 'Rozłączono',
   'library.pairing.toast.dismissed': 'Oznaczone jako niedopasowanie',
   'library.pairing.toast.failed': 'Nie udało się zmienić pary.',
+  // library
+  'library.edit.button': 'Edytuj',
+  'library.edit.buttonHint': 'Wybierz kilka książek i edytuj je razem',
+  'library.edit.toolbar':
+    '{n, plural, one {Edytowanie # książki} few {Edytowanie # książek} many {Edytowanie # książek} other {Edytowanie # książek}}',
+  'library.edit.pick': 'Dotykaj książek, aby je wybrać',
+  'library.edit.selected':
+    '{n, plural, one {# książka jest wybrana} few {# książki są wybrane} many {# książek jest wybranych} other {# książki są wybrane}}',
+  'library.edit.selectAll': 'Zaznacz wszystko',
+  'library.edit.selectNone': 'Odznacz wszystko',
+  'library.edit.language': 'Język',
+  'library.edit.remove': 'Usuń z półki',
+  'library.edit.hide': 'Ukryj',
+  'library.edit.show': 'Pokaż wszystkim',
+  'library.edit.languageTitle':
+    '{n, plural, one {Język # książki} few {Język # książek} many {Język # książek} other {Język # książek}}',
+  'library.edit.languageAuto': 'Automatycznie',
+  'library.edit.languageAutoHint': 'Ustalane przez plik i tekst samej książki',
+  'library.edit.languageDone':
+    '{n, plural, one {Ustawiono język # książki: {name}} few {Ustawiono język # książek: {name}} many {Ustawiono język # książek: {name}} other {Ustawiono język # książek: {name}}}',
+  'library.edit.languageAutoDone':
+    '{n, plural, one {Język # książki znów jest ustalany automatycznie} few {Język # książek znów jest ustalany automatycznie} many {Język # książek znów jest ustalany automatycznie} other {Język # książek znów jest ustalany automatycznie}}',
+  'library.edit.addTitle':
+    '{n, plural, one {Dodaj # książkę do…} few {Dodaj # książki do…} many {Dodaj # książek do…} other {Dodaj # książki do…}}',
+  'library.edit.addedTo':
+    '{n, plural, one {Dodano # książkę do {shelf}} few {Dodano # książki do {shelf}} many {Dodano # książek do {shelf}} other {Dodano # książki do {shelf}}}',
+  'library.edit.queued':
+    '{n, plural, one {Dodano # książkę do listy do przeczytania} few {Dodano # książki do listy do przeczytania} many {Dodano # książek do listy do przeczytania} other {Dodano # książki do listy do przeczytania}}',
+  'library.edit.alreadyThere':
+    '{n, plural, one {# była już tam} few {# były już tam} many {# było już tam} other {# było już tam}}',
+  'library.edit.removed':
+    '{n, plural, one {Usunięto # książkę z {shelf}} few {Usunięto # książki z {shelf}} many {Usunięto # książek z {shelf}} other {Usunięto # książki z {shelf}}}',
+  'library.edit.hideTitle':
+    '{n, plural, one {Ukryć # książkę przed czytelnikami?} few {Ukryć # książki przed czytelnikami?} many {Ukryć # książek przed czytelnikami?} other {Ukryć # książki przed czytelnikami?}}',
+  'library.edit.hideConfirm':
+    '{n, plural, one {Ukryj # książkę} few {Ukryj # książki} many {Ukryj # książek} other {Ukryj # książki}}',
+  'library.edit.hideShelves':
+    '{n, plural, one {Zniknie z cudzych bibliotek, wyszukiwania, półek i list do przeczytania.} few {Znikną z cudzych bibliotek, wyszukiwania, półek i list do przeczytania.} many {Znikną z cudzych bibliotek, wyszukiwania, półek i list do przeczytania.} other {Znikną z cudzych bibliotek, wyszukiwania, półek i list do przeczytania.}}',
+  'library.edit.hideLinks':
+    '{n, plural, one {Jej linki przestaną działać, a znajomi przestaną widzieć ją nawzajem w swoim czytaniu.} few {Ich linki przestaną działać, a znajomi przestaną widzieć je nawzajem w swoim czytaniu.} many {Ich linki przestaną działać, a znajomi przestaną widzieć je nawzajem w swoim czytaniu.} other {Ich linki przestaną działać, a znajomi przestaną widzieć je nawzajem w swoim czytaniu.}}',
+  'library.edit.hideKept':
+    '{n, plural, one {Nic nie jest usuwane. Postęp czytelników, notatki i półki wrócą, gdy ponownie ją pokażesz.} few {Nic nie jest usuwane. Postęp czytelników, notatki i półki wrócą, gdy ponownie je pokażesz.} many {Nic nie jest usuwane. Postęp czytelników, notatki i półki wrócą, gdy ponownie je pokażesz.} other {Nic nie jest usuwane. Postęp czytelników, notatki i półki wrócą, gdy ponownie je pokażesz.}}',
+  'library.edit.hidePairs': 'E-book i audiobook tego samego wydania są ukrywane razem.',
+  'library.edit.hidden':
+    '{n, plural, one {Ukryto # książkę. Widzą ją teraz tylko administratorzy.} few {Ukryto # książki. Widzą je teraz tylko administratorzy.} many {Ukryto # książek. Widzą je teraz tylko administratorzy.} other {Ukryto # książki. Widzą je teraz tylko administratorzy.}}',
+  'library.edit.shown':
+    '{n, plural, one {Ponownie pokazano # książkę wszystkim} few {Ponownie pokazano # książki wszystkim} many {Ponownie pokazano # książek wszystkim} other {Ponownie pokazano # książki wszystkim}}',
+  'library.edit.failed': 'Nie udało się zmienić tych książek.',
 };
 export default messages;

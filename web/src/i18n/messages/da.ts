@@ -1999,5 +1999,47 @@ const messages: Record<string, string> = {
   'library.pairing.toast.unpaired': 'Link fjernet',
   'library.pairing.toast.dismissed': 'Markeret som ikke et match',
   'library.pairing.toast.failed': 'Kunne ikke ændre parringen.',
+  // library
+  'library.edit.button': 'Rediger',
+  'library.edit.buttonHint': 'Vælg flere bøger, og rediger dem samlet',
+  'library.edit.toolbar': '{n, plural, one {Redigerer # bog} other {Redigerer # bøger}}',
+  'library.edit.pick': 'Tryk på bøger for at vælge dem',
+  'library.edit.selected': '{n, plural, one {# bog valgt} other {# bøger valgte}}',
+  'library.edit.selectAll': 'Vælg alle',
+  'library.edit.selectNone': 'Vælg ingen',
+  'library.edit.language': 'Sprog',
+  'library.edit.remove': 'Fjern fra hylden',
+  'library.edit.hide': 'Skjul',
+  'library.edit.show': 'Vis',
+  'library.edit.languageTitle': '{n, plural, one {Sprog for # bog} other {Sprog for # bøger}}',
+  'library.edit.languageAuto': 'Automatisk',
+  'library.edit.languageAutoHint': 'Hver bogs egen fil og tekst afgør det',
+  'library.edit.languageDone':
+    '{n, plural, one {# bog er nu på {name}} other {# bøger er nu på {name}}}',
+  'library.edit.languageAutoDone':
+    '{n, plural, one {# bog er tilbage på sit eget sprog} other {# bøger er tilbage på sit eget sprog}}',
+  'library.edit.addTitle': '{n, plural, one {Føj # bog til…} other {Føj # bøger til…}}',
+  'library.edit.addedTo':
+    '{n, plural, one {# bog tilføjet til {shelf}} other {# bøger tilføjede til {shelf}}}',
+  'library.edit.queued':
+    '{n, plural, one {# bog tilføjet til din læseliste} other {# bøger tilføjede til din læseliste}}',
+  'library.edit.alreadyThere': '{n, plural, one {# var der allerede} other {# var der allerede}}',
+  'library.edit.removed':
+    '{n, plural, one {# bog fjernet fra {shelf}} other {# bøger fjernede fra {shelf}}}',
+  'library.edit.hideTitle':
+    '{n, plural, one {Skjul # bog for læsere?} other {Skjul # bøger for læsere?}}',
+  'library.edit.hideConfirm': '{n, plural, one {Skjul # bog} other {Skjul # bøger}}',
+  'library.edit.hideShelves':
+    '{n, plural, one {Den forsvinder fra alle andres bibliotek, søgning, hylder og læseliste.} other {De forsvinder fra alle andres bibliotek, søgning, hylder og læseliste.}}',
+  'library.edit.hideLinks':
+    '{n, plural, one {Bogens delingslinks holder op med at virke, og venner holder op med at se, at andre læser den.} other {Bøgernes delingslinks holder op med at virke, og venner holder op med at se, at andre læser dem.}}',
+  'library.edit.hideKept':
+    '{n, plural, one {Intet bliver slettet. Læsernes fremskridt, noter og hylder kommer tilbage, når du viser den igen.} other {Intet bliver slettet. Læsernes fremskridt, noter og hylder kommer tilbage, når du viser dem igen.}}',
+  'library.edit.hidePairs': 'En titel med både e-bog og lydbog skjules helt.',
+  'library.edit.hidden':
+    '{n, plural, one {# bog skjult. Kun admins kan se den nu.} other {# bøger skjulte. Kun admins kan se dem nu.}}',
+  'library.edit.shown':
+    '{n, plural, one {# bog vist for alle igen} other {# bøger viste for alle igen}}',
+  'library.edit.failed': 'Kunne ikke ændre disse bøger.',
 };
 export default messages;

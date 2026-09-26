@@ -2053,5 +2053,48 @@ const messages: Record<string, string> = {
   'library.pairing.toast.unpaired': 'Ontkoppeld',
   'library.pairing.toast.dismissed': 'Als geen overeenkomst gemarkeerd',
   'library.pairing.toast.failed': 'De koppeling kon niet worden gewijzigd.',
+  // library
+  'library.edit.button': 'Bewerken',
+  'library.edit.buttonHint': 'Meerdere boeken kiezen en samen wijzigen',
+  'library.edit.toolbar': '{n, plural, one {Bewerking van # boek} other {Bewerking van # boeken}}',
+  'library.edit.pick': 'Tik op boeken om ze te selecteren',
+  'library.edit.selected': '{n, plural, one {# boek geselecteerd} other {# boeken geselecteerd}}',
+  'library.edit.selectAll': 'Alles selecteren',
+  'library.edit.selectNone': 'Niets selecteren',
+  'library.edit.language': 'Taal',
+  'library.edit.remove': 'Van de plank halen',
+  'library.edit.hide': 'Verbergen',
+  'library.edit.show': 'Tonen',
+  'library.edit.languageTitle': '{n, plural, one {Taal van # boek} other {Taal van # boeken}}',
+  'library.edit.languageAuto': 'Automatisch',
+  'library.edit.languageAutoHint': 'Het eigen bestand en de tekst van elk boek bepalen dit',
+  'library.edit.languageDone':
+    '{n, plural, one {# boek staat nu in het {name}} other {# boeken staan nu in het {name}}}',
+  'library.edit.languageAutoDone':
+    '{n, plural, one {# boek staat weer in zijn eigen taal} other {# boeken staan weer in hun eigen taal}}',
+  'library.edit.addTitle':
+    '{n, plural, one {# boek toevoegen aan…} other {# boeken toevoegen aan…}}',
+  'library.edit.addedTo':
+    '{n, plural, one {# boek toegevoegd aan {shelf}} other {# boeken toegevoegd aan {shelf}}}',
+  'library.edit.queued':
+    '{n, plural, one {# boek toegevoegd aan je leeslijst} other {# boeken toegevoegd aan je leeslijst}}',
+  'library.edit.alreadyThere': '{n, plural, one {# was er al} other {# waren er al}}',
+  'library.edit.removed':
+    '{n, plural, one {# boek van {shelf} gehaald} other {# boeken van {shelf} gehaald}}',
+  'library.edit.hideTitle':
+    '{n, plural, one {# boek verbergen voor lezers?} other {# boeken verbergen voor lezers?}}',
+  'library.edit.hideConfirm': '{n, plural, one {# boek verbergen} other {# boeken verbergen}}',
+  'library.edit.hideShelves':
+    '{n, plural, one {Het verdwijnt bij iedereen anders uit de mediatheek, zoekresultaten, planken en leeslijst.} other {Ze verdwijnen bij iedereen anders uit de mediatheek, zoekresultaten, planken en leeslijst.}}',
+  'library.edit.hideLinks':
+    '{n, plural, one {Zijn deellinks werken niet meer, en vrienden zien niet meer dat anderen het lezen.} other {Hun deellinks werken niet meer, en vrienden zien niet meer dat anderen ze lezen.}}',
+  'library.edit.hideKept':
+    '{n, plural, one {Er wordt niets verwijderd. De voortgang, notities en planken van lezers komen terug zodra je het weer toont.} other {Er wordt niets verwijderd. De voortgang, notities en planken van lezers komen terug zodra je ze weer toont.}}',
+  'library.edit.hidePairs': 'Een titel met e-book en luisterboek wordt helemaal verborgen.',
+  'library.edit.hidden':
+    '{n, plural, one {# boek verborgen. Alleen beheerders kunnen het nu nog zien.} other {# boeken verborgen. Alleen beheerders kunnen ze nu nog zien.}}',
+  'library.edit.shown':
+    '{n, plural, one {# boek weer aan iedereen getoond} other {# boeken weer aan iedereen getoond}}',
+  'library.edit.failed': 'Deze boeken konden niet worden gewijzigd.',
 } as const;
 export default messages;

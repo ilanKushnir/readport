@@ -2032,5 +2032,53 @@ const messages: Record<string, string> = {
   'library.pairing.toast.unpaired': 'Propojení zrušeno',
   'library.pairing.toast.dismissed': 'Označeno jako neshoda',
   'library.pairing.toast.failed': 'Pár se nepodařilo změnit.',
+  // library
+  'library.edit.button': 'Upravit',
+  'library.edit.buttonHint': 'Vyberte několik knih a upravte je najednou',
+  'library.edit.toolbar':
+    '{n, plural, one {Úprava # knihy} few {Úprava # knih} many {Úprava # knih} other {Úprava # knih}}',
+  'library.edit.pick': 'Klepnutím na knihy je vyberete',
+  'library.edit.selected':
+    '{n, plural, one {# kniha je vybrána} few {# knihy jsou vybrány} many {# knihy jsou vybrány} other {# knih je vybráno}}',
+  'library.edit.selectAll': 'Vybrat vše',
+  'library.edit.selectNone': 'Zrušit výběr',
+  'library.edit.language': 'Jazyk',
+  'library.edit.remove': 'Odebrat z police',
+  'library.edit.hide': 'Skrýt',
+  'library.edit.show': 'Zobrazit všem',
+  'library.edit.languageTitle':
+    '{n, plural, one {Jazyk # knihy} few {Jazyk # knih} many {Jazyk # knih} other {Jazyk # knih}}',
+  'library.edit.languageAuto': 'Automaticky',
+  'library.edit.languageAutoHint': 'Určeno souborem a textem samotné knihy',
+  'library.edit.languageDone':
+    '{n, plural, one {Jazyk # knihy je nastaven na {name}} few {Jazyk # knih je nastaven na {name}} many {Jazyk # knih je nastaven na {name}} other {Jazyk # knih je nastaven na {name}}}',
+  'library.edit.languageAutoDone':
+    '{n, plural, one {Jazyk # knihy se znovu určuje podle souboru} few {Jazyk # knih se znovu určuje podle souboru} many {Jazyk # knih se znovu určuje podle souboru} other {Jazyk # knih se znovu určuje podle souboru}}',
+  'library.edit.addTitle':
+    '{n, plural, one {Přidat # knihu do…} few {Přidat # knihy do…} many {Přidat # knih do…} other {Přidat # knihy do…}}',
+  'library.edit.addedTo':
+    '{n, plural, one {Přidána # kniha do {shelf}} few {Přidány # knihy do {shelf}} many {Přidány # knihy do {shelf}} other {Přidáno # knih do {shelf}}}',
+  'library.edit.queued':
+    '{n, plural, one {Přidána # kniha na seznam ke čtení} few {Přidány # knihy na seznam ke čtení} many {Přidány # knihy na seznam ke čtení} other {Přidáno # knih na seznam ke čtení}}',
+  'library.edit.alreadyThere':
+    '{n, plural, one {# už tam byla} few {# už tam byly} many {# už tam byly} other {# už tam bylo}}',
+  'library.edit.removed':
+    '{n, plural, one {Odebrána # kniha z {shelf}} few {Odebrány # knihy z {shelf}} many {Odebrány # knihy z {shelf}} other {Odebráno # knih z {shelf}}}',
+  'library.edit.hideTitle':
+    '{n, plural, one {Skrýt # knihu před čtenáři?} few {Skrýt # knihy před čtenáři?} many {Skrýt # knihy před čtenáři?} other {Skrýt # knih před čtenáři?}}',
+  'library.edit.hideConfirm':
+    '{n, plural, one {Skrýt # knihu} few {Skrýt # knihy} many {Skrýt # knihy} other {Skrýt # knih}}',
+  'library.edit.hideShelves':
+    '{n, plural, one {Zmizí z knihovny, hledání, polic a seznamů ke čtení všech ostatních.} few {Zmizí z knihovny, hledání, polic a seznamů ke čtení všech ostatních.} many {Zmizí z knihovny, hledání, polic a seznamů ke čtení všech ostatních.} other {Zmizí z knihovny, hledání, polic a seznamů ke čtení všech ostatních.}}',
+  'library.edit.hideLinks':
+    '{n, plural, one {Sdílené odkazy k ní přestanou fungovat a přátelé ji přestanou vídat ve čtení svých přátel.} few {Sdílené odkazy k nim přestanou fungovat a přátelé je přestanou vídat ve čtení svých přátel.} many {Sdílené odkazy k nim přestanou fungovat a přátelé je přestanou vídat ve čtení svých přátel.} other {Sdílené odkazy k nim přestanou fungovat a přátelé je přestanou vídat ve čtení svých přátel.}}',
+  'library.edit.hideKept':
+    '{n, plural, one {Nic se nemaže. Postup, poznámky a police čtenářů se vrátí, když ho znovu zobrazíte.} few {Nic se nemaže. Postup, poznámky a police čtenářů se vrátí, když je znovu zobrazíte.} many {Nic se nemaže. Postup, poznámky a police čtenářů se vrátí, když je znovu zobrazíte.} other {Nic se nemaže. Postup, poznámky a police čtenářů se vrátí, když je znovu zobrazíte.}}',
+  'library.edit.hidePairs': 'E-kniha a audiokniha stejného vydání se skrývají společně.',
+  'library.edit.hidden':
+    '{n, plural, one {# kniha je skrytá. Teď ji vidí jen administrátoři.} few {# knihy jsou skryté. Teď je vidí jen administrátoři.} many {# knihy jsou skryté. Teď je vidí jen administrátoři.} other {# knih je skrytých. Teď je vidí jen administrátoři.}}',
+  'library.edit.shown':
+    '{n, plural, one {# kniha je znovu zobrazena všem} few {# knihy jsou znovu zobrazeny všem} many {# knihy jsou znovu zobrazeny všem} other {# knih je znovu zobrazeno všem}}',
+  'library.edit.failed': 'Nepodařilo se změnit tyto knihy.',
 };
 export default messages;

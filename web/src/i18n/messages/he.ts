@@ -1779,8 +1779,7 @@ const messages: Record<string, string> = {
   'library.hidden.toolHint': 'הסתר את הספר הזה מכולם חוץ ממנהלים',
   'library.hidden.askTitle': 'להסתיר מקוראים?',
   'library.hidden.askLede': 'רק מנהלים יראו את {title}.',
-  'library.hidden.askShelves':
-    'הוא נעלם מהספרייה, מהחיפוש, מהמדפים ומרשימות הקריאה של כולם האחרים.',
+  'library.hidden.askShelves': 'הוא נעלם מהספרייה, מהחיפוש, מהמדפים ומרשימות הקריאה של כל האחרים.',
   'library.hidden.askLinks':
     'קישורי השיתוף שלו מפסיקים להיפתח, וחברים מפסיקים לראות אותו בקריאה ההדדית שלהם.',
   'library.hidden.askKept':
@@ -2030,5 +2029,53 @@ const messages: Record<string, string> = {
   'library.pairing.toast.unpaired': 'הזיווג בוטל',
   'library.pairing.toast.dismissed': 'סומן כלא התאמה',
   'library.pairing.toast.failed': 'לא ניתן היה לשנות את הזיווג.',
+  // library
+  'library.edit.button': 'עריכה',
+  'library.edit.buttonHint': 'בחר כמה ספרים ושנה אותם יחד',
+  'library.edit.toolbar':
+    '{n, plural, one {עריכת # ספר} two {עריכת # ספרים} other {עריכת # ספרים}}',
+  'library.edit.pick': 'יש להקיש על ספרים כדי לבחור אותם',
+  'library.edit.selected':
+    '{n, plural, one {# ספר נבחר} two {# ספרים נבחרים} other {# ספרים נבחרים}}',
+  'library.edit.selectAll': 'בחר הכל',
+  'library.edit.selectNone': 'נקה בחירה',
+  'library.edit.language': 'שפה',
+  'library.edit.remove': 'הסרה מהמדף',
+  'library.edit.hide': 'הסתר',
+  'library.edit.show': 'הצג',
+  'library.edit.languageTitle':
+    '{n, plural, one {שפה: # ספר} two {שפה: # ספרים} other {שפה: # ספרים}}',
+  'library.edit.languageAuto': 'אוטומטי',
+  'library.edit.languageAutoHint': 'הקובץ והטקסט של כל ספר קובעים את שפתו',
+  'library.edit.languageDone':
+    '{n, plural, one {השפה של ספר אחד נקבעה ל-{name}} two {השפה של שני ספרים נקבעה ל-{name}} other {השפה של # ספרים נקבעה ל-{name}}}',
+  'library.edit.languageAutoDone':
+    '{n, plural, one {השפה של ספר אחד שוב עוקבת אחרי הקובץ} two {השפה של שני ספרים שוב עוקבת אחרי הקבצים} other {השפה של # ספרים שוב עוקבת אחרי הקבצים}}',
+  'library.edit.addTitle':
+    '{n, plural, one {הוספת # ספר אל…} two {הוספת # ספרים אל…} other {הוספת # ספרים אל…}}',
+  'library.edit.addedTo':
+    '{n, plural, one {# ספר נוסף אל {shelf}} two {# ספרים נוספו אל {shelf}} other {# ספרים נוספו אל {shelf}}}',
+  'library.edit.queued':
+    '{n, plural, one {# ספר התווסף לרשימת הקריאה שלך} two {# ספרים התווספו לרשימת הקריאה שלך} other {# ספרים התווספו לרשימת הקריאה שלך}}',
+  'library.edit.alreadyThere':
+    '{n, plural, one {# כבר היה שם} two {# כבר היו שם} other {# כבר היו שם}}',
+  'library.edit.removed':
+    '{n, plural, one {# ספר הוסר מ-{shelf}} two {# ספרים הוסרו מ-{shelf}} other {# ספרים הוסרו מ-{shelf}}}',
+  'library.edit.hideTitle':
+    '{n, plural, one {להסתיר # ספר מקוראים?} two {להסתיר # ספרים מקוראים?} other {להסתיר # ספרים מקוראים?}}',
+  'library.edit.hideConfirm':
+    '{n, plural, one {הסתר # ספר} two {הסתר # ספרים} other {הסתר # ספרים}}',
+  'library.edit.hideShelves':
+    '{n, plural, one {הוא נעלם מהספרייה, מהחיפוש, מהמדפים ומרשימות הקריאה של כל האחרים.} two {הם נעלמים מהספרייה, מהחיפוש, מהמדפים ומרשימות הקריאה של כל האחרים.} other {הם נעלמים מהספרייה, מהחיפוש, מהמדפים ומרשימות הקריאה של כל האחרים.}}',
+  'library.edit.hideLinks':
+    '{n, plural, one {קישורי השיתוף שלו מפסיקים להיפתח, וחברים מפסיקים לראות אותו בקריאה ההדדית שלהם.} two {קישורי השיתוף שלהם מפסיקים להיפתח, וחברים מפסיקים לראות אותם בקריאה ההדדית שלהם.} other {קישורי השיתוף שלהם מפסיקים להיפתח, וחברים מפסיקים לראות אותם בקריאה ההדדית שלהם.}}',
+  'library.edit.hideKept':
+    '{n, plural, one {שום דבר לא נמחק. ההתקדמות, ההערות והמדפים של הקוראים חוזרים כשמציגים אותו שוב.} two {שום דבר לא נמחק. ההתקדמות, ההערות והמדפים של הקוראים חוזרים כשמציגים אותם שוב.} other {שום דבר לא נמחק. ההתקדמות, ההערות והמדפים של הקוראים חוזרים כשמציגים אותם שוב.}}',
+  'library.edit.hidePairs': 'כותר הקיים כספר אלקטרוני וכספר קול מוסתר בשתי המהדורות יחד.',
+  'library.edit.hidden':
+    '{n, plural, one {# ספר הוסתר. רק מנהלים יכולים לראות אותו עכשיו.} two {# ספרים הוסתרו. רק מנהלים יכולים לראות אותם עכשיו.} other {# ספרים הוסתרו. רק מנהלים יכולים לראות אותם עכשיו.}}',
+  'library.edit.shown':
+    '{n, plural, one {# ספר הוצג לכולם שוב} two {# ספרים הוצגו לכולם שוב} other {# ספרים הוצגו לכולם שוב}}',
+  'library.edit.failed': 'לא ניתן היה לשנות את הספרים האלה.',
 };
 export default messages;

@@ -2020,5 +2020,47 @@ const messages: Record<string, string> = {
   'library.pairing.toast.unpaired': 'Purettu',
   'library.pairing.toast.dismissed': 'Ehdotus hylätty',
   'library.pairing.toast.failed': 'Pariliitosta ei voitu muuttaa.',
+  // library
+  'library.edit.button': 'Muokkaa',
+  'library.edit.buttonHint': 'Valitse useita kirjoja ja muuta niitä yhdessä',
+  'library.edit.toolbar': '{n, plural, one {Muokataan # kirjaa} other {Muokataan # kirjaa}}',
+  'library.edit.pick': 'Valitse kirjoja napauttamalla',
+  'library.edit.selected': '{n, plural, one {# valittu kirja} other {# valittua kirjaa}}',
+  'library.edit.selectAll': 'Valitse kaikki',
+  'library.edit.selectNone': 'Poista valinta',
+  'library.edit.language': 'Kieli',
+  'library.edit.remove': 'Poista hyllyltä',
+  'library.edit.hide': 'Piilota',
+  'library.edit.show': 'Näytä',
+  'library.edit.languageTitle': '{n, plural, one {# kirjan kieli} other {# kirjan kieli}}',
+  'library.edit.languageAuto': 'Automaattinen',
+  'library.edit.languageAutoHint': 'Kunkin kirjan oma tiedosto ja teksti ratkaisevat',
+  'library.edit.languageDone':
+    '{n, plural, one {# kirja on nyt kielellä {name}} other {# kirjaa on nyt kielellä {name}}}',
+  'library.edit.languageAutoDone':
+    '{n, plural, one {# kirja on taas omalla kielellään} other {# kirjaa on taas omalla kielellään}}',
+  'library.edit.addTitle': '{n, plural, one {Lisää # kirja…} other {Lisää # kirjaa…}}',
+  'library.edit.addedTo':
+    '{n, plural, one {# kirja lisätty hyllylle {shelf}} other {# kirjaa lisätty hyllylle {shelf}}}',
+  'library.edit.queued':
+    '{n, plural, one {# kirja lisätty lukulistallesi} other {# kirjaa lisätty lukulistallesi}}',
+  'library.edit.alreadyThere': '{n, plural, one {# oli jo siellä} other {# oli jo siellä}}',
+  'library.edit.removed':
+    '{n, plural, one {# kirja poistettu hyllystä {shelf}} other {# kirjaa poistettu hyllystä {shelf}}}',
+  'library.edit.hideTitle':
+    '{n, plural, one {Piilotetaanko # kirja lukijoilta?} other {Piilotetaanko # kirjaa lukijoilta?}}',
+  'library.edit.hideConfirm': '{n, plural, one {Piilota # kirja} other {Piilota # kirjaa}}',
+  'library.edit.hideShelves':
+    '{n, plural, one {Se katoaa kaikkien muiden kirjastosta, hausta, hyllyiltä ja lukulistoilta.} other {Ne katoavat kaikkien muiden kirjastosta, hausta, hyllyiltä ja lukulistoilta.}}',
+  'library.edit.hideLinks':
+    '{n, plural, one {Sen jakolinkit lakkaavat toimimasta, eivätkä ystävät enää näe sitä toistensa lukemisissa.} other {Niiden jakolinkit lakkaavat toimimasta, eivätkä ystävät enää näe niitä toistensa lukemisissa.}}',
+  'library.edit.hideKept':
+    '{n, plural, one {Mitään ei poisteta. Lukijoiden edistyminen, muistiinpanot ja hyllyt palautuvat, kun näytät sen taas kaikille.} other {Mitään ei poisteta. Lukijoiden edistyminen, muistiinpanot ja hyllyt palautuvat, kun näytät ne taas kaikille.}}',
+  'library.edit.hidePairs': 'E-kirjana ja äänikirjana oleva nimeke piilotetaan kokonaan.',
+  'library.edit.hidden':
+    '{n, plural, one {# kirja piilotettu. Vain ylläpitäjät näkevät sen nyt.} other {# kirjaa piilotettu. Vain ylläpitäjät näkevät ne nyt.}}',
+  'library.edit.shown':
+    '{n, plural, one {# kirja näytetty kaikille taas} other {# kirjaa näytetty kaikille taas}}',
+  'library.edit.failed': 'Näitä kirjoja ei voitu muuttaa.',
 };
 export default messages;
