@@ -185,7 +185,7 @@ export function LinkTranslationsSheet({
   );
 
   return (
-    <Sheet title={t('translations.sheet.title')} onClose={onClose}>
+    <Sheet size="wide" title={t('translations.sheet.title')} onClose={onClose}>
       <p className="sheet__lede">{t('translations.sheet.lede')}</p>
       {!data ? (
         <div aria-busy="true">

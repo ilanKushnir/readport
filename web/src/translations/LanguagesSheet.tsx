@@ -67,7 +67,7 @@ export function LanguagesSheet({
   };
 
   return (
-    <Sheet title={t('translations.continue.title')} onClose={onClose}>
+    <Sheet placement="corner" title={t('translations.continue.title')} onClose={onClose}>
       <ul className="lang-list">
         {titles.map((title) => {
           const ebook = bookOf(title, 'ebook');

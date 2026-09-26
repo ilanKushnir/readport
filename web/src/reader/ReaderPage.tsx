@@ -4412,6 +4412,7 @@ export function ReaderPage() {
       )}
       {sheet === 'toc' && manifest && (
         <Sheet
+          placement="corner"
           title={t('reader.contents.title')}
           onClose={() => setSheet('none')}
           // The tabs are the head of the sheet, not the first thing in its
@@ -4575,6 +4576,7 @@ export function ReaderPage() {
 
       {sheet === 'note' && (
         <Sheet
+          placement="corner"
           title={editingNote ? t('reader.note.edit') : t('reader.note.add')}
           onClose={() => {
             // On a phone the way to dismiss the keyboard is to tap outside,
@@ -4833,7 +4835,7 @@ function ReaderSettingsSheet({
     { value: 'contrast', label: t('reader.theme.contrast') },
   ];
   return (
-    <Sheet title={t('reader.settings.title')} onClose={onClose}>
+    <Sheet placement="corner" title={t('reader.settings.title')} onClose={onClose}>
       <div className="rs-group" role="group" aria-label={t('reader.settings.theme')}>
         <div className="rs-themes">
           {themes.map((th) => (

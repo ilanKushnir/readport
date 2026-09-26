@@ -154,7 +154,9 @@ const reducedMotion = () =>
 const narrowSheet = () => typeof matchMedia === 'function' && matchMedia(NARROW_SHEET).matches;
 
 /**
- * A bottom sheet on a phone, a card at the corner on anything wider.
+ * A bottom sheet on a phone; on anything wider, a dialog in the middle of the
+ * screen - or, beside a page the reader keeps looking at (the reader's and
+ * the player's panels), a card at the corner that leaves the page in view.
  *
  * On a phone it rises out of the bottom edge and goes back down into it -
  * from the close button, Escape, a tap outside, or a finger: the handle and
@@ -170,6 +172,8 @@ export function Sheet({
   docked = false,
   closeRef,
   host,
+  placement = 'dialog',
+  size = 'medium',
 }: {
   title: string;
   onClose: () => void;
@@ -190,6 +194,14 @@ export function Sheet({
    * stand in front of them while they rise from behind it.
    */
   host?: Element | null;
+  /**
+   * Wider than a phone: a dialog in the middle of the screen, or a card at
+   * the corner for a panel whose page should stay in sight while it is open
+   * - the text a reading setting changes, the player it controls.
+   */
+  placement?: 'dialog' | 'corner';
+  /** A dialog's width: a question or a short list, most things, or a long table. */
+  size?: 'narrow' | 'medium' | 'wide';
 }) {
   const t = useT();
   const ref = useRef<HTMLDivElement>(null);
@@ -303,7 +315,9 @@ export function Sheet({
 
   const panel = (
     <div
-      className={`sheet${docked ? ' sheet--docked' : ''}`}
+      className={`sheet sheet--${placement}${size === 'medium' ? '' : ` sheet--${size}`}${
+        docked ? ' sheet--docked' : ''
+      }`}
       role="dialog"
       // Docked, the tab bar beside it stays usable: not modal, then.
       aria-modal={docked ? undefined : 'true'}
@@ -330,7 +344,9 @@ export function Sheet({
     <>
       <div
         ref={backdrop}
-        className={`sheet-backdrop${docked ? ' sheet-backdrop--docked' : ''}`}
+        className={`sheet-backdrop sheet-backdrop--${placement}${
+          docked ? ' sheet-backdrop--docked' : ''
+        }`}
         onClick={close}
         aria-hidden="true"
       />

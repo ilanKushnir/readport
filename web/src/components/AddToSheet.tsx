@@ -150,7 +150,7 @@ export function AddToSheet({
   const shelves = overview?.shelves ?? [];
 
   return (
-    <Sheet title={title} onClose={onClose}>
+    <Sheet size="narrow" title={title} onClose={onClose}>
       <div className="addto">
         <button
           className="list-row"

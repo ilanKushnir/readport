@@ -48,7 +48,7 @@ export function BookMetadataSheet({ bookId, onClose }: { bookId: string; onClose
   const or = (v: ReactNode) => (v === null || v === '' ? t('library.meta.notSet') : v);
 
   return (
-    <Sheet title={t('library.meta.title')} onClose={onClose}>
+    <Sheet size="wide" title={t('library.meta.title')} onClose={onClose}>
       {failed ? (
         <p className="hint" role="alert">
           {t('library.meta.failed')}

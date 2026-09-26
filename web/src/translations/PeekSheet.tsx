@@ -109,6 +109,7 @@ export function PeekSheet({
 
   return (
     <Sheet
+      placement="corner"
       title={t('translations.peek.title', { language: name })}
       onClose={onClose}
       head={

@@ -124,7 +124,7 @@ export function PairSheet({
   const current = data?.linked[0] ?? null;
 
   return (
-    <Sheet title={t('library.pairing.title', { kind: book.kind })} onClose={onClose}>
+    <Sheet size="wide" title={t('library.pairing.title', { kind: book.kind })} onClose={onClose}>
       <p className="sheet__lede">{t('library.pairing.lede', { kind: book.kind })}</p>
       {!data ? (
         failed ? (

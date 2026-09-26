@@ -23,6 +23,12 @@ export const whatsnew = {
   'whatsnew.update.refreshing': 'Refreshing…',
   'whatsnew.update.later': 'Not now',
 
+  // ---------------------------------------------------------------- 0.29.0
+  'whatsnew.release.editMany':
+    'Edit in the library: select several books and set their language, put them on a shelf or your reading list, take them off a shelf or hide them, all at once.',
+  'whatsnew.release.desktopDialogs':
+    'On a computer, what a book page’s tools open - Metadata, Pair, Add to and the rest - is a dialog in the middle of the screen, not a strip down its edge.',
+
   // ---------------------------------------------------------------- 0.28.0
   'whatsnew.release.pairFromBook':
     'Pair a book from its own page: Pair lists the books of the other format, the likeliest match first, and your pick replaces a pairing that was wrong.',

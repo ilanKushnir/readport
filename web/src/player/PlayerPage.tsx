@@ -1054,7 +1054,11 @@ export function PlayerPage() {
         />
       )}
       {sheet === 'chapters' && (
-        <Sheet title={t('player.chapters.title')} onClose={() => setSheet('none')}>
+        <Sheet
+          placement="corner"
+          title={t('player.chapters.title')}
+          onClose={() => setSheet('none')}
+        >
           {chapters.map((c, i) => (
             <button
               key={c.idx}
@@ -1081,7 +1085,11 @@ export function PlayerPage() {
         </Sheet>
       )}
       {sheet === 'playback' && (
-        <Sheet title={t('player.speed.sheetTitle')} onClose={() => setSheet('none')}>
+        <Sheet
+          placement="corner"
+          title={t('player.speed.sheetTitle')}
+          onClose={() => setSheet('none')}
+        >
           <div className="rs-group">
             <div className="rs-label">{t('player.speed.current', { rate: speed })}</div>
             <input
@@ -1142,7 +1150,7 @@ export function PlayerPage() {
         </Sheet>
       )}
       {sheet === 'sleep' && (
-        <Sheet title={t('player.sleep.title')} onClose={() => setSheet('none')}>
+        <Sheet placement="corner" title={t('player.sleep.title')} onClose={() => setSheet('none')}>
           <div className="chip-row" style={{ flexWrap: 'wrap' }}>
             {SLEEP_OPTIONS.filter((o) => o.minutes !== -1 || chapters.length > 0).map((o) => (
               <button
@@ -1210,7 +1218,11 @@ export function PlayerPage() {
         </div>
       )}
       {sheet === 'bookmarks' && (
-        <Sheet title={t('player.bookmarks.title')} onClose={() => setSheet('none')}>
+        <Sheet
+          placement="corner"
+          title={t('player.bookmarks.title')}
+          onClose={() => setSheet('none')}
+        >
           {audioBookmarks.length === 0 && (
             <p style={{ color: 'var(--rp-text-soft)', margin: 0 }}>{t('player.bookmarks.empty')}</p>
           )}

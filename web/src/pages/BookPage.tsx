@@ -850,7 +850,11 @@ export function BookPage() {
         />
       )}
       {hideSheet && (
-        <Sheet title={t('library.hidden.askTitle')} onClose={() => setHideSheet(false)}>
+        <Sheet
+          size="narrow"
+          title={t('library.hidden.askTitle')}
+          onClose={() => setHideSheet(false)}
+        >
           <p className="sheet__lede">{t('library.hidden.askLede', { title: book.title })}</p>
           {/* What hiding does, in the three places a reader would notice. */}
           <ul className="hide-points">
@@ -1172,6 +1176,7 @@ function OfflineSheet({
       : null;
   return (
     <Sheet
+      size="narrow"
       title={
         done
           ? t('library.download.available')
