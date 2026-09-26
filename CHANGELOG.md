@@ -4,6 +4,35 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.29.0 - 2026-09-26
+
+### Added
+
+- **Edit many books at once.** An Edit button beside the library's heading
+  turns the grid into a choice: a tap on a cover selects the book instead
+  of opening it, and a bar at the foot of the screen changes every book
+  selected. Curators set their language (or give it back to each book's own
+  file and text), from the same searchable list of languages the library
+  filters by; a title owned in both formats changes as one book. Everyone
+  can put the books on a shelf or the reading list, and take them off the
+  shelf being looked at, with an Undo; admins hide them or show them again.
+  The selection holds across a search, so books found by two searches can
+  be changed together. For the API: `POST /api/books/language`,
+  `POST /api/books/hidden`, `POST /api/shelves/:id/remove` and
+  `POST /api/reading-list/add`.
+
+### Changed
+
+- **Dialogs on a computer.** Wider than a phone, what the book page's tools
+  open (Metadata, Pair, Languages, Add to, Save offline, Download files,
+  Hide) was a card pinned to the bottom corner, and a long one became a
+  tall, narrow strip down the right edge of the screen. They are dialogs in
+  the middle of it now, each as wide as what it holds; the searchable ones
+  hang from near the top, so the list moves under a search field that
+  stays put. The same goes for the app's other windows, except the
+  reader's and the player's own panels, which keep to the corner so the
+  page or the player stays in view. A phone keeps its sheets as they were.
+
 ## 0.28.0 - 2026-09-25
 
 ### Added
