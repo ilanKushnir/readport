@@ -558,6 +558,31 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
     return { removed: Number(res.changes) > 0, count: shelfCount(id, seesHidden(req)) };
   });
 
+  /** Take many books off a shelf at once, from the library's Edit mode. */
+  app.post('/api/shelves/:id/remove', async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const shelf = ownedShelf(req.user!.id, id);
+    if (!shelf) return reply.code(404).send({ error: 'not-found' });
+    const parsed = bulkAddSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'invalid', detail: parsed.error.issues[0]?.message });
+    }
+    const drop = db.prepare('DELETE FROM shelf_items WHERE shelf_id = ? AND book_id = ?');
+    let removed = 0;
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      for (const bookId of parsed.data.bookIds) removed += Number(drop.run(id, bookId).changes);
+      if (removed > 0) {
+        db.prepare('UPDATE shelves SET updated_at = ? WHERE id = ?').run(nowIso(), id);
+      }
+      db.exec('COMMIT');
+    } catch (err) {
+      db.exec('ROLLBACK');
+      throw err;
+    }
+    return { removed, count: shelfCount(id, seesHidden(req)) };
+  });
+
   app.patch('/api/shelves/:id/books/:bookId/position', async (req, reply) => {
     const { id, bookId } = req.params as { id: string; bookId: string };
     const shelf = ownedShelf(req.user!.id, id);
@@ -706,6 +731,47 @@ export function registerShelfRoutes(app: FastifyInstance, ctx: AppContext): void
       position: visiblePosition(userId, bookId, sees),
       count: queueLength(userId, sees),
     };
+  });
+
+  /**
+   * Queue many books at once, from the library's Edit mode: at the end of
+   * the list, in the order given. A book already queued keeps its place.
+   */
+  app.post('/api/reading-list/add', async (req, reply) => {
+    const parsed = bulkAddSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'invalid', detail: parsed.error.issues[0]?.message });
+    }
+    const userId = req.user!.id;
+    const sees = seesHidden(req);
+    const rows = readingListRows(userId);
+    const queued = new Set(rows.map((r) => r.id));
+    let last = rows[rows.length - 1]?.sort_key ?? null;
+    let added = 0;
+    let skipped = 0;
+    const now = nowIso();
+    const insert = db.prepare(
+      `INSERT INTO reading_list (user_id, book_id, sort_key, note, added_at, recommended_by, recommended_at)
+       VALUES (?, ?, ?, NULL, ?, NULL, NULL)`,
+    );
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      for (const bookId of parsed.data.bookIds) {
+        if (queued.has(bookId) || !bookExists(bookId, sees)) {
+          skipped++;
+          continue;
+        }
+        last = between(last, null);
+        insert.run(userId, bookId, last, now);
+        queued.add(bookId);
+        added++;
+      }
+      db.exec('COMMIT');
+    } catch (err) {
+      db.exec('ROLLBACK');
+      throw err;
+    }
+    return { added, skipped, count: queueLength(userId, sees) };
   });
 
   app.delete('/api/reading-list/:bookId', async (req) => {

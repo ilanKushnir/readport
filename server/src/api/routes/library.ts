@@ -20,7 +20,7 @@ import {
 } from '../../library/facets.js';
 import { setBookLanguageOverride } from '../../library/language.js';
 import { requestLanguageBackfill } from '../../library/redetect.js';
-import { BOOK_LANGUAGES, normaliseLanguage } from '@readport/shared';
+import { BOOK_LANGUAGES, BULK_ADD_MAX, normaliseLanguage } from '@readport/shared';
 import { requireRole } from '../../auth/roles.js';
 import { libraryRoots } from '../../domain/settings.js';
 import { type AppContext } from '../../context.js';
@@ -33,7 +33,13 @@ import {
   isReadingNow,
 } from '../../progress/service.js';
 import { requireExport } from '../../auth/roles.js';
-import { seesHidden, setHidden, visiblePairSql, visibleSql } from '../../library/visibility.js';
+import {
+  bookVisible,
+  seesHidden,
+  setHidden,
+  visiblePairSql,
+  visibleSql,
+} from '../../library/visibility.js';
 import { realResolveWithin } from '../../util/paths.js';
 import { zipStream, type ZipEntry } from '../../util/zip.js';
 import { translationTitles } from '../../translations/editions.js';
@@ -569,6 +575,68 @@ export function registerLibraryRoutes(app: FastifyInstance, ctx: AppContext): vo
     setBookLanguageOverride(db, id, code);
     const after = db.prepare('SELECT * FROM books WHERE id = ?').get(id) as Record<string, unknown>;
     return { book: bookRowToSummary(ctx, req.user!.id, after, seesHidden(req)) };
+  });
+
+  /**
+   * The same word for many books at once, from the library's Edit mode. A
+   * title owned in both formats is one book there, so its other edition
+   * takes the same language. Answers with every book that changed; a book
+   * this person cannot see is skipped rather than refused.
+   */
+  app.post('/api/books/language', async (req, reply) => {
+    if (!requireRole(req, reply, 'curator')) return reply;
+    const parsed = z
+      .object({
+        bookIds: z.array(z.string().min(1).max(64)).min(1).max(BULK_ADD_MAX),
+        language: z.string().max(16).nullable(),
+      })
+      .safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: 'invalid' });
+    const code = parsed.data.language === null ? null : normaliseLanguage(parsed.data.language);
+    if (parsed.data.language !== null && (!code || !BOOK_LANGUAGES.some((l) => l.code === code)))
+      return reply.code(400).send({ error: 'unsupported-language' });
+    const sees = seesHidden(req);
+    const ids = new Set<string>();
+    const partners = db.prepare(
+      `SELECT ebook_id, audio_id FROM pairs
+        WHERE (ebook_id = ? OR audio_id = ?) AND status IN ('auto','confirmed')`,
+    );
+    for (const id of parsed.data.bookIds) {
+      if (!bookVisible(db, id, sees)) continue;
+      ids.add(id);
+      for (const p of partners.all(id, id) as { ebook_id: string; audio_id: string }[]) {
+        const other = p.ebook_id === id ? p.audio_id : p.ebook_id;
+        if (bookVisible(db, other, sees)) ids.add(other);
+      }
+    }
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      for (const id of ids) setBookLanguageOverride(db, id, code);
+      db.exec('COMMIT');
+    } catch (err) {
+      db.exec('ROLLBACK');
+      throw err;
+    }
+    return { ids: [...ids] };
+  });
+
+  /** Hide many books, or show them again - each with its other edition, as one is. */
+  app.post('/api/books/hidden', async (req, reply) => {
+    if (!requireRole(req, reply, 'admin')) return reply;
+    const parsed = z
+      .object({
+        bookIds: z.array(z.string().min(1).max(64)).min(1).max(BULK_ADD_MAX),
+        hidden: z.boolean(),
+      })
+      .strict()
+      .safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: 'invalid' });
+    const ids = new Set<string>();
+    for (const id of parsed.data.bookIds) {
+      if (!db.prepare('SELECT 1 FROM books WHERE id = ?').get(id)) continue;
+      for (const changed of setHidden(db, id, parsed.data.hidden, req.user!.id)) ids.add(changed);
+    }
+    return { ids: [...ids] };
   });
 
   /**

@@ -344,6 +344,50 @@ export const library = {
   'library.pairing.toast.unpaired': 'Unpaired',
   'library.pairing.toast.dismissed': 'Marked not a match',
   'library.pairing.toast.failed': 'Could not change the pairing.',
+
+  // ---------------------------------------------------------------- editing many books at once
+  'library.edit.button': 'Edit',
+  'library.edit.buttonHint': 'Choose several books and change them together',
+  'library.edit.toolbar': '{n, plural, one {Editing # book} other {Editing # books}}',
+  'library.edit.pick': 'Tap books to select them',
+  'library.edit.selected': '{n, plural, one {# book selected} other {# books selected}}',
+  'library.edit.selectAll': 'Select all',
+  'library.edit.selectNone': 'Select none',
+  'library.edit.language': 'Language',
+  'library.edit.remove': 'Remove from shelf',
+  'library.edit.hide': 'Hide',
+  'library.edit.show': 'Show',
+  'library.edit.languageTitle': '{n, plural, one {Language of # book} other {Language of # books}}',
+  'library.edit.languageAuto': 'Automatic',
+  'library.edit.languageAutoHint': 'Each book’s own file and text decide',
+  'library.edit.languageDone':
+    '{n, plural, one {# book is now in {name}} other {# books are now in {name}}}',
+  'library.edit.languageAutoDone':
+    '{n, plural, one {# book is back to its own language} other {# books are back to their own language}}',
+  'library.edit.addTitle': '{n, plural, one {Add # book to…} other {Add # books to…}}',
+  'library.edit.addedTo':
+    '{n, plural, one {# book added to {shelf}} other {# books added to {shelf}}}',
+  'library.edit.queued':
+    '{n, plural, one {# book added to your reading list} other {# books added to your reading list}}',
+  'library.edit.alreadyThere':
+    '{n, plural, one {# was there already} other {# were there already}}',
+  'library.edit.removed':
+    '{n, plural, one {# book taken off {shelf}} other {# books taken off {shelf}}}',
+  'library.edit.hideTitle':
+    '{n, plural, one {Hide # book from readers?} other {Hide # books from readers?}}',
+  'library.edit.hideConfirm': '{n, plural, one {Hide # book} other {Hide # books}}',
+  'library.edit.hideShelves':
+    '{n, plural, one {It leaves everyone else’s library, search, shelves and reading lists.} other {They leave everyone else’s library, search, shelves and reading lists.}}',
+  'library.edit.hideLinks':
+    '{n, plural, one {Its share links stop opening, and friends stop seeing it in each other’s reading.} other {Their share links stop opening, and friends stop seeing them in each other’s reading.}}',
+  'library.edit.hideKept':
+    '{n, plural, one {Nothing is deleted. Readers’ progress, notes and shelves come back when you show it again.} other {Nothing is deleted. Readers’ progress, notes and shelves come back when you show them again.}}',
+  'library.edit.hidePairs': 'A title owned as both an ebook and an audiobook is hidden whole.',
+  'library.edit.hidden':
+    '{n, plural, one {# book hidden. Only admins can see it now.} other {# books hidden. Only admins can see them now.}}',
+  'library.edit.shown':
+    '{n, plural, one {# book shown to everyone again} other {# books shown to everyone again}}',
+  'library.edit.failed': 'Could not change those books.',
   'library.download.inProgress': 'Downloads in progress',
   'library.download.title': 'Downloads',
   'library.download.downloadingN': 'Downloading {n}',

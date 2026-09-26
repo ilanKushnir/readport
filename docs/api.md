@@ -128,39 +128,41 @@ step.
 
 ## Library & books
 
-| Method | Path                                         | Notes                                                      |
-| ------ | -------------------------------------------- | ---------------------------------------------------------- |
-| GET    | `/api/library?query&kind&filter&sort`        | `{books, continueRail, scanActive}`                        |
-| GET    | `/api/library?collapse=none`                 | both halves of every pair, for the device shelf            |
-| POST   | `/api/books/:id/language`                    | curator; `{language}` or `{language: null}`                |
-| GET    | `/api/library?filter=both-formats`           | one row per paired title (see Shelves)                     |
-| GET    | `/api/library?filter=recently-added`         | arrivals of the last 30 days, capped at 60                 |
-| GET    | `/api/library?facet=kind:value`              | one grouping the library itself carries                    |
-| GET    | `/api/library?lang=he,en`                    | only these languages; `unknown` for none                   |
-| GET    | `/api/library?filter=hidden`                 | admin; the books hidden from everyone else                 |
-| POST   | `/api/books/:id/hidden`                      | admin; `{hidden}` → `{book, ids}` (see below)              |
-| GET    | `/api/facets`                                | every grouping this library supports, counted              |
-| POST   | `/api/library/rescan`                        | admin                                                      |
-| GET    | `/api/library/roots`                         | admin; the configured read-only roots                      |
-| GET    | `/api/books/:id`                             | detail: chapters, tracks, pair, progress                   |
-| GET    | `/api/books/:id/metadata`                    | admin; the file, where it is, and what ReadPort made of it |
-| GET    | `/api/books/:id/pairing`                     | curator; its pair, a suggestion, the other format to pick  |
-| GET    | `/api/books/:id/cover`                       | image; `?v=` from the summary's `coverV`                   |
-| GET    | `/api/books/:id/cover-suggestions`           | curator; `?look=1` asks the catalogues now                 |
-| GET    | `/api/books/:id/cover-suggestions/:n/image`  | curator; candidate `n`, from ReadPort's disk               |
-| POST   | `/api/books/:id/cover-suggestions/:n/accept` | curator; → `{book, ids}`                                   |
-| POST   | `/api/books/:id/cover-suggestions/dismiss`   | curator; nothing offered until asked again                 |
-| DELETE | `/api/books/:id/found-cover`                 | curator; → `{book}`, coverless again                       |
-| GET    | `/api/books/:id/manifest`                    | ebook derived manifest (spine/toc/pct math)                |
-| GET    | `/api/books/:id/chapter/:idx`                | sanitized chapter HTML fragment                            |
-| GET    | `/api/books/:id/sentences/:idx`              | sentence index (ids + char offsets)                        |
-| GET    | `/api/books/:id/asset/*`                     | sanitized-referenced images only                           |
-| GET    | `/api/books/:id/search?q`                    | in-book text search                                        |
-| GET    | `/api/books/:id/track/:idx`                  | audio stream, HTTP Range                                   |
-| GET    | `/api/books/:id/offline-manifest`            | URLs + sizes + integrity for the PWA download              |
-| GET    | `/api/books/:id/offline-switch`              | precomputed switch answers for that download               |
-| GET    | `/api/books/:id/export?track`                | export permission; the book's own file                     |
-| GET    | `/api/books/:id/archive`                     | export permission; an audiobook's files, one ZIP           |
+| Method | Path                                         | Notes                                                        |
+| ------ | -------------------------------------------- | ------------------------------------------------------------ |
+| GET    | `/api/library?query&kind&filter&sort`        | `{books, continueRail, scanActive}`                          |
+| GET    | `/api/library?collapse=none`                 | both halves of every pair, for the device shelf              |
+| POST   | `/api/books/:id/language`                    | curator; `{language}` or `{language: null}`                  |
+| POST   | `/api/books/language`                        | curator; `{bookIds, language}`, each with its pair → `{ids}` |
+| GET    | `/api/library?filter=both-formats`           | one row per paired title (see Shelves)                       |
+| GET    | `/api/library?filter=recently-added`         | arrivals of the last 30 days, capped at 60                   |
+| GET    | `/api/library?facet=kind:value`              | one grouping the library itself carries                      |
+| GET    | `/api/library?lang=he,en`                    | only these languages; `unknown` for none                     |
+| GET    | `/api/library?filter=hidden`                 | admin; the books hidden from everyone else                   |
+| POST   | `/api/books/:id/hidden`                      | admin; `{hidden}` → `{book, ids}` (see below)                |
+| POST   | `/api/books/hidden`                          | admin; `{bookIds, hidden}` → `{ids}`                         |
+| GET    | `/api/facets`                                | every grouping this library supports, counted                |
+| POST   | `/api/library/rescan`                        | admin                                                        |
+| GET    | `/api/library/roots`                         | admin; the configured read-only roots                        |
+| GET    | `/api/books/:id`                             | detail: chapters, tracks, pair, progress                     |
+| GET    | `/api/books/:id/metadata`                    | admin; the file, where it is, and what ReadPort made of it   |
+| GET    | `/api/books/:id/pairing`                     | curator; its pair, a suggestion, the other format to pick    |
+| GET    | `/api/books/:id/cover`                       | image; `?v=` from the summary's `coverV`                     |
+| GET    | `/api/books/:id/cover-suggestions`           | curator; `?look=1` asks the catalogues now                   |
+| GET    | `/api/books/:id/cover-suggestions/:n/image`  | curator; candidate `n`, from ReadPort's disk                 |
+| POST   | `/api/books/:id/cover-suggestions/:n/accept` | curator; → `{book, ids}`                                     |
+| POST   | `/api/books/:id/cover-suggestions/dismiss`   | curator; nothing offered until asked again                   |
+| DELETE | `/api/books/:id/found-cover`                 | curator; → `{book}`, coverless again                         |
+| GET    | `/api/books/:id/manifest`                    | ebook derived manifest (spine/toc/pct math)                  |
+| GET    | `/api/books/:id/chapter/:idx`                | sanitized chapter HTML fragment                              |
+| GET    | `/api/books/:id/sentences/:idx`              | sentence index (ids + char offsets)                          |
+| GET    | `/api/books/:id/asset/*`                     | sanitized-referenced images only                             |
+| GET    | `/api/books/:id/search?q`                    | in-book text search                                          |
+| GET    | `/api/books/:id/track/:idx`                  | audio stream, HTTP Range                                     |
+| GET    | `/api/books/:id/offline-manifest`            | URLs + sizes + integrity for the PWA download                |
+| GET    | `/api/books/:id/offline-switch`              | precomputed switch answers for that download                 |
+| GET    | `/api/books/:id/export?track`                | export permission; the book's own file                       |
+| GET    | `/api/books/:id/archive`                     | export permission; an audiobook's files, one ZIP             |
 
 **Hidden books.** An admin can hide a book from everyone but the admins
 signed in to ReadPort: not curators, and not API keys, even an admin's. To
@@ -485,7 +487,11 @@ override, which no rescan touches), `metadata` (the file's own tag), `pair`
 (the other, verified edition of the same book - confirmed, or an automatic
 pair with an alignment - lending its answer), `detected` (the ebook's prose),
 or null. `POST /api/books/:id/language` sets or clears the override and
-recomputes both books of any pair the book is in.
+recomputes both books of any pair the book is in. `POST /api/books/language`,
+from the library's Edit mode, does the same for up to 200 books at once and
+sets the override on each book's paired edition too, since the library shows a
+title owned twice as one book; a book the caller cannot see is skipped, and
+`ids` names every book that changed.
 
 Which groups appear is per person, not per server: two people share every book
 and no furniture. An empty `facets` with `chosen:true` means "show none" and is
@@ -513,12 +519,14 @@ key, and a neighbour that moved underneath answers `409 stale-order`.
 | PUT    | `/api/shelves/:id/books/:bookId`          | idempotent add → `{added, count}`; optional `{afterBookId}`                        |
 | POST   | `/api/shelves/:id/books`                  | `{bookIds: []}` up to 200 in one transaction → `{added, skipped}`                  |
 | DELETE | `/api/shelves/:id/books/:bookId`          | `{removed, count}`                                                                 |
+| POST   | `/api/shelves/:id/remove`                 | `{bookIds: []}` up to 200 off the shelf at once → `{removed, count}`               |
 | PATCH  | `/api/shelves/:id/books/:bookId/position` | `{afterBookId}`; null = first                                                      |
 | GET    | `/api/reading-list`                       | queue order, with notes; missing books reported not hidden                         |
 | PUT    | `/api/reading-list/:bookId`               | queue or re-place; `{position?, afterBookId?, note?}` → `{added, moved, position}` |
 | PATCH  | `/api/reading-list/:bookId`               | `{note}` - a note belongs to a place in the queue, not to a book                   |
 | PATCH  | `/api/reading-list/:bookId/position`      | `{afterBookId}`; null = first                                                      |
 | DELETE | `/api/reading-list/:bookId`               | `{removed}`                                                                        |
+| POST   | `/api/reading-list/add`                   | `{bookIds: []}` up to 200 at the end, in order → `{added, skipped, count}`         |
 | GET    | `/api/books/:id/shelves`                  | `{shelfIds, onReadingList, readingListPosition}` for the book page                 |
 
 The automatic shelves are NOT endpoints of their own: `filter=reading-now` is

@@ -69,6 +69,12 @@ export function LanguagePicker({
         <LanguageSpotlight
           options={options}
           selected={selected}
+          first={{
+            label: t('library.lang.allLanguages'),
+            count: options.reduce((n, o) => n + o.count, 0),
+          }}
+          title={t('library.lang.menuTitle')}
+          label={t('library.lang.group')}
           onClose={() => setOpen(false)}
           onSelect={(value) => {
             onSelect(value);
@@ -86,20 +92,38 @@ interface Entry {
   /** The language's name in itself, when that is not what the label already says. */
   own: string | null;
   flag: string;
-  count: number;
+  /** Books in it, where the list is of a shelf's languages. */
+  count?: number;
   names: string[];
 }
 
 const optionId = (value: string | null) => `langspot-${value ?? 'all'}`;
 
-function LanguageSpotlight({
+/**
+ * The floating panel a language is chosen in: a search field on top, and
+ * the languages under it with their flags. Used to filter a shelf by one of
+ * its languages (with every language first, and counts), and to set the
+ * language of books (with automatic first, and every language ReadPort
+ * knows).
+ */
+export function LanguageSpotlight({
   options,
   selected,
+  first,
+  title,
+  label,
   onSelect,
   onClose,
 }: {
-  options: LanguageOption[];
-  selected: string | null;
+  options: { value: string; count?: number }[];
+  /** What is chosen now: null for the first entry, undefined for none of them. */
+  selected: string | null | undefined;
+  /** The entry above the languages - every language, or automatic - and a line under it. */
+  first: { label: string; hint?: string; count?: number };
+  /** The list's heading. */
+  title: string;
+  /** The panel's name, for assistive technology. */
+  label: string;
   onSelect: (value: string | null) => void;
   onClose: () => void;
 }) {
@@ -121,15 +145,14 @@ function LanguageSpotlight({
   }, []);
 
   const entries = useMemo<Entry[]>(() => {
-    const all = t('library.lang.allLanguages');
     return [
       {
         value: null,
-        label: all,
-        own: null,
+        label: first.label,
+        own: first.hint ?? null,
         flag: '',
-        count: options.reduce((n, o) => n + o.count, 0),
-        names: [all],
+        count: first.count,
+        names: [first.label],
       },
       ...options.map((o) => {
         const label = f.languageListName(o.value);
@@ -145,7 +168,7 @@ function LanguageSpotlight({
         };
       }),
     ];
-  }, [options, f, locale, t]);
+  }, [options, f, locale, first.label, first.hint, first.count]);
 
   const shown = useMemo(() => searchLanguages(entries, query), [entries, query]);
   const [active, setActive] = useState(() =>
@@ -187,7 +210,7 @@ function LanguageSpotlight({
         className="spot langspot"
         role="dialog"
         aria-modal="true"
-        aria-label={t('library.lang.group')}
+        aria-label={label}
         tabIndex={-1}
         ref={ref}
       >
@@ -237,7 +260,7 @@ function LanguageSpotlight({
         </div>
         <div className="spot__results">
           <p className="langspot__title" id="langspot-title">
-            {t('library.lang.menuTitle')}
+            {title}
           </p>
           {shown.length === 0 ? (
             <p className="spot__none" role="status">
@@ -273,10 +296,12 @@ function LanguageSpotlight({
                       </span>
                     )}
                   </span>
-                  <span className="langpick__count">
-                    <span aria-hidden="true">{f.number(e.count)}</span>
-                    <span className="visually-hidden">{t('common.books', { n: e.count })}</span>
-                  </span>
+                  {e.count !== undefined && (
+                    <span className="langpick__count">
+                      <span aria-hidden="true">{f.number(e.count)}</span>
+                      <span className="visually-hidden">{t('common.books', { n: e.count })}</span>
+                    </span>
+                  )}
                   <IconCheck size={16} className="langspot__tick" />
                 </li>
               ))}

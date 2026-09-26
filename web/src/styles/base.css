@@ -3189,6 +3189,18 @@ body:has(.app-body) {
   color: var(--rp-text-soft);
   white-space: nowrap;
 }
+/* The totals and the Edit button, together at the end of the heading. */
+.band__side {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+.band__edit {
+  align-self: center;
+}
 .band--library .toolbar {
   margin-block-end: var(--sp-4);
 }
@@ -4552,6 +4564,139 @@ body[data-rp-dragging] * {
   .book-card:hover .book-card__add,
   .book-card:focus-within .book-card__add {
     opacity: 1;
+  }
+}
+
+/* ------------------------------------------------ editing many books at once */
+/* In Edit mode a card is a checkbox: the same cover and title, a ring to
+   tick where the card's plus button stands otherwise, and a frame around
+   each book chosen. */
+.book-card__pick {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.book-card__check {
+  position: absolute;
+  inset-block-end: var(--sp-2);
+  inset-inline-end: var(--sp-2);
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: rgb(0 0 0 / 0.35);
+  color: var(--rp-on-primary);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
+}
+.book-card.is-selected .book-card__check {
+  border-color: var(--rp-primary);
+  background: var(--rp-primary);
+}
+.book-card.is-selected .book-card__coverwrap {
+  outline: 3px solid var(--rp-primary);
+  outline-offset: 2px;
+}
+.book-grid.is-editing .book-card:hover .book-card__coverwrap {
+  transform: none;
+}
+
+/* The bar that changes the books chosen: at the foot of the screen while
+   the grid scrolls under it, standing on the tab bar on a phone. A sticky
+   offset counts from inside the scroller's padding, which already keeps
+   room at the bottom, so the offsets take that room back. */
+.editbar {
+  position: sticky;
+  inset-block-end: calc(var(--sp-3) - var(--sp-8));
+  z-index: 30;
+  display: grid;
+  gap: var(--sp-2);
+  margin-block-start: var(--sp-5);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--rp-border-strong);
+  border-radius: var(--radius-card);
+  background: var(--rp-surface-raised);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.3);
+}
+@media (max-width: 743.98px) {
+  .editbar {
+    inset-block-end: calc(var(--tabbar-h, 64px) + 10px - 96px - var(--rp-safe-bottom));
+    padding: var(--sp-2) var(--sp-3);
+  }
+}
+.editbar__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+.editbar__count {
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.editbar__link {
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--rp-interactive);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.editbar__actions {
+  display: flex;
+  gap: var(--sp-1);
+  overflow-x: auto;
+}
+.editbar__action {
+  flex: 1 1 0;
+  min-width: 72px;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: var(--sp-2) var(--sp-1);
+  border: 0;
+  border-radius: var(--radius-control);
+  background: none;
+  color: var(--rp-text);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+}
+.editbar__action > svg {
+  color: var(--rp-interactive);
+}
+.editbar__action:hover:not(:disabled) {
+  background: var(--rp-surface);
+}
+.editbar__action:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+/* Room enough for one row: the count at the start, the changes at the end. */
+@media (min-width: 744px) {
+  .editbar {
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    column-gap: var(--sp-6);
+  }
+  .editbar__head {
+    justify-content: flex-start;
+  }
+  .editbar__actions {
+    justify-content: flex-end;
+  }
+  .editbar__action {
+    flex: 0 0 auto;
+    min-width: 96px;
   }
 }
 

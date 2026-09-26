@@ -21,6 +21,7 @@ import { ReadingNow } from './ReadingNow';
 import { AddToSheet } from '../components/AddToSheet';
 import { Cover, EmptyState } from '../components/ui';
 import { LanguagePicker } from '../components/LanguagePicker';
+import { EditBar, type EditChange } from '../components/EditBar';
 import { HiddenMark } from '../components/HiddenMark';
 import {
   IconAlert,
@@ -119,7 +120,7 @@ export function LibraryPage() {
   const f = useFormat();
   const params = useParams();
   const { overview, refresh, refreshDownloads } = useShelves();
-  const { setScope, groups, scopedCounts } = useFacets();
+  const { setScope, groups, scopedCounts, refresh: refreshFacets } = useFacets();
   // The language lives in the address - `?lang=he` - so it survives a
   // reload and Back undoes a choice, like any other move. One language at a
   // time: an older address that names several keeps only the first.
@@ -167,6 +168,14 @@ export function LibraryPage() {
   useSegmentsFit(kindSeg);
   const [sort, setSort] = useState<Sort>('title');
   const [addTo, setAddTo] = useState<BookSummary | null>(null);
+  /**
+   * Edit mode: a card chooses its book instead of opening it, and the bar at
+   * the foot of the grid changes every book chosen at once. Chosen books are
+   * kept with the summary they were chosen as, so a search can narrow the
+   * grid without letting go of what was chosen before it.
+   */
+  const [editing, setEditing] = useState(false);
+  const [chosen, setChosen] = useState<Map<string, BookSummary>>(() => new Map());
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const requestSeq = useRef(0);
   const chipsRef = useRef<HTMLElement>(null);
@@ -193,6 +202,8 @@ export function LibraryPage() {
     );
     setQuery('');
     setKind('all');
+    setEditing(false);
+    setChosen(new Map());
   }, [shelfKey]);
 
   // The chip you are on must be the chip you can see; a row that scrolls
@@ -429,6 +440,74 @@ export function LibraryPage() {
     return source;
   }, [data, offlineBooks, showing, downloaded, debouncedQuery, kind, langs]);
 
+  // A reload brings each chosen book's summary up to date - hidden or not,
+  // its language - so the bar offers what is true of the books now.
+  useEffect(() => {
+    setChosen((prev) => {
+      if (prev.size === 0) return prev;
+      let changed = false;
+      const next = new Map(prev);
+      for (const b of books) {
+        if (next.has(b.id) && next.get(b.id) !== b) {
+          next.set(b.id, b);
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [books]);
+  // Edit mode needs the server, and books to edit: not offline, not on
+  // Reading Now (a list of places, not a grid), not on a shelf now empty.
+  const canEdit =
+    !gone &&
+    !!data &&
+    !offlineBooks &&
+    books.length > 0 &&
+    !(showing.kind === 'auto' && showing.id === 'reading-now');
+  const stopEditing = useCallback(() => {
+    setEditing(false);
+    setChosen(new Map());
+  }, []);
+  useEffect(() => {
+    if (!canEdit && editing) stopEditing();
+  }, [canEdit, editing, stopEditing]);
+  useEffect(() => {
+    if (!editing) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented) return;
+      // A sheet open over the grid takes its own Escape.
+      if (document.querySelector('[role="dialog"]')) return;
+      stopEditing();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [editing, stopEditing]);
+  const toggleChosen = useCallback((b: BookSummary) => {
+    setChosen((prev) => {
+      const next = new Map(prev);
+      if (next.has(b.id)) next.delete(b.id);
+      else next.set(b.id, b);
+      return next;
+    });
+  }, []);
+  const allChosen = books.length > 0 && books.every((b) => chosen.has(b.id));
+  const afterEdit = useCallback(
+    (change: EditChange, ids: string[]) => {
+      // Books that left this list leave the choice with it.
+      if (change === 'removed' || (change === 'shown' && showing.kind === 'hidden')) {
+        setChosen((prev) => {
+          const next = new Map(prev);
+          for (const id of ids) next.delete(id);
+          return next;
+        });
+      }
+      void load();
+      void refresh();
+      if (change !== 'shelved' && change !== 'removed') void refreshFacets();
+    },
+    [load, refresh, refreshFacets, showing.kind],
+  );
+
   const continueBooks = data?.continueRail ?? [];
   const hero = continueBooks[0] ?? null;
   const rail = continueBooks.slice(1);
@@ -593,15 +672,28 @@ export function LibraryPage() {
               <span className="section-title__count">{f.number(books.length)}</span>
             )}
           </h2>
-          {showing.kind === 'library' && data && (
-            <span className="band__stats">
-              {t('library.stats', {
-                ebooks: stats.ebooks,
-                audio: stats.audio,
-                paired: Math.round(stats.paired),
-              })}
-            </span>
-          )}
+          <span className="band__side">
+            {showing.kind === 'library' && data && (
+              <span className="band__stats">
+                {t('library.stats', {
+                  ebooks: stats.ebooks,
+                  audio: stats.audio,
+                  paired: Math.round(stats.paired),
+                })}
+              </span>
+            )}
+            {canEdit && (
+              <button
+                type="button"
+                className={`btn btn--sm band__edit ${editing ? 'btn--secondary' : 'btn--ghost'}`}
+                aria-pressed={editing}
+                title={editing ? undefined : t('library.edit.buttonHint')}
+                onClick={() => (editing ? stopEditing() : setEditing(true))}
+              >
+                {editing ? t('common.done') : t('library.edit.button')}
+              </button>
+            )}
+          </span>
         </div>
         {/* Nothing to search, filter or sort on a shelf that is not there. */}
         {gone ? null : (
@@ -718,11 +810,14 @@ export function LibraryPage() {
             }}
           />
         ) : (
-          <div className="book-grid">
+          <div className={`book-grid${editing ? ' is-editing' : ''}`}>
             {books.map((b) => (
               <BookCard
                 key={b.id}
                 book={b}
+                selecting={editing}
+                selected={chosen.has(b.id)}
+                onToggle={() => toggleChosen(b)}
                 offline={downloaded.has(b.id)}
                 saved={
                   showing.kind === 'device'
@@ -736,6 +831,25 @@ export function LibraryPage() {
               />
             ))}
           </div>
+        )}
+        {editing && (
+          <EditBar
+            selected={[...chosen.values()]}
+            allSelected={allChosen}
+            shelf={
+              showing.kind === 'user' && shelfName ? { id: showing.id, name: shelfName } : null
+            }
+            hiddenShelf={showing.kind === 'hidden'}
+            onSelectAll={() =>
+              setChosen((prev) => {
+                const next = new Map(prev);
+                for (const b of books) next.set(b.id, b);
+                return next;
+              })
+            }
+            onSelectNone={() => setChosen(new Map())}
+            onChanged={afterEdit}
+          />
         )}
       </section>
 
@@ -1091,12 +1205,19 @@ function BookCard({
   offline,
   saved,
   onAddTo,
+  selecting = false,
+  selected = false,
+  onToggle,
 }: {
   book: BookSummary;
   offline: boolean;
   /** On the On this device shelf: which of the title's editions are saved here. */
   saved?: { own: boolean; other: boolean };
   onAddTo: () => void;
+  /** Edit mode: the card chooses its book rather than opening it. */
+  selecting?: boolean;
+  selected?: boolean;
+  onToggle?: () => void;
 }) {
   const t = useT();
   const stateNote =
@@ -1131,12 +1252,24 @@ function BookCard({
     // lands on top of the placeholder title. Only these cards need the extra
     // clearance, so only these cards pay for it.
     <div
-      className={`book-card ${pair ? 'book-card--multiformat' : ''} ${book.hidden ? 'is-hidden' : ''}`}
+      className={`book-card ${pair ? 'book-card--multiformat' : ''} ${book.hidden ? 'is-hidden' : ''}${
+        selected ? ' is-selected' : ''
+      }`}
     >
-      <Link className="book-card__link" to={`/book/${book.id}`}>
+      <CardFrame
+        selecting={selecting}
+        selected={selected}
+        onToggle={onToggle}
+        to={`/book/${book.id}`}
+      >
         <span className="book-card__coverwrap">
           <Cover book={book} className="book-card__cover" />
           {book.hidden && <HiddenMark />}
+          {selecting && (
+            <span className="book-card__check" aria-hidden="true">
+              {selected && <IconCheck size={15} />}
+            </span>
+          )}
           <span className="book-card__badges">
             {/* One card per title, so one badge naming every format it is
                 owned in. Two separate pills read as two books - which is the
@@ -1199,16 +1332,56 @@ function BookCard({
             {stateNote ?? book.author ?? ' '}
           </span>
         </span>
-      </Link>
-      <button
-        className="book-card__add"
-        onClick={onAddTo}
-        aria-label={t('library.card.addLabel', { title: book.title })}
-        title={t('library.card.addTo')}
-      >
-        <IconPlus size={17} />
-      </button>
+      </CardFrame>
+      {!selecting && (
+        <button
+          className="book-card__add"
+          onClick={onAddTo}
+          aria-label={t('library.card.addLabel', { title: book.title })}
+          title={t('library.card.addTo')}
+        >
+          <IconPlus size={17} />
+        </button>
+      )}
     </div>
+  );
+}
+
+/**
+ * What a card is: a link to its book, or - in Edit mode - a checkbox that
+ * chooses it. The same cover and title inside either, so the grid does not
+ * move when the mode changes.
+ */
+function CardFrame({
+  selecting,
+  selected,
+  onToggle,
+  to,
+  children,
+}: {
+  selecting: boolean;
+  selected: boolean;
+  onToggle?: () => void;
+  to: string;
+  children: React.ReactNode;
+}) {
+  if (!selecting) {
+    return (
+      <Link className="book-card__link" to={to}>
+        {children}
+      </Link>
+    );
+  }
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={selected}
+      className="book-card__link book-card__pick"
+      onClick={onToggle}
+    >
+      {children}
+    </button>
   );
 }
 
