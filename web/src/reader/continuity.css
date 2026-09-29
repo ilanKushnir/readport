@@ -1,15 +1,64 @@
+/* Where the reader left off (ResumeMarker): the sentence they were in, lit
+   in the accent from its first word and gone by its last - one fade across
+   the whole sentence, the stops from the overlay - and a short ember in the
+   margin beside the line it begins on. A place, not a mark the reader made:
+   those are flat and in their own colours. It arrives softly, and fades as
+   the reader reads on (markerOpacity). */
 .resume-marker {
-  position: absolute;
-  pointer-events: none;
-  z-index: 5;
-  border-bottom: 2px dotted currentColor;
-  border-inline-start: 3px solid currentColor;
-  border-radius: 2px;
-  color: var(--rd-fg, currentColor);
+  color: var(--rd-link);
   transition: opacity 400ms ease-out;
+}
+.resume-marker > span {
+  --rd-fade-from: 1;
+  --rd-fade-to: 0;
+  border-radius: 4px;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, currentColor calc(var(--rd-fade-from) * 30%), transparent),
+    color-mix(in srgb, currentColor calc(var(--rd-fade-to) * 30%), transparent)
+  );
+  animation: rd-resume-in 900ms var(--rp-ease) both;
+}
+.resume-marker[data-rtl] > span {
+  background: linear-gradient(
+    to left,
+    color-mix(in srgb, currentColor calc(var(--rd-fade-from) * 30%), transparent),
+    color-mix(in srgb, currentColor calc(var(--rd-fade-to) * 30%), transparent)
+  );
+}
+.resume-marker__tick {
+  position: absolute;
+  display: block;
+  width: 3px;
+  border-radius: 2px;
+  background: currentColor;
+  transform-origin: center;
+  animation: rd-resume-tick 700ms var(--rp-ease) 120ms both;
+}
+@keyframes rd-resume-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes rd-resume-tick {
+  from {
+    opacity: 0;
+    transform: scaleY(0.3);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .resume-marker {
     transition: none !important;
+  }
+  .resume-marker > span,
+  .resume-marker__tick {
+    animation: none;
   }
 }

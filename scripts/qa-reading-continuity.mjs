@@ -326,7 +326,10 @@ try {
         const marker = page.locator('.resume-marker').first();
         await marker.waitFor({ timeout: 2500 });
         assert.equal(await marker.getAttribute('data-offset'), String(offset));
-        const r = await marker.boundingBox();
+        // Drawn from the start of the place's sentence, never inside a word.
+        const start = Number(await marker.getAttribute('data-start'));
+        assert(start <= offset && start >= offset - 500, `marker starts at ${start}`);
+        const r = await marker.locator('span').first().boundingBox();
         assert(r.y > 0 && r.y + r.height < viewport.height && r.x >= 0 && r.x < viewport.width);
         const opacity = await marker.evaluate((e) => getComputedStyle(e).opacity);
         await page.waitForTimeout(800);

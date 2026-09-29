@@ -99,6 +99,7 @@ import {
   checkpointDue,
   landingOffset,
   markerOpacity,
+  sentenceStartNear,
   type JumpReason,
   type ReadingPoint,
 } from './continuity';
@@ -386,12 +387,30 @@ export function ReaderPage() {
       return null;
     }
   });
-  const [resumeMark, setResumeMark] = useState<(ReadingPoint & { opacity: number }) | null>(null);
+  /**
+   * Where the reader left off, shown by ResumeMarker. `anchor` is what the
+   * landing brought into view - the start of the place's sentence, a line or
+   * two above the place itself - and the marker fades by how far the reading
+   * moves from there, not from a character the screen was never showing first.
+   */
+  const [resumeMark, setResumeMark] = useState<
+    (ReadingPoint & { anchor: number; opacity: number }) | null
+  >(null);
+  /**
+   * The line a scrolled landing put under the chrome, for the place it was
+   * put there for. A relayout (a font arriving, a rotation) scrolls the
+   * reader's place back under the chrome; while that place is still this
+   * one, it is this line that goes back there - the start of the place's
+   * sentence, where the marker begins - not the place's own line, which
+   * left the marker's first line behind the bar.
+   */
+  const lineAnchorRef = useRef<{ offset: number; line: number } | null>(null);
   const narrationOffsetRef = useRef<() => number | null>(() => null);
   const readingMoved = useCallback((current: ReadingPoint) => {
     setResumeMark((mark) => {
       if (!mark) return null;
-      const opacity = Math.min(mark.opacity, markerOpacity(mark, current));
+      const from = { spineIdx: mark.spineIdx, charOffset: mark.anchor };
+      const opacity = Math.min(mark.opacity, markerOpacity(from, current));
       return opacity <= 0 ? null : opacity === mark.opacity ? mark : { ...mark, opacity };
     });
   }, []);
@@ -1059,8 +1078,13 @@ export function ReaderPage() {
 
     // Resolve legacy sentence-only locators before publishing either the
     // marker or the initial durable checkpoint. Zero is an explicit offset.
-    if (target?.resume || target?.handoff || target?.mark)
-      setResumeMark({ spineIdx, charOffset, opacity: 1 });
+    // A place is shown from the start of its sentence (ResumeMarker): in
+    // scroll mode that is the line brought up under the chrome. The place
+    // itself stays exact - it is what is kept, and what a page is found by.
+    const marked = !!(target?.resume || target?.handoff || target?.mark);
+    const inView = marked ? sentenceStartNear(sentences, charOffset) : charOffset;
+    lineAnchorRef.current = marked ? { offset: charOffset, line: inView } : null;
+    if (marked) setResumeMark({ spineIdx, charOffset, anchor: inView, opacity: 1 });
     if (target?.initialIntent && manifest)
       void recordCheckpoint(
         id,
@@ -1162,7 +1186,9 @@ export function ReaderPage() {
    * behind the bar on exactly the phones where the bar is tallest.
    */
   const scrollLineTo = useCallback(
-    (box: HTMLElement, map: TextMap, charOffset: number) => {
+    (box: HTMLElement, map: TextMap, place: number) => {
+      const anchor = lineAnchorRef.current;
+      const charOffset = anchor && anchor.offset === place ? anchor.line : place;
       if (charOffset <= 0) {
         // Opening a chapter at its start. Say so absolutely: a relative
         // nudge starts from wherever the PREVIOUS chapter was scrolled to.
@@ -1670,6 +1696,8 @@ export function ReaderPage() {
             }
           }
           currentOffsetRef.current = charOffset;
+          const inView = extra.mark ? sentenceStartNear(sentences, charOffset) : charOffset;
+          lineAnchorRef.current = extra.mark ? { offset: charOffset, line: inView } : null;
           if (prefs.mode === 'paginated' && !paginationFailed) {
             // Measure before landing. This was the one lander that asked
             // which page an offset is on without first re-laying the chapter
@@ -1682,7 +1710,7 @@ export function ReaderPage() {
             const box = scrollBox();
             if (box) scrollLineTo(box, map, charOffset);
           }
-          if (extra.mark) setResumeMark({ spineIdx, charOffset, opacity: 1 });
+          if (extra.mark) setResumeMark({ spineIdx, charOffset, anchor: inView, opacity: 1 });
           // And check it arrived. The search path has verified its landing on
           // the next frame for as long as it has existed - the layout can
           // still be settling when a sheet closes and hands the viewport
@@ -3789,9 +3817,12 @@ export function ReaderPage() {
       {resumeMark && resumeMark.spineIdx === spineIdx && (
         <ResumeMarker
           target={resumeMark}
-          map={() => textMapRef.current}
+          sentences={sentences}
+          map={getMap}
           container={getHost}
+          clip={getClip}
           scroller={getScroller}
+          content={getContent}
           layoutKey={layoutKey}
         />
       )}
