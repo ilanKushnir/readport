@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { type AudioLocator, type EbookLocator, type TranslationTitle } from '@readport/shared';
+import {
+  PLACE_AHEAD_CHARS,
+  PLACE_BACK_CHARS,
+  PLACE_REJOIN_CHARS,
+  type AudioLocator,
+  type EbookLocator,
+  type ProgressIntent,
+  type ReadingPlace,
+  type TranslationTitle,
+} from '@readport/shared';
 import { api, ApiError, isOffline, notifyUnauthorized } from '../api/client';
 import { cachedSwitch, removeDownload } from '../offline/downloads';
 import {
@@ -88,14 +97,14 @@ import { trimQuote } from './share';
 import { liveCheckpointOffset } from './liveOffset';
 import {
   checkpointDue,
-  continuedAtDestination,
   landingOffset,
   markerOpacity,
-  returnAfterJump,
   type JumpReason,
   type ReadingPoint,
-  type ReturnPoint,
 } from './continuity';
+import { beginVisit, settles, type Visit } from './visit';
+import { cachedPlaces, fetchPlaces, forgetPlace } from './places';
+import { PlacesPanel } from './PlacesPanel';
 import { ResumeMarker } from './ResumeMarker';
 import { VoiceMarkGlyph } from './VoiceMarkGlyph';
 import {
@@ -130,6 +139,15 @@ import { applyAppThemeColor, setThemeColor } from '../lib/themeColor';
 type SheetKind = 'none' | 'toc' | 'settings' | 'search' | 'note' | 'languages' | 'peek';
 
 const DARK_MQ = '(prefers-color-scheme: dark)';
+
+/** Jumps that are a look until the reader reads on (visit.ts). */
+const LOOK_REASONS: ReadonlySet<JumpReason> = new Set([
+  'toc',
+  'search',
+  'bookmark',
+  'slider',
+  'link',
+]);
 
 /** The settings that lay the chapter out again (the layout effect's dependencies). */
 const RELAYOUT_KEYS = [
@@ -344,19 +362,40 @@ export function ReaderPage() {
   const [editingNote, setEditingNote] = useState<string | null>(null);
   /** Mirror of currentOffsetRef for rendering: page turns set it, scroll updates it live. */
   const [liveOffset, setLiveOffset] = useState(0);
-  /** Where the reader was before a jump (bookmark, contents, search, slider). */
-  const [returnPoint, setReturnPoint] = useState<ReturnPoint | null>(null);
+  /**
+   * A look that has not become reading yet (visit.ts): while it lasts
+   * nothing is recorded, and the way back to where the reader was reading
+   * is offered.
+   */
+  const visitRef = useRef<Visit | null>(null);
+  const [visitFrom, setVisitFrom] = useState<Visit['from']>(null);
+  /** This reader's places in the book (places.ts), as last heard. */
+  const [places, setPlaces] = useState<ReadingPlace[]>(() => cachedPlaces(id));
+  /** The way back from a look, closed: it stays closed until the next jump. */
+  const [chipClosed, setChipClosed] = useState<string | null>(null);
+  /**
+   * The way back to the reader's own place, closed - kept, because a reader
+   * who has chosen to read on somewhere else has said so once, and their
+   * own place stays in the Places tab. It comes back if they read there
+   * again, which makes it a different place to go back to.
+   */
+  const [ownChipClosed, setOwnChipClosed] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(`rp-place-chip:${id}`);
+    } catch {
+      return null;
+    }
+  });
   const [resumeMark, setResumeMark] = useState<(ReadingPoint & { opacity: number }) | null>(null);
   const narrationOffsetRef = useRef<() => number | null>(() => null);
   const readingMoved = useCallback((current: ReadingPoint) => {
-    setReturnPoint((point) => (point && continuedAtDestination(point, current) ? null : point));
     setResumeMark((mark) => {
       if (!mark) return null;
       const opacity = Math.min(mark.opacity, markerOpacity(mark, current));
       return opacity <= 0 ? null : opacity === mark.opacity ? mark : { ...mark, opacity };
     });
   }, []);
-  const [contentsTab, setContentsTab] = useState<'toc' | 'marks'>('toc');
+  const [contentsTab, setContentsTab] = useState<'toc' | 'places' | 'marks'>('toc');
   /** Read-along: the narration playing over the page the reader is on. */
   const [readAlong, setReadAlong] = useState(false);
   /**
@@ -570,6 +609,48 @@ export function ReaderPage() {
   const swipeRef = useRef<{ x: number; y: number; t: number } | null>(null);
   /** The next deliberate page turn re-claims progress for this session. */
   const needsClaimRef = useRef(true);
+
+  const refreshPlaces = useCallback(() => {
+    void fetchPlaces(id).then(setPlaces, () => {});
+  }, [id]);
+  useEffect(() => {
+    setPlaces(cachedPlaces(id));
+    try {
+      setOwnChipClosed(localStorage.getItem(`rp-place-chip:${id}`));
+    } catch {
+      setOwnChipClosed(null);
+    }
+    refreshPlaces();
+  }, [id, refreshPlaces]);
+  // Opening the list of places asks for them afresh.
+  useEffect(() => {
+    if (sheet === 'toc' && contentsTab === 'places') refreshPlaces();
+  }, [sheet, contentsTab, refreshPlaces]);
+  const endVisit = useCallback(() => {
+    visitRef.current = null;
+    setVisitFrom(null);
+  }, []);
+  /**
+   * Record where the reader is - unless they are only looking (visit.ts).
+   * Once they have read on from where a look landed, it is where they are,
+   * recorded as a move they made so that it takes the progress claim; and
+   * their places are asked for again once the server has folded it.
+   */
+  const recordReading = useCallback(
+    (intent: ProgressIntent, locator: EbookLocator) => {
+      const visit = visitRef.current;
+      if (visit && manifest) {
+        if (!settles(visit, locator.pct * manifest.totalChars, performance.now())) return;
+        endVisit();
+        needsClaimRef.current = false;
+        void recordCheckpoint(id, 'seek', locator);
+        window.setTimeout(refreshPlaces, 2500);
+        return;
+      }
+      void recordCheckpoint(id, intent, locator);
+    },
+    [manifest, id, endVisit, refreshPlaces],
+  );
   /**
    * True from asking for a chapter until it has rendered and been paginated.
    * `page` and `pageCount` describe the OLD chapter in that window, so a
@@ -615,10 +696,35 @@ export function ReaderPage() {
         if (spineParam !== null) {
           const s = Math.min(Math.max(0, Number(spineParam) || 0), m.chapters.length - 1);
           const charOffset = charParam === null ? undefined : Number(charParam) || 0;
+          // Where the reader was reading, when they have been reading.
+          const from =
+            !handoff && resume?.locator.medium === 'ebook'
+              ? {
+                  spineIdx: resume.locator.spineIdx,
+                  charOffset: resume.locator.charOffset ?? 0,
+                  // Unnamed spine items are called by number where the chip renders.
+                  label: m.chapters[resume.locator.spineIdx]?.title ?? '',
+                }
+              : null;
+          const at = (sp: number, off: number) => (m.chapters[sp]?.cumChars ?? 0) + off;
+          const landed = at(s, charOffset ?? 0);
+          // Arriving at a passage - a quotation somebody sent, a mark opened
+          // from the Notes or the book page - is a look (visit.ts), not a
+          // move: the reader's place stays theirs until they read on here.
+          // It used to move at once, and a glance at a six-week-old highlight
+          // relocated "Continue reading" with no way back. Landing where they
+          // were reading anyway is simply opening the book.
+          const look =
+            !handoff &&
+            (!from || Math.abs(landed - at(from.spineIdx, from.charOffset)) > PLACE_REJOIN_CHARS);
+          if (look) {
+            visitRef.current = beginVisit(null, from, landed, performance.now());
+            setVisitFrom(from);
+          }
           pendingTargetRef.current = {
             charOffset,
             sentenceId: sentenceParam ?? undefined,
-            initialIntent: handoff ? 'switch' : 'open',
+            initialIntent: handoff ? 'switch' : look ? undefined : 'open',
             handoff,
             granularity: searchParams.get('granularity') ?? undefined,
             fromLanguage:
@@ -627,25 +733,6 @@ export function ReaderPage() {
                 : undefined,
             mark: !handoff,
           };
-          // Arriving at a mark from the Notes or book page moves the reading
-          // position, as opening anywhere does. It used to do so silently: a
-          // glance at a six-week-old highlight relocated "Continue reading"
-          // with no way back. The place they were is known, so offer it.
-          if (!handoff && resume?.locator.medium === 'ebook') {
-            const from = resume.locator;
-            setReturnPoint(
-              returnAfterJump(
-                {
-                  spineIdx: from.spineIdx,
-                  charOffset: from.charOffset ?? 0,
-                  // Unnamed spine items are called by number where the chip renders.
-                  label: m.chapters[from.spineIdx]?.title ?? '',
-                },
-                { spineIdx: s, charOffset: charOffset ?? 0 },
-                'bookmark',
-              ),
-            );
-          }
           setSpineIdx(s);
         } else {
           if (resume && resume.locator.medium === 'ebook') {
@@ -864,11 +951,11 @@ export function ReaderPage() {
           // session that lost the claim to another device are ignored).
           const effective = needsClaimRef.current && intent === 'heartbeat' ? 'seek' : intent;
           needsClaimRef.current = false;
-          void recordCheckpoint(id, effective, locatorAt(manifest, sentences, spineIdx, off));
+          recordReading(effective, locatorAt(manifest, sentences, spineIdx, off));
         }
       }
     },
-    [manifest, sentences, spineIdx, pageCount, dirFactor, id],
+    [manifest, sentences, spineIdx, pageCount, dirFactor, recordReading],
   );
 
   // Coming back to a backgrounded tab: re-claim on the next turn, and offer
@@ -877,10 +964,24 @@ export function ReaderPage() {
     const onVisible = async () => {
       if (document.visibilityState !== 'visible' || !manifest) return;
       needsClaimRef.current = true;
+      refreshPlaces();
       try {
         const resume = await resumeLocator(id, { activate: false });
         const l = resume?.locator;
         if (!l || l.medium !== 'ebook') return;
+        // While only looking, the position recorded is the reader's own
+        // place, which the chip already offers - it is not another device.
+        const from = visitRef.current?.from;
+        if (
+          from &&
+          Math.abs(
+            pctFor(manifest, l.spineIdx, l.charOffset ?? 0) -
+              pctFor(manifest, from.spineIdx, from.charOffset),
+          ) *
+            manifest.totalChars <=
+            PLACE_REJOIN_CHARS
+        )
+          return;
         const here = pctFor(manifest, spineIdx, currentOffsetRef.current);
         if (
           Math.abs(l.pct - here) > 0.005 &&
@@ -912,7 +1013,7 @@ export function ReaderPage() {
     const handler = () => void onVisible();
     document.addEventListener('visibilitychange', handler);
     return () => document.removeEventListener('visibilitychange', handler);
-  }, [manifest, id, spineIdx, toast, t, f]);
+  }, [manifest, id, spineIdx, toast, t, f, refreshPlaces]);
   // Leaving the book takes its offer with it.
   useEffect(() => () => toast.dismiss(), [toast]);
 
@@ -949,14 +1050,12 @@ export function ReaderPage() {
     currentOffsetRef.current = charOffset;
     setLiveOffset(charOffset);
     // A cross-chapter jump to a fragment or a mark could only name its
-    // chapter until now; the chip that offers the way back measures
-    // "have they read on from here" against this landing, not the start.
-    if (target && (target.fragment || target.sentenceId || target.excerpt))
-      setReturnPoint((point) =>
-        point && point.destination.spineIdx === spineIdx
-          ? { ...point, destination: { spineIdx, charOffset } }
-          : point,
-      );
+    // chapter until now; a look measures "have they read on from here"
+    // against this landing, not the chapter's start.
+    const look = visitRef.current;
+    if (look && manifest && target && (target.fragment || target.sentenceId || target.excerpt)) {
+      look.landed = look.furthest = pctFor(manifest, spineIdx, charOffset) * manifest.totalChars;
+    }
 
     // Resolve legacy sentence-only locators before publishing either the
     // marker or the initial durable checkpoint. Zero is an explicit offset.
@@ -1404,7 +1503,9 @@ export function ReaderPage() {
   useEffect(() => {
     if (!manifest) return;
     return setActiveLocatorProvider(() => {
-      if (chapterLoadingRef.current || spineIdx < 0) return null;
+      // Only looking: there is nothing to keep. Leaving for another app used
+      // to save the page being looked at as the reader's place.
+      if (chapterLoadingRef.current || spineIdx < 0 || visitRef.current) return null;
       const stillAtResume =
         resumeMark &&
         (prefs.mode === 'paginated' ||
@@ -1474,7 +1575,7 @@ export function ReaderPage() {
           // is not reduced to heartbeats nobody applies.
           const effective = needsClaimRef.current ? 'seek' : 'heartbeat';
           needsClaimRef.current = false;
-          void recordCheckpoint(id, effective, locatorAt(manifest, sentences, spineIdx, off));
+          recordReading(effective, locatorAt(manifest, sentences, spineIdx, off));
         }
       }, 600);
     };
@@ -1484,7 +1585,7 @@ export function ReaderPage() {
       if (timer) clearTimeout(timer);
       if (footerTimer) clearTimeout(footerTimer);
     };
-  }, [prefs.mode, paginationFailed, manifest, sentences, spineIdx, id, html]);
+  }, [prefs.mode, paginationFailed, manifest, sentences, spineIdx, html, recordReading]);
 
   /* ----------------------------------------------------------- actions */
 
@@ -1524,13 +1625,24 @@ export function ReaderPage() {
         charOffset =
           offsetForFragment(contentRef.current, textMapRef.current, fragment) ?? charOffset;
       }
-      setReturnPoint(
-        returnAfterJump(
-          origin,
-          { spineIdx: clamped, charOffset },
-          intent === 'open' ? 'resume' : reason,
-        ),
-      );
+      // Contents, search, a mark, the slider, a link: a look, until the
+      // reader reads on there (visit.ts). A look carried on from another
+      // keeps the place the reader first left. Going back, or taking up
+      // where another device is, is a move.
+      const bookAt = (sp: number, off: number) => pctFor(manifest, sp, off) * manifest.totalChars;
+      const landed = bookAt(clamped, charOffset ?? 0);
+      const look =
+        intent === 'seek' &&
+        LOOK_REASONS.has(reason) &&
+        (!!visitRef.current ||
+          Math.abs(landed - bookAt(origin.spineIdx, origin.charOffset)) > PLACE_REJOIN_CHARS);
+      if (look) {
+        visitRef.current = beginVisit(visitRef.current, origin, landed, performance.now());
+        setVisitFrom(visitRef.current.from);
+        setChipClosed(null);
+      } else if (intent === 'open' || reason === 'return' || reason === 'resume') {
+        endVisit();
+      }
       if (!extra.mark) setResumeMark(null);
       handoffCleanupRef.current?.();
       pendingTargetRef.current = {
@@ -1591,11 +1703,18 @@ export function ReaderPage() {
         setSpineIdx(clamped);
       }
       setLiveOffset(charOffset);
-      void recordCheckpoint(
-        id,
-        intent,
-        locatorAt(manifest, clamped === spineIdx ? sentences : [], clamped, charOffset),
+      const locator = locatorAt(
+        manifest,
+        clamped === spineIdx ? sentences : [],
+        clamped,
+        charOffset ?? 0,
       );
+      // A look records nothing; a move records itself, claiming the position.
+      if (look) return;
+      if (intent === 'open' || reason === 'return' || reason === 'resume') {
+        void recordCheckpoint(id, intent, locator);
+        window.setTimeout(refreshPlaces, 2500);
+      } else recordReading(intent, locator);
     },
     [
       manifest,
@@ -1609,6 +1728,9 @@ export function ReaderPage() {
       scrollLineTo,
       toast,
       t,
+      endVisit,
+      recordReading,
+      refreshPlaces,
     ],
   );
   const gotoChapterRef = useRef(gotoChapter);
@@ -1687,7 +1809,7 @@ export function ReaderPage() {
       // chapter ahead of where the reader actually is. The new chapter's
       // sentence index is not loaded yet, hence no sentenceId.
       needsClaimRef.current = false;
-      void recordCheckpoint(id, 'seek', locatorAt(manifest, [], spineIdx - 1, back));
+      recordReading('seek', locatorAt(manifest, [], spineIdx - 1, back));
     }
   }, [
     prefs.mode,
@@ -1698,7 +1820,7 @@ export function ReaderPage() {
     manifest,
     goToPage,
     carrySelection,
-    id,
+    recordReading,
   ]);
 
   /* -------------------------------------------------------- read along */
@@ -1728,9 +1850,9 @@ export function ReaderPage() {
       chapterLoadingRef.current = true;
       setSpineIdx(target);
       needsClaimRef.current = false;
-      void recordCheckpoint(id, 'seek', locatorAt(manifest, [], target, offset));
+      recordReading('seek', locatorAt(manifest, [], target, offset));
     },
-    [manifest, spineIdx, id],
+    [manifest, spineIdx, recordReading],
   );
 
   const narration = useNarration({
@@ -1763,10 +1885,10 @@ export function ReaderPage() {
       saved = off;
       last = performance.now();
       currentOffsetRef.current = off;
-      void recordCheckpoint(id, 'heartbeat', locatorAt(manifest, sentences, spineIdx, off));
+      recordReading('heartbeat', locatorAt(manifest, sentences, spineIdx, off));
     }, 500);
     return () => clearInterval(timer);
-  }, [readAlong, manifest, spineIdx, sentences, id, narration.playing, readingMoved]);
+  }, [readAlong, manifest, spineIdx, sentences, narration.playing, readingMoved, recordReading]);
 
   /**
    * Relocate first, verify the rendered cue, then give the voice control.
@@ -2822,20 +2944,29 @@ export function ReaderPage() {
    * Share the quotation: the words, the book, and a link to it.
    *
    * The link is the caller's share link for this book, made or reused by the
-   * server. A server that has no such thing yet, or no network, still lets
-   * the words go - without the link. The platform's own share sheet where
-   * there is one; the clipboard where there is not, with a word to say so.
+   * server, pointing at the passage: someone who can read the book lands on
+   * the quotation itself, as a look that leaves their own place where it is
+   * (visit.ts). A server that has no such thing yet, or no network, still
+   * lets the words go - without the link. The platform's own share sheet
+   * where there is one; the clipboard where there is not, with a word to say so.
    */
   const shareSelection = useCallback(
-    async (passage?: string) => {
+    async (passage?: string, at?: { spineIdx: number; charOffset: number }) => {
       const quote = trimQuote(passage ?? selectedText());
       if (!quote || !manifest) return;
+      const where = at ?? {
+        spineIdx,
+        charOffset: selectionRef.current?.start ?? currentOffsetRef.current,
+      };
       let url = '';
       try {
         const res = await api<{ url: string; token: string }>(`/api/books/${id}/share`, {
           method: 'POST',
         });
-        url = res.url;
+        const link = new URL(res.url);
+        link.searchParams.set('spine', String(where.spineIdx));
+        link.searchParams.set('char', String(where.charOffset));
+        url = link.toString();
       } catch {
         /* no share links on this server, or offline: the quotation still travels */
       }
@@ -2857,7 +2988,7 @@ export function ReaderPage() {
         toast.show(t('reader.toast.copyFailed'));
       }
     },
-    [selectedText, manifest, id, toast, t],
+    [selectedText, manifest, id, toast, t, spineIdx],
   );
 
   /**
@@ -3569,6 +3700,70 @@ export function ReaderPage() {
     manifest?.title ??
     '';
   const bookPct = manifest ? pctFor(manifest, spineIdx, liveOffset) : 0;
+
+  /** A place's chapter by its name in the contents, or by its number. */
+  const placeChapter = (place: ReadingPlace) =>
+    place.chapter || t('common.chapterN', { n: place.locator.spineIdx + 1 });
+  /** Whether the reader is at a place now: where it got to, or a little either side. */
+  const isHere = (place: ReadingPlace) => {
+    if (!manifest) return false;
+    const ahead = (bookPct - place.locator.pct) * manifest.totalChars;
+    return ahead >= -PLACE_BACK_CHARS && ahead <= PLACE_AHEAD_CHARS;
+  };
+  const ownPlace = places.find((p) => p.main) ?? null;
+  /**
+   * Where "Back to your place" goes. While the reader is only looking, the
+   * place they were reading when they jumped; once they have read on
+   * somewhere else, their own place - on the book opening there too, since
+   * the book opens where they last read.
+   */
+  const backTo = (() => {
+    if (!manifest) return null;
+    if (visitFrom) {
+      const key = `look:${visitFrom.spineIdx}:${visitFrom.charOffset}`;
+      if (chipClosed === key) return null;
+      const pct = pctFor(manifest, visitFrom.spineIdx, visitFrom.charOffset);
+      const own =
+        !!ownPlace &&
+        Math.abs(pct - ownPlace.locator.pct) * manifest.totalChars <= PLACE_AHEAD_CHARS;
+      return {
+        key,
+        spineIdx: visitFrom.spineIdx,
+        charOffset: visitFrom.charOffset,
+        sentenceId: undefined as string | undefined,
+        pct,
+        own,
+        placeId: own ? ownPlace!.id : null,
+        where: visitFrom.label || t('common.chapterN', { n: visitFrom.spineIdx + 1 }),
+      };
+    }
+    if (!ownPlace || ownPlace.current || isHere(ownPlace)) return null;
+    const key = `own:${ownPlace.id}@${ownPlace.lastReadAt}`;
+    if (ownChipClosed === key) return null;
+    return {
+      key,
+      spineIdx: ownPlace.locator.spineIdx,
+      charOffset: ownPlace.locator.charOffset ?? 0,
+      sentenceId: ownPlace.locator.sentenceId,
+      pct: ownPlace.locator.pct,
+      own: true,
+      placeId: ownPlace.id,
+      where: placeChapter(ownPlace),
+    };
+  })();
+  /** Go to a place, as the reader's move: it becomes where they are. */
+  const goToPlace = (to: {
+    spineIdx: number;
+    charOffset: number;
+    sentenceId?: string;
+    placeId: string | null;
+  }) => {
+    if (to.placeId) setPlaces((all) => all.map((p) => ({ ...p, current: p.id === to.placeId })));
+    gotoChapter(to.spineIdx, to.charOffset, 'seek', undefined, 'return', {
+      sentenceId: to.sentenceId,
+      mark: true,
+    });
+  };
   const chapterPct = (() => {
     const ch = manifest?.chapters[spineIdx];
     if (!ch || ch.charCount === 0) return 0;
@@ -3972,8 +4167,8 @@ export function ReaderPage() {
         )}
       </div>
 
-      {/* Selection actions take precedence; retain the return origin until selection clears. */}
-      {returnPoint && !toolbarShown && (
+      {/* Selection actions take precedence; the way back waits until the selection clears. */}
+      {backTo && !toolbarShown && (
         // Two buttons side by side, not a button inside a button: nesting
         // them is invalid, unreachable by keyboard, and left the dismiss as
         // a 14px target inside a much larger tap area that did the opposite.
@@ -3981,25 +4176,28 @@ export function ReaderPage() {
           <button
             type="button"
             className="return-pill__go"
-            onClick={() => {
-              const rp = returnPoint.origin;
-              setReturnPoint(null);
-              gotoChapter(rp.spineIdx, rp.charOffset, 'seek', undefined, 'return');
-            }}
-          >
-            <IconBack size={15} />{' '}
-            {t('reader.return.backTo', {
-              // A spine item the book never named is called by its number.
-              label:
-                returnPoint.origin.label ||
-                t('common.chapterN', { n: returnPoint.origin.spineIdx + 1 }),
+            aria-label={t(backTo.own ? 'reader.places.backLabel' : 'reader.places.backThereLabel', {
+              where: backTo.where,
             })}
+            onClick={() => goToPlace(backTo)}
+          >
+            <IconBack size={15} />
+            <span>{t(backTo.own ? 'reader.places.back' : 'reader.places.backThere')}</span>
+            <span className="return-pill__where">{backTo.where}</span>
           </button>
           <button
             type="button"
             className="return-pill__x"
             aria-label={t('common.dismiss')}
-            onClick={() => setReturnPoint(null)}
+            onClick={() => {
+              if (!backTo.key.startsWith('own:')) return setChipClosed(backTo.key);
+              setOwnChipClosed(backTo.key);
+              try {
+                localStorage.setItem(`rp-place-chip:${id}`, backTo.key);
+              } catch {
+                /* private mode: closed for this visit to the book */
+              }
+            }}
           >
             <IconClose size={14} />
           </button>
@@ -4218,7 +4416,15 @@ export function ReaderPage() {
                     className="mark-pop__icon"
                     aria-label={t('reader.select.share')}
                     title={t('reader.select.share')}
-                    onClick={() => void shareSelection(markPop.a.selectedText ?? undefined)}
+                    onClick={() => {
+                      const l = markPop.a.locator;
+                      void shareSelection(
+                        markPop.a.selectedText ?? undefined,
+                        l.medium === 'ebook'
+                          ? { spineIdx: l.spineIdx, charOffset: l.charOffset ?? 0 }
+                          : undefined,
+                      );
+                    }}
                   >
                     <IconShare size={18} />
                     <span>{t('reader.select.share')}</span>
@@ -4342,6 +4548,13 @@ export function ReaderPage() {
                   on="slider"
                   onPick={() => friendsHere.setCardOpen(true)}
                 />
+                {backTo && (
+                  <span
+                    className="place-tick"
+                    style={{ insetInlineStart: `${backTo.pct * 100}%` }}
+                    aria-hidden="true"
+                  />
+                )}
               </div>
             )}
             {prefs.progressBar === 'compact' && (
@@ -4359,6 +4572,13 @@ export function ReaderPage() {
               >
                 <span style={{ width: `${bookPct * 100}%` }} />
                 <i style={{ insetInlineStart: `${bookPct * 100}%` }} aria-hidden="true" />
+                {backTo && (
+                  <b
+                    className="place-tick place-tick--mini"
+                    style={{ insetInlineStart: `${backTo.pct * 100}%` }}
+                    aria-hidden="true"
+                  />
+                )}
                 <FriendMarkers
                   friends={friendsHere.friends}
                   shownIds={friendsHere.shownIds}
@@ -4473,6 +4693,13 @@ export function ReaderPage() {
               </button>
               <button
                 role="tab"
+                aria-selected={contentsTab === 'places'}
+                onClick={() => setContentsTab('places')}
+              >
+                {t('reader.contents.placesTab')}
+              </button>
+              <button
+                role="tab"
                 aria-selected={contentsTab === 'marks'}
                 onClick={() => setContentsTab('marks')}
               >
@@ -4483,6 +4710,28 @@ export function ReaderPage() {
             </div>
           }
         >
+          {contentsTab === 'places' && (
+            <PlacesPanel
+              places={places}
+              herePct={bookPct}
+              isHere={isHere}
+              chapterName={placeChapter}
+              onGo={(place) => {
+                setSheet('none');
+                goToPlace({
+                  spineIdx: place.locator.spineIdx,
+                  charOffset: place.locator.charOffset ?? 0,
+                  sentenceId: place.locator.sentenceId,
+                  placeId: place.id,
+                });
+              }}
+              onForget={(place) => {
+                forgetPlace(id, place.id).then(setPlaces, () =>
+                  toast.show(t('reader.places.forgetFailed')),
+                );
+              }}
+            />
+          )}
           {contentsTab === 'marks' && (
             // The page's own bookmark lives with the marks now, where the
             // ribbon used to be a button in the bar.

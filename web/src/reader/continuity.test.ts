@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   landingOffset,
-  returnAfterJump,
-  continuedAtDestination,
   markerOpacity,
   checkpointDue,
   audioReturnAfterJump,
@@ -18,27 +16,9 @@ describe('exact landing', () => {
     expect(landingOffset({ sentenceId: 's1' }, sentences)).toBe(100);
   });
 });
+// Where a jump left from, and where it landed.
 const origin = { spineIdx: 1, charOffset: 173, label: 'The beginning' };
 const destination = { spineIdx: 3, charOffset: 0 };
-describe('ephemeral return policy', () => {
-  it('only disorienting explicit jumps with a useful origin qualify', () => {
-    for (const reason of ['toc', 'search', 'bookmark', 'slider', 'link'] as const)
-      expect(returnAfterJump(origin, destination, reason)?.origin).toEqual(origin);
-    for (const reason of ['progression', 'resume', 'narration', 'return'] as const)
-      expect(returnAfterJump(origin, destination, reason)).toBeNull();
-    expect(returnAfterJump(origin, { ...origin, charOffset: 200 }, 'toc')).toBeNull();
-    expect(returnAfterJump({ ...origin, spineIdx: -1 }, destination, 'toc')).toBeNull();
-  });
-  it('a fresh jump replaces the old origin; meaningful continuation expires it', () => {
-    const point = returnAfterJump(origin, destination, 'search')!;
-    expect(continuedAtDestination(point, destination)).toBe(false);
-    expect(continuedAtDestination(point, { ...destination, charOffset: 500 })).toBe(true);
-    expect(continuedAtDestination(point, origin)).toBe(true);
-    expect(
-      returnAfterJump({ ...destination, label: 'New origin' }, origin, 'bookmark')?.origin.spineIdx,
-    ).toBe(3);
-  });
-});
 describe('resume marker lifecycle', () => {
   it('layout ticks and small movement cannot erase the marker; reading fades it progressively', () => {
     expect(markerOpacity(origin, origin)).toBe(1);

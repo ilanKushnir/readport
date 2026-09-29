@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { api, ApiError, failureMessage } from '../api/client';
 import { useSession, type User } from '../state/session';
 import { useShelves } from '../state/shelves';
@@ -161,6 +161,21 @@ function SignedIn({ token, peek }: { token: string; peek: PeekState }) {
   const [onList, setOnList] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const bookId = typeof peek === 'object' ? peek.book.id : null;
+  const navigate = useNavigate();
+  const [search] = useSearchParams();
+
+  // A quotation's link names its passage: for someone who can read the
+  // book, the link is the passage, opened as a look that leaves their own
+  // place where it is (reader/visit.ts).
+  const spine = search.get('spine');
+  const char = search.get('char');
+  const passage =
+    typeof peek === 'object' && peek.book.kind === 'ebook' && spine && /^\d+$/.test(spine)
+      ? `/read/${peek.book.id}?spine=${spine}${char && /^\d+$/.test(char) ? `&char=${char}` : ''}`
+      : null;
+  useEffect(() => {
+    if (passage) navigate(passage, { replace: true });
+  }, [passage, navigate]);
 
   useEffect(() => {
     if (!bookId) return;

@@ -273,7 +273,7 @@ try {
         .click();
       await page.locator('.return-pill__go').waitFor();
       const label = await page.locator('.return-pill__go').innerText();
-      assert.match(label, /Back to Chapter 1/);
+      assert.match(label, /Chapter 1/);
       await page.waitForTimeout(1700);
       // Select visible text without scrolling away from the jump destination:
       // ordinary reading must still be allowed to expire an unrelated return.
@@ -833,7 +833,8 @@ try {
       // wants the passage to arrive.
       const lead = 'Look what I read in Selection QA:\n\n“';
       assert(shared.startsWith(lead), shared);
-      assert(shared.endsWith('”\n\nhttps://readport.test/s/abc'), shared);
+      // The link names the passage, so whoever can read the book lands on it.
+      assert.match(shared, /”\n\nhttps:\/\/readport\.test\/s\/abc\?spine=0&char=\d+$/);
       const quote = shared.slice(lead.length, shared.indexOf('”\n\nhttps'));
       const prose = span.text.replace(/\s+/g, ' ').trim();
       assert.equal(quote.replace(/\s+/g, ' ').trim(), prose, 'the selection is quoted whole');

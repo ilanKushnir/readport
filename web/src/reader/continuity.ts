@@ -12,35 +12,11 @@ export type JumpReason =
   | 'resume'
   | 'narration'
   | 'return';
-export interface ReturnPoint {
-  origin: ReadingPoint & { label: string };
-  destination: ReadingPoint;
-}
 export function landingOffset(
   target: { charOffset?: number; sentenceId?: string },
   sentences: { id: string; start: number }[],
 ): number {
   return target.charOffset ?? sentences.find((s) => s.id === target.sentenceId)?.start ?? 0;
-}
-export function returnAfterJump(
-  origin: ReturnPoint['origin'],
-  destination: ReadingPoint,
-  reason: JumpReason,
-): ReturnPoint | null {
-  if (!['toc', 'search', 'bookmark', 'slider', 'link'].includes(reason) || origin.spineIdx < 0)
-    return null;
-  if (
-    origin.spineIdx === destination.spineIdx &&
-    Math.abs(origin.charOffset - destination.charOffset) < 1000
-  )
-    return null;
-  return { origin, destination };
-}
-export function continuedAtDestination(point: ReturnPoint, current: ReadingPoint): boolean {
-  return (
-    current.spineIdx !== point.destination.spineIdx ||
-    Math.abs(current.charOffset - point.destination.charOffset) >= 400
-  );
 }
 export function markerOpacity(origin: ReadingPoint, current: ReadingPoint): number {
   if (origin.spineIdx !== current.spineIdx) return 0;

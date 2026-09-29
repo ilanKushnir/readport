@@ -321,7 +321,7 @@ try {
     { width: 820, height: 1180 },
   ]) {
     for (const mode of ['paginated', 'scroll']) {
-      const { page, context, errors } = await open(viewport, mode);
+      const { page, context, errors, posted } = await open(viewport, mode);
       await check(`${viewport.width} ${mode} exact marker visible and layout-safe`, async () => {
         const marker = page.locator('.resume-marker').first();
         await marker.waitFor({ timeout: 2500 });
@@ -358,25 +358,29 @@ try {
         assert.deepEqual(errors, []);
       });
       await check(
-        `${viewport.width} ${mode} return chip show, replace, return and dismiss`,
+        `${viewport.width} ${mode} a look keeps the way back, records nothing, and returns`,
         async () => {
           const jump = async (name) => {
             await page.getByRole('button', { name: 'Table of contents' }).click({ force: true });
             await page.getByRole('dialog').getByRole('button', { name, exact: true }).click();
             await page.waitForTimeout(300);
           };
+          // Positions recorded outside the first chapter, queued or sent.
+          const recordedElsewhere = async () => {
+            const queued = await page.evaluate(async () => {
+              const { idbAll, STORES } = await import('/src/progress/idb.ts');
+              return (await idbAll(STORES.pendingEvents)).map((e) => e.value.locator.spineIdx);
+            });
+            return [...queued, ...posted.map((e) => e.locator.spineIdx)].filter((s) => s !== 0)
+              .length;
+          };
           await jump('Chapter 3');
           assert.equal(await page.locator('.return-pill').count(), 1);
-          assert.match(await page.locator('.return-pill').innerText(), /Back to Chapter 1/);
+          assert.match(await page.locator('.return-pill').innerText(), /Chapter 1/);
+          // A look carried on from another keeps the place the reader left.
           await jump('Chapter 2');
-          assert.equal(await page.locator('.return-pill').count(), 1);
-          assert.match(await page.locator('.return-pill').innerText(), /Back to Chapter 3/);
-          await page.locator('.return-pill__go').click();
-          assert.equal(await page.locator('.return-pill').count(), 0);
-          await jump('Chapter 1');
-          await page.locator('.return-pill__x').click();
-          assert.equal(await page.locator('.return-pill').count(), 0);
-          await jump('Chapter 2');
+          assert.match(await page.locator('.return-pill').innerText(), /Chapter 1/);
+          // Reading a page of what they were looking at is still a look.
           if (mode === 'paginated')
             await page
               .getByRole('button', { name: 'Next page', exact: true })
@@ -387,6 +391,13 @@ try {
               e.scrollTop += 1000;
             });
           await page.waitForTimeout(800);
+          assert.equal(await page.locator('.return-pill').count(), 1);
+          assert.equal(await recordedElsewhere(), 0, 'a look recorded a position');
+          await page.locator('.return-pill__go').click();
+          await page.waitForTimeout(300);
+          assert.equal(await page.locator('.return-pill').count(), 0);
+          await jump('Chapter 3');
+          await page.locator('.return-pill__x').click();
           assert.equal(await page.locator('.return-pill').count(), 0);
         },
       );

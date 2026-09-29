@@ -10,6 +10,7 @@ import {
 } from '@readport/shared';
 import { type DB, nowIso } from '../db/index.js';
 import { prepareSessionFolder } from '../stats/sessions.js';
+import { preparePlacesFolder } from './places.js';
 
 /**
  * Authoritative progress pipeline: append-only event history + reconciled
@@ -108,6 +109,8 @@ export function resetProgress(db: DB, userId: string, bookId: string): number {
   try {
     db.prepare('DELETE FROM progress_events WHERE user_id = ? AND book_id = ?').run(userId, bookId);
     db.prepare('DELETE FROM progress_state WHERE user_id = ? AND book_id = ?').run(userId, bookId);
+    // Starting over is starting over: no place is kept either.
+    db.prepare('DELETE FROM reading_places WHERE user_id = ? AND book_id = ?').run(userId, bookId);
     db.prepare(
       'INSERT INTO progress_resets (user_id, book_id, generation) VALUES (?, ?, 1) ON CONFLICT(user_id, book_id) DO UPDATE SET generation = generation + 1',
     ).run(userId, bookId);
@@ -154,6 +157,9 @@ export function applyProgressEvents(
   // moment of a sitting, and folding it inside the same transaction is what
   // keeps the diary and the position from ever disagreeing (stats/sessions.ts).
   const sessions = prepareSessionFolder(db);
+  // And every ebook checkpoint is one more step of reading somewhere, or a
+  // jump to somewhere else: where this person reads the book (places.ts).
+  const places = preparePlacesFolder(db);
 
   db.exec('BEGIN IMMEDIATE');
   try {
@@ -281,6 +287,7 @@ export function applyProgressEvents(
         );
       }
       sessions.fold(userId, ev.bookId, ev.locator.medium, ev.deviceId, effectiveAt, ev.locator.pct);
+      if (ev.locator.medium === 'ebook') places.fold(userId, ev.bookId, effectiveAt, ev.locator);
       results.push({ eventId: ev.eventId, status: 'applied' });
     }
     db.exec('COMMIT');

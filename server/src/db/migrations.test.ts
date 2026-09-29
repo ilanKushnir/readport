@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { placesDocSchema, readingPlaces } from '@readport/shared';
 import { MIGRATIONS } from './migrations.js';
 import { openDatabase } from './index.js';
 
@@ -124,6 +125,53 @@ describe('schema migrations', () => {
     // The book itself is library content and stays.
     expect(db.prepare('SELECT COUNT(*) AS c FROM books').get()).toMatchObject({ c: 1 });
     db.close();
+  });
+
+  it('gives everyone already reading a book their place in it', () => {
+    databaseAtVersion(26);
+    const old = new DatabaseSync(path.join(dir, 'readport.db'));
+    const now = new Date().toISOString();
+    old
+      .prepare(
+        `INSERT INTO books (id, kind, root_dir, rel_path, format, title, added_at)
+         VALUES ('b2', 'ebook', '/lib', 'b.epub', 'epub', 'Rooms Above the Ferry', ?)`,
+      )
+      .run(now);
+    const progress = old.prepare(
+      `INSERT INTO progress_state (user_id, book_id, revision, locator_json, intent, occurred_at,
+         session_uuid, device_id, seq, finished, updated_at)
+       VALUES ('u1', ?, 3, ?, 'heartbeat', ?, 's', 'd', 3, 0, ?)`,
+    );
+    progress.run('b1', '{"medium":"ebook","spineIdx":4,"charOffset":120,"pct":0.2}', now, now);
+    progress.run('b2', '{"medium":"ebook","spineIdx":9,"charOffset":40,"pct":0.5}', now, now);
+    const sitting = old.prepare(
+      `INSERT INTO reading_sessions (user_id, book_id, medium, device_id, started_at, ended_at,
+         pct_start, pct_end, active_ms)
+       VALUES ('u1', ?, 'ebook', 'd', ?, ?, 0, 0.1, ?)`,
+    );
+    sitting.run('b1', now, now, 20 * 60_000);
+    sitting.run('b1', now, now, 10 * 60_000);
+    // Opened once at a passage and put down: no place.
+    sitting.run('b2', now, now, 10_000);
+    old.close();
+
+    const db = openDatabase(dir);
+    try {
+      const rows = db.prepare('SELECT book_id, doc_json FROM reading_places').all() as {
+        book_id: string;
+        doc_json: string;
+      }[];
+      expect(rows.map((r) => r.book_id)).toEqual(['b1']);
+      const doc = placesDocSchema.parse(JSON.parse(rows[0]!.doc_json));
+      const [place] = readingPlaces(doc);
+      expect(place).toMatchObject({ main: true, current: true });
+      expect(place!.thread).toMatchObject({ to: 0.2, readMs: 30 * 60_000 });
+      expect(place!.thread.locator).toMatchObject({ spineIdx: 4, charOffset: 120 });
+      db.prepare("DELETE FROM users WHERE id = 'u1'").run();
+      expect(db.prepare('SELECT COUNT(*) AS c FROM reading_places').get()).toMatchObject({ c: 0 });
+    } finally {
+      db.close();
+    }
   });
 
   it('re-opening an already-migrated database changes nothing', () => {

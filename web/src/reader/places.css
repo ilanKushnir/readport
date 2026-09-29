@@ -1,0 +1,197 @@
+/* Reading places: the Places tab of the reader's contents (PlacesPanel.tsx).
+   Rows reach a little past the sheet's padding, so a row's hover and its
+   highlight have room while its words line up with everything else. */
+.places {
+  display: grid;
+  gap: var(--sp-2);
+  margin-inline: calc(-1 * var(--sp-2));
+}
+.places__lede {
+  margin: var(--sp-2) var(--sp-2) 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--rp-text-soft);
+}
+
+/* The book as a strip: the stretch read to the reader's own place, a pin
+   for each place (filled for their own), and a tick where they are now. */
+.places-map {
+  position: relative;
+  height: 30px;
+  margin: var(--sp-1) calc(var(--sp-2) + 7px) var(--sp-1);
+}
+.places-map__track,
+.places-map__run {
+  position: absolute;
+  top: 50%;
+  height: 4px;
+  margin-top: -2px;
+  border-radius: 2px;
+}
+.places-map__track {
+  inset-inline: 0;
+  background: color-mix(in srgb, var(--rp-text) 12%, transparent);
+}
+.places-map__run {
+  background: color-mix(in srgb, var(--rp-primary) 45%, transparent);
+}
+.places-map__here {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  width: 2px;
+  margin-inline-start: -1px;
+  border-radius: 1px;
+  background: var(--rp-text);
+}
+.places-map__pin {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin-top: -6px;
+  margin-inline-start: -6px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 2px solid var(--rp-primary);
+  background: var(--rp-surface-raised);
+}
+.places-map__pin.is-own {
+  width: 14px;
+  height: 14px;
+  margin-top: -7px;
+  margin-inline-start: -7px;
+  background: var(--rp-primary);
+  box-shadow: 0 0 0 2px var(--rp-surface-raised);
+}
+
+.places__label {
+  margin: var(--sp-2) var(--sp-2) 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rp-text-soft);
+}
+.places__list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.place-row {
+  display: flex;
+  align-items: flex-start;
+}
+.place-row__open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-2);
+  border: 0;
+  border-radius: var(--radius-control);
+  background: none;
+  color: var(--rp-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+/* The reader's own place is the one thing here that is lifted. */
+.place-row.is-own .place-row__open {
+  background: color-mix(in srgb, var(--rp-primary) 8%, transparent);
+}
+@media (hover: hover) {
+  .place-row__open:hover {
+    background: var(--rp-surface);
+  }
+  .place-row.is-own .place-row__open:hover {
+    background: color-mix(in srgb, var(--rp-primary) 13%, transparent);
+  }
+}
+.place-row__open:focus-visible {
+  outline: 2px solid var(--rp-primary);
+  outline-offset: -2px;
+}
+.place-row__pin {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  margin-top: 3px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 2px solid var(--rp-primary);
+}
+.place-row.is-own .place-row__pin {
+  background: var(--rp-primary);
+}
+.place-row__body {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+.place-row__where {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.place-row__text {
+  font-family: var(--rp-font-reading);
+  font-size: 15px;
+  line-height: 1.4;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.place-row__meta {
+  font-size: 12.5px;
+  color: var(--rp-text-soft);
+}
+.place-row.is-here .place-row__meta {
+  color: var(--rp-interactive);
+  font-weight: 600;
+}
+.place-row__forget {
+  flex-shrink: 0;
+  margin-top: var(--sp-1);
+  color: var(--rp-text-soft);
+}
+.places__note {
+  margin: var(--sp-2) var(--sp-2) var(--sp-1);
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--rp-text-soft);
+}
+
+/* The way back, on the reader's progress bar: a notch where the place is
+   that "Back to your place" goes to. Only drawn while there is one. */
+.place-tick {
+  position: absolute;
+  /* The slider's track runs through 14px (friends-bar.css). */
+  top: 14px;
+  width: 3px;
+  height: 14px;
+  margin-top: -7px;
+  margin-inline-start: -1.5px;
+  border-radius: 2px;
+  background: var(--rd-link);
+  box-shadow: 0 0 0 2px var(--rd-bg);
+  pointer-events: none;
+}
+.place-tick--mini {
+  top: 50%;
+  height: 9px;
+  margin-top: -4.5px;
+}
+/* "Back to your place", and where that is, quieter and the first to give. */
+.return-pill__where {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+  opacity: 0.65;
+}

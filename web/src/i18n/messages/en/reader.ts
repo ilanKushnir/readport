@@ -25,7 +25,6 @@ export const reader = {
 
   // The resumed position, and the way back after a jump
   'reader.resumeMarker': 'Your resumed reading position',
-  'reader.return.backTo': 'Back to {label}',
 
   // End of a chapter
   'reader.chapterEnd.next': 'Next: {title}',
@@ -147,6 +146,25 @@ export const reader = {
   'reader.contents.chaptersTab': 'Chapters',
   'reader.contents.marksTab': 'Bookmarks & notes',
   'reader.contents.marksTabCount': 'Bookmarks & notes · {n}',
+  'reader.contents.placesTab': 'Places',
+
+  // Reading places: where the reader reads, kept apart from where they looked
+  'reader.places.own': 'Your place',
+  'reader.places.others': 'Also reading',
+  'reader.places.where': '{chapter} · {pct}',
+  'reader.places.meta': '{read} of reading · {when}',
+  'reader.places.here': 'You are here',
+  'reader.places.goLabel': 'Go to {where}. {text} {meta}',
+  'reader.places.forget': 'Forget the place at {where}',
+  'reader.places.forgetFailed': 'Could not forget that place - are you offline?',
+  'reader.places.empty':
+    'Your place appears here once you have read for a minute or two. From then on a jump anywhere - a passage someone sent you, a note, a search - never loses it: one tap brings you back.',
+  'reader.places.note':
+    'Looking at a passage does not move your place. Reading on there for a while keeps that place here too, until you go back to your own and read on.',
+  'reader.places.back': 'Back to your place',
+  'reader.places.backLabel': 'Back to your place, {where}',
+  'reader.places.backThere': 'Back to where you were',
+  'reader.places.backThereLabel': 'Back to where you were, {where}',
   'reader.contents.noMarks':
     'No bookmarks yet. Tap the ribbon icon while reading to mark a page; select text to highlight or add a note.',
   'reader.contents.bookmarkedPage': 'Bookmarked page',

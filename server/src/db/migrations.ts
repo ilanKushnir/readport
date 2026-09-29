@@ -804,4 +804,50 @@ UPDATE users SET last_seen_at = NULLIF(MAX(
 ), '');
 `,
   },
+  {
+    version: 27,
+    sql: `
+-- Reading places (progress/places.ts): the threads of one person's reading
+-- in one book - where they read on from and how far they got - folded from
+-- their progress as it is applied, so that a jump elsewhere never takes
+-- their place with it. One JSON document per person and book. Like
+-- progress_state, not tied to the books table: a checkpoint for a book the
+-- library has since lost must not fail the queue it arrives in.
+CREATE TABLE reading_places (
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  book_id TEXT NOT NULL,
+  doc_json TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (user_id, book_id)
+);
+
+-- Everyone already reading has a place from the start: where their book is
+-- open now, carrying the reading they have done in it (the stats diary), so
+-- it is theirs before any of the next page turns has been folded. A book
+-- only ever glanced at - under a minute read - has no place yet.
+INSERT INTO reading_places (user_id, book_id, doc_json, updated_at)
+SELECT p.user_id, p.book_id,
+  json_object(
+    'threads', json_array(json_object(
+      'id', 'seed',
+      'from', 0,
+      'to', MIN(1, MAX(0, json_extract(p.locator_json, '$.pct'))),
+      'locator', json(p.locator_json),
+      'readMs', r.ms,
+      'leftMs', 0,
+      'startedAt', p.occurred_at,
+      'lastAt', p.updated_at)),
+    'current', 'seed'),
+  p.updated_at
+FROM progress_state p
+JOIN books b ON b.id = p.book_id
+JOIN (
+  SELECT user_id, book_id,
+    SUM(COALESCE(active_ms,
+      (julianday(ended_at) - julianday(started_at)) * 86400000)) AS ms
+  FROM reading_sessions WHERE medium = 'ebook' GROUP BY user_id, book_id
+) r ON r.user_id = p.user_id AND r.book_id = p.book_id
+WHERE json_extract(p.locator_json, '$.medium') = 'ebook' AND r.ms >= 45000;
+`,
+  },
 ];

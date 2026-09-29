@@ -14,6 +14,7 @@ import { registerPrefsRoutes } from './routes/prefs.js';
 import { registerReaderRoutes } from './routes/reader.js';
 import { registerAudioRoutes } from './routes/audio.js';
 import { registerProgressRoutes } from './routes/progress.js';
+import { registerPlacesRoutes } from './routes/places.js';
 import { registerStatsRoutes } from './routes/stats.js';
 import { registerFriendRoutes } from './routes/friends.js';
 import { registerAnnotationRoutes } from './routes/annotations.js';
@@ -302,6 +303,7 @@ export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyIn
   registerReaderRoutes(app, ctx);
   registerAudioRoutes(app, ctx);
   registerProgressRoutes(app, ctx);
+  registerPlacesRoutes(app, ctx);
   // What the progress pipeline wrote down, read back as a reader's own stats.
   registerStatsRoutes(app, ctx);
   // Friends sit here too: who may see this reader's place in a book is the
