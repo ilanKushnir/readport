@@ -263,14 +263,35 @@
 
 /* --------------------------------------------------------------- pages */
 
-/// The chapter the page is in: the first to begin on it, or the last one before it.
+/// The name of the chapter the page is in, as written: the first to begin
+/// on it, or the last one before it. Each opening records its name beside
+/// its heading (see `opening`).
 #let chapter-here() = {
   let n = here().page()
-  let all = query(heading.where(level: 1))
-  let on-page = all.filter(h => h.location().page() == n)
-  if on-page.len() > 0 { return on-page.first().body }
-  let before = all.filter(h => h.location().page() < n)
-  if before.len() > 0 { before.last().body } else { none }
+  let all = query(<chapter-name>)
+  let on-page = all.filter(m => m.location().page() == n)
+  if on-page.len() > 0 { return on-page.first().value }
+  let before = all.filter(m => m.location().page() < n)
+  if before.len() > 0 { before.last().value } else { none }
+}
+
+/// `s` set by `make`, cut short with an ellipsis where it would run past
+/// `width`: a running head is one line, however long the name.
+#let fit(s, width, make) = {
+  if measure(make(s)).width <= width { return make(s) }
+  let cs = s.clusters()
+  let (lo, hi) = (0, cs.len())
+  while lo < hi {
+    let mid = calc.div-euclid(lo + hi + 1, 2)
+    if measure(make(cs.slice(0, mid).join().trim() + "…")).width <= width { lo = mid } else { hi = mid - 1 }
+  }
+  // Between words where there are words to be between: a cut inside one
+  // gives up the rest of it.
+  let kept = cs.slice(0, lo).join()
+  if lo < cs.len() and cs.at(lo) != " " and kept.contains(" ") {
+    kept = kept.split(" ").slice(0, -1).join(" ")
+  }
+  make(kept.trim() + "…")
 }
 
 #set page(
@@ -278,15 +299,24 @@
   header: context {
     set text(size: sz(7))
     let section = chapter-here()
-    grid(
-      columns: (1fr, auto),
-      column-gutter: 6mm,
-      align: (start + bottom, end + bottom),
-      text(font: serif(bk), lang: bk, style: "italic", size: sz(8), fill: faint, d.title),
-      if section != none { label(section, size: 6.2, fill: faint, tracking: 0.12em) },
-    )
-    v(-1.5mm)
-    line(length: 100%, stroke: 0.4pt + rule)
+    layout(room => {
+      let gap = 6mm
+      let title(s) = text(font: serif(bk), lang: bk, dir: way(d.titleDir), style: "italic", size: sz(8), fill: faint, s)
+      let head(s) = label(s, size: 6.2, fill: faint, tracking: 0.12em)
+      // The chapter's name may have a little over half the line; the
+      // book's title has the rest.
+      let named = if section != none { fit(section, room.width * 0.55, head) } else { none }
+      let used = if named != none { measure(named).width + gap } else { 0pt }
+      grid(
+        columns: (1fr, auto),
+        column-gutter: gap,
+        align: (start + bottom, end + bottom),
+        fit(d.title, room.width - used, title),
+        named,
+      )
+      v(-1.5mm)
+      line(length: 100%, stroke: 0.4pt + rule)
+    })
   },
   footer: context align(center, text(font: serif(ui), size: sz(8), fill: faint, counter(page).display())),
 )
@@ -302,6 +332,7 @@
       #block(width: 86%)[
         #set par(leading: 0.45em)
         #set text(font: display(bk), lang: bk, dir: way(s.dir), size: sz(if phone { 16 } else { 19.5 }), fill: ink)
+        #metadata(s.head) <chapter-name>
         #heading(level: 1, s.head)
       ]
       #if s.count != none {
