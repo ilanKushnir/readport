@@ -4,6 +4,19 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.31.1 - 2026-09-29
+
+### Fixed
+
+- **A tapped sentence, and only that one.** Reading along, a tap on a
+  sentence started the voice up to a second before it - an allowance for
+  timings the aligner was unsure of - so it played the end of the sentence
+  before, and lit that sentence beside the one tapped. The voice now starts
+  at the very beginning of the sentence tapped, and that sentence alone is
+  marked from the moment of the tap, even while the seek is still landing.
+  The same goes for turning the page with the voice and for switching read
+  along on.
+
 ## 0.31.0 - 2026-09-29
 
 ### Added
