@@ -4,6 +4,36 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.32.0 - 2026-09-29
+
+### Added
+
+- **Highlights and notes as a real PDF.** Export as PDF no longer goes
+  through the browser's print dialog: the server sets the pages in type
+  (Typst, with its fonts bundled in the image). A title page with the
+  cover, the title and what the export holds over a faint harbour; a
+  contents page for a long export by chapter; each highlight in the
+  reading face with its colour down its edge, its note beneath and the
+  place and date under it; and a closing line. Night is dark to the edge
+  of every page on every device, the iPhone included, where printing
+  could only put dark pages on white paper. The export page shows the
+  first pages themselves before anything is saved, and Save PDF hands
+  over the file: the share sheet on a phone, a download elsewhere. Hebrew
+  and Arabic are set right to left, Chinese, Japanese and Korean in faces
+  of their own, and a long title steps down rather than crowding the
+  cover. For the API: `POST /api/books/:id/notes/export`.
+- **Chapter names.** An export can open each chapter that has marks with
+  its name, and leaves the chapters without any out. The names follow the
+  book, so choosing them puts the marks in book order, and choosing
+  another order leaves them out; the options say so when either happens.
+  The sort that was called Position is now called Book order.
+
+### Upgrading
+
+- The image is about 70 MB larger: the typesetter, and the fonts the PDF
+  is set in (Latin, Greek, Cyrillic, Hebrew, Arabic, Chinese, Japanese,
+  Korean and emoji).
+
 ## 0.31.2 - 2026-09-29
 
 ### Fixed
