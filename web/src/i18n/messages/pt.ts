@@ -1721,6 +1721,8 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'Limpar a pesquisa',
   'reader.voiceMark.margin': 'Uma marca na margem, junto à linha lida pela voz',
   'reader.voiceMark.wash': 'A frase lida pela voz, destacada',
+  'reader.settings.washStrength': 'Intensidade',
+  'reader.settings.washStrengthLabel': 'Intensidade do destaque',
   // library
   'library.lang.allLanguages': 'Todos os idiomas',
   'library.lang.button': 'Idioma: {name}',

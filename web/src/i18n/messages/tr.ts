@@ -1705,6 +1705,8 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'Aramayı temizle',
   'reader.voiceMark.margin': 'Okunan satırın yanında, kenar boşluğunda bir işaret',
   'reader.voiceMark.wash': 'Okunan cümle, vurgulanmış',
+  'reader.settings.washStrength': 'Yoğunluk',
+  'reader.settings.washStrengthLabel': 'Vurgunun yoğunluğu',
   // library
   'library.lang.allLanguages': 'Tüm diller',
   'library.lang.button': 'Dil: {name}',

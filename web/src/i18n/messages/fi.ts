@@ -1698,6 +1698,8 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'Tyhjennä haku',
   'reader.voiceMark.margin': 'Merkki marginaalissa sen rivin vieressä, jota luetaan',
   'reader.voiceMark.wash': 'Lause, jota luetaan, korostettuna',
+  'reader.settings.washStrength': 'Voimakkuus',
+  'reader.settings.washStrengthLabel': 'Korostuksen voimakkuus',
   // library
   'library.lang.allLanguages': 'Kaikki kielet',
   'library.lang.button': 'Kieli: {name}',

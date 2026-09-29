@@ -1688,6 +1688,8 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'Ryd søgningen',
   'reader.voiceMark.margin': 'Et mærke i margenen ved siden af den oplæste linje',
   'reader.voiceMark.wash': 'Den oplæste sætning, fremhævet',
+  'reader.settings.washStrength': 'Styrke',
+  'reader.settings.washStrengthLabel': 'Fremhævningens styrke',
   // library
   'library.lang.allLanguages': 'Alle sprog',
   'library.lang.button': 'Sprog: {name}',

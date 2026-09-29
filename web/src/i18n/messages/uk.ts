@@ -1723,6 +1723,8 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'Очистити пошук',
   'reader.voiceMark.margin': 'Відмітка на полях біля рядка, який читає голос',
   'reader.voiceMark.wash': 'Речення, яке читає голос, виділене',
+  'reader.settings.washStrength': 'Інтенсивність',
+  'reader.settings.washStrengthLabel': 'Інтенсивність виділення',
   // library
   'library.lang.allLanguages': 'Усі мови',
   'library.lang.button': 'Мова: {name}',

@@ -1721,6 +1721,8 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'ניקוי החיפוש',
   'reader.voiceMark.margin': 'סימון בשוליים לצד השורה הנקראת',
   'reader.voiceMark.wash': 'המשפט הנקרא, מודגש',
+  'reader.settings.washStrength': 'עוצמה',
+  'reader.settings.washStrengthLabel': 'עוצמת ההדגשה',
   // library
   'library.lang.allLanguages': 'כל השפות',
   'library.lang.button': 'שפה: {name}',

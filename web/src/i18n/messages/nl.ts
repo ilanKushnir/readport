@@ -1732,6 +1732,8 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'Zoeken wissen',
   'reader.voiceMark.margin': 'Een teken in de marge naast de regel die de stem voorleest',
   'reader.voiceMark.wash': 'De zin die de stem voorleest, gemarkeerd',
+  'reader.settings.washStrength': 'Sterkte',
+  'reader.settings.washStrengthLabel': 'Sterkte van de markering',
   // library
   'library.lang.allLanguages': 'Alle talen',
   'library.lang.button': 'Taal: {name}',

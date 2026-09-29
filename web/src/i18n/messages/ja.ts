@@ -1704,6 +1704,8 @@ const messages: Record<string, string> = {
   'reader.search.clear': '検索をクリア',
   'reader.voiceMark.margin': '読んでいる行の横の余白に印を付けます',
   'reader.voiceMark.wash': '読んでいる文をハイライト表示します',
+  'reader.settings.washStrength': '濃さ',
+  'reader.settings.washStrengthLabel': 'ハイライトの濃さ',
   // library
   'library.lang.allLanguages': 'すべての言語',
   'library.lang.button': '言語: {name}',

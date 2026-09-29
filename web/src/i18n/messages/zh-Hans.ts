@@ -1604,6 +1604,8 @@ const messages: Record<string, string> = {
   'reader.search.clear': '清除搜索',
   'reader.voiceMark.margin': '正在朗读的那一行旁，页边距上的标记',
   'reader.voiceMark.wash': '正在朗读的句子，高亮显示',
+  'reader.settings.washStrength': '浓度',
+  'reader.settings.washStrengthLabel': '高亮浓度',
   // library
   'library.lang.allLanguages': '全部语言',
   'library.lang.button': '语言：{name}',

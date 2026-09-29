@@ -1731,6 +1731,8 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'Απαλοιφή αναζήτησης',
   'reader.voiceMark.margin': 'Ένδειξη στο περιθώριο δίπλα στη γραμμή που διαβάζεται',
   'reader.voiceMark.wash': 'Η πρόταση που διαβάζεται, επισημασμένη',
+  'reader.settings.washStrength': 'Ένταση',
+  'reader.settings.washStrengthLabel': 'Ένταση της επισήμανσης',
   // library
   'library.lang.allLanguages': 'Όλες οι γλώσσες',
   'library.lang.button': 'Γλώσσα: {name}',

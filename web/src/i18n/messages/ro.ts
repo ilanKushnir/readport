@@ -1724,6 +1724,8 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'Șterge căutarea',
   'reader.voiceMark.margin': 'Un semn pe margine, lângă rândul citit de voce',
   'reader.voiceMark.wash': 'Propoziția citită de voce, evidențiată',
+  'reader.settings.washStrength': 'Intensitate',
+  'reader.settings.washStrengthLabel': 'Intensitatea evidențierii',
   // library
   'library.lang.allLanguages': 'Toate limbile',
   'library.lang.button': 'Limbă: {name}',

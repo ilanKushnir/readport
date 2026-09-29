@@ -1727,6 +1727,8 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'Wyczyść wyszukiwanie',
   'reader.voiceMark.margin': 'Znacznik na marginesie obok czytanej linii',
   'reader.voiceMark.wash': 'Zaznaczenie czytanego zdania',
+  'reader.settings.washStrength': 'Intensywność',
+  'reader.settings.washStrengthLabel': 'Intensywność zaznaczenia',
   // library
   'library.lang.allLanguages': 'Wszystkie języki',
   'library.lang.button': 'Język: {name}',

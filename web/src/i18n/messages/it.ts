@@ -1719,6 +1719,8 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'Cancella la ricerca',
   'reader.voiceMark.margin': 'Un segno nel margine accanto alla riga in lettura',
   'reader.voiceMark.wash': 'La frase in lettura, evidenziata',
+  'reader.settings.washStrength': 'Intensità',
+  'reader.settings.washStrengthLabel': 'Intensità dell’evidenziazione',
   // library
   'library.lang.allLanguages': 'Tutte le lingue',
   'library.lang.button': 'Lingua: {name}',

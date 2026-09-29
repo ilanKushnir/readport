@@ -1740,6 +1740,8 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'Suche leeren',
   'reader.voiceMark.margin': 'Ein Zeichen am Rand neben der aktuell gelesenen Zeile',
   'reader.voiceMark.wash': 'Der aktuell gelesene Satz, markiert',
+  'reader.settings.washStrength': 'Stärke',
+  'reader.settings.washStrengthLabel': 'Stärke der Markierung',
   // library
   'library.lang.allLanguages': 'Alle Sprachen',
   'library.lang.button': 'Sprache: {name}',

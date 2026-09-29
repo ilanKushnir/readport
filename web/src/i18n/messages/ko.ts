@@ -1664,6 +1664,8 @@ const messages: Record<string, string> = {
   'reader.search.clear': '검색어 지우기',
   'reader.voiceMark.margin': '낭독 중인 줄 옆 여백의 표시',
   'reader.voiceMark.wash': '낭독 중인 문장의 하이라이트',
+  'reader.settings.washStrength': '진하기',
+  'reader.settings.washStrengthLabel': '하이라이트 진하기',
   // library
   'library.lang.allLanguages': '전체 언어',
   'library.lang.button': '언어: {name}',

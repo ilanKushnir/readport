@@ -1757,6 +1757,8 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'مسح البحث',
   'reader.voiceMark.margin': 'علامة في الهامش بجانب السطر قيد القراءة',
   'reader.voiceMark.wash': 'الجملة قيد القراءة، مظللة',
+  'reader.settings.washStrength': 'الشدة',
+  'reader.settings.washStrengthLabel': 'شدة التظليل',
   // library
   'library.lang.allLanguages': 'كل اللغات',
   'library.lang.button': 'اللغة: {name}',

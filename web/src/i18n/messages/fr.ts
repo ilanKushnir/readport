@@ -1731,6 +1731,8 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'Effacer la recherche',
   'reader.voiceMark.margin': 'Un repère dans la marge à côté de la ligne en cours de lecture',
   'reader.voiceMark.wash': 'La phrase en cours de lecture, surlignée',
+  'reader.settings.washStrength': 'Intensité',
+  'reader.settings.washStrengthLabel': 'Intensité du surlignage',
   // library
   'library.lang.allLanguages': 'Toutes les langues',
   'library.lang.button': 'Langue : {name}',

@@ -1685,6 +1685,8 @@ const messages: Record<string, string> = {
   'reader.search.clear': 'Tøm søket',
   'reader.voiceMark.margin': 'Et merke i margen ved siden av linjen som leses',
   'reader.voiceMark.wash': 'Setningen som leses, uthevet',
+  'reader.settings.washStrength': 'Styrke',
+  'reader.settings.washStrengthLabel': 'Styrken på uthevingen',
   // library
   'library.lang.allLanguages': 'Alle språk',
   'library.lang.button': 'Språk: {name}',
