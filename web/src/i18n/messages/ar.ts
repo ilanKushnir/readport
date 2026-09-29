@@ -1341,7 +1341,7 @@ const messages: Record<string, string> = {
     'حدّد مقطعًا أثناء القراءة لتظليله أو كتابة ملاحظة عليه، واضغط على الشريط لوضع إشارة على صفحة.',
   'notes.readBook': '{kind, select, audio {فتح الكتاب الصوتي} other {فتح الكتاب}}',
   'notes.sort': 'الترتيب',
-  'notes.sort.position': 'الموضع',
+  'notes.sort.position': 'ترتيب الكتاب',
   'notes.sort.newest': 'الأحدث',
   'notes.sort.color': 'اللون',
   'notes.marksLabel': 'العلامات',
@@ -1352,10 +1352,7 @@ const messages: Record<string, string> = {
   'notes.export.scope.kind':
     '{kind, select, highlight {التظليلات فقط} note {الملاحظات فقط} bookmark {الإشارات المرجعية فقط} other {كل شيء مُعلَّم}}',
   'notes.export.scope.colours': 'تظليلات {list} فقط',
-  'notes.export.print': 'طباعة / حفظ بصيغة PDF',
   'notes.export.back': 'العودة إلى العلامات',
-  'notes.export.hint':
-    'معاينة للصفحات كما ستُطبَع. طباعة / حفظ بصيغة PDF يفتح نافذة الطباعة؛ اختر «حفظ بصيغة PDF» وجهةً للاحتفاظ بملف.',
   'notes.export.empty': 'لا شيء لتصديره بعوامل التصفية هذه.',
   // nav
   'nav.friends': 'الأصدقاء',
@@ -1625,7 +1622,6 @@ const messages: Record<string, string> = {
   'notes.export.page.phoneHint': 'صفحة ضيقة تظهر بالعرض الكامل على شاشة الهاتف.',
   'notes.export.include': 'تضمين',
   'notes.export.include.cover': 'الغلاف في صفحة العنوان',
-  'notes.export.include.heads': 'عناوين الفصول',
   'notes.export.include.where': 'أسطر الموضع والتاريخ',
   'notes.export.include.notes': 'الملاحظات أسفل التظليلات',
   'notes.export.order': 'الترتيب',
@@ -1638,18 +1634,36 @@ const messages: Record<string, string> = {
   'notes.export.nothing': 'لا شيء لتصديره - حدّد نوعًا واحدًا من العلامات على الأقل.',
   'notes.export.go': 'تصدير',
   'notes.export.apply': 'تطبيق',
-  'notes.export.figures': 'ما يحتويه هذا التصدير',
   'notes.export.figure.highlights':
     '{n, plural, zero {تظليلات} one {تظليل} two {تظليلان} few {تظليلات} many {تظليلًا} other {تظليل}}',
   'notes.export.figure.notes':
     '{n, plural, zero {ملاحظات} one {ملاحظة} two {ملاحظتان} few {ملاحظات} many {ملاحظة} other {ملاحظة}}',
   'notes.export.figure.bookmarks':
     '{n, plural, zero {إشارات مرجعية} one {إشارة مرجعية} two {إشارتان مرجعيتان} few {إشارات مرجعية} many {إشارة مرجعية} other {إشارة مرجعية}}',
-  'notes.export.legend': 'ألوان التظليل',
   'notes.export.scope.kinds':
     '{kinds, select, hn {التظليلات والملاحظات} hb {التظليلات والإشارات المرجعية} nb {الملاحظات والإشارات المرجعية} other {كل شيء مُعلَّم}}',
   'notes.export.bookmark': 'إشارة مرجعية',
   'notes.export.whereWhen': '{where} · {date}',
+  'notes.export.save': 'حفظ PDF',
+  'notes.export.open': 'فتح PDF',
+  'notes.export.preparing': 'تجهيز صفحاتك…',
+  'notes.export.pages':
+    '{n, plural, zero {لا صفحات} one {صفحة واحدة} two {صفحتان} few {# صفحات} many {# صفحة} other {# صفحة}}',
+  'notes.export.pageAlt': 'الصفحة {n} من {total}',
+  'notes.export.more':
+    '{n, plural, zero {لا صفحات أخرى في PDF} one {صفحة واحدة أخرى في PDF} two {صفحتان أخريان في PDF} few {# صفحات أخرى في PDF} many {# صفحة أخرى في PDF} other {# صفحة أخرى في PDF}}',
+  'notes.export.failed': 'تعذّر إنشاء الصفحات. تحقق من الاتصال وحاول مرة أخرى.',
+  'notes.export.busy': 'الخادم يُنشئ ملف PDF آخر الآن. حاول مرة أخرى بعد قليل.',
+  'notes.export.include.chapters': 'أسماء الفصول',
+  'notes.export.include.chaptersHint': 'كل فصل مُعلَّم يبدأ باسمه.',
+  'notes.export.notice.bookOrder':
+    'أسماء الفصول تتبع ترتيب الكتاب، لذلك أصبحت العلامات الآن بترتيب الكتاب.',
+  'notes.export.notice.noChapters': 'أسماء الفصول تُستخدم فقط مع ترتيب الكتاب، لذلك تم استبعادها.',
+  'notes.export.bookmarkAt': 'إشارة مرجعية · {where}',
+  'notes.export.contents': 'المحتويات',
+  'notes.export.noteLabel': 'ملاحظة',
+  'notes.export.markedBy': 'مُعلَّم من {name}',
+  'notes.export.closing': 'محفوظة من قراءتك لكتاب {title}',
   // nav
   'nav.joinRequests': 'شخص ما طلب الانضمام',
 

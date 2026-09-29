@@ -1299,7 +1299,7 @@ const messages: Record<string, string> = {
     'Виділіть уривок під час читання, щоб виділити його або написати нотатку, і натисніть на стрічку, щоб додати сторінку в закладки.',
   'notes.readBook': '{kind, select, audio {Відкрити аудіокнигу} other {Відкрити книгу}}',
   'notes.sort': 'Сортування',
-  'notes.sort.position': 'Позиція',
+  'notes.sort.position': 'Порядок книги',
   'notes.sort.newest': 'Найновіші',
   'notes.sort.color': 'Колір',
   'notes.marksLabel': 'Відмітки',
@@ -1310,10 +1310,7 @@ const messages: Record<string, string> = {
   'notes.export.scope.kind':
     '{kind, select, highlight {Лише виділення} note {Лише нотатки} bookmark {Лише закладки} other {Усе відмічене}}',
   'notes.export.scope.colours': 'Лише виділення: {list}',
-  'notes.export.print': 'Друкувати / Зберегти як PDF',
   'notes.export.back': 'Назад до відміток',
-  'notes.export.hint':
-    'Попередній перегляд сторінок такими, якими вони будуть надруковані. Друкувати / Зберегти як PDF відкриє вікно друку. Як місце призначення виберіть «Зберегти як PDF», щоб отримати файл.',
   'notes.export.empty': 'З такими фільтрами немає що експортувати.',
 
   // nav
@@ -1587,7 +1584,6 @@ const messages: Record<string, string> = {
   'notes.export.page.phoneHint': 'Вузька сторінка, яка займає всю ширину екрана телефону.',
   'notes.export.include': 'Включити',
   'notes.export.include.cover': 'Обкладинка на титульній сторінці',
-  'notes.export.include.heads': 'Заголовки розділів',
   'notes.export.include.where': 'Позиція і дата',
   'notes.export.include.notes': 'Нотатки під виділеннями',
   'notes.export.order': 'Порядок',
@@ -1600,18 +1596,37 @@ const messages: Record<string, string> = {
   'notes.export.nothing': 'Немає чого експортувати — відмітьте хоча б один тип.',
   'notes.export.go': 'Експортувати',
   'notes.export.apply': 'Застосувати',
-  'notes.export.figures': 'Що містить цей експорт',
   'notes.export.figure.highlights':
     '{n, plural, one {виділення} few {виділення} many {виділень} other {виділення}}',
   'notes.export.figure.notes':
     '{n, plural, one {нотатка} few {нотатки} many {нотаток} other {нотатки}}',
   'notes.export.figure.bookmarks':
     '{n, plural, one {закладка} few {закладки} many {закладок} other {закладки}}',
-  'notes.export.legend': 'Кольори виділень',
   'notes.export.scope.kinds':
     '{kinds, select, hn {Виділення і нотатки} hb {Виділення і закладки} nb {Нотатки і закладки} other {Усе відмічене}}',
   'notes.export.bookmark': 'Закладка',
   'notes.export.whereWhen': '{where} · {date}',
+  'notes.export.save': 'Зберегти PDF',
+  'notes.export.open': 'Відкрити PDF',
+  'notes.export.preparing': 'Готуємо ваші сторінки…',
+  'notes.export.pages':
+    '{n, plural, one {# сторінка} few {# сторінки} many {# сторінок} other {# сторінки}}',
+  'notes.export.pageAlt': 'Сторінка {n} з {total}',
+  'notes.export.more':
+    '{n, plural, one {Ще # сторінка в PDF} few {Ще # сторінки в PDF} many {Ще # сторінок в PDF} other {Ще # сторінки в PDF}}',
+  'notes.export.failed': 'Не вдалося підготувати сторінки. Перевірте з’єднання і спробуйте ще раз.',
+  'notes.export.busy': 'Сервер зараз готує інший PDF. Спробуйте ще раз трохи пізніше.',
+  'notes.export.include.chapters': 'Назви розділів',
+  'notes.export.include.chaptersHint': 'Кожен розділ із позначками починається з його назви.',
+  'notes.export.notice.bookOrder':
+    'Назви розділів ідуть за порядком книги, тому сортування перемкнено на «Порядок книги».',
+  'notes.export.notice.noChapters':
+    'Назви розділів працюють лише із сортуванням «Порядок книги», тому їх вимкнено.',
+  'notes.export.bookmarkAt': 'Закладка · {where}',
+  'notes.export.contents': 'Зміст',
+  'notes.export.noteLabel': 'Нотатка',
+  'notes.export.markedBy': 'Відмітки: {name}',
+  'notes.export.closing': 'На згадку про читання книги «{title}»',
   // nav
   'nav.joinRequests': 'Хтось попросив приєднатися',
 

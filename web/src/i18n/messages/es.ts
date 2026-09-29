@@ -1495,7 +1495,7 @@ const messages: Record<string, string> = {
     'Selecciona un pasaje mientras lees para subrayarlo o escribir una nota, y toca la cinta para marcar una página.',
   'notes.readBook': '{kind, select, audio {Abrir el audiolibro} other {Abrir el libro}}',
   'notes.sort': 'Ordenar',
-  'notes.sort.position': 'Posición',
+  'notes.sort.position': 'Orden del libro',
   'notes.sort.newest': 'Recientes',
   'notes.sort.color': 'Color',
   'notes.marksLabel': 'Marcas',
@@ -1506,10 +1506,7 @@ const messages: Record<string, string> = {
   'notes.export.scope.kind':
     '{kind, select, highlight {Solo subrayados} note {Solo notas} bookmark {Solo marcadores} other {Todo lo marcado}}',
   'notes.export.scope.colours': 'Solo subrayados en {list}',
-  'notes.export.print': 'Imprimir / Guardar como PDF',
   'notes.export.back': 'Volver a las marcas',
-  'notes.export.hint':
-    'Una vista previa de las páginas tal como se imprimirán. Imprimir / Guardar como PDF abre el diálogo de impresión; elige «Guardar como PDF» como destino para conservar un archivo.',
   'notes.export.empty': 'Nada que exportar con estos filtros.',
   // nav
   'nav.more': 'Más',
@@ -1589,7 +1586,6 @@ const messages: Record<string, string> = {
     'Una página estrecha que ocupa todo el ancho en la pantalla de un teléfono.',
   'notes.export.include': 'Incluir',
   'notes.export.include.cover': 'Portada en la página de título',
-  'notes.export.include.heads': 'Títulos de los capítulos',
   'notes.export.include.where': 'Líneas de posición y fecha',
   'notes.export.include.notes': 'Notas bajo los subrayados',
   'notes.export.order': 'Orden',
@@ -1602,15 +1598,34 @@ const messages: Record<string, string> = {
   'notes.export.nothing': 'Nada que exportar: elige al menos un tipo de marca.',
   'notes.export.go': 'Exportar',
   'notes.export.apply': 'Aplicar',
-  'notes.export.figures': 'Qué contiene esta exportación',
   'notes.export.figure.highlights': '{n, plural, one {subrayado} other {subrayados}}',
   'notes.export.figure.notes': '{n, plural, one {nota} other {notas}}',
   'notes.export.figure.bookmarks': '{n, plural, one {marcador} other {marcadores}}',
-  'notes.export.legend': 'Colores de subrayado',
   'notes.export.scope.kinds':
     '{kinds, select, hn {Subrayados y notas} hb {Subrayados y marcadores} nb {Notas y marcadores} other {Todo lo marcado}}',
   'notes.export.bookmark': 'Marcador',
   'notes.export.whereWhen': '{where} · {date}',
+  'notes.export.save': 'Guardar PDF',
+  'notes.export.open': 'Abrir PDF',
+  'notes.export.preparing': 'Preparando tus páginas…',
+  'notes.export.pages': '{n, plural, one {# página} other {# páginas}}',
+  'notes.export.pageAlt': 'Página {n} de {total}',
+  'notes.export.more': '{n, plural, one {# página más en el PDF} other {# páginas más en el PDF}}',
+  'notes.export.failed':
+    'No se pudieron crear las páginas. Comprueba la conexión e inténtalo de nuevo.',
+  'notes.export.busy':
+    'El servidor está creando otro PDF ahora mismo. Inténtalo de nuevo en un momento.',
+  'notes.export.include.chapters': 'Nombres de los capítulos',
+  'notes.export.include.chaptersHint': 'Cada capítulo que marcaste empieza con su nombre.',
+  'notes.export.notice.bookOrder':
+    'Los nombres de los capítulos siguen el libro, así que las marcas ahora están en el orden del libro.',
+  'notes.export.notice.noChapters':
+    'Los nombres de los capítulos solo funcionan con el orden del libro, así que se han omitido.',
+  'notes.export.bookmarkAt': 'Marcador · {where}',
+  'notes.export.contents': 'Índice',
+  'notes.export.noteLabel': 'Nota',
+  'notes.export.markedBy': 'Marcado por {name}',
+  'notes.export.closing': 'Guardado de tu lectura de {title}',
   // nav
   'nav.joinRequests': 'Alguien pidió unirse',
 

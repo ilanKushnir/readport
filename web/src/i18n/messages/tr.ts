@@ -1478,7 +1478,7 @@ const messages: Record<string, string> = {
     'Vurgulamak veya not yazmak için okurken bir pasaj seçin ve bir sayfayı yer imlerine eklemek için kurdeleye dokunun.',
   'notes.readBook': '{kind, select, audio {Sesli kitabı aç} other {Kitabı aç}}',
   'notes.sort': 'Sırala',
-  'notes.sort.position': 'Konum',
+  'notes.sort.position': 'Kitap sırası',
   'notes.sort.newest': 'En yeni',
   'notes.sort.color': 'Renk',
   'notes.marksLabel': 'İşaretler',
@@ -1489,10 +1489,7 @@ const messages: Record<string, string> = {
   'notes.export.scope.kind':
     '{kind, select, highlight {Yalnızca vurgulamalar} note {Yalnızca notlar} bookmark {Yalnızca yer imleri} other {İşaretlenen her şey}}',
   'notes.export.scope.colours': 'Yalnızca {list} vurgulamalar',
-  'notes.export.print': 'Yazdır / PDF olarak kaydet',
   'notes.export.back': 'İşaretlere dön',
-  'notes.export.hint':
-    'Sayfaların yazdırılacak haliyle önizlemesi. Yazdır / PDF olarak kaydet yazdırma penceresini açar; bir dosyayı saklamak için hedef olarak “PDF olarak kaydet”i seçin.',
   'notes.export.empty': 'Bu filtrelerle dışa aktarılacak bir şey yok.',
   // nav
   'nav.more': 'Diğer',
@@ -1571,7 +1568,6 @@ const messages: Record<string, string> = {
   'notes.export.page.phoneHint': 'Telefon ekranında tam genişlikte okunan dar bir sayfa.',
   'notes.export.include': 'Dahil et',
   'notes.export.include.cover': 'Başlık sayfasında kapak',
-  'notes.export.include.heads': 'Bölüm başlıkları',
   'notes.export.include.where': 'Konum ve tarih satırları',
   'notes.export.include.notes': 'Vurgulamaların altında notlar',
   'notes.export.order': 'Sıralama',
@@ -1584,15 +1580,32 @@ const messages: Record<string, string> = {
   'notes.export.nothing': 'Dışa aktarılacak bir şey yok - en az bir işaret türü seçin.',
   'notes.export.go': 'Dışa aktar',
   'notes.export.apply': 'Uygula',
-  'notes.export.figures': 'Bu dışa aktarımda neler var',
   'notes.export.figure.highlights': '{n, plural, one {vurgulama} other {vurgulama}}',
   'notes.export.figure.notes': '{n, plural, one {not} other {not}}',
   'notes.export.figure.bookmarks': '{n, plural, one {yer imi} other {yer imi}}',
-  'notes.export.legend': 'Vurgulama renkleri',
   'notes.export.scope.kinds':
     '{kinds, select, hn {Vurgulamalar ve notlar} hb {Vurgulamalar ve yer imleri} nb {Notlar ve yer imleri} other {İşaretlenen her şey}}',
   'notes.export.bookmark': 'Yer imi',
   'notes.export.whereWhen': '{where} · {date}',
+  'notes.export.save': "PDF'yi kaydet",
+  'notes.export.open': "PDF'yi aç",
+  'notes.export.preparing': 'Sayfalarınız hazırlanıyor…',
+  'notes.export.pages': '{n, plural, one {# sayfa} other {# sayfa}}',
+  'notes.export.pageAlt': 'Sayfa {n} / {total}',
+  'notes.export.more': "{n, plural, one {PDF'de # sayfa daha} other {PDF'de # sayfa daha}}",
+  'notes.export.failed': 'Sayfalar oluşturulamadı. Bağlantınızı kontrol edip tekrar deneyin.',
+  'notes.export.busy': 'Sunucu şu anda başka bir PDF hazırlıyor. Birazdan tekrar deneyin.',
+  'notes.export.include.chapters': 'Bölüm adları',
+  'notes.export.include.chaptersHint': 'İşaretlediğiniz her bölüm kendi adıyla başlar.',
+  'notes.export.notice.bookOrder':
+    'Bölüm adları kitabın sırasını izler, bu yüzden sıralama “Kitap sırası”na geçirildi.',
+  'notes.export.notice.noChapters':
+    'Bölüm adları yalnızca “Kitap sırası”yla birlikte kullanılabilir, bu yüzden kapatıldı.',
+  'notes.export.bookmarkAt': 'Yer imi · {where}',
+  'notes.export.contents': 'İçindekiler',
+  'notes.export.noteLabel': 'Not',
+  'notes.export.markedBy': 'İşaretleyen: {name}',
+  'notes.export.closing': '“{title}” adlı kitabı okumanızın anısına',
   // nav
   'nav.joinRequests': 'Biri katılma isteği gönderdi',
 

@@ -1503,7 +1503,7 @@ const messages: Record<string, string> = {
     'Selecteer een passage tijdens het lezen om deze te markeren of een notitie te schrijven, en tik op het lint om een pagina als bladwijzer te markeren.',
   'notes.readBook': '{kind, select, audio {Luisterboek openen} other {Boek openen}}',
   'notes.sort': 'Sorteren',
-  'notes.sort.position': 'Positie',
+  'notes.sort.position': 'Boekvolgorde',
   'notes.sort.newest': 'Nieuwste',
   'notes.sort.color': 'Kleur',
   'notes.marksLabel': 'Markeringen',
@@ -1514,10 +1514,7 @@ const messages: Record<string, string> = {
   'notes.export.scope.kind':
     '{kind, select, highlight {Alleen markeringen} note {Alleen notities} bookmark {Alleen bladwijzers} other {Alles wat gemarkeerd is}}',
   'notes.export.scope.colours': 'Alleen markeringen in {list}',
-  'notes.export.print': 'Afdrukken / Opslaan als PDF',
   'notes.export.back': 'Terug naar markeringen',
-  'notes.export.hint':
-    "Een voorbeeld van de pagina's zoals ze worden afgedrukt. Afdrukken / Opslaan als PDF opent het afdrukvenster; kies „Opslaan als PDF” als bestemming om een bestand te bewaren.",
   'notes.export.empty': 'Met deze filters is er niets te exporteren.',
   // nav
   'nav.more': 'Meer',
@@ -1598,7 +1595,6 @@ const messages: Record<string, string> = {
     'Een smalle pagina die op een telefoonscherm de volledige breedte gebruikt.',
   'notes.export.include': 'Opnemen',
   'notes.export.include.cover': 'Omslag op de titelpagina',
-  'notes.export.include.heads': 'Hoofdstuktitels',
   'notes.export.include.where': 'Positie- en datumregels',
   'notes.export.include.notes': 'Notities onder markeringen',
   'notes.export.order': 'Volgorde',
@@ -1611,15 +1607,33 @@ const messages: Record<string, string> = {
   'notes.export.nothing': 'Niets te exporteren – vink minstens één soort markering aan.',
   'notes.export.go': 'Exporteren',
   'notes.export.apply': 'Toepassen',
-  'notes.export.figures': 'Wat deze export bevat',
   'notes.export.figure.highlights': '{n, plural, one {markering} other {markeringen}}',
   'notes.export.figure.notes': '{n, plural, one {notitie} other {notities}}',
   'notes.export.figure.bookmarks': '{n, plural, one {bladwijzer} other {bladwijzers}}',
-  'notes.export.legend': 'Markeringskleuren',
   'notes.export.scope.kinds':
     '{kinds, select, hn {Markeringen en notities} hb {Markeringen en bladwijzers} nb {Notities en bladwijzers} other {Alles wat gemarkeerd is}}',
   'notes.export.bookmark': 'Bladwijzer',
   'notes.export.whereWhen': '{where} · {date}',
+  'notes.export.save': 'PDF bewaren',
+  'notes.export.open': 'PDF openen',
+  'notes.export.preparing': "Je pagina's worden voorbereid…",
+  'notes.export.pages': "{n, plural, one {# pagina} other {# pagina's}}",
+  'notes.export.pageAlt': 'Pagina {n} van {total}',
+  'notes.export.more': "{n, plural, one {Nog # pagina in de PDF} other {Nog # pagina's in de PDF}}",
+  'notes.export.failed':
+    "De pagina's konden niet worden aangemaakt. Controleer je verbinding en probeer het opnieuw.",
+  'notes.export.busy': 'De server maakt nu een andere PDF aan. Probeer het straks nog eens.',
+  'notes.export.include.chapters': 'Hoofdstuknamen',
+  'notes.export.include.chaptersHint': 'Elk gemarkeerd hoofdstuk begint met zijn naam.',
+  'notes.export.notice.bookOrder':
+    'Hoofdstuknamen volgen het boek, dus de markeringen staan nu in boekvolgorde.',
+  'notes.export.notice.noChapters':
+    'Hoofdstuknamen horen alleen bij boekvolgorde, dus die zijn weggelaten.',
+  'notes.export.bookmarkAt': 'Bladwijzer · {where}',
+  'notes.export.contents': 'Inhoud',
+  'notes.export.noteLabel': 'Notitie',
+  'notes.export.markedBy': 'Gemarkeerd door {name}',
+  'notes.export.closing': 'Bewaard uit het lezen van {title}',
   // nav
   'nav.joinRequests': 'Iemand wil lid worden',
 

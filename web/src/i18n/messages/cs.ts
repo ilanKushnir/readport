@@ -1286,7 +1286,7 @@ const messages: Record<string, string> = {
     'Při čtení vyberte úsek textu, abyste ho zvýraznili nebo k němu napsali poznámku, a klepnutím na stuhu přidejte stránku do záložek.',
   'notes.readBook': '{kind, select, audio {Otevřít audioknihu} other {Otevřít knihu}}',
   'notes.sort': 'Řazení',
-  'notes.sort.position': 'Pozice',
+  'notes.sort.position': 'Pořadí knihy',
   'notes.sort.newest': 'Nejnovější',
   'notes.sort.color': 'Barva',
   'notes.marksLabel': 'Značky',
@@ -1297,10 +1297,7 @@ const messages: Record<string, string> = {
   'notes.export.scope.kind':
     '{kind, select, highlight {Jen zvýraznění} note {Jen poznámky} bookmark {Jen záložky} other {Vše označené}}',
   'notes.export.scope.colours': 'Jen zvýraznění: {list}',
-  'notes.export.print': 'Tisknout / Uložit jako PDF',
   'notes.export.back': 'Zpět na značky',
-  'notes.export.hint':
-    'Náhled stránek tak, jak se vytisknou. Tisknout / Uložit jako PDF otevře tiskové okno. Jako cíl zvolte „Uložit jako PDF“, aby vznikl soubor.',
   'notes.export.empty': 'S těmito filtry není co exportovat.',
 
   // nav
@@ -1576,7 +1573,6 @@ const messages: Record<string, string> = {
     'Úzká stránka, která se na obrazovce telefonu zobrazí na celou šířku.',
   'notes.export.include': 'Zahrnout',
   'notes.export.include.cover': 'Obálka na titulní stránce',
-  'notes.export.include.heads': 'Nadpisy kapitol',
   'notes.export.include.where': 'Řádky pozice a data',
   'notes.export.include.notes': 'Poznámky pod zvýrazněními',
   'notes.export.order': 'Pořadí',
@@ -1589,18 +1585,38 @@ const messages: Record<string, string> = {
   'notes.export.nothing': 'Není co exportovat – zaškrtněte alespoň jeden typ značky.',
   'notes.export.go': 'Exportovat',
   'notes.export.apply': 'Použít',
-  'notes.export.figures': 'Co tento export obsahuje',
   'notes.export.figure.highlights':
     '{n, plural, one {zvýraznění} few {zvýraznění} many {zvýraznění} other {zvýraznění}}',
   'notes.export.figure.notes':
     '{n, plural, one {poznámka} few {poznámky} many {poznámky} other {poznámek}}',
   'notes.export.figure.bookmarks':
     '{n, plural, one {záložka} few {záložky} many {záložky} other {záložek}}',
-  'notes.export.legend': 'Barvy zvýraznění',
   'notes.export.scope.kinds':
     '{kinds, select, hn {Zvýraznění a poznámky} hb {Zvýraznění a záložky} nb {Poznámky a záložky} other {Vše označené}}',
   'notes.export.bookmark': 'Záložka',
   'notes.export.whereWhen': '{where} · {date}',
+  'notes.export.save': 'Uložit PDF',
+  'notes.export.open': 'Otevřít PDF',
+  'notes.export.preparing': 'Připravují se stránky…',
+  'notes.export.pages':
+    '{n, plural, one {# stránka} few {# stránky} many {# stránky} other {# stránek}}',
+  'notes.export.pageAlt': 'Stránka {n} z {total}',
+  'notes.export.more':
+    '{n, plural, one {Ještě # stránka v PDF} few {Ještě # stránky v PDF} many {Ještě # stránky v PDF} other {Ještě # stránek v PDF}}',
+  'notes.export.failed':
+    'Stránky se nepodařilo vytvořit. Zkontrolujte připojení a zkuste to znovu.',
+  'notes.export.busy': 'Server právě vytváří jiné PDF. Zkuste to za chvíli znovu.',
+  'notes.export.include.chapters': 'Názvy kapitol',
+  'notes.export.include.chaptersHint': 'Každá označená kapitola začíná svým názvem.',
+  'notes.export.notice.bookOrder':
+    'Názvy kapitol se řídí pořadím knihy, proto jsou značky teď v pořadí knihy.',
+  'notes.export.notice.noChapters':
+    'Názvy kapitol platí jen pro pořadí knihy, proto jsou vynechány.',
+  'notes.export.bookmarkAt': 'Záložka · {where}',
+  'notes.export.contents': 'Obsah',
+  'notes.export.noteLabel': 'Poznámka',
+  'notes.export.markedBy': 'Označeno od {name}',
+  'notes.export.closing': 'Uchováno z vaší četby knihy {title}',
   // nav
   'nav.joinRequests': 'Čekají žádosti o připojení',
 

@@ -1302,7 +1302,7 @@ const messages: Record<string, string> = {
     'Zaznacz fragment podczas czytania, aby go podświetlić lub napisać notatkę, i dotknij wstążki, aby dodać stronę do zakładek.',
   'notes.readBook': '{kind, select, audio {Otwórz audiobook} other {Otwórz książkę}}',
   'notes.sort': 'Sortowanie',
-  'notes.sort.position': 'Pozycja',
+  'notes.sort.position': 'Kolejność książki',
   'notes.sort.newest': 'Najnowsze',
   'notes.sort.color': 'Kolor',
   'notes.marksLabel': 'Zaznaczenia',
@@ -1313,10 +1313,7 @@ const messages: Record<string, string> = {
   'notes.export.scope.kind':
     '{kind, select, highlight {Tylko zaznaczenia} note {Tylko notatki} bookmark {Tylko zakładki} other {Wszystko zaznaczone}}',
   'notes.export.scope.colours': 'Tylko zaznaczenia: {list}',
-  'notes.export.print': 'Drukuj / Zapisz jako PDF',
   'notes.export.back': 'Wróć do zaznaczeń',
-  'notes.export.hint':
-    'Podgląd stron takich, jakie zostaną wydrukowane. Drukuj / Zapisz jako PDF otworzy okno drukowania. Jako miejsce docelowe wybierz „Zapisz jako PDF”, aby zachować plik.',
   'notes.export.empty': 'Z tymi filtrami nie ma co eksportować.',
 
   // nav
@@ -1592,7 +1589,6 @@ const messages: Record<string, string> = {
     'Wąska strona, która wyświetla się na pełną szerokość ekranu telefonu.',
   'notes.export.include': 'Uwzględnij',
   'notes.export.include.cover': 'Okładka na stronie tytułowej',
-  'notes.export.include.heads': 'Nagłówki rozdziałów',
   'notes.export.include.where': 'Wiersze pozycji i daty',
   'notes.export.include.notes': 'Notatki pod zaznaczeniami',
   'notes.export.order': 'Kolejność',
@@ -1605,18 +1601,37 @@ const messages: Record<string, string> = {
   'notes.export.nothing': 'Nie ma co eksportować – zaznacz przynajmniej jeden rodzaj zaznaczenia.',
   'notes.export.go': 'Eksportuj',
   'notes.export.apply': 'Zastosuj',
-  'notes.export.figures': 'Co zawiera ten eksport',
   'notes.export.figure.highlights':
     '{n, plural, one {zaznaczenie} few {zaznaczenia} many {zaznaczeń} other {zaznaczenia}}',
   'notes.export.figure.notes':
     '{n, plural, one {notatka} few {notatki} many {notatek} other {notatki}}',
   'notes.export.figure.bookmarks':
     '{n, plural, one {zakładka} few {zakładki} many {zakładek} other {zakładki}}',
-  'notes.export.legend': 'Kolory zaznaczenia',
   'notes.export.scope.kinds':
     '{kinds, select, hn {Zaznaczenia i notatki} hb {Zaznaczenia i zakładki} nb {Notatki i zakładki} other {Wszystko zaznaczone}}',
   'notes.export.bookmark': 'Zakładka',
   'notes.export.whereWhen': '{where} · {date}',
+  'notes.export.save': 'Zapisz PDF',
+  'notes.export.open': 'Otwórz PDF',
+  'notes.export.preparing': 'Przygotowywanie twoich stron…',
+  'notes.export.pages':
+    '{n, plural, one {# strona} few {# strony} many {# stron} other {# strony}}',
+  'notes.export.pageAlt': 'Strona {n} z {total}',
+  'notes.export.more':
+    '{n, plural, one {Jeszcze # strona w PDF} few {Jeszcze # strony w PDF} many {Jeszcze # stron w PDF} other {Jeszcze # strony w PDF}}',
+  'notes.export.failed': 'Nie udało się utworzyć stron. Sprawdź połączenie i spróbuj ponownie.',
+  'notes.export.busy': 'Serwer właśnie tworzy inny plik PDF. Spróbuj ponownie za chwilę.',
+  'notes.export.include.chapters': 'Nazwy rozdziałów',
+  'notes.export.include.chaptersHint': 'Każdy zaznaczony rozdział zaczyna się od swojej nazwy.',
+  'notes.export.notice.bookOrder':
+    'Nazwy rozdziałów podążają za kolejnością książki, więc zaznaczenia są teraz w tej kolejności.',
+  'notes.export.notice.noChapters':
+    'Nazwy rozdziałów pasują tylko do kolejności książki, więc zostały pominięte.',
+  'notes.export.bookmarkAt': 'Zakładka · {where}',
+  'notes.export.contents': 'Spis treści',
+  'notes.export.noteLabel': 'Notatka',
+  'notes.export.markedBy': 'Zaznaczone przez {name}',
+  'notes.export.closing': 'Zachowane z twojego czytania „{title}”',
   // nav
   'nav.joinRequests': 'Czekają prośby o dołączenie',
 

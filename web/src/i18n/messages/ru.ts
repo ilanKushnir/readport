@@ -1492,7 +1492,7 @@ const messages: Record<string, string> = {
     'Выделите отрывок во время чтения, чтобы выделить его или написать заметку, и нажмите на ленточку, чтобы добавить страницу в закладки.',
   'notes.readBook': '{kind, select, audio {Открыть аудиокнигу} other {Открыть книгу}}',
   'notes.sort': 'Сортировка',
-  'notes.sort.position': 'Позиция',
+  'notes.sort.position': 'Порядок книги',
   'notes.sort.newest': 'Новые',
   'notes.sort.color': 'Цвет',
   'notes.marksLabel': 'Отметки',
@@ -1503,10 +1503,7 @@ const messages: Record<string, string> = {
   'notes.export.scope.kind':
     '{kind, select, highlight {Только выделения} note {Только заметки} bookmark {Только закладки} other {Всё отмеченное}}',
   'notes.export.scope.colours': 'Только выделения: {list}',
-  'notes.export.print': 'Печатать / Сохранить как PDF',
   'notes.export.back': 'Назад к отметкам',
-  'notes.export.hint':
-    'Предпросмотр страниц такими, какими они будут напечатаны. Печатать / Сохранить как PDF откроет окно печати. В качестве назначения выберите «Сохранить как PDF», чтобы получить файл.',
   'notes.export.empty': 'С этими фильтрами нечего экспортировать.',
   // nav
   'nav.more': 'Ещё',
@@ -1585,7 +1582,6 @@ const messages: Record<string, string> = {
   'notes.export.page.phoneHint': 'Узкая страница, которая занимает всю ширину экрана телефона.',
   'notes.export.include': 'Включить',
   'notes.export.include.cover': 'Обложка на титульной странице',
-  'notes.export.include.heads': 'Заголовки глав',
   'notes.export.include.where': 'Позиция и дата',
   'notes.export.include.notes': 'Заметки под выделениями',
   'notes.export.order': 'Порядок',
@@ -1598,18 +1594,38 @@ const messages: Record<string, string> = {
   'notes.export.nothing': 'Нечего экспортировать — отметьте хотя бы один тип.',
   'notes.export.go': 'Экспортировать',
   'notes.export.apply': 'Применить',
-  'notes.export.figures': 'Что входит в этот экспорт',
   'notes.export.figure.highlights':
     '{n, plural, one {выделение} few {выделения} many {выделений} other {выделения}}',
   'notes.export.figure.notes':
     '{n, plural, one {заметка} few {заметки} many {заметок} other {заметки}}',
   'notes.export.figure.bookmarks':
     '{n, plural, one {закладка} few {закладки} many {закладок} other {закладки}}',
-  'notes.export.legend': 'Цвета выделений',
   'notes.export.scope.kinds':
     '{kinds, select, hn {Выделения и заметки} hb {Выделения и закладки} nb {Заметки и закладки} other {Всё отмеченное}}',
   'notes.export.bookmark': 'Закладка',
   'notes.export.whereWhen': '{where} · {date}',
+  'notes.export.save': 'Сохранить PDF',
+  'notes.export.open': 'Открыть PDF',
+  'notes.export.preparing': 'Готовим ваши страницы…',
+  'notes.export.pages':
+    '{n, plural, one {# страница} few {# страницы} many {# страниц} other {# страницы}}',
+  'notes.export.pageAlt': 'Страница {n} из {total}',
+  'notes.export.more':
+    '{n, plural, one {Ещё # страница в PDF} few {Ещё # страницы в PDF} many {Ещё # страниц в PDF} other {Ещё # страницы в PDF}}',
+  'notes.export.failed':
+    'Не удалось подготовить страницы. Проверьте соединение и попробуйте ещё раз.',
+  'notes.export.busy': 'Сервер сейчас готовит другой PDF. Попробуйте ещё раз чуть позже.',
+  'notes.export.include.chapters': 'Названия глав',
+  'notes.export.include.chaptersHint': 'Каждая глава с отметками начинается с её названия.',
+  'notes.export.notice.bookOrder':
+    'Названия глав идут по порядку книги, поэтому сортировка переключена на «Порядок книги».',
+  'notes.export.notice.noChapters':
+    'Названия глав доступны только при сортировке «Порядок книги», поэтому они отключены.',
+  'notes.export.bookmarkAt': 'Закладка · {where}',
+  'notes.export.contents': 'Содержание',
+  'notes.export.noteLabel': 'Заметка',
+  'notes.export.markedBy': 'Отметки: {name}',
+  'notes.export.closing': 'На память о чтении книги «{title}»',
   // nav
   'nav.joinRequests': 'Есть запрос на присоединение',
 

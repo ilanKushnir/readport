@@ -1295,7 +1295,7 @@ const messages: Record<string, string> = {
     'Selectează un pasaj în timp ce citești pentru a-l evidenția sau a scrie o notiță, și atinge panglica pentru a marca o pagină.',
   'notes.readBook': '{kind, select, audio {Deschide cartea audio} other {Deschide cartea}}',
   'notes.sort': 'Sortare',
-  'notes.sort.position': 'Poziție',
+  'notes.sort.position': 'Ordinea cărții',
   'notes.sort.newest': 'Recente',
   'notes.sort.color': 'Culoare',
   'notes.marksLabel': 'Marcaje',
@@ -1306,10 +1306,7 @@ const messages: Record<string, string> = {
   'notes.export.scope.kind':
     '{kind, select, highlight {Doar evidențieri} note {Doar notițe} bookmark {Doar semne de carte} other {Tot ce e marcat}}',
   'notes.export.scope.colours': 'Doar evidențieri în {list}',
-  'notes.export.print': 'Printează / Salvează ca PDF',
   'notes.export.back': 'Înapoi la marcaje',
-  'notes.export.hint':
-    'O previzualizare a paginilor așa cum vor fi printate. Printează / Salvează ca PDF deschide fereastra de printare; alege „Salvează ca PDF” ca destinație pentru a păstra un fișier.',
   'notes.export.empty': 'Nimic de exportat cu aceste filtre.',
   // stats
   'stats.figure.streakNone': 'cinci minute pe zi sunt de ajuns pentru a începe una',
@@ -1590,7 +1587,6 @@ const messages: Record<string, string> = {
     'O pagină îngustă care ocupă toată lățimea pe ecranul unui telefon.',
   'notes.export.include': 'Include',
   'notes.export.include.cover': 'Coperta pe pagina de titlu',
-  'notes.export.include.heads': 'Titlurile capitolelor',
   'notes.export.include.where': 'Rânduri de poziție și dată',
   'notes.export.include.notes': 'Notițe sub evidențieri',
   'notes.export.order': 'Ordine',
@@ -1603,17 +1599,35 @@ const messages: Record<string, string> = {
   'notes.export.nothing': 'Nimic de exportat - bifează cel puțin un tip de marcaj.',
   'notes.export.go': 'Exportă',
   'notes.export.apply': 'Aplică',
-  'notes.export.figures': 'Ce conține acest export',
   'notes.export.figure.highlights':
     '{n, plural, one {evidențiere} few {evidențieri} other {de evidențieri}}',
   'notes.export.figure.notes': '{n, plural, one {notiță} few {notițe} other {de notițe}}',
   'notes.export.figure.bookmarks':
     '{n, plural, one {semn de carte} few {semne de carte} other {de semne de carte}}',
-  'notes.export.legend': 'Culori de evidențiere',
   'notes.export.scope.kinds':
     '{kinds, select, hn {Evidențieri și notițe} hb {Evidențieri și semne de carte} nb {Notițe și semne de carte} other {Tot ce e marcat}}',
   'notes.export.bookmark': 'Semn de carte',
   'notes.export.whereWhen': '{where} · {date}',
+  'notes.export.save': 'Salvează PDF',
+  'notes.export.open': 'Deschide PDF',
+  'notes.export.preparing': 'Se pregătesc paginile tale…',
+  'notes.export.pages': '{n, plural, one {# pagină} few {# pagini} other {# de pagini}}',
+  'notes.export.pageAlt': 'Pagina {n} din {total}',
+  'notes.export.more':
+    '{n, plural, one {Încă # pagină în PDF} few {Încă # pagini în PDF} other {Încă # de pagini în PDF}}',
+  'notes.export.failed': 'Paginile nu au putut fi create. Verifică conexiunea și încearcă din nou.',
+  'notes.export.busy': 'Serverul creează acum alt PDF. Încearcă din nou peste puțin timp.',
+  'notes.export.include.chapters': 'Numele capitolelor',
+  'notes.export.include.chaptersHint': 'Fiecare capitol marcat începe cu numele său.',
+  'notes.export.notice.bookOrder':
+    'Numele capitolelor urmează cartea, așa că marcajele sunt acum în ordinea cărții.',
+  'notes.export.notice.noChapters':
+    'Numele capitolelor merg doar cu ordinea cărții, așa că au fost omise.',
+  'notes.export.bookmarkAt': 'Semn de carte · {where}',
+  'notes.export.contents': 'Cuprins',
+  'notes.export.noteLabel': 'Notiță',
+  'notes.export.markedBy': 'Marcat de {name}',
+  'notes.export.closing': 'Păstrate din lectura cărții {title}',
   // nav
   'nav.joinRequests': 'Cineva a cerut să se alăture',
 

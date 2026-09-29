@@ -1512,7 +1512,7 @@ const messages: Record<string, string> = {
     'Eine Passage beim Lesen auswählen, um sie zu markieren oder eine Notiz zu schreiben, und das Lesezeichen-Symbol antippen, um eine Seite zu markieren.',
   'notes.readBook': '{kind, select, audio {Hörbuch öffnen} other {Buch öffnen}}',
   'notes.sort': 'Sortieren',
-  'notes.sort.position': 'Position',
+  'notes.sort.position': 'Buchreihenfolge',
   'notes.sort.newest': 'Neueste',
   'notes.sort.color': 'Farbe',
   'notes.marksLabel': 'Markierungen',
@@ -1523,10 +1523,7 @@ const messages: Record<string, string> = {
   'notes.export.scope.kind':
     '{kind, select, highlight {Nur Markierungen} note {Nur Notizen} bookmark {Nur Lesezeichen} other {Alles Markierte}}',
   'notes.export.scope.colours': 'Nur Markierungen in {list}',
-  'notes.export.print': 'Drucken / Als PDF speichern',
   'notes.export.back': 'Zurück zu den Markierungen',
-  'notes.export.hint':
-    'Eine Vorschau der Seiten, so wie sie gedruckt werden. Drucken / Als PDF speichern öffnet den Druckdialog; als Ziel „Als PDF speichern“ wählen, um eine Datei zu behalten.',
   'notes.export.empty': 'Mit diesen Filtern gibt es nichts zu exportieren.',
   // nav
   'nav.more': 'Mehr',
@@ -1606,7 +1603,6 @@ const messages: Record<string, string> = {
     'Eine schmale Seite, die auf einem Smartphone-Bildschirm die volle Breite ausfüllt.',
   'notes.export.include': 'Einschließen',
   'notes.export.include.cover': 'Cover auf der Titelseite',
-  'notes.export.include.heads': 'Kapitelüberschriften',
   'notes.export.include.where': 'Positions- und Datumszeilen',
   'notes.export.include.notes': 'Notizen unter Markierungen',
   'notes.export.order': 'Reihenfolge',
@@ -1619,15 +1615,34 @@ const messages: Record<string, string> = {
   'notes.export.nothing': 'Nichts zu exportieren – mindestens eine Markierungsart ankreuzen.',
   'notes.export.go': 'Exportieren',
   'notes.export.apply': 'Übernehmen',
-  'notes.export.figures': 'Was dieser Export enthält',
   'notes.export.figure.highlights': '{n, plural, one {Markierung} other {Markierungen}}',
   'notes.export.figure.notes': '{n, plural, one {Notiz} other {Notizen}}',
   'notes.export.figure.bookmarks': '{n, plural, one {Lesezeichen} other {Lesezeichen}}',
-  'notes.export.legend': 'Markierungsfarben',
   'notes.export.scope.kinds':
     '{kinds, select, hn {Markierungen und Notizen} hb {Markierungen und Lesezeichen} nb {Notizen und Lesezeichen} other {Alles Markierte}}',
   'notes.export.bookmark': 'Lesezeichen',
   'notes.export.whereWhen': '{where} · {date}',
+  'notes.export.save': 'PDF speichern',
+  'notes.export.open': 'PDF öffnen',
+  'notes.export.preparing': 'Seiten werden vorbereitet…',
+  'notes.export.pages': '{n, plural, one {# Seite} other {# Seiten}}',
+  'notes.export.pageAlt': 'Seite {n} von {total}',
+  'notes.export.more': '{n, plural, one {Noch # Seite im PDF} other {Noch # Seiten im PDF}}',
+  'notes.export.failed':
+    'Die Seiten konnten nicht erstellt werden. Bitte Verbindung prüfen und erneut versuchen.',
+  'notes.export.busy':
+    'Der Server erstellt gerade ein anderes PDF. Bitte in Kürze erneut versuchen.',
+  'notes.export.include.chapters': 'Kapitelnamen',
+  'notes.export.include.chaptersHint': 'Jedes markierte Kapitel beginnt mit seinem Namen.',
+  'notes.export.notice.bookOrder':
+    'Kapitelnamen folgen dem Buch, daher sind die Markierungen jetzt in Buchreihenfolge.',
+  'notes.export.notice.noChapters':
+    'Kapitelnamen funktionieren nur mit der Buchreihenfolge, daher werden sie weggelassen.',
+  'notes.export.bookmarkAt': 'Lesezeichen · {where}',
+  'notes.export.contents': 'Inhalt',
+  'notes.export.noteLabel': 'Notiz',
+  'notes.export.markedBy': 'Markiert von {name}',
+  'notes.export.closing': 'Bewahrt aus der Lektüre von {title}',
   // nav
   'nav.joinRequests': 'Jemand möchte beitreten',
 

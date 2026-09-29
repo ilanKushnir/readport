@@ -1460,7 +1460,7 @@ const messages: Record<string, string> = {
     'Markera en passage medan du läser för att skapa en markering eller skriva en anteckning, och tryck på bandet för att bokmärka en sida.',
   'notes.readBook': '{kind, select, audio {Öppna ljudboken} other {Öppna boken}}',
   'notes.sort': 'Sortera',
-  'notes.sort.position': 'Position',
+  'notes.sort.position': 'Bokordning',
   'notes.sort.newest': 'Nyast',
   'notes.sort.color': 'Färg',
   'notes.marksLabel': 'Markeringar',
@@ -1471,10 +1471,7 @@ const messages: Record<string, string> = {
   'notes.export.scope.kind':
     '{kind, select, highlight {Bara markeringar} note {Bara anteckningar} bookmark {Bara bokmärken} other {Allt markerat}}',
   'notes.export.scope.colours': 'Bara markeringar i {list}',
-  'notes.export.print': 'Skriv ut / Spara som PDF',
   'notes.export.back': 'Tillbaka till markeringarna',
-  'notes.export.hint':
-    'En förhandsgranskning av hur sidorna kommer att skrivas ut. Skriv ut / Spara som PDF öppnar utskriftsdialogen; välj ”Spara som PDF” som destination för att behålla en fil.',
   'notes.export.empty': 'Inget att exportera med dessa filter.',
   // nav
   'nav.more': 'Mer',
@@ -1552,7 +1549,6 @@ const messages: Record<string, string> = {
   'notes.export.page.phoneHint': 'En smal sida som läses i full bredd på en telefonskärm.',
   'notes.export.include': 'Inkludera',
   'notes.export.include.cover': 'Omslag på titelsidan',
-  'notes.export.include.heads': 'Kapitelrubriker',
   'notes.export.include.where': 'Positions- och datumrader',
   'notes.export.include.notes': 'Anteckningar under markeringar',
   'notes.export.order': 'Ordning',
@@ -1565,15 +1561,33 @@ const messages: Record<string, string> = {
   'notes.export.nothing': 'Inget att exportera – kryssa i minst en markeringstyp.',
   'notes.export.go': 'Exportera',
   'notes.export.apply': 'Verkställ',
-  'notes.export.figures': 'Vad den här exporten innehåller',
   'notes.export.figure.highlights': '{n, plural, one {markering} other {markeringar}}',
   'notes.export.figure.notes': '{n, plural, one {anteckning} other {anteckningar}}',
   'notes.export.figure.bookmarks': '{n, plural, one {bokmärke} other {bokmärken}}',
-  'notes.export.legend': 'Markeringsfärger',
   'notes.export.scope.kinds':
     '{kinds, select, hn {Markeringar och anteckningar} hb {Markeringar och bokmärken} nb {Anteckningar och bokmärken} other {Allt markerat}}',
   'notes.export.bookmark': 'Bokmärke',
   'notes.export.whereWhen': '{where} · {date}',
+  'notes.export.save': 'Spara PDF',
+  'notes.export.open': 'Öppna PDF',
+  'notes.export.preparing': 'Förbereder dina sidor…',
+  'notes.export.pages': '{n, plural, one {# sida} other {# sidor}}',
+  'notes.export.pageAlt': 'Sida {n} av {total}',
+  'notes.export.more':
+    '{n, plural, one {# sida till i PDF-filen} other {# sidor till i PDF-filen}}',
+  'notes.export.failed': 'Kunde inte skapa sidorna. Kontrollera anslutningen och försök igen.',
+  'notes.export.busy': 'Servern skapar en annan PDF just nu. Försök igen om en liten stund.',
+  'notes.export.include.chapters': 'Kapitelnamn',
+  'notes.export.include.chaptersHint': 'Varje kapitel med markeringar börjar med sitt namn.',
+  'notes.export.notice.bookOrder':
+    'Kapitelnamn följer bokens ordning, så sorteringen har växlats till ”Bokordning”.',
+  'notes.export.notice.noChapters':
+    'Kapitelnamn fungerar bara med sorteringen ”Bokordning”, så de har stängts av.',
+  'notes.export.bookmarkAt': 'Bokmärke · {where}',
+  'notes.export.contents': 'Innehåll',
+  'notes.export.noteLabel': 'Anteckning',
+  'notes.export.markedBy': 'Markerat av {name}',
+  'notes.export.closing': 'Ett minne från din läsning av boken ”{title}”',
   // nav
   'nav.joinRequests': 'Någon har bett om att gå med',
 

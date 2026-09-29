@@ -1492,7 +1492,7 @@ const messages: Record<string, string> = {
     'Seleziona un passaggio durante la lettura per evidenziarlo o scrivere una nota, e tocca il nastro per aggiungere una pagina ai segnalibri.',
   'notes.readBook': "{kind, select, audio {Apri l'audiolibro} other {Apri il libro}}",
   'notes.sort': 'Ordina',
-  'notes.sort.position': 'Posizione',
+  'notes.sort.position': 'Ordine del libro',
   'notes.sort.newest': 'Più recenti',
   'notes.sort.color': 'Colore',
   'notes.marksLabel': 'Segni',
@@ -1503,10 +1503,7 @@ const messages: Record<string, string> = {
   'notes.export.scope.kind':
     '{kind, select, highlight {Solo evidenziazioni} note {Solo note} bookmark {Solo segnalibri} other {Tutti i segni}}',
   'notes.export.scope.colours': 'Solo evidenziazioni in {list}',
-  'notes.export.print': 'Stampa / Salva come PDF',
   'notes.export.back': 'Torna ai segni',
-  'notes.export.hint':
-    "Un'anteprima delle pagine così come verranno stampate. Stampa / Salva come PDF apre la finestra di stampa; scegli «Salva come PDF» come destinazione per conservare un file.",
   'notes.export.empty': 'Niente da esportare con questi filtri.',
   // nav
   'nav.more': 'Altro',
@@ -1585,7 +1582,6 @@ const messages: Record<string, string> = {
     'Una pagina stretta che occupa tutta la larghezza su uno schermo di telefono.',
   'notes.export.include': 'Includi',
   'notes.export.include.cover': 'Copertina sulla pagina del titolo',
-  'notes.export.include.heads': 'Titoli dei capitoli',
   'notes.export.include.where': 'Righe di posizione e data',
   'notes.export.include.notes': 'Note sotto le evidenziazioni',
   'notes.export.order': 'Ordine',
@@ -1598,15 +1594,32 @@ const messages: Record<string, string> = {
   'notes.export.nothing': 'Niente da esportare - spunta almeno un tipo di segno.',
   'notes.export.go': 'Esporta',
   'notes.export.apply': 'Applica',
-  'notes.export.figures': 'Cosa contiene questa esportazione',
   'notes.export.figure.highlights': '{n, plural, one {evidenziazione} other {evidenziazioni}}',
   'notes.export.figure.notes': '{n, plural, one {nota} other {note}}',
   'notes.export.figure.bookmarks': '{n, plural, one {segnalibro} other {segnalibri}}',
-  'notes.export.legend': 'Colori evidenziazione',
   'notes.export.scope.kinds':
     '{kinds, select, hn {Evidenziazioni e note} hb {Evidenziazioni e segnalibri} nb {Note e segnalibri} other {Tutti i segni}}',
   'notes.export.bookmark': 'Segnalibro',
   'notes.export.whereWhen': '{where} · {date}',
+  'notes.export.save': 'Salva PDF',
+  'notes.export.open': 'Apri PDF',
+  'notes.export.preparing': 'Preparazione delle tue pagine…',
+  'notes.export.pages': '{n, plural, one {# pagina} other {# pagine}}',
+  'notes.export.pageAlt': 'Pagina {n} di {total}',
+  'notes.export.more': '{n, plural, one {# pagina in più nel PDF} other {# pagine in più nel PDF}}',
+  'notes.export.failed': 'Impossibile creare le pagine. Controlla la connessione e riprova.',
+  'notes.export.busy': 'Il server sta creando un altro PDF in questo momento. Riprova tra poco.',
+  'notes.export.include.chapters': 'Nomi dei capitoli',
+  'notes.export.include.chaptersHint': 'Ogni capitolo che hai segnato si apre con il suo nome.',
+  'notes.export.notice.bookOrder':
+    "I nomi dei capitoli seguono il libro, quindi ora i segni sono nell'ordine del libro.",
+  'notes.export.notice.noChapters':
+    "I nomi dei capitoli valgono solo con l'ordine del libro, quindi vengono omessi.",
+  'notes.export.bookmarkAt': 'Segnalibro · {where}',
+  'notes.export.contents': 'Indice',
+  'notes.export.noteLabel': 'Nota',
+  'notes.export.markedBy': 'Segnato da {name}',
+  'notes.export.closing': 'Conservato dalla tua lettura di {title}',
   // nav
   'nav.joinRequests': 'Qualcuno ha chiesto di partecipare',
 

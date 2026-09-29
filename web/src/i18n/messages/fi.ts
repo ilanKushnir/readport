@@ -1475,7 +1475,7 @@ const messages: Record<string, string> = {
     'Valitse kohta lukiessasi korostaaksesi sen tai kirjoittaaksesi muistiinpanon, ja napauta nauhaa merkitäksesi sivun.',
   'notes.readBook': '{kind, select, audio {Avaa äänikirja} other {Avaa kirja}}',
   'notes.sort': 'Järjestä',
-  'notes.sort.position': 'Sijainti',
+  'notes.sort.position': 'Kirjajärjestys',
   'notes.sort.newest': 'Uusimmat',
   'notes.sort.color': 'Väri',
   'notes.marksLabel': 'Merkinnät',
@@ -1486,10 +1486,7 @@ const messages: Record<string, string> = {
   'notes.export.scope.kind':
     '{kind, select, highlight {Vain korostukset} note {Vain muistiinpanot} bookmark {Vain kirjanmerkit} other {Kaikki merkitty}}',
   'notes.export.scope.colours': 'Vain korostukset väreissä {list}',
-  'notes.export.print': 'Tulosta / Tallenna PDF-muodossa',
   'notes.export.back': 'Takaisin merkintöihin',
-  'notes.export.hint':
-    'Esikatselu siitä, miltä sivut näyttävät tulostettuina. Tulosta / Tallenna PDF-muodossa avaa tulostusikkunan; valitse kohteeksi ”Tallenna PDF-muodossa” säilyttääksesi tiedoston.',
   'notes.export.empty': 'Ei mitään vietävää näillä suodattimilla.',
   // nav
   'nav.more': 'Lisää',
@@ -1567,7 +1564,6 @@ const messages: Record<string, string> = {
   'notes.export.page.phoneHint': 'Kapea sivu, joka näkyy täydessä leveydessä puhelimen näytöllä.',
   'notes.export.include': 'Sisällytä',
   'notes.export.include.cover': 'Kansikuva nimiösivulla',
-  'notes.export.include.heads': 'Lukujen otsikot',
   'notes.export.include.where': 'Sijainti- ja päivämäärärivit',
   'notes.export.include.notes': 'Muistiinpanot korostusten alla',
   'notes.export.order': 'Järjestys',
@@ -1580,15 +1576,34 @@ const messages: Record<string, string> = {
   'notes.export.nothing': 'Ei mitään vietävää - rastita vähintään yksi merkintätyyppi.',
   'notes.export.go': 'Vie',
   'notes.export.apply': 'Käytä',
-  'notes.export.figures': 'Mitä tämä vienti sisältää',
   'notes.export.figure.highlights': '{n, plural, one {korostus} other {korostusta}}',
   'notes.export.figure.notes': '{n, plural, one {muistiinpano} other {muistiinpanoa}}',
   'notes.export.figure.bookmarks': '{n, plural, one {kirjanmerkki} other {kirjanmerkkiä}}',
-  'notes.export.legend': 'Korostusten värit',
   'notes.export.scope.kinds':
     '{kinds, select, hn {Korostukset ja muistiinpanot} hb {Korostukset ja kirjanmerkit} nb {Muistiinpanot ja kirjanmerkit} other {Kaikki merkitty}}',
   'notes.export.bookmark': 'Kirjanmerkki',
   'notes.export.whereWhen': '{where} · {date}',
+  'notes.export.save': 'Tallenna PDF',
+  'notes.export.open': 'Avaa PDF',
+  'notes.export.preparing': 'Valmistellaan sivujasi…',
+  'notes.export.pages': '{n, plural, one {# sivu} other {# sivua}}',
+  'notes.export.pageAlt': 'Sivu {n}/{total}',
+  'notes.export.more':
+    '{n, plural, one {Vielä # sivu PDF-tiedostossa} other {Vielä # sivua PDF-tiedostossa}}',
+  'notes.export.failed': 'Sivuja ei voitu luoda. Tarkista yhteys ja yritä uudelleen.',
+  'notes.export.busy':
+    'Palvelin tekee juuri nyt toista PDF-tiedostoa. Yritä uudelleen hetken kuluttua.',
+  'notes.export.include.chapters': 'Lukujen nimet',
+  'notes.export.include.chaptersHint': 'Jokainen merkitsemäsi luku alkaa omalla nimellään.',
+  'notes.export.notice.bookOrder':
+    'Lukujen nimet noudattavat kirjan järjestystä, joten merkinnät ovat nyt kirjajärjestyksessä.',
+  'notes.export.notice.noChapters':
+    'Lukujen nimet toimivat vain kirjajärjestyksessä, joten ne jätetään pois.',
+  'notes.export.bookmarkAt': 'Kirjanmerkki · {where}',
+  'notes.export.contents': 'Sisällys',
+  'notes.export.noteLabel': 'Muistiinpano',
+  'notes.export.markedBy': 'Merkinnyt {name}',
+  'notes.export.closing': 'Talteen otettu kirjasta {title}',
   // nav
   'nav.joinRequests': 'Joku pyysi liittymistä',
 

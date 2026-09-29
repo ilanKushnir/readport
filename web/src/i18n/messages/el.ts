@@ -1505,7 +1505,7 @@ const messages: Record<string, string> = {
   'notes.readBook':
     '{kind, select, audio {Άνοιγμα του ηχητικού βιβλίου} other {Άνοιγμα του βιβλίου}}',
   'notes.sort': 'Ταξινόμηση',
-  'notes.sort.position': 'Θέση',
+  'notes.sort.position': 'Σειρά βιβλίου',
   'notes.sort.newest': 'Νεότερα',
   'notes.sort.color': 'Χρώμα',
   'notes.marksLabel': 'Σημάδια',
@@ -1516,10 +1516,7 @@ const messages: Record<string, string> = {
   'notes.export.scope.kind':
     '{kind, select, highlight {Μόνο επισημάνσεις} note {Μόνο σημειώσεις} bookmark {Μόνο σελιδοδείκτες} other {Ό,τι έχει σημειωθεί}}',
   'notes.export.scope.colours': 'Μόνο επισημάνσεις σε {list}',
-  'notes.export.print': 'Εκτύπωση / Αποθήκευση ως PDF',
   'notes.export.back': 'Πίσω στα σημάδια',
-  'notes.export.hint':
-    'Προεπισκόπηση των σελίδων όπως θα εκτυπωθούν. Εκτύπωση / Αποθήκευση ως PDF ανοίγει το παράθυρο εκτύπωσης· επίλεξε «Αποθήκευση ως PDF» ως προορισμό για να κρατήσεις ένα αρχείο.',
   'notes.export.empty': 'Τίποτα προς εξαγωγή με αυτά τα φίλτρα.',
   // nav
   'nav.more': 'Περισσότερα',
@@ -1599,7 +1596,6 @@ const messages: Record<string, string> = {
     'Μια στενή σελίδα που διαβάζεται σε πλήρες πλάτος σε οθόνη κινητού.',
   'notes.export.include': 'Συμπερίληψη',
   'notes.export.include.cover': 'Εξώφυλλο στη σελίδα τίτλου',
-  'notes.export.include.heads': 'Επικεφαλίδες κεφαλαίων',
   'notes.export.include.where': 'Γραμμές θέσης και ημερομηνίας',
   'notes.export.include.notes': 'Σημειώσεις κάτω από τις επισημάνσεις',
   'notes.export.order': 'Σειρά',
@@ -1612,15 +1608,34 @@ const messages: Record<string, string> = {
   'notes.export.nothing': 'Τίποτα προς εξαγωγή - επίλεξε τουλάχιστον ένα είδος σημαδιού.',
   'notes.export.go': 'Εξαγωγή',
   'notes.export.apply': 'Εφαρμογή',
-  'notes.export.figures': 'Τι περιλαμβάνει αυτή η εξαγωγή',
   'notes.export.figure.highlights': '{n, plural, one {επισήμανση} other {επισημάνσεις}}',
   'notes.export.figure.notes': '{n, plural, one {σημείωση} other {σημειώσεις}}',
   'notes.export.figure.bookmarks': '{n, plural, one {σελιδοδείκτης} other {σελιδοδείκτες}}',
-  'notes.export.legend': 'Χρώματα επισήμανσης',
   'notes.export.scope.kinds':
     '{kinds, select, hn {Επισημάνσεις και σημειώσεις} hb {Επισημάνσεις και σελιδοδείκτες} nb {Σημειώσεις και σελιδοδείκτες} other {Ό,τι έχει σημειωθεί}}',
   'notes.export.bookmark': 'Σελιδοδείκτης',
   'notes.export.whereWhen': '{where} · {date}',
+  'notes.export.save': 'Αποθήκευση PDF',
+  'notes.export.open': 'Άνοιγμα PDF',
+  'notes.export.preparing': 'Προετοιμασία των σελίδων σου…',
+  'notes.export.pages': '{n, plural, one {# σελίδα} other {# σελίδες}}',
+  'notes.export.pageAlt': 'Σελίδα {n} από {total}',
+  'notes.export.more': '{n, plural, one {# ακόμη σελίδα στο PDF} other {# ακόμη σελίδες στο PDF}}',
+  'notes.export.failed':
+    'Δεν ήταν δυνατή η δημιουργία των σελίδων. Έλεγξε τη σύνδεση και δοκίμασε ξανά.',
+  'notes.export.busy':
+    'Ο διακομιστής δημιουργεί ένα άλλο PDF αυτή τη στιγμή. Δοκίμασε ξανά σε λίγο.',
+  'notes.export.include.chapters': 'Ονόματα κεφαλαίων',
+  'notes.export.include.chaptersHint': 'Κάθε κεφάλαιο που σημείωσες ξεκινά με το όνομά του.',
+  'notes.export.notice.bookOrder':
+    'Τα ονόματα κεφαλαίων ακολουθούν το βιβλίο, οπότε τα σημάδια είναι πλέον σε σειρά βιβλίου.',
+  'notes.export.notice.noChapters':
+    'Τα ονόματα κεφαλαίων λειτουργούν μόνο με τη σειρά βιβλίου, οπότε παραλείπονται.',
+  'notes.export.bookmarkAt': 'Σελιδοδείκτης · {where}',
+  'notes.export.contents': 'Περιεχόμενα',
+  'notes.export.noteLabel': 'Σημείωση',
+  'notes.export.markedBy': 'Σημειώθηκε από {name}',
+  'notes.export.closing': 'Από τη δική σου ανάγνωση του βιβλίου {title}',
   // nav
   'nav.joinRequests': 'Κάποιος έστειλε αίτημα συμμετοχής',
 

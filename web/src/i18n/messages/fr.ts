@@ -1503,7 +1503,7 @@ const messages: Record<string, string> = {
     'Sélectionnez un passage pendant la lecture pour le surligner ou écrire une note, et touchez le ruban pour mettre une page en signet.',
   'notes.readBook': '{kind, select, audio {Ouvrir le livre audio} other {Ouvrir le livre}}',
   'notes.sort': 'Trier',
-  'notes.sort.position': 'Position',
+  'notes.sort.position': 'Ordre du livre',
   'notes.sort.newest': 'Plus récents',
   'notes.sort.color': 'Couleur',
   'notes.marksLabel': 'Repères',
@@ -1514,10 +1514,7 @@ const messages: Record<string, string> = {
   'notes.export.scope.kind':
     '{kind, select, highlight {Uniquement les surlignages} note {Uniquement les notes} bookmark {Uniquement les signets} other {Tous les repères}}',
   'notes.export.scope.colours': 'Uniquement les surlignages en {list}',
-  'notes.export.print': 'Imprimer / Enregistrer au format PDF',
   'notes.export.back': 'Retour aux repères',
-  'notes.export.hint':
-    "Un aperçu des pages telles qu'elles seront imprimées. Imprimer / Enregistrer au format PDF ouvre la fenêtre d'impression ; choisissez « Enregistrer au format PDF » comme destination pour conserver un fichier.",
   'notes.export.empty': 'Rien à exporter avec ces filtres.',
   // nav
   'nav.more': 'Plus',
@@ -1598,7 +1595,6 @@ const messages: Record<string, string> = {
     "Une page étroite qui s'affiche en pleine largeur sur un écran de téléphone.",
   'notes.export.include': 'Inclure',
   'notes.export.include.cover': 'Couverture sur la page de titre',
-  'notes.export.include.heads': 'Titres des chapitres',
   'notes.export.include.where': 'Lignes de position et de date',
   'notes.export.include.notes': 'Notes sous les surlignages',
   'notes.export.order': 'Ordre',
@@ -1611,15 +1607,33 @@ const messages: Record<string, string> = {
   'notes.export.nothing': 'Rien à exporter - cochez au moins un type de repère.',
   'notes.export.go': 'Exporter',
   'notes.export.apply': 'Appliquer',
-  'notes.export.figures': 'Ce que contient cet export',
   'notes.export.figure.highlights': '{n, plural, one {surlignage} other {surlignages}}',
   'notes.export.figure.notes': '{n, plural, one {note} other {notes}}',
   'notes.export.figure.bookmarks': '{n, plural, one {signet} other {signets}}',
-  'notes.export.legend': 'Couleurs de surlignage',
   'notes.export.scope.kinds':
     '{kinds, select, hn {Surlignages et notes} hb {Surlignages et signets} nb {Notes et signets} other {Tous les repères}}',
   'notes.export.bookmark': 'Signet',
   'notes.export.whereWhen': '{where} · {date}',
+  'notes.export.save': 'Enregistrer le PDF',
+  'notes.export.open': 'Ouvrir le PDF',
+  'notes.export.preparing': 'Préparation de vos pages…',
+  'notes.export.pages': '{n, plural, one {# page} other {# pages}}',
+  'notes.export.pageAlt': 'Page {n} sur {total}',
+  'notes.export.more':
+    '{n, plural, one {# page de plus dans le PDF} other {# pages de plus dans le PDF}}',
+  'notes.export.failed': 'Impossible de créer les pages. Vérifiez la connexion et réessayez.',
+  'notes.export.busy': 'Le serveur crée déjà un autre PDF. Réessayez dans un instant.',
+  'notes.export.include.chapters': 'Noms des chapitres',
+  'notes.export.include.chaptersHint': 'Chaque chapitre marqué commence par son nom.',
+  'notes.export.notice.bookOrder':
+    "Les noms des chapitres suivent l'ordre du livre, les repères sont donc maintenant triés dans cet ordre.",
+  'notes.export.notice.noChapters':
+    "Les noms des chapitres ne fonctionnent qu'avec l'ordre du livre, ils sont donc omis.",
+  'notes.export.bookmarkAt': 'Signet · {where}',
+  'notes.export.contents': 'Table des matières',
+  'notes.export.noteLabel': 'Note',
+  'notes.export.markedBy': 'Marqué par {name}',
+  'notes.export.closing': 'Souvenir de votre lecture de {title}',
   // nav
   'nav.joinRequests': "Quelqu'un a demandé à rejoindre",
 

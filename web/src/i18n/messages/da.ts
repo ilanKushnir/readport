@@ -1463,7 +1463,7 @@ const messages: Record<string, string> = {
     'Marker en passage mens du læser for at fremhæve den eller skrive en note, og tryk på båndet for at sætte bogmærke på en side.',
   'notes.readBook': '{kind, select, audio {Åbn lydbogen} other {Åbn bogen}}',
   'notes.sort': 'Sorter',
-  'notes.sort.position': 'Position',
+  'notes.sort.position': 'Bogens rækkefølge',
   'notes.sort.newest': 'Nyeste',
   'notes.sort.color': 'Farve',
   'notes.marksLabel': 'Markeringer',
@@ -1474,10 +1474,7 @@ const messages: Record<string, string> = {
   'notes.export.scope.kind':
     '{kind, select, highlight {Kun fremhævninger} note {Kun noter} bookmark {Kun bogmærker} other {Alt markeret}}',
   'notes.export.scope.colours': 'Kun fremhævninger i {list}',
-  'notes.export.print': 'Udskriv / Gem som PDF',
   'notes.export.back': 'Tilbage til markeringerne',
-  'notes.export.hint':
-    'En forhåndsvisning af hvordan siderne udskrives. Udskriv / Gem som PDF åbner udskriftsdialogen; vælg »Gem som PDF« som destination for at beholde en fil.',
   'notes.export.empty': 'Intet at eksportere med disse filtre.',
   // nav
   'nav.more': 'Mere',
@@ -1555,7 +1552,6 @@ const messages: Record<string, string> = {
   'notes.export.page.phoneHint': 'En smal side, der læses i fuld bredde på en telefonskærm.',
   'notes.export.include': 'Inkluder',
   'notes.export.include.cover': 'Omslag på titelsiden',
-  'notes.export.include.heads': 'Kapiteloverskrifter',
   'notes.export.include.where': 'Positions- og datolinjer',
   'notes.export.include.notes': 'Noter under fremhævninger',
   'notes.export.order': 'Rækkefølge',
@@ -1568,15 +1564,33 @@ const messages: Record<string, string> = {
   'notes.export.nothing': 'Intet at eksportere – afkryds mindst én markeringstype.',
   'notes.export.go': 'Eksporter',
   'notes.export.apply': 'Anvend',
-  'notes.export.figures': 'Hvad denne eksport indeholder',
   'notes.export.figure.highlights': '{n, plural, one {fremhævning} other {fremhævninger}}',
   'notes.export.figure.notes': '{n, plural, one {note} other {noter}}',
   'notes.export.figure.bookmarks': '{n, plural, one {bogmærke} other {bogmærker}}',
-  'notes.export.legend': 'Fremhævningsfarver',
   'notes.export.scope.kinds':
     '{kinds, select, hn {Fremhævninger og noter} hb {Fremhævninger og bogmærker} nb {Noter og bogmærker} other {Alt markeret}}',
   'notes.export.bookmark': 'Bogmærke',
   'notes.export.whereWhen': '{where} · {date}',
+  'notes.export.save': 'Gem PDF',
+  'notes.export.open': 'Åbn PDF',
+  'notes.export.preparing': 'Forbereder dine sider…',
+  'notes.export.pages': '{n, plural, one {# side} other {# sider}}',
+  'notes.export.pageAlt': 'Side {n} af {total}',
+  'notes.export.more':
+    '{n, plural, one {# side mere i denne PDF} other {# sider mere i denne PDF}}',
+  'notes.export.failed': 'Siderne kunne ikke laves. Tjek forbindelsen, og prøv igen.',
+  'notes.export.busy': 'Serveren er ved at lave en anden PDF lige nu. Prøv igen om lidt.',
+  'notes.export.include.chapters': 'Kapitelnavne',
+  'notes.export.include.chaptersHint': 'Hvert markeret kapitel begynder med sit navn.',
+  'notes.export.notice.bookOrder':
+    'Kapitelnavne følger bogen, så markeringerne er nu i bogens rækkefølge.',
+  'notes.export.notice.noChapters':
+    'Kapitelnavne bruges kun med bogens rækkefølge, så de er udeladt.',
+  'notes.export.bookmarkAt': 'Bogmærke · {where}',
+  'notes.export.contents': 'Indhold',
+  'notes.export.noteLabel': 'Note',
+  'notes.export.markedBy': 'Markeret af {name}',
+  'notes.export.closing': 'Gemt fra din læsning af {title}',
   // nav
   'nav.joinRequests': 'Nogen har bedt om at deltage',
 
