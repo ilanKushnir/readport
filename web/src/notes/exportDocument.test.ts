@@ -213,7 +213,7 @@ describe('directions and languages', () => {
   it('sets each paragraph the way its first letter runs', () => {
     expect(directionOf('המעבורת יצאה עם שחר.', 'ltr')).toBe('rtl');
     expect(directionOf('“Nell,” she said.', 'rtl')).toBe('ltr');
-    expect(directionOf('— 12 —', 'rtl')).toBe('rtl');
+    expect(directionOf('\u2014 12 \u2014', 'rtl')).toBe('rtl');
     expect(directionOf(null, 'ltr')).toBe('ltr');
   });
 
