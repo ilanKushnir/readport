@@ -4,6 +4,45 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.30.0 - 2026-09-29
+
+### Added
+
+- **A preview in Reading settings.** The settings open on a few lines of
+  the book at the reader's own place, copied from the page with its own
+  markup, and show every change as it is made: the type, its size, weight
+  and spacing, the margins, the theme and brightness, and the voice's mark,
+  drawn where and how the page draws it. It stays at the top while the
+  settings scroll beneath it, so on a phone, where the sheet covers the
+  page, the page is still in view.
+- **How strong the highlight is.** With the sentence being read
+  highlighted rather than marked in the margin, a Strength slider under
+  the choice sets how strongly, from a faint tint to a clear band; the
+  default is a little stronger than before.
+
+### Fixed
+
+- **The voice's mark stays chosen.** Choosing the highlight over the margin
+  mark did not last: each time the settings were read back, the margin mark
+  was filed under every device, where it outranked the reader's choice.
+  Settings stored that way read back as chosen now. A change also travels as
+  that one setting: a reader left open on another device used to send back
+  its whole, older copy of the settings the next time anything was changed
+  there, over whatever had been chosen since. It catches up with the other
+  devices when it comes back to the screen, and a change it could not send
+  is sent the next time the app opens. For the API:
+  `PATCH /api/prefs/reader`.
+- **Selecting text stopped working.** Tapping outside a note with something
+  written in it asked whether to discard it only after the note had slid
+  away; Cancel left it open but out of sight, and the reader's selection
+  menu and frame waited on it until the app was restarted. The question
+  comes first now, and Cancel keeps the note on the screen. A translation
+  shown beside the page that disappeared from under it did the same.
+- **Turning the phone kept the text larger.** On an iPhone, turning to
+  landscape enlarged the text, and in an app on the home screen it did not
+  always shrink back on turning upright. The text stays the size it was
+  set to.
+
 ## 0.29.0 - 2026-09-26
 
 ### Added

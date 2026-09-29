@@ -24,6 +24,10 @@ export const whatsnew = {
   'whatsnew.update.later': 'Not now',
 
   // ---------------------------------------------------------------- 0.29.0
+  'whatsnew.release.settingsPreview':
+    'Reading settings open on a few lines of your book as the page shows them, so every change - size, spacing, theme, the voice’s mark - is seen as you make it.',
+  'whatsnew.release.washStrength':
+    'The highlight on the sentence being read has a strength slider, and the voice’s mark you choose now stays chosen, in every book and on every device.',
   'whatsnew.release.editMany':
     'Edit in the library: select several books and set their language, put them on a shelf or your reading list, take them off a shelf or hide them, all at once.',
   'whatsnew.release.desktopDialogs':
