@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { type Annotation } from '@readport/shared';
+import { IconInfo } from '../components/icons';
 import { Sheet } from '../components/ui';
 import { useI18n, useT } from '../i18n';
 import { type MessageKey } from '../i18n/messages/en';
@@ -10,7 +11,10 @@ import {
   MARK_KINDS,
   PAGE_SIZES,
   TEXT_SIZES,
+  CHAPTER_ORDER,
   selectForExport,
+  withChapters,
+  withSort,
   type ExportOptions,
   type Look,
   type PageSize,
@@ -23,10 +27,15 @@ import { useMarkLabels } from './useMarkLabels';
  * The sheet behind "Export as PDF…": how the pages should look, what size
  * they are, what goes on them and in what order, with one line at the foot
  * saying what will come out - "12 highlights, 2 notes, 1 bookmark · only
- * plum and sky" - so nobody prints forty pages to find the notes were left
+ * plum and sky" - so nobody makes forty pages to find the notes were left
  * out. Every control changes that line at once; the primary button hands
  * the finished options back and the caller decides where they go (to the
- * print sheet from the marks page, into the preview from the export page).
+ * export page from the marks page, into its pages from the export page).
+ *
+ * "Chapter names" and the order move together (exportOptions): the names
+ * put the marks in book order, and another order leaves the names out.
+ * Either way the sheet says what it did, where the order is chosen, and
+ * the order it moved to glows once - nothing changes behind the reader's back.
  */
 
 const LOOK_LABELS: Record<Look, [MessageKey, MessageKey]> = {
@@ -52,11 +61,18 @@ const COUNT_LABELS: Record<MarkKind, MessageKey> = {
   bookmark: 'notes.book.bookmarks',
 };
 
-const WITH_LABELS: Record<'cover' | 'heads' | 'where' | 'notes', MessageKey> = {
+const WITH_LABELS: Record<'cover' | 'chapters' | 'where' | 'notes', MessageKey> = {
   cover: 'notes.export.include.cover',
-  heads: 'notes.export.include.heads',
+  chapters: 'notes.export.include.chapters',
   where: 'notes.export.include.where',
   notes: 'notes.export.include.notes',
+};
+
+/** What a choice did to another, said once where the order is chosen. */
+type Notice = 'bookOrder' | 'noChapters';
+const NOTICES: Record<Notice, MessageKey> = {
+  bookOrder: 'notes.export.notice.bookOrder',
+  noChapters: 'notes.export.notice.noChapters',
 };
 
 export function ExportOptionsSheet({
@@ -80,6 +96,25 @@ export function ExportOptionsSheet({
   const [options, setOptions] = useState(initial);
   const patch = (change: Partial<ExportOptions>) =>
     setOptions((current) => ({ ...current, ...change }));
+  // Each notice a fresh one, so saying the same thing twice says it again.
+  const [notice, setNotice] = useState<{ kind: Notice; n: number } | null>(null);
+  const say = (kind: Notice) => setNotice((was) => ({ kind, n: (was?.n ?? 0) + 1 }));
+  const noticeRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    noticeRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+  }, [notice]);
+  const setChapters = (on: boolean) => {
+    const next = withChapters(options, on);
+    setOptions(next.options);
+    if (next.resorted) say('bookOrder');
+    else setNotice(null);
+  };
+  const setSort = (sort: ExportOptions['sort']) => {
+    const next = withSort(options, sort);
+    setOptions(next.options);
+    if (next.unnamed) say('noChapters');
+    else setNotice(null);
+  };
 
   const inBook = useMemo(() => countByKind(marks), [marks]);
   const chosen = useMemo(() => selectForExport(marks, options), [marks, options]);
@@ -214,9 +249,20 @@ export function ExportOptionsSheet({
                   <input
                     type="checkbox"
                     checked={options[flag]}
-                    onChange={(e) => patch({ [flag]: e.target.checked })}
+                    onChange={(e) =>
+                      flag === 'chapters'
+                        ? setChapters(e.target.checked)
+                        : patch({ [flag]: e.target.checked })
+                    }
                   />
-                  <span>{t(WITH_LABELS[flag])}</span>
+                  <span>
+                    {t(WITH_LABELS[flag])}
+                    {flag === 'chapters' && (
+                      <small className="export-checks__hint">
+                        {t('notes.export.include.chaptersHint')}
+                      </small>
+                    )}
+                  </span>
                 </label>
               </li>
             ))}
@@ -230,15 +276,26 @@ export function ExportOptionsSheet({
           <div className="segmented">
             {SORT_ORDERS.map((sort) => (
               <button
-                key={sort}
+                key={
+                  sort === CHAPTER_ORDER && notice?.kind === 'bookOrder'
+                    ? `${sort}-${notice.n}`
+                    : sort
+                }
                 type="button"
                 aria-pressed={options.sort === sort}
-                onClick={() => patch({ sort })}
+                data-moved={sort === CHAPTER_ORDER && notice?.kind === 'bookOrder' ? '' : undefined}
+                onClick={() => setSort(sort)}
               >
                 {labels.sortName(sort)}
               </button>
             ))}
           </div>
+          {notice && (
+            <p className="export-notice" role="status" key={notice.n} ref={noticeRef}>
+              <IconInfo size={16} />
+              <span>{t(NOTICES[notice.kind])}</span>
+            </p>
+          )}
         </div>
 
         <div className="export-sheet__group" role="group" aria-labelledby="export-text">

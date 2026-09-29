@@ -504,559 +504,196 @@
   color: var(--rp-text-soft);
 }
 
-/* --- The printed page: on screen ---------------------------------------- */
-/* A preview: the sheets on the app's ground, the toolbar above them. The
-   sheets paint their own paper - white for Paper, warm near-black for Night -
-   whatever theme the screen is in, so what is previewed is what will print.
-   The look, the page and the text size are attributes on <html>, set by the
-   export page and read here on screen and on paper alike. */
-.notes-export {
-  --rp-measure: 900px;
-}
-.notes-export__toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--sp-3);
-  margin-block-end: var(--sp-5);
-}
-.notes-export__hint {
-  flex: 1 1 260px;
-  margin: 0;
-  font-size: 13.5px;
+/* A hint under an option that needs one: what "Chapter names" puts where. */
+.export-checks__hint {
+  display: block;
+  margin-block-start: 1px;
+  font-size: 12.5px;
+  line-height: 1.35;
   color: var(--rp-text-soft);
 }
-
-/* The document's palette and scale. Paper is ink on white; Night is the
-   same page with the lamp off - and the reader's night set of highlight
-   hues, which hold against the dark. Every text pairing is 4.5:1 or better.
-   The sizes are one scale, so Compact and Large move everything together. */
-.print-doc {
-  --pd-paper: #fff;
-  --pd-ink: #1c1917;
-  --pd-soft: #6b6259;
-  --pd-rule: #e2d9cb;
-  --pd-tint: #ede6da;
-  --pd-ember: #b4532a;
-  --pd-shadow: 0 14px 32px -14px rgb(28 25 23 / 0.5);
-  --pd-scale: 1;
-  --pd-f-body: calc(13.5px * var(--pd-scale));
-  --pd-f-quote: calc(15px * var(--pd-scale));
-  --pd-f-note: calc(13px * var(--pd-scale));
-  --pd-f-small: calc(11.5px * var(--pd-scale));
-  --pd-f-head: calc(15px * var(--pd-scale));
-  --pd-f-title: calc(30px * var(--pd-scale));
-  --pd-f-author: calc(16px * var(--pd-scale));
-  --pd-f-figure: calc(22px * var(--pd-scale));
-  --pd-cover-w: 190px;
-  color: var(--pd-ink);
-  font-family: var(--rp-font-ui);
-  font-size: var(--pd-f-body);
-  line-height: 1.5;
+.export-checks li:has(.export-checks__hint) {
+  grid-column: 1 / -1;
 }
-html[data-print-look='night'] .print-doc {
-  /* #121212, not the shell's warm #16120f: on paper the margins are painted
-     by the engine's own dark canvas (that exact grey), and a page in any
-     other dark showed as a faint rectangle inside it. */
-  --pd-paper: #121212;
-  --pd-ink: #efe7d9;
-  --pd-soft: #a99f91;
-  --pd-rule: #3a322b;
-  --pd-tint: #29231d;
-  --pd-ember: #e69c74;
-  --pd-shadow: 0 14px 32px -14px rgb(0 0 0 / 0.9);
-  --rd-mark-amber: #d6a034;
-  --rd-mark-rose: #c86a3e;
-  --rd-mark-plum: #826cb4;
-  --rd-mark-sky: #6491be;
-  --rd-mark-sand: #a08e74;
-  color-scheme: dark;
+.export-checks li:has(.export-checks__hint) label {
+  align-items: flex-start;
+  padding-block: var(--sp-1);
 }
-html[data-print-text='compact'] .print-doc {
-  --pd-scale: 0.88;
+.export-checks li:has(.export-checks__hint) input {
+  margin-block-start: 1px;
 }
-html[data-print-text='large'] .print-doc {
-  --pd-scale: 1.2;
+/* When one choice moves another - chapter names put the marks in book
+   order; another order takes the names away - the sheet says so where the
+   order is chosen, and the order it moved to glows once. */
+.export-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-control);
+  border: 1px solid color-mix(in srgb, var(--rp-interactive) 35%, transparent);
+  background: color-mix(in srgb, var(--rp-interactive) 9%, var(--rp-surface-raised));
+  color: var(--rp-text);
+  font-size: 13px;
+  line-height: 1.4;
+  animation: export-notice-in var(--rp-duration-base) var(--rp-ease) both;
 }
-
-.print-sheet {
-  box-sizing: border-box;
-  background: var(--pd-paper);
-  color: var(--pd-ink);
-  max-width: 760px;
-  margin: 0 auto var(--sp-5);
-  padding: 56px 64px;
-  border-radius: 4px;
-  box-shadow: var(--rp-shadow-2);
+.export-notice svg {
+  flex: none;
+  margin-block-start: 1px;
+  color: var(--rp-interactive);
 }
-/* On screen the sheets take the shape of the page they will be: a narrow
-   one for the phone page, and a title sheet in the page's proportions.
-   Under @media screen so these can never outrank the print rules below,
-   which are keyed on the same attributes. */
-@media screen {
-  /* A Night sheet on the dark app ground needs an edge the shadow cannot give it. */
-  html[data-print-look='night'] .print-sheet {
-    box-shadow:
-      0 0 0 1px rgb(255 255 255 / 0.08),
-      var(--rp-shadow-2);
-  }
-  html[data-print-page='phone'] .print-doc {
-    --pd-cover-w: 132px;
-  }
-  html[data-print-page='phone'] .print-sheet {
-    max-width: 420px;
-    padding: 32px 30px;
-  }
-  .print-doc__title {
-    aspect-ratio: 210 / 297;
-  }
-  html[data-print-page='letter'] .print-doc__title {
-    aspect-ratio: 8.5 / 11;
-  }
-  html[data-print-page='phone'] .print-doc__title {
-    aspect-ratio: 105 / 186;
+@keyframes export-notice-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
   }
 }
-@media screen and (max-width: 640px) {
-  .print-sheet {
-    padding: 36px 24px;
+.export-sheet .segmented button[data-moved] {
+  animation: export-moved 1.2s var(--rp-ease) both;
+}
+@keyframes export-moved {
+  0%,
+  100% {
+    box-shadow: none;
+  }
+  30% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--rp-interactive) 35%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .export-notice,
+  .export-sheet .segmented button[data-moved] {
+    animation: none;
   }
 }
 
-/* The title page: the mark at the head, the book in the middle, the stamp
-   at the foot. */
-.print-doc__title {
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  justify-items: center;
-  align-items: center;
-  gap: 20px;
-  text-align: center;
+/* --- The export page -------------------------------------------------------- */
+/* The very pages the PDF holds, drawn by the server that set them, on the
+   app's own ground: each a sheet with a soft shadow, as wide as reads well
+   and a phone page narrower, with the way to keep them - Save PDF - held at
+   the top while the pages scroll. The sheets paint their own paper whatever
+   the app's theme: a Night export shows Night pages, because that is what
+   will be saved. */
+.notes-export {
+  --rp-measure: 820px;
 }
-.print-doc__masthead {
-  display: grid;
-  justify-items: center;
-  gap: 4px;
-  align-self: start;
-}
-.print-doc__brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  margin: 0;
-  font-family: var(--rp-font-reading);
-  font-size: 15px;
-  font-weight: 650;
-  letter-spacing: -0.01em;
-  color: var(--pd-ink);
-}
-.print-doc__eyebrow {
-  margin: 0;
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--pd-soft);
-}
-.print-doc__titleblock {
-  display: grid;
-  justify-items: center;
-  gap: 6px;
-  max-width: 100%;
-}
-.print-doc__coverwrap {
-  position: relative;
-  width: var(--pd-cover-w);
-  aspect-ratio: 2 / 3;
-  margin: 0 0 22px;
-  border-radius: 4px;
-  overflow: hidden;
-  background: var(--pd-tint);
-  box-shadow: var(--pd-shadow);
-  container-type: inline-size;
-}
-.print-doc__coverwrap--plain {
-  display: grid;
-  place-items: center;
-  box-sizing: border-box;
-  padding: 18px;
-  border: 1px solid var(--pd-rule);
-}
-.print-doc__nocover {
-  font-family: var(--rp-font-reading);
-  font-size: calc(15px * var(--pd-scale));
-  line-height: 1.25;
-  color: var(--pd-soft);
-  overflow-wrap: anywhere;
-}
-.print-doc__cover {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-.print-doc__book {
-  margin: 0;
-  max-width: 22ch;
-  font-family: var(--rp-font-reading);
-  font-size: var(--pd-f-title);
-  font-weight: 600;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
-  overflow-wrap: anywhere;
-}
-.print-doc__author {
-  margin: 0;
-  font-family: var(--rp-font-reading);
-  font-size: var(--pd-f-author);
-  font-style: italic;
-  color: var(--pd-soft);
-}
-.print-doc__figures {
-  list-style: none;
-  margin: 18px 0 0;
-  padding: 0;
+.notes-export__bar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px 30px;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+  margin-inline: calc(-1 * var(--sp-2));
+  padding: var(--sp-3) var(--sp-2);
+  background: color-mix(in srgb, var(--rp-bg) 86%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
-.print-doc__figures li {
+.notes-export__title {
+  flex: 1 1 220px;
+  min-width: 0;
   display: grid;
   gap: 2px;
-  min-width: 60px;
 }
-.print-doc__figures b {
-  font-family: var(--rp-font-reading);
-  font-size: var(--pd-f-figure);
-  font-weight: 600;
-  line-height: 1.1;
+.notes-export__title h1 {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.notes-export__title p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--rp-text-soft);
   font-variant-numeric: tabular-nums;
 }
-.print-doc__figures span {
-  font-size: calc(10.5px * var(--pd-scale));
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--pd-soft);
-}
-.print-doc__scope {
-  margin: 6px 0 0;
-  font-size: var(--pd-f-small);
-  color: var(--pd-soft);
-}
-/* The legend's chips are borders, like the bars they explain: a background
-   would be dropped by a printer set to ink only. */
-.print-doc__legend {
-  list-style: none;
-  margin: 18px 0 0;
-  padding: 12px 0 0;
-  border-block-start: 1px solid var(--pd-rule);
+.notes-export__actions {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px 16px;
-  font-size: var(--pd-f-small);
-  color: var(--pd-soft);
+  gap: var(--sp-2);
 }
-.print-doc__legend li {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+.notes-export__pages {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-6);
+  padding-block: var(--sp-4) var(--sp-7);
 }
-.print-doc__legend i {
+.export-page {
+  --page-w: 560px;
+  position: relative;
+  margin: 0;
+  width: min(100%, var(--page-w));
+  aspect-ratio: 210 / 297;
+  border-radius: 2px;
+  overflow: hidden;
+  background: #fbf8f2;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.08),
+    0 18px 40px -18px rgb(0 0 0 / 0.35);
+  animation: rp-fade var(--rp-duration-slow) var(--rp-ease) both;
+}
+.export-page[data-page='letter'] {
+  aspect-ratio: 8.5 / 11;
+}
+.export-page[data-page='phone'] {
+  --page-w: 340px;
+  aspect-ratio: 105 / 186;
+}
+.export-page[data-look='night'] {
+  background: #15120f;
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.04),
+    0 18px 40px -18px rgb(0 0 0 / 0.6);
+}
+.export-page img {
   display: block;
-  width: 0;
-  height: 12px;
-  border-inline-start: 3px solid var(--mark-hue);
-  border-radius: 1px;
+  width: 100%;
+  height: 100%;
 }
-.print-doc__stamp {
+/* While the pages are being set: the sheets they will be, breathing. */
+.export-page--waiting {
+  animation: export-waiting 1.6s ease-in-out infinite;
+}
+.export-page--waiting::after {
+  content: '';
+  position: absolute;
+  inset: 12% 14% auto;
+  height: 38%;
+  border-radius: 2px;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgb(128 118 104 / 0.16) 0 6px,
+    transparent 6px 16px
+  );
+}
+@keyframes export-waiting {
+  50% {
+    opacity: 0.6;
+  }
+}
+.notes-export__status {
   margin: 0;
-  align-self: end;
-  font-size: var(--pd-f-small);
-  color: var(--pd-soft);
-}
-
-/* The pages after it. */
-.print-doc__section {
-  margin: 0 0 28px;
-}
-.print-doc__head {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 12px;
-  margin: 0 0 14px;
-  padding-block-end: 6px;
-  border-block-end: 1px solid var(--pd-rule);
-  font-family: var(--rp-font-reading);
-  font-size: var(--pd-f-head);
-  font-weight: 650;
-  letter-spacing: 0;
-}
-.print-doc__headcount {
-  font-family: var(--rp-font-ui);
-  font-size: var(--pd-f-small);
-  font-weight: 500;
-  color: var(--pd-soft);
-  font-variant-numeric: tabular-nums;
-}
-.print-doc__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 18px;
-}
-/* The bar is a border, not a background: printers drop backgrounds unless
-   asked for "background graphics", and a colour that vanishes on paper
-   would defeat the point of the export. */
-.print-mark {
-  display: grid;
-  gap: 5px;
-  padding-inline-start: 14px;
-  border-inline-start: 3px solid var(--mark-hue, var(--pd-rule));
-}
-.print-mark--note {
-  border-inline-start-style: dotted;
-  border-inline-start-color: var(--pd-soft);
-}
-.print-mark--bookmark {
-  border-inline-start-color: var(--pd-ember);
-}
-.print-mark__quote {
-  margin: 0;
-  font-family: var(--rp-font-reading);
-  font-size: var(--pd-f-quote);
-  line-height: 1.55;
-  text-align: start;
-  white-space: pre-line;
-  overflow-wrap: anywhere;
-}
-.print-mark__note {
-  margin: 0;
-  font-size: var(--pd-f-note);
-  line-height: 1.5;
-  text-align: start;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-.print-mark__plain {
-  margin: 0;
-  font-size: var(--pd-f-note);
-  color: var(--pd-soft);
-}
-.print-mark__marker {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0;
-  font-size: var(--pd-f-note);
-  font-weight: 600;
-  color: var(--pd-ember);
-  font-variant-numeric: tabular-nums;
-}
-.print-mark__marker svg {
-  flex: none;
-}
-.print-mark__where {
-  margin: 0;
-  font-size: var(--pd-f-small);
-  color: var(--pd-soft);
-  font-variant-numeric: tabular-nums;
-}
-.print-doc__empty {
-  margin: 0;
-  color: var(--pd-soft);
-}
-.print-doc__foot {
-  margin-block-start: 40px;
-  padding-block-start: 10px;
-  border-block-start: 1px solid var(--pd-rule);
-  font-size: var(--pd-f-small);
-  color: var(--pd-soft);
   text-align: center;
+  font-size: 14px;
+  color: var(--rp-text-soft);
 }
-
-/* --- The printed page: on paper ----------------------------------------- */
-/* One named page per size; `data-print-page` on <html> says which one the
-   document is laid on (the `page` rules under @media print below). The
-   sheet size then reaches the PDF writer from the page the content is on,
-   not from whatever the print dialog last had. The unnamed page stays
-   `auto` for an engine without named pages: it prints on the dialog's
-   own choice, with the column narrow enough to sit inside any of them. */
-@page {
-  size: auto;
-  margin: 18mm 20mm;
+.notes-export__more {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-3);
+  text-align: center;
+  font-size: 14px;
+  color: var(--rp-text-soft);
 }
-@page a4 {
-  size: A4;
-  margin: 18mm 20mm;
-}
-@page letter {
-  size: letter;
-  margin: 18mm 20mm;
-}
-@page phone {
-  size: 105mm 186mm;
-  margin: 10mm;
-}
-@media print {
-  /* The shell owns the viewport with a fixed, overflow-hidden frame so the
-     library can scroll in panes. On paper that prints one page and stops;
-     while the export page is up, the frame is undone and the chrome hidden. */
-  html[data-print-view] {
-    color-scheme: light;
-  }
-  html[data-print-view],
-  html[data-print-view] body {
-    height: auto !important;
-    min-height: 0 !important;
-    overflow: visible !important;
-    color: #1c1917 !important;
-  }
-  /* The ground is painted once, by the root, which reaches the whole sheet,
-     margins included; a body painting the same colour again came out as a
-     second shade on the PDF. Night's `print-color-adjust: exact` keeps the
-     dark when the dialog is set to print without backgrounds - dark pages
-     without their dark would be cream type on white paper. */
-  html[data-print-view] {
-    background: #fff !important;
-  }
-  html[data-print-view] body {
-    background: transparent !important;
-  }
-  html[data-print-view][data-print-look='night'] {
-    color-scheme: dark;
-    background: #121212 !important;
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
-  }
-  html[data-print-view][data-print-look='night'] body {
-    color: #efe7d9 !important;
-  }
-  html[data-print-view] #root {
-    display: block !important;
-    min-height: 0 !important;
-  }
-  html[data-print-view] .app-shell {
-    position: static !important;
-    inset: auto !important;
-    height: auto !important;
-    overflow: visible !important;
-    display: block !important;
-  }
-  html[data-print-view] .app-body {
-    display: block !important;
-    overflow: visible !important;
-  }
-  html[data-print-view] .app-body > .app-main {
-    position: static !important;
-    overflow: visible !important;
-    padding: 0 !important;
-    scrollbar-gutter: auto !important;
-  }
-  html[data-print-view] .app-header,
-  html[data-print-view] .app-rail,
-  html[data-print-view] .tabbar,
-  html[data-print-view] .skip-link,
-  html[data-print-view] .toast,
-  html[data-print-view] .sheet,
-  html[data-print-view] .sheet-backdrop,
-  html[data-print-view] .notes-export__toolbar {
-    display: none !important;
-  }
-
-  /* Which page the document is laid on, how tall the title page may be
-     (the page less its margins, with a little to spare so rounding never
-     spills the stamp onto a page of its own), and how wide the cover is. */
-  html[data-print-page='a4'] .print-doc {
-    page: a4;
-    --pd-page-h: 258mm;
-    --pd-cover-w: 58mm;
-  }
-  html[data-print-page='letter'] .print-doc {
-    page: letter;
-    --pd-page-h: 240mm;
-    --pd-cover-w: 58mm;
-  }
-  html[data-print-page='phone'] .print-doc {
-    page: phone;
-    --pd-page-h: 163mm;
-    --pd-cover-w: 38mm;
-  }
-
-  .print-sheet {
-    max-width: none;
-    margin: 0;
-    padding: 0;
-    border-radius: 0;
-    box-shadow: none;
-    background: transparent;
-  }
-  /* Points, not pixels: what a printer calls 11pt is 11pt on every printer. */
-  .print-doc {
-    --pd-f-body: calc(10pt * var(--pd-scale));
-    --pd-f-quote: calc(11pt * var(--pd-scale));
-    --pd-f-note: calc(9.5pt * var(--pd-scale));
-    --pd-f-small: calc(8pt * var(--pd-scale));
-    --pd-f-head: calc(11.5pt * var(--pd-scale));
-    --pd-f-title: calc(24pt * var(--pd-scale));
-    --pd-f-author: calc(13pt * var(--pd-scale));
-    --pd-f-figure: calc(18pt * var(--pd-scale));
-  }
-  /* The phone page is read scaled up to a screen a hand's width across:
-     larger type relative to the page, and a title that still fits its width. */
-  html[data-print-page='phone'] .print-doc {
-    --pd-f-body: calc(11pt * var(--pd-scale));
-    --pd-f-quote: calc(12pt * var(--pd-scale));
-    --pd-f-note: calc(10.5pt * var(--pd-scale));
-    --pd-f-small: calc(8.5pt * var(--pd-scale));
-    --pd-f-head: calc(12pt * var(--pd-scale));
-    --pd-f-title: calc(17pt * var(--pd-scale));
-    --pd-f-author: calc(11pt * var(--pd-scale));
-    --pd-f-figure: calc(15pt * var(--pd-scale));
-  }
-  .print-doc__title {
-    aspect-ratio: auto;
-    height: var(--pd-page-h);
-    gap: 6mm;
-    break-after: page;
-    page-break-after: always;
-  }
-  .print-doc__coverwrap {
-    margin-block-end: 6mm;
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
-  }
-  html[data-print-page='phone'] .print-doc__coverwrap {
-    margin-block-end: 4mm;
-  }
-  .print-doc__section {
-    margin-block-end: 8mm;
-  }
-  /* A running head stays with what runs under it. */
-  .print-doc__head {
-    margin-block-end: 4mm;
-    break-after: avoid;
-    page-break-after: avoid;
-  }
-  .print-doc__list {
-    gap: 5mm;
-  }
-  html[data-print-page='phone'] .print-doc__list {
-    gap: 4mm;
-  }
-  /* A highlight and its note stay on one page together; a passage longer
-     than a page has to split, but never leaves a single line behind. */
-  .print-mark {
-    break-inside: avoid;
-    page-break-inside: avoid;
-    orphans: 2;
-    widows: 2;
-  }
-  .print-doc__foot {
-    margin-block-start: 12mm;
+@media (prefers-reduced-motion: reduce) {
+  .export-page,
+  .export-page--waiting {
+    animation: none;
   }
 }

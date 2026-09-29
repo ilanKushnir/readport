@@ -13,6 +13,8 @@ import {
   rememberPreferences,
   selectForExport,
   viewOfOptions,
+  withChapters,
+  withSort,
   type ExportOptions,
 } from './exportOptions';
 
@@ -59,7 +61,7 @@ describe('the options in the URL', () => {
       colors: ['sky', 'plum'],
       sort: 'newest',
       cover: false,
-      heads: true,
+      chapters: false,
       where: false,
       notes: true,
     };
@@ -69,6 +71,16 @@ describe('the options in the URL', () => {
     );
     expect(exportOptionsFromParams(params)).toEqual({ ...chosen, colors: ['plum', 'sky'] });
     expect(exportOptionsToParams(EVERYTHING).toString()).toBe('');
+    // Chapter names are book order's default: only leaving them out is written.
+    const unnamed = { ...EVERYTHING, chapters: false };
+    expect(exportOptionsToParams(unnamed).toString()).toBe('chapters=0');
+    expect(exportOptionsFromParams(exportOptionsToParams(unnamed))).toEqual(unnamed);
+  });
+
+  it('reads chapter names only in book order, and a link from before they had the name', () => {
+    expect(exportOptionsFromParams(new URLSearchParams('sort=color')).chapters).toBe(false);
+    expect(exportOptionsFromParams(new URLSearchParams('heads=0')).chapters).toBe(false);
+    expect(exportOptionsFromParams(new URLSearchParams('')).chapters).toBe(true);
   });
 
   it('ignores what it does not recognise and writes every kind for none', () => {
@@ -97,23 +109,28 @@ describe('the options in the URL', () => {
     );
   });
 
-  it('builds the export address, with print=1 only when asked', () => {
+  it('builds the export address', () => {
     expect(exportHref('b1', EVERYTHING)).toBe('/notes/b1/export');
-    expect(exportHref('b1', { ...EVERYTHING, kinds: ['highlight'] }, true)).toBe(
-      '/notes/b1/export?kinds=highlight&print=1',
+    expect(exportHref('b1', { ...EVERYTHING, kinds: ['highlight'] })).toBe(
+      '/notes/b1/export?kinds=highlight',
     );
   });
 });
 
 describe('from the view and back', () => {
   it('opens with the kinds, colours and order of the view, in the remembered dress', () => {
-    const prefs = { ...DEFAULT_PREFERENCES, look: 'night' as const, heads: false };
+    const prefs = { ...DEFAULT_PREFERENCES, look: 'night' as const };
     expect(optionsForView({ kind: 'all', colors: ['plum'], sort: 'color' }, prefs)).toEqual({
       ...prefs,
+      // Remembered on, and not to be had in colour order.
+      chapters: false,
       kinds: ['highlight', 'note', 'bookmark'],
       colors: ['plum'],
       sort: 'color',
     });
+    expect(optionsForView({ kind: 'all', colors: [], sort: 'position' }, prefs).chapters).toBe(
+      true,
+    );
     expect(kindsOfView({ kind: 'note', colors: [], sort: 'position' })).toEqual(['note']);
   });
 
@@ -132,6 +149,42 @@ describe('from the view and back', () => {
     expect(
       preferencesOf({ ...EVERYTHING, kinds: ['note'], colors: ['rose'], sort: 'newest' }),
     ).toEqual(DEFAULT_PREFERENCES);
+  });
+
+  it('remembers chapter names only from an export that could have them', () => {
+    expect(preferencesOf({ ...EVERYTHING, chapters: false }).chapters).toBe(false);
+    const off = { ...DEFAULT_PREFERENCES, chapters: false };
+    expect(preferencesOf({ ...EVERYTHING, sort: 'newest', chapters: false }, off).chapters).toBe(
+      false,
+    );
+    expect(
+      preferencesOf({ ...EVERYTHING, sort: 'color', chapters: false }, DEFAULT_PREFERENCES)
+        .chapters,
+    ).toBe(true);
+  });
+});
+
+describe('chapter names and the order', () => {
+  it('putting the names in puts the marks in book order, and says so', () => {
+    const newest = { ...EVERYTHING, sort: 'newest' as const, chapters: false };
+    const named = withChapters(newest, true);
+    expect(named.options).toMatchObject({ chapters: true, sort: 'position' });
+    expect(named.resorted).toBe(true);
+    // Already in book order: nothing moved, nothing to say.
+    expect(withChapters({ ...EVERYTHING, chapters: false }, true).resorted).toBe(false);
+    // Taking them out moves nothing.
+    expect(withChapters(EVERYTHING, false)).toEqual({
+      options: { ...EVERYTHING, chapters: false },
+      resorted: false,
+    });
+  });
+
+  it('another order takes the names out, and says so only when they were in', () => {
+    const byColour = withSort(EVERYTHING, 'color');
+    expect(byColour.options).toMatchObject({ sort: 'color', chapters: false });
+    expect(byColour.unnamed).toBe(true);
+    expect(withSort({ ...EVERYTHING, chapters: false }, 'newest').unnamed).toBe(false);
+    expect(withSort(EVERYTHING, 'position')).toEqual({ options: EVERYTHING, unnamed: false });
   });
 });
 
@@ -194,6 +247,11 @@ describe('remembering the preferences', () => {
     const prefs = { ...DEFAULT_PREFERENCES, look: 'night' as const, page: 'phone' as const };
     rememberPreferences(prefs);
     expect(readPreferences('en-US')).toEqual(prefs);
+  });
+
+  it('reads chapter headings remembered before they were chapter names', () => {
+    store['rp-notes-export'] = JSON.stringify({ heads: false });
+    expect(readPreferences().chapters).toBe(false);
   });
 
   it('takes the default for any field it cannot make sense of', () => {

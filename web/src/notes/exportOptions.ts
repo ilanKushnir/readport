@@ -11,17 +11,22 @@ import {
 } from './organise';
 
 /**
- * What "Export as PDF…" asks before it prints: how the pages should look,
- * what size they are, what goes on them, and in what order.
+ * What "Export as PDF…" asks before it makes the pages: how they should
+ * look, what size they are, what goes on them, and in what order.
  *
  * The options ride in the export page's URL, so the page is a pure function
  * of its address - a link to it, a reload of it and the Back button all
  * show the same pages - and only what differs from the defaults is written,
  * so an untouched export is a clean URL. The presentational half (look,
  * page, text size, and the include toggles) is also remembered in the
- * browser: a reader who prints Night on Letter once prints Night on Letter
+ * browser: a reader who exports Night on Letter once gets Night on Letter
  * next time. Which marks go in and in what order are not remembered - they
  * come from the view the reader is exporting from.
+ *
+ * Chapter names and book order go together: a chapter's name is a divider
+ * only where the marks run in the book's order, so choosing the names puts
+ * the marks in book order, and choosing another order leaves the names
+ * out (see `withChapters` and `withSort`; the sheet says when it does).
  */
 
 export const LOOKS = ['paper', 'night'] as const;
@@ -47,8 +52,11 @@ export interface ExportOptions {
   sort: SortOrder;
   /** The cover on the title page. */
   cover: boolean;
-  /** Running chapter (or colour) heads. */
-  heads: boolean;
+  /**
+   * Each chapter that has marks opens with its name. Only in book order:
+   * `withChapters` and `withSort` keep the two together.
+   */
+  chapters: boolean;
   /** The "Chapter 4 · 37% · 12 Sept 2026" line under each mark. */
   where: boolean;
   /** The reader's note under a highlight. A note that is the mark itself always stays. */
@@ -58,7 +66,7 @@ export interface ExportOptions {
 /** The presentational half, remembered from one export to the next. */
 export type ExportPreferences = Pick<
   ExportOptions,
-  'look' | 'page' | 'text' | 'cover' | 'heads' | 'where' | 'notes'
+  'look' | 'page' | 'text' | 'cover' | 'chapters' | 'where' | 'notes'
 >;
 
 export const DEFAULT_PREFERENCES: ExportPreferences = {
@@ -66,10 +74,41 @@ export const DEFAULT_PREFERENCES: ExportPreferences = {
   page: 'a4',
   text: 'comfortable',
   cover: true,
-  heads: true,
+  chapters: true,
   where: true,
   notes: true,
 };
+
+/** The order chapter names need: the book's own. */
+export const CHAPTER_ORDER: SortOrder = 'position';
+
+/**
+ * Chapter names on or off. On puts the marks in book order, the only order
+ * a chapter's name can stand over; `resorted` says the order had to change,
+ * so the sheet can say so.
+ */
+export function withChapters(
+  options: ExportOptions,
+  chapters: boolean,
+): { options: ExportOptions; resorted: boolean } {
+  const resorted = chapters && options.sort !== CHAPTER_ORDER;
+  return {
+    options: { ...options, chapters, sort: chapters ? CHAPTER_ORDER : options.sort },
+    resorted,
+  };
+}
+
+/**
+ * Another order. Any order but the book's leaves the chapter names out;
+ * `unnamed` says they had been in, so the sheet can say they are not now.
+ */
+export function withSort(
+  options: ExportOptions,
+  sort: SortOrder,
+): { options: ExportOptions; unnamed: boolean } {
+  const unnamed = options.chapters && sort !== CHAPTER_ORDER;
+  return { options: { ...options, sort, chapters: unnamed ? false : options.chapters }, unnamed };
+}
 
 /* ------------------------------------------------------------ the view */
 
@@ -87,19 +126,33 @@ export function viewOfOptions(options: ExportOptions): MarksView {
   return { kind, colors: [...options.colors], sort: options.sort };
 }
 
-/** What the sheet opens with: the view being looked at, dressed in the remembered preferences. */
+/**
+ * What the sheet opens with: the view being looked at, dressed in the
+ * remembered preferences - with the chapter names only where that view is
+ * in book order.
+ */
 export function optionsForView(view: MarksView, prefs: ExportPreferences): ExportOptions {
   return {
     ...prefs,
+    chapters: prefs.chapters && view.sort === CHAPTER_ORDER,
     kinds: kindsOfView(view),
     colors: [...view.colors],
     sort: view.sort,
   };
 }
 
-export function preferencesOf(options: ExportOptions): ExportPreferences {
-  const { look, page, text, cover, heads, where, notes } = options;
-  return { look, page, text, cover, heads, where, notes };
+/**
+ * The half worth remembering. An export in another order says nothing
+ * about the chapter names - they could not be had - so the choice made the
+ * last time they could be stays.
+ */
+export function preferencesOf(
+  options: ExportOptions,
+  remembered: ExportPreferences = DEFAULT_PREFERENCES,
+): ExportPreferences {
+  const { look, page, text, cover, where, notes } = options;
+  const chapters = options.sort === CHAPTER_ORDER ? options.chapters : remembered.chapters;
+  return { look, page, text, cover, chapters, where, notes };
 }
 
 /* ------------------------------------------------------------- the URL */
@@ -129,15 +182,17 @@ export function exportOptionsFromParams(params: URLSearchParams): ExportOptions 
         : [...MARK_KINDS];
   }
   const flag = (name: string) => params.get(name) !== '0';
+  const sort = oneOf(SORT_ORDERS, params.get('sort'), DEFAULT_VIEW.sort);
   return {
     look: oneOf(LOOKS, params.get('look'), DEFAULT_PREFERENCES.look),
     page: oneOf(PAGE_SIZES, params.get('page'), DEFAULT_PREFERENCES.page),
     text: oneOf(TEXT_SIZES, params.get('text'), DEFAULT_PREFERENCES.text),
     kinds,
     colors: listOf(HIGHLIGHT_COLORS, params.get('colors')),
-    sort: oneOf(SORT_ORDERS, params.get('sort'), DEFAULT_VIEW.sort),
+    sort,
     cover: flag('cover'),
-    heads: flag('heads'),
+    // `heads=0` is what a link from before the chapter names said.
+    chapters: flag('chapters') && flag('heads') && sort === CHAPTER_ORDER,
     where: flag('where'),
     notes: flag('notes'),
   };
@@ -158,17 +213,17 @@ export function exportOptionsToParams(options: ExportOptions): URLSearchParams {
   if (options.look !== DEFAULT_PREFERENCES.look) params.set('look', options.look);
   if (options.page !== DEFAULT_PREFERENCES.page) params.set('page', options.page);
   if (options.text !== DEFAULT_PREFERENCES.text) params.set('text', options.text);
-  for (const flag of ['cover', 'heads', 'where', 'notes'] as const) {
+  for (const flag of ['cover', 'where', 'notes'] as const) {
     if (!options[flag]) params.set(flag, '0');
   }
+  // Only book order can have them, and there they are the default.
+  if (options.sort === CHAPTER_ORDER && !options.chapters) params.set('chapters', '0');
   return params;
 }
 
-/** The export page for one book, with `print=1` when arriving should open the print sheet. */
-export function exportHref(bookId: string, options: ExportOptions, print = false): string {
-  const params = exportOptionsToParams(options);
-  if (print) params.set('print', '1');
-  const query = params.toString();
+/** The export page for one book. */
+export function exportHref(bookId: string, options: ExportOptions): string {
+  const query = exportOptionsToParams(options).toString();
   return `/notes/${bookId}/export${query ? `?${query}` : ''}`;
 }
 
@@ -242,7 +297,8 @@ export function readPreferences(language?: string | null): ExportPreferences {
     page: oneOf(PAGE_SIZES, str('page'), first.page),
     text: oneOf(TEXT_SIZES, str('text'), first.text),
     cover: bool('cover', first.cover),
-    heads: bool('heads', first.heads),
+    // Stored as `heads` before the chapter names had a name of their own.
+    chapters: bool('chapters', typeof stored.heads === 'boolean' ? stored.heads : first.chapters),
     where: bool('where', first.where),
     notes: bool('notes', first.notes),
   };

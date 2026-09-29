@@ -63,13 +63,14 @@ export const notes = {
     'Select a passage while reading to highlight it or write a note, and tap the ribbon to bookmark a page.',
   'notes.readBook': '{kind, select, audio {Open the audiobook} other {Open the book}}',
   'notes.sort': 'Sort',
-  'notes.sort.position': 'Position',
+  // The order the marks come in the book - what a reader means by "in order".
+  'notes.sort.position': 'Book order',
   'notes.sort.newest': 'Newest',
   'notes.sort.color': 'Colour',
   'notes.marksLabel': 'Marks',
   'notes.exportPdf': 'Export as PDF…',
 
-  // The printed page
+  // The export page: the pages themselves, and the PDF they make
   'notes.export.documentTitle': '{title} – Highlights & notes',
   'notes.export.heading': 'Highlights & notes',
   // Followed by the date on the title page: "Exported from ReadPort · 22 Sept 2026".
@@ -77,12 +78,19 @@ export const notes = {
   'notes.export.scope.kind':
     '{kind, select, highlight {Highlights only} note {Notes only} bookmark {Bookmarks only} other {Everything marked}}',
   'notes.export.scope.colours': 'Only highlights in {list}',
-  'notes.export.print': 'Print / Save as PDF',
   'notes.export.back': 'Back to the marks',
-  'notes.export.hint':
-    'A preview of the pages as they will print. Print / Save as PDF opens the print sheet; choose “Save as PDF” as the destination to keep a file.',
   'notes.export.empty': 'Nothing to export with these filters.',
   'notes.export.options': 'Options…',
+  'notes.export.save': 'Save PDF',
+  'notes.export.open': 'Open PDF',
+  'notes.export.preparing': 'Setting your pages…',
+  // Under the title of the export page: "24 pages · A4 · Night".
+  'notes.export.pages': '{n, plural, one {# page} other {# pages}}',
+  'notes.export.pageAlt': 'Page {n} of {total}',
+  // Under the last page shown, when the PDF has more.
+  'notes.export.more': '{n, plural, one {# more page in the PDF} other {# more pages in the PDF}}',
+  'notes.export.failed': 'The pages could not be made. Check the connection and try again.',
+  'notes.export.busy': 'The server is making another PDF right now. Try again in a moment.',
 
   // The export options sheet
   'notes.export.sheetTitle': 'Export highlights & notes',
@@ -100,10 +108,15 @@ export const notes = {
   'notes.export.page.phoneHint': 'A narrow page that reads at full width on a phone screen.',
   'notes.export.include': 'Include',
   'notes.export.include.cover': 'Cover on the title page',
-  'notes.export.include.heads': 'Chapter headings',
+  'notes.export.include.chapters': 'Chapter names',
+  'notes.export.include.chaptersHint': 'Each chapter you marked opens with its name.',
   'notes.export.include.where': 'Position and date lines',
   'notes.export.include.notes': 'Notes under highlights',
   'notes.export.order': 'Order',
+  // Said when a choice moves the other: chapter names stand only over the book's own order.
+  'notes.export.notice.bookOrder':
+    'Chapter names follow the book, so the marks are now in book order.',
+  'notes.export.notice.noChapters': 'Chapter names only go with book order, so they are left out.',
   'notes.export.textSize': 'Text size',
   'notes.export.text.compact': 'Compact',
   'notes.export.text.comfortable': 'Comfortable',
@@ -116,13 +129,19 @@ export const notes = {
   'notes.export.apply': 'Apply',
 
   // The title page and the marks on the pages after it
-  'notes.export.figures': 'What this export holds',
   'notes.export.figure.highlights': '{n, plural, one {highlight} other {highlights}}',
   'notes.export.figure.notes': '{n, plural, one {note} other {notes}}',
   'notes.export.figure.bookmarks': '{n, plural, one {bookmark} other {bookmarks}}',
-  'notes.export.legend': 'Highlight colours',
   'notes.export.scope.kinds':
     '{kinds, select, hn {Highlights and notes} hb {Highlights and bookmarks} nb {Notes and bookmarks} other {Everything marked}}',
   'notes.export.bookmark': 'Bookmark',
+  // A bookmark's line: "Bookmark · Chapter 4 · 37%".
+  'notes.export.bookmarkAt': 'Bookmark · {where}',
   'notes.export.whereWhen': '{where} · {date}',
+  'notes.export.contents': 'Contents',
+  // The small label over a note.
+  'notes.export.noteLabel': 'Note',
+  'notes.export.markedBy': 'Marked by {name}',
+  // The last line of the last page.
+  'notes.export.closing': 'Kept from your reading of {title}',
 } as const;

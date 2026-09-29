@@ -24,6 +24,10 @@ export const whatsnew = {
   'whatsnew.update.later': 'Not now',
 
   // ---------------------------------------------------------------- 0.29.0
+  'whatsnew.release.pdfExport':
+    'Export as PDF now makes a real little book of your highlights and notes - set in type, dark to the very edge in Night, and shown page by page before you save it.',
+  'whatsnew.release.chapterNames':
+    'Tick Chapter names and each chapter you marked opens with its name, in the order of the book.',
   'whatsnew.release.readingPlaces':
     'Opening a passage - a quote someone sent, a note, a search - no longer moves your place in the book: “Back to your place” takes you back, and the new Places tab keeps where you read.',
   'whatsnew.release.quoteLinks':

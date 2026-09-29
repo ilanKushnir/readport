@@ -262,8 +262,8 @@ export function NotesBookPage() {
           submitLabel={t('notes.export.go')}
           onClose={() => setExportOpen(false)}
           onSubmit={(options) => {
-            rememberPreferences(preferencesOf(options));
-            navigate(exportHref(bookId, options, true));
+            rememberPreferences(preferencesOf(options, readPreferences(navigator.language)));
+            navigate(exportHref(bookId, options));
           }}
         />
       )}
