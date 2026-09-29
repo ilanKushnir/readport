@@ -600,7 +600,6 @@ const messages: Record<string, string> = {
   'reader.chrome.nextPage': 'الصفحة التالية',
 
   'reader.resumeMarker': 'موضع استئناف قراءتك',
-  'reader.return.backTo': 'العودة إلى {label}',
 
   'reader.chapterEnd.next': 'التالي: {title}',
   'reader.chapterEnd.finish': 'إنهاء الكتاب',
@@ -696,6 +695,23 @@ const messages: Record<string, string> = {
   'reader.contents.chaptersTab': 'الفصول',
   'reader.contents.marksTab': 'الإشارات المرجعية والملاحظات',
   'reader.contents.marksTabCount': 'الإشارات المرجعية والملاحظات · {n}',
+  'reader.contents.placesTab': 'المواضع',
+  'reader.places.own': 'موضعك',
+  'reader.places.others': 'مواضع أخرى',
+  'reader.places.where': '{chapter} · {pct}',
+  'reader.places.meta': '{read} من القراءة · {when}',
+  'reader.places.here': 'أنت هنا',
+  'reader.places.goLabel': 'الانتقال إلى {where}. {text} {meta}',
+  'reader.places.forget': 'نسيان الموضع عند {where}',
+  'reader.places.forgetFailed': 'تعذّر نسيان هذا الموضع - هل أنت غير متصل؟',
+  'reader.places.empty':
+    'يظهر موضعك هنا بعد أن تقرأ لدقيقة أو دقيقتين. بعد ذلك لا يفقده أي انتقال إلى مكان آخر (مقطع أرسله لك أحد، أو ملاحظة، أو بحث): نقرة واحدة تعيدك إليه.',
+  'reader.places.note':
+    'مجرد النظر في مقطع لا يغيّر موضعك. القراءة هناك لفترة تُبقي ذلك الموضع هنا أيضًا، حتى تعود إلى موضعك وتواصل القراءة.',
+  'reader.places.back': 'العودة إلى موضعك',
+  'reader.places.backLabel': 'العودة إلى موضعك، {where}',
+  'reader.places.backThere': 'العودة إلى حيث كنت',
+  'reader.places.backThereLabel': 'العودة إلى حيث كنت، {where}',
   'reader.contents.noMarks':
     'لا إشارات مرجعية بعد. اضغط على أيقونة الشريط أثناء القراءة لوضع إشارة على صفحة؛ أو حدّد نصًا لتظليله أو إضافة ملاحظة.',
   'reader.contents.bookmarkedPage': 'صفحة بإشارة مرجعية',

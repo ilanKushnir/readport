@@ -586,7 +586,6 @@ const messages: Record<string, string> = {
   'reader.chrome.nextPage': 'העמוד הבא',
 
   'reader.resumeMarker': 'המיקום שבו חידשת את הקריאה',
-  'reader.return.backTo': 'חזרה אל {label}',
 
   'reader.chapterEnd.next': 'הבא: {title}',
   'reader.chapterEnd.finish': 'סיום הספר',
@@ -680,6 +679,23 @@ const messages: Record<string, string> = {
   'reader.contents.chaptersTab': 'פרקים',
   'reader.contents.marksTab': 'סימניות והערות',
   'reader.contents.marksTabCount': 'סימניות והערות · {n}',
+  'reader.contents.placesTab': 'מקומות',
+  'reader.places.own': 'המקום שלך',
+  'reader.places.others': 'מקומות נוספים',
+  'reader.places.where': '{chapter} · {pct}',
+  'reader.places.meta': '{read} של קריאה · {when}',
+  'reader.places.here': 'כאן עכשיו',
+  'reader.places.goLabel': 'קפיצה אל {where}. {text} {meta}',
+  'reader.places.forget': 'הסרת המקום ב-{where}',
+  'reader.places.forgetFailed': 'לא ניתן היה להסיר את המקום הזה - אולי אין חיבור?',
+  'reader.places.empty':
+    'המקום שלך יופיע כאן אחרי דקה או שתיים של קריאה. מאז ואילך אף קפיצה למקום אחר (קטע ששלחו לך, הערה, חיפוש) לא תאבד אותו: הקשה אחת מחזירה אליו.',
+  'reader.places.note':
+    'הצצה בקטע לא מזיזה את המקום שלך. קריאה שם לזמן מה שומרת גם את המקום ההוא כאן, עד לחזרה למקום שלך ולהמשך הקריאה בו.',
+  'reader.places.back': 'חזרה למקום שלך',
+  'reader.places.backLabel': 'חזרה למקום שלך, {where}',
+  'reader.places.backThere': 'חזרה למקום שבו היית',
+  'reader.places.backThereLabel': 'חזרה למקום שבו היית, {where}',
   'reader.contents.noMarks':
     'עדיין אין סימניות. יש להקיש על סמל הסרט תוך כדי קריאה כדי לסמן עמוד; ניתן לבחור טקסט כדי להדגיש או להוסיף הערה.',
   'reader.contents.bookmarkedPage': 'עמוד מסומן',
