@@ -4,6 +4,20 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.31.2 - 2026-09-29
+
+### Fixed
+
+- **Where you left off, at a sentence.** The marker at the reader's place
+  was a bar and a dotted rule at the exact character the place is kept
+  to, which is as often inside a word as between two. It now starts where
+  reading picks up - the beginning of the sentence, or of the word when
+  that sentence began on the page before - as a soft glow from the first
+  word that is gone by the end of about a line, with a short ember in the
+  margin beside the line. Scrolling, the sentence's first line is the one
+  brought up under the bar. The place itself is unchanged, and still kept
+  to the character.
+
 ## 0.31.1 - 2026-09-29
 
 ### Fixed
