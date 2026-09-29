@@ -22,9 +22,9 @@ import {
   type Cue,
   type FollowState,
   buildCues,
-  cueAt,
+  cueArriving,
   cueForOffset,
-  leadInFor,
+  hasArrived,
   locateInTracks,
   nearestChapter,
 } from './readalong';
@@ -58,6 +58,8 @@ export interface NarrationApi {
   cue: Cue | null;
   /** This chapter's timed sentences - what the pace marker interpolates over. */
   cues: Cue[];
+  /** The sentence the voice was just sent to, until the clock is in it (readalong.cueArriving). */
+  arriving: Cue | null;
   /** Increments on every deliberate seek; the page follows again when it does. */
   seekNonce: number;
   state: FollowState;
@@ -168,7 +170,15 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
 
   const totalMs = useMemo(() => tracks.reduce((a, t) => a + t.durationMs, 0), [tracks]);
   const cues = useMemo(() => buildCues(sentences, segments ?? []), [sentences, segments]);
-  const lookup = useMemo(() => cueAt(cues, bookMs), [cues, bookMs]);
+  /**
+   * The sentence the voice was just sent to, until the clock is in it
+   * (cueArriving): the one tapped shows, not the one before it.
+   */
+  const [arriving, setArriving] = useState<Cue | null>(null);
+  const lookup = useMemo(() => cueArriving(cues, bookMs, arriving), [cues, bookMs, arriving]);
+  useEffect(() => {
+    if (arriving && hasArrived(arriving, bookMs)) setArriving(null);
+  }, [arriving, bookMs]);
 
   /**
    * Adopt the rate this book was last played at, once its id is known.
@@ -329,14 +339,15 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
     startedRef.current = true;
     const cue = cueForOffset(cues, startOffset());
     if (!cue) return;
-    const lead = leadInFor(segments?.find((s) => s.sentenceId === cue.id)?.uncertaintyMs);
-    const at = Math.max(0, cue.startMs - lead);
+    // The sentence's own start: early is the end of the sentence before.
+    const at = Math.max(0, cue.startMs);
+    setArriving(cue);
     // An explicit intent, not a heartbeat: it moves the progress claim to this
     // session, without which every heartbeat below is discarded as coming from
     // a session that lost the claim to another device.
     if (audioBookId) void recordCheckpoint(audioBookId, 'seek', audioLocatorAt(at));
     seekTo(at, true);
-  }, [enabled, cues, tracks, segments, startOffset, seekTo, audioBookId, audioLocatorAt]);
+  }, [enabled, cues, tracks, startOffset, seekTo, audioBookId, audioLocatorAt]);
 
   // Stopping means stopping. An element left playing behind a closed bar is
   // the kind of bug people report as "my phone won't shut up".
@@ -496,21 +507,26 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
     [audioBookId],
   );
 
-  const back = useCallback(
-    () => seekTo(Math.max(0, bookMs - backSeconds * 1000), playing),
-    [seekTo, bookMs, playing, backSeconds],
-  );
+  const back = useCallback(() => {
+    setArriving(null);
+    seekTo(Math.max(0, bookMs - backSeconds * 1000), playing);
+  }, [seekTo, bookMs, playing, backSeconds]);
 
+  /**
+   * The voice to the sentence at `charOffset`, from the very start of its
+   * timing - never ahead of it, which played the end of the sentence before
+   * and lit it too - with that sentence shown from the moment it is asked for.
+   */
   const playFrom = useCallback(
     (charOffset: number) => {
       const cue = cueForOffset(cues, charOffset);
       if (!cue) return;
-      const lead = leadInFor(segments?.find((s) => s.sentenceId === cue.id)?.uncertaintyMs);
-      const at = Math.max(0, cue.startMs - lead);
+      const at = Math.max(0, cue.startMs);
+      setArriving(cue);
       if (audioBookId) void recordCheckpoint(audioBookId, 'seek', audioLocatorAt(at));
       seekTo(at, true);
     },
-    [cues, segments, seekTo, audioBookId, audioLocatorAt],
+    [cues, seekTo, audioBookId, audioLocatorAt],
   );
 
   const src =
@@ -545,6 +561,7 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
     playing,
     cue: lookup.cue,
     cues,
+    arriving,
     seekNonce,
     state: lookup.state,
     bookMs,

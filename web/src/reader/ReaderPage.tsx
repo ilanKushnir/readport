@@ -1869,7 +1869,11 @@ export function ReaderPage() {
   // Read the media element clock at capture time, not React's last timeupdate.
   narrationOffsetRef.current = () =>
     readAlong && followingRef.current
-      ? paceOffset(narration.cues, narration.currentBookMs?.() ?? narration.bookMs)
+      ? paceOffset(
+          narration.cues,
+          narration.currentBookMs?.() ?? narration.bookMs,
+          narration.arriving,
+        )
       : null;
   useEffect(() => {
     if (!readAlong || !manifest) return;
@@ -2350,7 +2354,7 @@ export function ReaderPage() {
       return;
     }
     const map = textMapRef.current;
-    const raw = paceOffset(narration.cues, narration.bookMs);
+    const raw = paceOffset(narration.cues, narration.bookMs, narration.arriving);
     if (raw === null || !map) {
       setPace(null);
       return;
@@ -2441,6 +2445,7 @@ export function ReaderPage() {
     narration.playing,
     narration.bookMs,
     narration.cues,
+    narration.arriving,
     prefs.mode,
     prefs.margin,
     paginationFailed,

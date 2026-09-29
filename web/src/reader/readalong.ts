@@ -175,16 +175,39 @@ export function cueForOffset(cues: Cue[], charOffset: number): Cue | null {
 }
 
 /**
- * How long before a cue's stated start to begin playing it.
- *
- * The alignment says how sure it is; when it is unsure, coming in a little
- * early means the reader hears the whole sentence rather than joining it
- * halfway. Bounded, because on a badly-aligned passage the uncertainty can be
- * tens of seconds and nobody wants to rewind that far to hear one line.
+ * How far short of a sentence's start the voice can be, sent to it, and
+ * still be arriving at it rather than reading the sentence before.
  */
-export function leadInFor(uncertaintyMs: number | undefined): number {
-  if (!uncertaintyMs || uncertaintyMs <= 0) return 0;
-  return Math.min(1_200, Math.round(uncertaintyMs * 0.25));
+export const ARRIVING_MS = 1_500;
+
+/**
+ * How far into the sentence the voice must be before it has arrived. The
+ * seek sets the clock to the sentence's start at once, and the element's
+ * first report of where it landed can still come in a frame short of it.
+ */
+export const ARRIVED_MS = 500;
+
+/** Whether the voice sent to `arriving` is in it now, well enough to let the clock speak. */
+export function hasArrived(arriving: Cue, bookMs: number): boolean {
+  return bookMs >= arriving.startMs + ARRIVED_MS || bookMs < arriving.startMs - ARRIVING_MS;
+}
+
+/**
+ * The cue at `bookMs` - or, while the voice is arriving at the sentence it
+ * was just sent to (a tap, a page turned with the voice), that sentence.
+ *
+ * The voice is sent to the very start of the sentence asked for, never
+ * ahead of it: coming in early used to play the end of the sentence before,
+ * and light it beside the one tapped. A seek still lands a little short -
+ * the element rounds to its audio frames - so for those moments the clock
+ * is inside the sentence before, and it is the sentence asked for that shows.
+ */
+export function cueArriving(cues: Cue[], bookMs: number, arriving: Cue | null): CueLookup {
+  if (arriving && bookMs < arriving.startMs && bookMs >= arriving.startMs - ARRIVING_MS) {
+    const index = cues.indexOf(arriving);
+    if (index >= 0) return { cue: arriving, state: 'on', index };
+  }
+  return cueAt(cues, bookMs);
 }
 
 /**
@@ -276,11 +299,17 @@ export function isConfident(cue: Cue | null): boolean {
  * a marker beside the text, never a mark on it.
  *
  * Returns null when there is nothing to estimate from - before the first cue,
- * after the last, or in a stretch with no timings at all.
+ * after the last, or in a stretch with no timings at all. `arriving` is the
+ * sentence the voice was just sent to (cueArriving): until the clock is in
+ * it, the voice is at its start.
  */
-export function paceOffset(cues: Cue[], bookMs: number): number | null {
+export function paceOffset(
+  cues: Cue[],
+  bookMs: number,
+  arriving: Cue | null = null,
+): number | null {
   if (cues.length === 0) return null;
-  const { cue, state, index } = cueAt(cues, bookMs);
+  const { cue, state, index } = cueArriving(cues, bookMs, arriving);
 
   if (state === 'on' && cue) {
     const span = cue.endMs - cue.startMs;

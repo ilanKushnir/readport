@@ -4,12 +4,14 @@ import {
   type AlignedSegment,
   HOLD_MS,
   buildCues,
+  cueArriving,
   cueAt,
   cueForOffset,
   cueForTurn,
-  leadInFor,
+  hasArrived,
   locateInTracks,
   nearestChapter,
+  paceOffset,
   shouldFollow,
 } from './readalong';
 
@@ -145,18 +147,34 @@ describe('cueForOffset', () => {
   });
 });
 
-describe('leadInFor', () => {
-  it('is nothing when the timing is certain', () => {
-    expect(leadInFor(0)).toBe(0);
-    expect(leadInFor(undefined)).toBe(0);
+describe('a sentence the voice was sent to', () => {
+  // A tap on s2. The voice goes to s2's own start, and a seek lands a little
+  // short of where it was sent: the clock is still in s1 for a moment.
+  const s2 = CUES[1]!;
+
+  it('is the one shown from the moment it is asked for, not the sentence before it', () => {
+    expect(cueAt(CUES, 3_500).cue?.id).toBe('s1');
+    expect(cueArriving(CUES, 3_500, s2)).toMatchObject({ cue: s2, state: 'on', index: 1 });
   });
 
-  it('comes in early in proportion to the doubt', () => {
-    expect(leadInFor(2_000)).toBe(500);
+  it('holds the margin mark at its first word while the voice arrives', () => {
+    expect(paceOffset(CUES, 3_500, s2)).toBe(40);
+    expect(paceOffset(CUES, 3_500)).toBeLessThan(40);
   });
 
-  it('is bounded, because a badly aligned passage admits to tens of seconds', () => {
-    expect(leadInFor(45_000)).toBe(1_200);
+  it('gives the clock back once the voice is in it, or somewhere else altogether', () => {
+    expect(cueArriving(CUES, 5_000, s2).cue?.id).toBe('s2');
+    // Rewound well before it: the clock's answer, not the tap's.
+    expect(cueArriving(CUES, 1_500, s2).cue?.id).toBe('s1');
+  });
+
+  it('has arrived only once the voice is well inside it', () => {
+    // The seek sets the clock to the start at once; the element's first
+    // report can still land a frame short, so that is not arriving yet.
+    expect(hasArrived(s2, 4_500)).toBe(false);
+    expect(hasArrived(s2, 4_480)).toBe(false);
+    expect(hasArrived(s2, 5_000)).toBe(true);
+    expect(hasArrived(s2, 1_500)).toBe(true);
   });
 });
 
