@@ -18,6 +18,7 @@ import { registerPlacesRoutes } from './routes/places.js';
 import { registerStatsRoutes } from './routes/stats.js';
 import { registerFriendRoutes } from './routes/friends.js';
 import { registerAnnotationRoutes } from './routes/annotations.js';
+import { registerNotesExportRoutes } from './routes/notesExport.js';
 import { registerShelfRoutes } from './routes/shelves.js';
 import { registerPairRoutes } from './routes/pairs.js';
 import { registerTranslationRoutes } from './routes/translations.js';
@@ -310,6 +311,7 @@ export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyIn
   // reader's own to give, like a shelf.
   registerFriendRoutes(app, ctx);
   registerAnnotationRoutes(app, ctx);
+  registerNotesExportRoutes(app, ctx);
   // Personal-data neighbourhood: shelves belong next to the other things a
   // reader owns rather than beside the library-wide routes.
   registerShelfRoutes(app, ctx);

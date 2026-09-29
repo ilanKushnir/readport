@@ -194,6 +194,11 @@ each claim stands.
 
 [AGPL-3.0-or-later](LICENSE). The optional alignment model is Meta's MMS forced
 aligner, **CC-BY-NC-4.0 (non-commercial)** - the one non-permissive piece, never
-fetched without you asking. Bundled Literata © The Literata Project Authors
-(SIL OFL 1.1). Sample stories, artwork and covers are original works of this
-repository.
+fetched without you asking. Bundled fonts are under the SIL OFL 1.1: Literata
+© The Literata Project Authors, Inter © The Inter Project Authors, Frank Ruhl
+Libre © The Frank Ruhl Libre Project Authors, the Noto families © The Noto
+Project Authors and Google LLC, and Noto Sans CJK © Adobe; the PDF export
+carries static cuts of them (`scripts/pdf-assets.py`), each licence beside
+them in `server/fonts/pdf`. The PDF export is typeset with
+[Typst](https://typst.app) (Apache-2.0). Sample stories, artwork and covers are
+original works of this repository.

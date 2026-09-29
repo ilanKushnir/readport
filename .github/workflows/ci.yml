@@ -94,6 +94,11 @@ jobs:
         run: RP_SESSION_SECRET=ci-validation-secret docker compose config -q
       - name: Build image
         run: docker build -t readport:ci .
+      # The PDF export's typesetter is a native module with a binary per
+      # platform, and its fonts and template ride beside the code: typeset
+      # one small export inside the image, on its worker thread.
+      - name: Smoke test the notes PDF typesetter
+        run: docker run --rm -e RP_SESSION_SECRET=ci-smoke-secret-0123456789 readport:ci node server/dist/notes/selftest.js
       - name: Smoke test container (health, setup-token gate)
         run: |
           docker run -d --name tl -p 8383:8383 \

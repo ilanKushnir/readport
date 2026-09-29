@@ -15,3 +15,4 @@ export * from './stats.js';
 export * from './friends.js';
 export * from './share.js';
 export * from './translations.js';
+export * from './notesExport.js';

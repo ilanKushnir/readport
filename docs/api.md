@@ -251,6 +251,7 @@ the text - the same direction the resolver's own margin errs in.
 | GET          | `/api/annotations?q&kind`       | every mark this reader has made, across every book                                                |
 | GET/POST     | `/api/books/:id/annotations`    | bookmarks/highlights/notes                                                                        |
 | PATCH/DELETE | `/api/annotations/:annId`       | own marks only; `PATCH` takes `{note?, color?}`                                                   |
+| POST         | `/api/books/:id/notes/export`   | typeset a written-out export as a PDF → `{pageCount, pages, pdf}`                                 |
 
 A batch of progress events is a drained offline queue, not a form. Refusing all
 two hundred because one is malformed would lose the other hundred and
@@ -275,6 +276,15 @@ that thing I wrote down". So it joins the book in and returns `bookTitle` and
 `bookAuthor` alongside each mark, orders newest first, and caps at 500. `q`
 matches the note, the highlighted text or the book title; `kind` narrows to
 `highlight`, `note` or `bookmark`. This is what the Notes & marks page reads.
+
+`POST /api/books/:id/notes/export` takes the whole export already written -
+`notesExportSchema` in `shared/src/notesExport.ts`: the look, the page size,
+every label in the reader's language, and the sections with their marks - and
+typesets it with the book's cover (Typst, `server/typst/notes.typ`). It answers
+with the PDF as base64, its page count, and the first pages as standalone SVG
+pictures for a preview. It reads no annotations itself: the marks are the ones
+the app sends. One export is typeset at a time on a worker thread; a queue four
+deep answers `503 busy`.
 
 A highlight's colour is a short lowercase word, not a hex value, so the reader
 can restyle the palette without rewriting anyone's marks. `PATCH` is how a
