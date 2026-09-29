@@ -24,6 +24,10 @@ export const whatsnew = {
   'whatsnew.update.later': 'Not now',
 
   // ---------------------------------------------------------------- 0.29.0
+  'whatsnew.release.readingPlaces':
+    'Opening a passage - a quote someone sent, a note, a search - no longer moves your place in the book: “Back to your place” takes you back, and the new Places tab keeps where you read.',
+  'whatsnew.release.quoteLinks':
+    'A quote you share links to the passage itself, so whoever opens it lands on those words in the book.',
   'whatsnew.release.settingsPreview':
     'Reading settings open on a few lines of your book as the page shows them, so every change - size, spacing, theme, the voice’s mark - is seen as you make it.',
   'whatsnew.release.washStrength':

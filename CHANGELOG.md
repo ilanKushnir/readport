@@ -4,6 +4,37 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.31.0 - 2026-09-29
+
+### Added
+
+- **Reading places.** A book keeps the reader's place apart from where
+  they only looked. Opening a passage - a quotation someone sent, a
+  highlight or a note, a search result, the contents, the slider, a
+  footnote - is a look: nothing is recorded while the reader looks, so the
+  book still opens at their place, their percentage in the library and
+  what friends see stay where they were, and a "Back to your place" chip,
+  with a notch on the progress bar, takes them back. Reading on there for
+  a while (a couple of pages, over half a minute) makes it where they are.
+  The reader's contents have a Places tab: the reader's own place, the one
+  read most, with its chapter, the sentence it stopped at, how long they
+  read and when; and the other places they read on at for a while, each
+  kept until they go back to their own place and read on there for a
+  quarter of an hour, or forgotten by hand. Reading on through where
+  another place stopped joins the two. Everyone already reading a book
+  starts with their place where the book is open now. For the API:
+  `GET /api/books/:id/places` and `DELETE /api/books/:id/places/:placeId`.
+- **Quotes that open at the passage.** A shared quotation's link names its
+  passage: someone who can read the book lands on those words, as a look
+  that leaves their own place where it is.
+
+### Changed
+
+- **The way back after a jump stays.** The chip that offered it vanished
+  after a page of reading at the new spot; it now lasts until the reader
+  goes back, reads on there for real, or closes it, and the way back to
+  one's own place, once closed, stays closed until that place moves.
+
 ## 0.30.0 - 2026-09-29
 
 ### Added
