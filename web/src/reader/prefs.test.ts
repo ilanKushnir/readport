@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { api } from '../api/client';
 import {
   computePageLayout,
   DEFAULT_PREFS,
@@ -6,8 +7,12 @@ import {
   loadPrefs,
   pageCountFor,
   savePrefs,
+  syncPrefs,
   TWO_COLUMN_MIN_WIDTH,
 } from './prefs';
+
+vi.mock('../api/client', () => ({ api: vi.fn(async () => ({ reader: null })) }));
+const apiMock = vi.mocked(api);
 
 const store = new Map<string, string>();
 vi.stubGlobal('localStorage', {
@@ -24,7 +29,7 @@ describe('reader prefs', () => {
   });
 
   it('round-trips and merges with defaults (forward compatible)', () => {
-    savePrefs({ ...DEFAULT_PREFS, theme: 'night', size: 22 });
+    savePrefs({ ...DEFAULT_PREFS, theme: 'night', size: 22 }, DEFAULT_PREFS);
     expect(loadPrefs().theme).toBe('night');
     expect(loadPrefs().size).toBe(22);
     // A pref added in a future version falls back to its default.
@@ -37,6 +42,74 @@ describe('reader prefs', () => {
   it('survives corrupt storage', () => {
     store.set('rp-reader-prefs', '{not json');
     expect(loadPrefs()).toEqual(DEFAULT_PREFS);
+  });
+});
+
+describe('a change to a setting', () => {
+  beforeEach(async () => {
+    // Whatever an earlier test left to send goes now, not in the middle of this one.
+    await syncPrefs();
+    store.clear();
+    apiMock.mockClear();
+  });
+
+  it('is sent alone, over what another device chose since this reader opened', () => {
+    // The phone chose the wash this morning; this reader has been open since yesterday.
+    store.set(
+      'rp-reader-prefs',
+      JSON.stringify({
+        shared: { voiceMark: 'wash' },
+        byDevice: {},
+        updatedAt: '2026-09-01T08:00:00.000Z',
+      }),
+    );
+    const yesterday = { ...DEFAULT_PREFS };
+    savePrefs({ ...yesterday, theme: 'night' }, yesterday);
+    expect(loadPrefs().voiceMark).toBe('wash');
+    expect(loadPrefs().theme).toBe('night');
+    expect(JSON.parse(store.get('rp-reader-prefs-pending')!).shared).toEqual({ theme: 'night' });
+  });
+
+  it('is nothing to send when nothing changed', () => {
+    savePrefs({ ...DEFAULT_PREFS }, { ...DEFAULT_PREFS });
+    expect(store.has('rp-reader-prefs-pending')).toBe(false);
+  });
+
+  it('is sent on the next load when the app closed first, and the answer kept', async () => {
+    store.set(
+      'rp-reader-prefs-pending',
+      JSON.stringify({
+        shared: { voiceMark: 'wash' },
+        byDevice: {},
+        updatedAt: '2026-09-01T08:00:00.000Z',
+      }),
+    );
+    apiMock.mockResolvedValueOnce({
+      reader: {
+        shared: { voiceMark: 'wash', theme: 'sepia' },
+        byDevice: {},
+        updatedAt: '2026-09-01T08:00:00.000Z',
+      },
+    });
+    const prefs = await syncPrefs();
+    expect(apiMock).toHaveBeenCalledWith(
+      '/api/prefs/reader',
+      expect.objectContaining({ method: 'PATCH' }),
+    );
+    expect(prefs.voiceMark).toBe('wash');
+    expect(prefs.theme).toBe('sepia');
+    expect(store.has('rp-reader-prefs-pending')).toBe(false);
+  });
+
+  it('is kept when the server cannot take it', async () => {
+    const before = { ...DEFAULT_PREFS };
+    savePrefs({ ...before, washOpacity: 0.3 }, before);
+    apiMock.mockRejectedValueOnce(new Error('offline'));
+    const prefs = await syncPrefs();
+    expect(prefs.washOpacity).toBe(0.3);
+    expect(JSON.parse(store.get('rp-reader-prefs-pending')!).shared).toEqual({
+      washOpacity: 0.3,
+    });
   });
 });
 

@@ -174,6 +174,7 @@ export function Sheet({
   host,
   placement = 'dialog',
   size = 'medium',
+  confirmClose,
 }: {
   title: string;
   onClose: () => void;
@@ -202,21 +203,66 @@ export function Sheet({
   placement?: 'dialog' | 'corner';
   /** A dialog's width: a question or a short list, most things, or a long table. */
   size?: 'narrow' | 'medium' | 'wide';
+  /**
+   * Asked before the sheet leaves, by any of its ways out - a draft about to
+   * be thrown away, say. False keeps it open. Asked BEFORE it moves: asked
+   * afterwards, a "no" left a sheet gone from the screen and still open.
+   */
+  confirmClose?: () => boolean;
 }) {
   const t = useT();
   const ref = useRef<HTMLDivElement>(null);
   const backdrop = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  const confirmRef = useRef(confirmClose);
+  confirmRef.current = confirmClose;
   const leaving = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
-  const close = useCallback(() => {
-    if (leaving.current) return;
+  /**
+   * An owner that kept the sheet after all gets it back, whole. A sheet that
+   * has left the screen but is still open is a page that ignores its reader:
+   * the reader's own selection menu waits for its note sheet to close, and a
+   * note sheet that never did left text selection dead until a reload.
+   */
+  const returnIfKept = useCallback(() => {
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        if (!mounted.current) return;
+        leaving.current = false;
+        const sheet = ref.current;
+        if (sheet) {
+          sheet.style.transition = '';
+          sheet.style.transform = '';
+          sheet.style.opacity = '';
+        }
+        const scrim = backdrop.current;
+        if (scrim) {
+          scrim.style.transition = '';
+          scrim.style.opacity = '';
+          scrim.style.pointerEvents = '';
+        }
+      }),
+    );
+  }, []);
+
+  /** Leave, animated; false when the sheet was asked to stay. */
+  const close = useCallback((): boolean => {
+    if (leaving.current) return false;
+    if (confirmRef.current && !confirmRef.current()) return false;
     leaving.current = true;
     const sheet = ref.current;
     if (!sheet || reducedMotion()) {
       onCloseRef.current();
-      return;
+      returnIfKept();
+      return true;
     }
     const narrow = narrowSheet();
     // Whatever it is doing - arriving, or following a finger - it leaves
@@ -233,8 +279,12 @@ export function Sheet({
       scrim.style.transition = `opacity ${SHEET_EXIT_MS}ms linear`;
       scrim.style.opacity = '0';
     }
-    window.setTimeout(() => onCloseRef.current(), SHEET_EXIT_MS);
-  }, []);
+    window.setTimeout(() => {
+      onCloseRef.current();
+      returnIfKept();
+    }, SHEET_EXIT_MS);
+    return true;
+  }, [returnIfKept]);
 
   useFocusTrap(ref, close);
   useScrollLock();
@@ -295,10 +345,9 @@ export function Sheet({
     drag.current = null;
     // A long pause before letting go is not a flick, whatever the last move was.
     const speed = e.timeStamp - d.lastT > 90 ? 0 : d.speed;
-    if (dragDismisses(e.clientY - d.y, sheet.offsetHeight, speed)) {
-      close();
-      return;
-    }
+    // Let go far enough down, it leaves - unless it was asked to stay, and
+    // then it settles back like any drag that fell short.
+    if (dragDismisses(e.clientY - d.y, sheet.offsetHeight, speed) && close()) return;
     sheet.style.transition = `transform ${SHEET_SETTLE_MS}ms ${SHEET_EASE_IN}`;
     sheet.style.transform = '';
     if (backdrop.current) {

@@ -163,9 +163,9 @@ export function ReadingNow({
       {selected && (
         <Sheet
           title={t('library.readingNow.resetTitle')}
-          onClose={() => {
-            if (!busy) setSelected(null);
-          }}
+          // Not while the reset is on its way: the sheet reports how it went.
+          confirmClose={() => !busy}
+          onClose={() => setSelected(null)}
         >
           <p>{t('library.readingNow.resetBody', { title: selected.title, kind: selected.kind })}</p>
           <p>

@@ -5,10 +5,14 @@ import {
   EMPTY_SYNCED_READER_PREFS,
   PER_BOOK_SPEED_LIMIT,
   type SyncedReaderPrefs,
+  applyReaderPrefsPatch,
+  combineReaderPrefsPatches,
   mergeReaderPrefs,
   prunePerBookSpeeds,
+  readerPrefsPatch,
   reconcileReaderPrefs,
   splitReaderPrefs,
+  syncedReaderPrefsSchema,
 } from './prefs.js';
 
 /**
@@ -99,6 +103,123 @@ describe('mergeReaderPrefs', () => {
     };
     const stored = splitReaderPrefs(chosen, 'tablet', null, T1);
     expect(mergeReaderPrefs(stored, 'tablet')).toEqual(chosen);
+  });
+});
+
+describe('a stored document', () => {
+  it('reads back with nothing added to it', () => {
+    // zod fills a default into a partial object too; a default on any field
+    // was written into every bucket each time a document was read.
+    const doc = {
+      shared: { voiceMark: 'wash' },
+      byDevice: { phone: { size: 20 } },
+      updatedAt: T1,
+    };
+    expect(syncedReaderPrefsSchema.parse(doc)).toEqual(doc);
+  });
+
+  it('keeps a shared choice that a device’s bucket also names', () => {
+    // What documents stored that way look like: the default voice mark filed
+    // under each device, where it outranked the reader's own choice.
+    const polluted: SyncedReaderPrefs = {
+      shared: { voiceMark: 'wash', autoScroll: false },
+      byDevice: {
+        phone: { size: 18, voiceMark: 'margin', autoScroll: true },
+        tablet: { margin: 'wide', voiceMark: 'margin' },
+      },
+      updatedAt: T1,
+    };
+    const phone = mergeReaderPrefs(polluted, 'phone');
+    expect(phone.voiceMark).toBe('wash');
+    expect(phone.size).toBe(18);
+    expect(phone.autoScroll).toBe(true);
+    expect(mergeReaderPrefs(polluted, 'tablet').voiceMark).toBe('wash');
+    expect(mergeReaderPrefs(polluted, 'tablet').autoScroll).toBe(false);
+  });
+
+  it('is tidied when another device saves', () => {
+    const polluted: SyncedReaderPrefs = {
+      shared: {},
+      byDevice: { tablet: { margin: 'wide', voiceMark: 'margin' } },
+      updatedAt: T1,
+    };
+    const out = splitReaderPrefs({ ...DEFAULT_READER_PREFS, size: 22 }, 'phone', polluted, T2);
+    expect(out.byDevice.tablet).toEqual({ margin: 'wide' });
+  });
+});
+
+describe('a change sent as a patch', () => {
+  it('files each setting where it belongs', () => {
+    const patch = readerPrefsPatch({ voiceMark: 'wash', size: 23 }, 'phone', T2);
+    expect(patch).toEqual({
+      shared: { voiceMark: 'wash' },
+      byDevice: { phone: { size: 23 } },
+      updatedAt: T2,
+    });
+    expect(readerPrefsPatch({ theme: 'night' }, 'phone', T2).byDevice).toEqual({});
+  });
+
+  it('changes only what it names', () => {
+    // The tablet was open since yesterday; the phone chose the wash this
+    // morning. The tablet's new type size must not take the wash away.
+    const stored: SyncedReaderPrefs = {
+      shared: { voiceMark: 'wash', theme: 'night' },
+      byDevice: { phone: { size: 18 }, tablet: { size: 21 } },
+      updatedAt: T1,
+    };
+    const out = applyReaderPrefsPatch(stored, readerPrefsPatch({ size: 24 }, 'tablet', T2));
+    expect(out).toEqual({
+      shared: { voiceMark: 'wash', theme: 'night' },
+      byDevice: { phone: { size: 18 }, tablet: { size: 24 } },
+      updatedAt: T2,
+    });
+  });
+
+  it('removes a setting put back to its default', () => {
+    const stored: SyncedReaderPrefs = {
+      shared: { voiceMark: 'wash', washOpacity: 0.3 },
+      byDevice: {},
+      updatedAt: T1,
+    };
+    const out = applyReaderPrefsPatch(
+      stored,
+      readerPrefsPatch(
+        { voiceMark: 'margin', washOpacity: DEFAULT_READER_PREFS.washOpacity },
+        'phone',
+        T2,
+      ),
+    );
+    expect(out.shared).toEqual({});
+  });
+
+  it('drops a default an older version stored', () => {
+    const stored: SyncedReaderPrefs = {
+      shared: {},
+      byDevice: { phone: { mode: 'paginated', autoScroll: false, size: 20 } },
+      updatedAt: T1,
+    };
+    const out = applyReaderPrefsPatch(stored, readerPrefsPatch({ theme: 'night' }, 'phone', T2));
+    expect(out.byDevice.phone).toEqual({ size: 20 });
+  });
+
+  it('starts a document that did not exist, and never goes back in time', () => {
+    const first = applyReaderPrefsPatch(null, readerPrefsPatch({ theme: 'sepia' }, 'desktop', T1));
+    expect(mergeReaderPrefs(first, 'phone').theme).toBe('sepia');
+    const stored: SyncedReaderPrefs = { shared: {}, byDevice: {}, updatedAt: T2 };
+    // A device whose clock runs behind still has its change applied.
+    const out = applyReaderPrefsPatch(stored, readerPrefsPatch({ theme: 'night' }, 'phone', T1));
+    expect(out.shared.theme).toBe('night');
+    expect(out.updatedAt).toBe(T2);
+  });
+
+  it('combines with a later one, the later winning', () => {
+    const a = readerPrefsPatch({ theme: 'sepia', size: 20 }, 'phone', T1);
+    const b = readerPrefsPatch({ theme: 'night' }, 'phone', T2);
+    expect(combineReaderPrefsPatches(a, b)).toEqual({
+      shared: { theme: 'night' },
+      byDevice: { phone: { size: 20 } },
+      updatedAt: T2,
+    });
   });
 });
 

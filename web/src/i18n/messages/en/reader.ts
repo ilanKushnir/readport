@@ -201,6 +201,8 @@ export const reader = {
   'reader.settings.voiceMark': 'Following the voice',
   'reader.voiceMark.margin': 'A mark in the margin beside the line being read',
   'reader.voiceMark.wash': 'The sentence being read, highlighted',
+  'reader.settings.washStrength': 'Strength',
+  'reader.settings.washStrengthLabel': 'Strength of the highlight',
   'reader.settings.progressBar': 'Progress bar',
   'reader.progressBar.full': 'Full',
   'reader.progressBar.compact': 'Compact',

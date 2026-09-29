@@ -9,6 +9,12 @@
 }
 html {
   height: 100%;
+  /* Text stays the size it was set to when the phone turns. Left to itself,
+     iOS enlarges text on its way into landscape - and, in an app on the home
+     screen, does not always shrink it back when the phone turns upright
+     again, so a reader's type size was lost to one rotation. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 body {
   margin: 0;

@@ -6,7 +6,10 @@ import {
   type ReaderPrefs,
   type ReaderTheme,
   type SyncedReaderPrefs,
+  applyReaderPrefsPatch,
+  combineReaderPrefsPatches,
   mergeReaderPrefs,
+  readerPrefsPatch,
   reconcileReaderPrefs,
   readerPrefsSchema,
   splitReaderPrefs,
@@ -19,6 +22,8 @@ export {
   DEFAULT_READER_PREFS as DEFAULT_PREFS,
   SIZE_MAX,
   SIZE_MIN,
+  WASH_MAX,
+  WASH_MIN,
   type ReaderFont,
   type ReaderPrefs,
   type ReaderTheme,
@@ -38,6 +43,8 @@ export {
  */
 
 const KEY = 'rp-reader-prefs';
+/** Changes made here and not yet taken by the server, kept for the next load if need be. */
+const PENDING_KEY = 'rp-reader-prefs-pending';
 
 /**
  * Which kind of screen this is.
@@ -94,51 +101,119 @@ export function loadPrefs(): ReaderPrefs {
 }
 
 let pushTimer: ReturnType<typeof setTimeout> | null = null;
+/** This device's changes that the server has not taken yet, as one patch. */
 let pending: SyncedReaderPrefs | null = null;
+/** Sends, one after another: two in flight could land in the wrong order. */
+let sending: Promise<void> = Promise.resolve();
+
+function keepPending(next: SyncedReaderPrefs | null): void {
+  pending = next;
+  try {
+    if (next) localStorage.setItem(PENDING_KEY, JSON.stringify(next));
+    else localStorage.removeItem(PENDING_KEY);
+  } catch {
+    /* private mode: kept in memory for this session */
+  }
+}
+
+/** A change an app closed too soon never sent, taken up on the next load. */
+function adoptStoredPending(): void {
+  try {
+    const raw = localStorage.getItem(PENDING_KEY);
+    const stored = raw ? syncedReaderPrefsSchema.safeParse(JSON.parse(raw)) : null;
+    if (stored?.success) {
+      pending = pending ? combineReaderPrefsPatches(stored.data, pending) : stored.data;
+    }
+  } catch {
+    /* nothing kept, or nothing readable: nothing to send */
+  }
+}
+
+async function send(): Promise<void> {
+  const patch = pending;
+  if (!patch) return;
+  keepPending(null);
+  try {
+    const res = await api<{ reader: unknown }>('/api/prefs/reader', {
+      method: 'PATCH',
+      body: patch,
+    });
+    const doc = syncedReaderPrefsSchema.safeParse(res.reader);
+    // The server's copy is every device's changes together; anything
+    // changed here while this was on its way still goes on top.
+    if (doc.success) storeSynced(pending ? applyReaderPrefsPatch(doc.data, pending) : doc.data);
+  } catch {
+    // Back in line, under anything changed since, for the next change or
+    // the next book opened to carry. The local copy already has it.
+    keepPending(pending ? combineReaderPrefsPatches(patch, pending) : patch);
+  }
+}
+
+function push(): Promise<void> {
+  if (pushTimer) clearTimeout(pushTimer);
+  pushTimer = null;
+  sending = sending.then(send);
+  return sending;
+}
 
 /**
- * Save locally at once, and to the server shortly afterwards.
+ * Save locally at once, and to the server shortly afterwards - only the
+ * settings that changed from `previous`, which is what this reader was
+ * showing. The rest are not this device's to send: another device may have
+ * changed them since this one last looked.
  *
- * The push is debounced because the size stepper fires on every press, and a
- * reader adjusting it is making one decision, not eight. A failed push is
- * left for the next change or the next load to carry: preferences are not
- * worth a retry queue, and the local copy is already correct.
+ * The push is debounced because the size stepper fires on every press, and
+ * a reader adjusting it is making one decision, not eight. A push that fails
+ * is kept, here and in storage, for the next change or the next book opened
+ * to carry.
  */
-export function savePrefs(next: ReaderPrefs): void {
-  const merged = splitReaderPrefs(next, deviceClass(), loadSynced(), new Date().toISOString());
-  storeSynced(merged);
-  pending = merged;
+export function savePrefs(next: ReaderPrefs, previous: ReaderPrefs): void {
+  const changed: Partial<ReaderPrefs> = {};
+  for (const key of Object.keys(next) as (keyof ReaderPrefs)[]) {
+    if (next[key] !== previous[key]) Object.assign(changed, { [key]: next[key] });
+  }
+  if (Object.keys(changed).length === 0) return;
+  const patch = readerPrefsPatch(changed, deviceClass(), new Date().toISOString());
+  storeSynced(applyReaderPrefsPatch(loadSynced(), patch));
+  keepPending(pending ? combineReaderPrefsPatches(pending, patch) : patch);
   if (pushTimer) clearTimeout(pushTimer);
-  pushTimer = setTimeout(() => {
-    const body = pending;
-    pending = null;
-    pushTimer = null;
-    if (body) void api('/api/prefs/reader', { method: 'PUT', body }).catch(() => {});
-  }, 900);
+  pushTimer = setTimeout(() => void push(), 900);
 }
 
 /**
  * Take whatever the server has and reconcile it with this browser's copy.
  *
- * Returns the preferences to use now. Called when the reader opens a book, so
- * a size chosen on the laptop this morning is in place on the phone tonight
- * without either device having to be told about the other.
+ * Returns the preferences to use now. Called when the reader opens a book and
+ * when it comes back to the screen, so a size chosen on the laptop this
+ * morning is in place on the phone tonight without either device having to
+ * be told about the other.
  */
 export async function syncPrefs(): Promise<ReaderPrefs> {
-  const local = loadSynced();
+  adoptStoredPending();
   try {
-    const res = await api<{ reader: SyncedReaderPrefs | null }>('/api/prefs/reader');
-    const winner = reconcileReaderPrefs(local, res.reader);
-    if (winner !== local) storeSynced(winner);
-    // This device has something the server has not seen - a change made
-    // offline, or a first run against a server that has never been told.
-    else if (Date.parse(local.updatedAt) > Date.parse(res.reader?.updatedAt ?? '1970-01-01')) {
-      void api('/api/prefs/reader', { method: 'PUT', body: local }).catch(() => {});
+    if (pending) {
+      // Sending what this device has not sent brings back everything the
+      // other devices changed, in the same answer.
+      await push();
+    } else {
+      const res = await api<{ reader: SyncedReaderPrefs | null }>('/api/prefs/reader');
+      // Read after the answer, not before: a change made while it was on its
+      // way is in this copy, waiting to be sent, and must not be replaced.
+      const local = loadSynced();
+      if (!pending) {
+        const winner = reconcileReaderPrefs(local, res.reader);
+        if (winner !== local) storeSynced(winner);
+        // A copy only this browser has - written before changes were sent
+        // one at a time, or for a server that has never been told.
+        else if (Date.parse(local.updatedAt) > Date.parse(res.reader?.updatedAt ?? '1970-01-01')) {
+          void api('/api/prefs/reader', { method: 'PUT', body: local }).catch(() => {});
+        }
+      }
     }
-    return mergeReaderPrefs(winner, deviceClass());
   } catch {
-    return mergeReaderPrefs(local, deviceClass());
+    /* offline: this browser's copy is what there is */
   }
+  return mergeReaderPrefs(loadSynced(), deviceClass());
 }
 
 /** Resolve 'auto' against the system appearance. */
@@ -196,6 +271,26 @@ export const MARGINS: Record<ReaderPrefs['margin'], { padding: number; measure: 
   normal: { padding: 24, measure: '38em' },
   wide: { padding: 40, measure: '32em' },
 };
+
+/**
+ * The page's type as the custom properties the reader's stylesheet reads.
+ * The page and the preview in its settings set these same ones, so the
+ * preview cannot drift into showing something the page does not.
+ */
+export function readerTypeVars(prefs: ReaderPrefs): Record<`--rd-${string}`, string | number> {
+  const margins = MARGINS[prefs.margin];
+  return {
+    '--rd-font': FONTS[prefs.font].stack,
+    '--rd-size': `${prefs.size}px`,
+    '--rd-weight': prefs.weight,
+    '--rd-leading': prefs.lineHeight,
+    '--rd-margin': `${margins.padding}px`,
+    '--rd-measure': margins.measure,
+    '--rd-align': prefs.align,
+    '--rd-hyphens': prefs.hyphens ? 'auto' : 'manual',
+    '--rd-wash': `${Math.round(prefs.washOpacity * 100)}%`,
+  };
+}
 
 /* ------------------------------------------------------------ pagination */
 

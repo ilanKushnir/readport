@@ -1169,7 +1169,8 @@
 }
 .spoken-mark > span {
   border-radius: 5px;
-  background: color-mix(in srgb, currentColor 13%, transparent);
+  /* As strong as the reader set it in Reading settings (washOpacity). */
+  background: color-mix(in srgb, currentColor var(--rd-wash, 18%), transparent);
   transition: opacity var(--rp-duration-quick) var(--rp-ease);
 }
 .spoken-mark > span[data-first] {
@@ -1343,6 +1344,54 @@
 }
 
 /* reading settings sheet (Apple Books-style) */
+
+/* The page, a few lines of it, above the settings that change it: the
+   reader's own words in the page's type, colours and brightness, with the
+   voice's mark drawn as the page draws it. Held at the top while the
+   settings scroll beneath, so each change is seen as it is made. Out to
+   the sheet's edges: on a phone the sheet is as wide as the page, so the
+   lines break where the page's do. */
+.rs-preview {
+  position: sticky;
+  /* Sticky offsets count from inside the body's padding. */
+  top: calc(-1 * var(--sp-4));
+  z-index: 3;
+  margin: calc(-1 * var(--sp-4)) calc(-1 * var(--sp-4)) 0;
+  height: clamp(120px, 24dvh, 196px);
+  overflow: hidden;
+  background: var(--rd-bg);
+  color: var(--rd-text);
+  border-block-end: 1px solid var(--rp-border);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.rs-preview .rs-preview__text {
+  padding: var(--sp-4) var(--rd-margin, 24px) 0;
+}
+/* The words run on past the preview's foot: they fade, as a page does not
+   end mid-sentence. Under the brightness, which dims the fade with the rest. */
+.rs-preview::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 40px;
+  z-index: 4;
+  background: linear-gradient(to bottom, transparent, var(--rd-bg));
+  pointer-events: none;
+}
+.sheet__body > .rs-preview + .rs-group {
+  padding-block-start: var(--sp-4);
+}
+/* A name longer than "Lines" pushes the slider along rather than into it. */
+.rs-slider--wash {
+  margin-block: var(--sp-3) 0;
+}
+.rs-slider--wash .rs-slider__name {
+  width: auto;
+  min-width: 56px;
+}
+
 .rs-group {
   padding-block: var(--sp-3);
   border-block-end: 1px solid var(--rp-border);

@@ -113,18 +113,36 @@ import {
   syncPrefs,
   MARGINS,
   pageCountFor,
+  readerTypeVars,
   savePrefs,
   SIZE_MAX,
   SIZE_MIN,
+  WASH_MAX,
+  WASH_MIN,
   type PageLayout,
   type ReaderPrefs,
+  type ReaderTheme,
 } from './prefs';
+import { ReadingPreview, previewSample, type PreviewSample } from './ReadingPreview';
 import { formatDuration } from '../lib/format';
 import { applyAppThemeColor, setThemeColor } from '../lib/themeColor';
 
 type SheetKind = 'none' | 'toc' | 'settings' | 'search' | 'note' | 'languages' | 'peek';
 
 const DARK_MQ = '(prefers-color-scheme: dark)';
+
+/** The settings that lay the chapter out again (the layout effect's dependencies). */
+const RELAYOUT_KEYS = [
+  'mode',
+  'size',
+  'lineHeight',
+  'font',
+  'weight',
+  'margin',
+  'columns',
+  'align',
+  'hyphens',
+] as const satisfies readonly (keyof ReaderPrefs)[];
 
 /** Reader page backgrounds, mirrored from tokens.css for the status bar. */
 const THEME_BG: Record<ReturnType<typeof effectiveTheme>, string> = {
@@ -229,6 +247,8 @@ export function ReaderPage() {
   const [prefs, setPrefs] = useState<ReaderPrefs>(loadPrefs);
   const [chrome, setChrome] = useState(true);
   const [sheet, setSheet] = useState<SheetKind>('none');
+  /** The page's own words for the preview in Reading settings, taken as they open. */
+  const [settingsSample, setSettingsSample] = useState<PreviewSample | null>(null);
   const [page, setPage] = useState(0);
   const [pageCount, setPageCount] = useState(1);
   /**
@@ -1000,19 +1020,31 @@ export function ReaderPage() {
   /**
    * Pick up preferences changed on another device.
    *
-   * Once, when the reader opens a book - not on a timer. Preferences are
-   * changed rarely and read constantly, so polling would be all cost; and
-   * re-reading them mid-chapter would reflow the page under someone who is
-   * reading it. The local copy is what the first paint used, so this can only
-   * ever be an improvement on it.
+   * When the reader opens a book, and when it comes back to the screen - not
+   * on a timer. Preferences are changed rarely and read constantly, so
+   * polling would be all cost, and re-reading them mid-chapter would reflow
+   * the page under someone who is reading it. Coming back is the moment: a
+   * reader left open on the tablet for a day would otherwise show, and send
+   * back, a day-old idea of what the reader chose. Nothing changed is
+   * nothing set, so an answer that agrees reflows nothing.
    */
   useEffect(() => {
     let alive = true;
-    void syncPrefs().then((p) => {
-      if (alive) setPrefs(p);
-    });
+    const pull = () =>
+      void syncPrefs().then((p) => {
+        if (!alive) return;
+        setPrefs((current) =>
+          (Object.keys(p) as (keyof ReaderPrefs)[]).every((k) => p[k] === current[k]) ? current : p,
+        );
+      });
+    pull();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') pull();
+    };
+    document.addEventListener('visibilitychange', onVisible);
     return () => {
       alive = false;
+      document.removeEventListener('visibilitychange', onVisible);
     };
   }, []);
 
@@ -2920,6 +2952,14 @@ export function ReaderPage() {
     },
     [manifest, sentences, spineIdx],
   );
+  // A sheet with nothing left to show is closed, not left open off screen:
+  // an open sheet is what the selection menu waits on, and one that could
+  // not be seen or closed took the menu with it until the app restarted.
+  const peekGone = sheet === 'peek' && !(peek && peekable.length > 0);
+  const contentsGone = sheet === 'toc' && !manifest;
+  useEffect(() => {
+    if (peekGone || contentsGone) setSheet('none');
+  }, [peekGone, contentsGone]);
   const hereLocator = useCallback(
     () => (manifest ? locatorAt(manifest, sentences, spineIdx, currentOffsetRef.current) : null),
     [manifest, sentences, spineIdx],
@@ -3613,14 +3653,7 @@ export function ReaderPage() {
       data-reader-theme={theme}
       style={
         {
-          '--rd-font': FONTS[prefs.font].stack,
-          '--rd-size': `${prefs.size}px`,
-          '--rd-weight': prefs.weight,
-          '--rd-leading': prefs.lineHeight,
-          '--rd-margin': `${margins.padding}px`,
-          '--rd-measure': margins.measure,
-          '--rd-align': prefs.align,
-          '--rd-hyphens': prefs.hyphens ? 'auto' : 'manual',
+          ...readerTypeVars(prefs),
           // Measured, so scroll mode and the chapter-end button reserve the
           // room the bars actually take rather than a constant that was
           // already wrong before read-along made it worse.
@@ -3651,7 +3684,18 @@ export function ReaderPage() {
         </button>
         <button
           className="icon-btn"
-          onClick={() => setSheet('settings')}
+          onClick={() => {
+            const cue = readAlong ? narration.cue : null;
+            setSettingsSample(
+              previewSample(
+                textMapRef.current,
+                sentences,
+                currentOffsetRef.current,
+                cue ? { start: cue.charStart, end: cue.charEnd } : null,
+              ),
+            );
+            setSheet('settings');
+          }}
           aria-label={t('reader.chrome.settings')}
         >
           <IconType />
@@ -4233,7 +4277,7 @@ export function ReaderPage() {
               wantAutoScrollRef.current = enabled;
               const next = { ...prefs, autoScroll: enabled };
               setPrefs(next);
-              savePrefs(next);
+              savePrefs(next, prefs);
               if (enabled) {
                 if (reduceMotion) toast.show(t('reader.readAlong.reducedMotion'));
                 else if (!resumeFollowing(true)) returnToVoice();
@@ -4553,10 +4597,19 @@ export function ReaderPage() {
       {sheet === 'settings' && (
         <ReaderSettingsSheet
           prefs={prefs}
+          theme={theme}
+          sample={settingsSample}
+          rtl={rtl}
+          lang={language}
           onChange={(p) => {
+            // A change that moves the text keeps the reader's place through
+            // the relayout. One that does not - a colour, the voice's mark -
+            // must not leave a place behind for some later relayout to jump
+            // back to.
+            if (RELAYOUT_KEYS.some((k) => p[k] !== prefs[k]))
+              pendingTargetRef.current = { charOffset: currentOffsetRef.current };
             setPrefs(p);
-            savePrefs(p);
-            pendingTargetRef.current = { charOffset: currentOffsetRef.current };
+            savePrefs(p, prefs);
           }}
           onClose={() => setSheet('none')}
         />
@@ -4578,11 +4631,13 @@ export function ReaderPage() {
         <Sheet
           placement="corner"
           title={editingNote ? t('reader.note.edit') : t('reader.note.add')}
+          // On a phone the way to dismiss the keyboard is to tap outside,
+          // which lands on the backdrop and closes the sheet - so an
+          // accidental dismissal used to take the note with it silently.
+          // Asked before the sheet leaves: asked after, a "keep it" left the
+          // sheet off screen yet open, and the selection menu waiting on it.
+          confirmClose={() => !noteDraft.trim() || window.confirm(t('reader.note.discard'))}
           onClose={() => {
-            // On a phone the way to dismiss the keyboard is to tap outside,
-            // which lands on the backdrop and closes the sheet - so an
-            // accidental dismissal used to take the note with it silently.
-            if (noteDraft.trim() && !window.confirm(t('reader.note.discard'))) return;
             setSheet('none');
             setEditingNote(null);
             setSelection(null);
@@ -4817,14 +4872,25 @@ function paintHandoff(map: TextMap, start: number, end: number): () => void {
 
 function ReaderSettingsSheet({
   prefs,
+  theme,
+  sample,
+  rtl,
+  lang,
   onChange,
   onClose,
 }: {
   prefs: ReaderPrefs;
+  /** The page's theme as it is drawn, 'auto' resolved. */
+  theme: ReaderTheme;
+  /** The page's own words, for the preview; none on a page with no text. */
+  sample: PreviewSample | null;
+  rtl: boolean;
+  lang: string | null;
   onChange: (p: ReaderPrefs) => void;
   onClose: () => void;
 }) {
   const t = useT();
+  const f = useFormat();
   const set = <K extends keyof ReaderPrefs>(k: K, v: ReaderPrefs[K]) =>
     onChange({ ...prefs, [k]: v });
   const themes: { value: ReaderPrefs['theme']; label: string }[] = [
@@ -4836,6 +4902,9 @@ function ReaderSettingsSheet({
   ];
   return (
     <Sheet placement="corner" title={t('reader.settings.title')} onClose={onClose}>
+      {sample && (
+        <ReadingPreview prefs={prefs} theme={theme} sample={sample} rtl={rtl} lang={lang} />
+      )}
       <div className="rs-group" role="group" aria-label={t('reader.settings.theme')}>
         <div className="rs-themes">
           {themes.map((th) => (
@@ -5008,6 +5077,25 @@ function ReaderSettingsSheet({
             </button>
           ))}
         </div>
+        {/* How strongly the sentence is lit - only where it is lit. */}
+        {prefs.voiceMark === 'wash' && (
+          <label className="rs-slider rs-slider--wash" htmlFor="rs-wash">
+            <span className="rs-slider__name">{t('reader.settings.washStrength')}</span>
+            <input
+              id="rs-wash"
+              className="slider"
+              type="range"
+              min={WASH_MIN}
+              max={WASH_MAX}
+              step={0.01}
+              value={prefs.washOpacity}
+              aria-label={t('reader.settings.washStrengthLabel')}
+              aria-valuetext={f.percent(prefs.washOpacity)}
+              onChange={(e) => set('washOpacity', Number(e.target.value))}
+            />
+            <span className="rs-slider__val">{f.percent(prefs.washOpacity)}</span>
+          </label>
+        )}
       </div>
 
       <div className="rs-group">

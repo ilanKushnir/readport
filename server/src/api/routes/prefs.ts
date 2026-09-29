@@ -3,6 +3,7 @@ import { z } from 'zod';
 import {
   FACET_KINDS,
   type SidebarPrefs,
+  applyReaderPrefsPatch,
   playbackPrefsSchema,
   prunePerBookSpeeds,
   syncedReaderPrefsSchema,
@@ -101,21 +102,39 @@ export function registerPrefsRoutes(app: FastifyInstance, ctx: AppContext): void
   /**
    * Reader appearance.
    *
-   * The client is the source of truth for its own device bucket and pushes
-   * the whole document, because it is the only side that knows which device
-   * class it is. The server's job is to validate it and hand it to the next
-   * device that asks - a phone must not be able to write the desktop's type
-   * size by accident, which is why the shape, not just the values, is checked.
+   * A change arrives as a patch - the settings that changed, filed under
+   * the shared bucket or the device's, which only the client can know - and
+   * is applied here to what is stored, one setting at a time, so a device
+   * holding an older copy of everything else cannot send it back. The shape,
+   * not just the values, is checked: a phone must not be able to write the
+   * desktop's type size by accident.
    */
   app.get('/api/prefs/reader', async (req) => ({ reader: readPref(ctx, req.user!.id, 'reader') }));
 
+  app.patch('/api/prefs/reader', async (req, reply) => {
+    const body = syncedReaderPrefsSchema.safeParse(req.body);
+    if (!body.success) {
+      return reply.code(400).send({ error: 'invalid', detail: body.error.issues[0]?.message });
+    }
+    const next = applyReaderPrefsPatch(readPref(ctx, req.user!.id, 'reader'), body.data);
+    writePref(ctx, req.user!.id, 'reader', next);
+    return { reader: next };
+  });
+
+  /**
+   * The whole document at once: what a client from before patches sends,
+   * and a first copy for a server that has none. Tidied on the way in -
+   * applied as a change to nothing - so settings filed in the wrong bucket
+   * are not stored again.
+   */
   app.put('/api/prefs/reader', async (req, reply) => {
     const body = syncedReaderPrefsSchema.safeParse(req.body);
     if (!body.success) {
       return reply.code(400).send({ error: 'invalid', detail: body.error.issues[0]?.message });
     }
-    writePref(ctx, req.user!.id, 'reader', body.data);
-    return { reader: body.data };
+    const next = applyReaderPrefsPatch(null, body.data);
+    writePref(ctx, req.user!.id, 'reader', next);
+    return { reader: next };
   });
 
   app.get('/api/prefs/playback', async (req) => ({
