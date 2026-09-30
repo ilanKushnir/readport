@@ -4,6 +4,20 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.33.1 - 2026-09-30
+
+### Fixed
+
+- **The server no longer stops answering while it scans.** A library scan
+  read the start and end of every book file one after another, holding
+  the whole server still while it waited. On a library on a network share
+  whose files were not already cached - after a restart, or while a sync
+  read gigabytes of narration - that was minutes in which nothing
+  answered: not the app, not its health check, so it was restarted as
+  dead, scanned again, and a sync under way started over each time. The
+  scan now reads without blocking, several files at a time, and does not
+  read again a file whose size and date have not changed.
+
 ## 0.33.0 - 2026-09-30
 
 ### Added
