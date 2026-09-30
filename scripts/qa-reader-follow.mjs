@@ -1084,6 +1084,48 @@ try {
     );
     await context.close();
   }
+  {
+    // Reading along, nobody touches the screen: the phone would lock itself
+    // mid-chapter. A Wake Lock that counts stands in for the browser's.
+    const { page, context } = await open('paginated');
+    await page.evaluate(() => {
+      const locks = { held: 0, requests: 0 };
+      window.__locks = locks;
+      const wakeLock = {
+        request: async () => {
+          locks.requests++;
+          locks.held++;
+          const s = {
+            released: false,
+            release: async () => {
+              if (s.released) return;
+              s.released = true;
+              locks.held--;
+            },
+            addEventListener() {},
+          };
+          return s;
+        },
+      };
+      Object.defineProperty(Navigator.prototype, 'wakeLock', {
+        get: () => wakeLock,
+        configurable: true,
+      });
+    });
+    const held = () => page.evaluate(() => window.__locks.held);
+    await check('the screen stays on while the voice reads along, and only then', async () => {
+      assert.equal(await held(), 0, 'not before read-along is on');
+      await page.getByRole('button', { name: 'Read along', exact: true }).click();
+      await page.waitForFunction(() => window.__locks.held === 1);
+      await page.evaluate(() => window.readerClock({ playing: false }));
+      await page.waitForFunction(() => window.__locks.held === 0);
+      await page.evaluate(() => window.readerClock({ playing: true }));
+      await page.waitForFunction(() => window.__locks.held === 1);
+      await page.getByRole('button', { name: 'Stop reading along' }).click();
+      await page.waitForFunction(() => window.__locks.held === 0);
+    });
+    await context.close();
+  }
 } finally {
   await browser.close();
 }

@@ -95,6 +95,7 @@ import { hostOrigin, outlinePath, outlineRuns } from './overlay';
 import { lineBoxes, relativeTo, sameBoxes, type LineBox } from './overlay';
 import { trimQuote } from './share';
 import { liveCheckpointOffset } from './liveOffset';
+import { holdAwake } from '../lib/wakeLock';
 import {
   checkpointDue,
   landingOffset,
@@ -1921,6 +1922,16 @@ export function ReaderPage() {
     }, 500);
     return () => clearInterval(timer);
   }, [readAlong, manifest, spineIdx, sentences, narration.playing, readingMoved, recordReading]);
+
+  // Reading along, the voice turns the pages and nobody touches the screen,
+  // so the phone locked itself mid-chapter - the text gone dark under a
+  // voice still reading it. The screen stays on while the voice plays, and
+  // is let go of the moment it stops: a paused reader's phone sleeps as it
+  // always has.
+  useEffect(() => {
+    if (!readAlong || !narration.playing) return;
+    return holdAwake();
+  }, [readAlong, narration.playing]);
 
   /**
    * Relocate first, verify the rendered cue, then give the voice control.

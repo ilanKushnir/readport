@@ -2,6 +2,7 @@ import { api, notifyUnauthorized } from '../api/client';
 import { idbAll, idbClear, idbDelete, idbGet, idbPut, STORES } from '../progress/idb';
 import { type BookSummary, type Locator, type SwitchResolution } from '@readport/shared';
 import { type MessageKey } from '../i18n/messages/en';
+import { holdAwake } from '../lib/wakeLock';
 
 /**
  * Explicit per-title offline packages. Downloads go into a dedicated Cache
@@ -991,41 +992,10 @@ async function requestPersistentStorage(): Promise<void> {
   }
 }
 
-/**
- * Keep the screen on while a download runs. A phone that locks itself
- * stops the page and the download with it - a web app has no background
- * downloads on iOS - and a gigabyte takes longer than the screen stays on.
- * Taken again whenever the page comes back to the front, because the
- * browser lets go of it whenever the page leaves.
- */
-function holdAwake(): () => void {
-  type Sentinel = { release: () => Promise<void> };
-  const wl =
-    typeof navigator !== 'undefined'
-      ? (navigator as unknown as { wakeLock?: { request: (t: 'screen') => Promise<Sentinel> } })
-          .wakeLock
-      : undefined;
-  if (!wl || typeof document === 'undefined') return () => {};
-  let sentinel: Sentinel | null = null;
-  let stopped = false;
-  const take = () => {
-    if (stopped || document.visibilityState !== 'visible') return;
-    wl.request('screen').then(
-      (s) => {
-        if (stopped) void s.release().catch(() => {});
-        else sentinel = s;
-      },
-      () => {},
-    );
-  };
-  document.addEventListener('visibilitychange', take);
-  take();
-  return () => {
-    stopped = true;
-    document.removeEventListener('visibilitychange', take);
-    void sentinel?.release().catch(() => {});
-  };
-}
+// A download keeps the screen on while it runs (holdAwake, lib/wakeLock):
+// a phone that locks itself stops the page and the download with it - a
+// web app has no background downloads on iOS - and a gigabyte takes longer
+// than the screen stays on.
 
 /** What a failure is called where a reader will see it. */
 function errorCodeOf(err: unknown): DownloadErrorCode | undefined {
