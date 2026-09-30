@@ -4,6 +4,24 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.32.1 - 2026-09-30
+
+### Fixed
+
+- **The library, where you left it.** Opening a book from the middle of
+  the library and coming back - by the back gesture, the back button or
+  the Library tab - started the library again at the top, its search and
+  order forgotten. Each shelf, grouping and language now comes back as it
+  was left while the app is open: the same search, format and order, the
+  same books drawn at once, and the book that was opened exactly where its
+  card was. The Library tab tapped on the library still goes to the top.
+- **The plus on a cover.** On a phone the plus that adds a book to a shelf
+  sat on the book's title under the cover. It is on the cover's bottom
+  corner again, with the saved-here dot beside it.
+- **No zooming.** Two fingers or a double tap no longer zoom the whole app
+  on a phone, and focusing the search in the Languages sheet no longer
+  zooms the page in.
+
 ## 0.32.0 - 2026-09-29
 
 ### Added
