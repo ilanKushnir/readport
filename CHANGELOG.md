@@ -4,6 +4,33 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.34.0 - 2026-10-01
+
+### Changed
+
+- **Syncing follows the voice much more closely.** A sync listens to a
+  short sample of the narration every minute instead of every two and a
+  half, and times everything in between from those. Measured against what
+  the narration actually says at points no sample heard, on seven hours
+  of a real audiobook: half the sentences within 0.5-0.6 seconds of the
+  voice (was 1.2), 83-93% within two seconds (was 72-75%), the worst 5.8
+  seconds (was 11.5). It takes longer: about fifteen minutes for a
+  six-hour audiobook. Books already synced keep their sync; press Sync
+  again to get the new one.
+
+### Fixed
+
+- **Text the narrator skips is no longer spread over the narration.** A
+  preface between the spoken title and chapter one, or a chapter's
+  summary page, was timed as if it were read: the highlight swept through
+  the preface while the voice read chapter one, and the chapter's first
+  sentences came late. A stretch whose text could not have been read in
+  its time now has the skipped part taken out (the whole chapter files
+  between the two nearest matches, or the opening of the one the
+  narration resumes in), and what is left is timed at the narrator's own
+  pace. The narration's own announcement in its place shows as "Only in
+  the audiobook".
+
 ## 0.33.1 - 2026-09-30
 
 ### Fixed

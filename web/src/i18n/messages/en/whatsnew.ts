@@ -24,6 +24,8 @@ export const whatsnew = {
   'whatsnew.update.later': 'Not now',
 
   // ---------------------------------------------------------------- 0.29.0
+  'whatsnew.release.closerSync':
+    'Syncing an ebook with its audiobook now follows the voice much more closely, and leaves out what the narrator skips, like a preface. Press Sync on a book again to get it.',
   'whatsnew.release.onlyInAudiobook':
     'When the audiobook reads a part the ebook doesn’t have, reading along now says so, counts down to where the text picks up, and waits for you there - or skips ahead.',
   'whatsnew.release.friendsListening':
