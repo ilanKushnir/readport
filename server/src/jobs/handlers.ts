@@ -303,7 +303,7 @@ export async function runScan(ctx: AppContext, job: JobRow, guard: LeaseGuard): 
   const { db, config } = ctx;
   jobProgress(db, job.id, job.lease_token, 0.05, 'Scanning library roots');
   const roots = libraryRoots(db, config);
-  const report = scanRoots(roots.ebookDirs, roots.audiobookDirs);
+  const report = await scanRoots(roots.ebookDirs, roots.audiobookDirs);
   guard.assertHeld();
   const result = applyScan(db, report);
   const covered = giveFolderCovers(ctx);

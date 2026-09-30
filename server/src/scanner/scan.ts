@@ -43,26 +43,68 @@ export interface ScanReport {
   errors: string[];
 }
 
-function quickHash(filePath: string, stat: fs.Stats): string {
-  // Cheap change-detection hash: size + mtime + head/tail bytes. Not a
-  // cryptographic identity of content; used to decide when to re-index.
+/**
+ * What each file hashed to, by path, for as long as the server runs: a file
+ * whose size and modification time are what they were hashes to what it did,
+ * without reading it again. The hourly rescan of an unchanged library reads
+ * nothing but directories.
+ */
+const hashMemo = new Map<string, { size: number; mtimeMs: number; hash: string }>();
+
+/**
+ * Cheap change-detection hash: size + mtime + head/tail bytes. Not a
+ * cryptographic identity of content; used to decide when to re-index.
+ *
+ * Read without blocking. A library on a network share answers a cold read in
+ * a third of a second or more, and a synchronous read of every file's head
+ * and tail held the server still for all of it: a scan of a few hundred
+ * audiobooks answered nothing - not the reader, not the health check - for
+ * ten minutes, long enough to be restarted as dead and scan again.
+ */
+async function quickHash(filePath: string, stat: fs.Stats): Promise<string> {
+  const known = hashMemo.get(filePath);
+  if (known && known.size === stat.size && known.mtimeMs === stat.mtimeMs) return known.hash;
   const h = createHash('sha256');
   h.update(`${stat.size}:${Math.floor(stat.mtimeMs)}`);
+  let file: fs.promises.FileHandle | null = null;
   try {
-    const fd = fs.openSync(filePath, 'r');
+    file = await fs.promises.open(filePath, 'r');
     const head = Buffer.alloc(Math.min(65536, stat.size));
-    fs.readSync(fd, head, 0, head.length, 0);
+    await file.read(head, 0, head.length, 0);
     h.update(head);
     if (stat.size > 65536) {
       const tail = Buffer.alloc(65536);
-      fs.readSync(fd, tail, 0, tail.length, stat.size - 65536);
+      await file.read(tail, 0, tail.length, stat.size - 65536);
       h.update(tail);
     }
-    fs.closeSync(fd);
   } catch {
     /* hash stays size+mtime based */
+  } finally {
+    await file?.close().catch(() => {});
   }
-  return h.digest('hex').slice(0, 32);
+  const hash = h.digest('hex').slice(0, 32);
+  hashMemo.set(filePath, { size: stat.size, mtimeMs: stat.mtimeMs, hash });
+  return hash;
+}
+
+/**
+ * How many files are read at once. A share is slow to answer, not slow to
+ * deliver: a handful in flight turns minutes of waiting into seconds.
+ */
+const READS_IN_FLIGHT = 8;
+
+/** `fn` over every item, `limit` at a time, results in the items' order. */
+async function inTurn<T, R>(items: readonly T[], limit: number, fn: (item: T) => Promise<R>) {
+  const out = new Array<R>(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const i = next++;
+      out[i] = await fn(items[i]!);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return out;
 }
 
 /** Where a book is found: its kind, library folder and path within it. */
@@ -74,20 +116,22 @@ export function naturalCompare(a: string, b: string): number {
   return a.localeCompare(b, 'en', { numeric: true, sensitivity: 'base' });
 }
 
-export function scanRoots(ebookRoots: string[], audioRoots: string[]): ScanReport {
+export async function scanRoots(ebookRoots: string[], audioRoots: string[]): Promise<ScanReport> {
   const report: ScanReport = { ebooks: [], audiobooks: [], unsupported: [], errors: [] };
   let fileCount = 0;
 
-  const walk = (
+  // Directories are read in turn and files listed in order; nothing here
+  // blocks the server while the share takes its time to answer.
+  const walk = async (
     root: string,
     dir: string,
     depth: number,
     onFile: (abs: string, rel: string, ext: string, stat: fs.Stats) => void,
-  ) => {
+  ): Promise<void> => {
     if (depth > MAX_DEPTH || fileCount > MAX_FILES) return;
     let entries: fs.Dirent[];
     try {
-      entries = fs.readdirSync(dir, { withFileTypes: true });
+      entries = await fs.promises.readdir(dir, { withFileTypes: true });
     } catch (err) {
       report.errors.push(`Cannot read ${dir}: ${(err as Error).message}`);
       return;
@@ -99,8 +143,8 @@ export function scanRoots(ebookRoots: string[], audioRoots: string[]): ScanRepor
       if (e.isSymbolicLink()) {
         // Follow only symlinks that resolve inside the root.
         try {
-          const real = fs.realpathSync(abs);
-          const rootReal = fs.realpathSync(root);
+          const real = await fs.promises.realpath(abs);
+          const rootReal = await fs.promises.realpath(root);
           if (real !== rootReal && !real.startsWith(rootReal + path.sep)) continue;
         } catch {
           continue;
@@ -108,12 +152,12 @@ export function scanRoots(ebookRoots: string[], audioRoots: string[]): ScanRepor
       }
       let stat: fs.Stats;
       try {
-        stat = fs.statSync(abs);
+        stat = await fs.promises.stat(abs);
       } catch {
         continue;
       }
       if (stat.isDirectory()) {
-        walk(root, abs, depth + 1, onFile);
+        await walk(root, abs, depth + 1, onFile);
       } else if (stat.isFile()) {
         fileCount += 1;
         const ext = path.extname(e.name).toLowerCase();
@@ -121,28 +165,35 @@ export function scanRoots(ebookRoots: string[], audioRoots: string[]): ScanRepor
       }
     }
   };
+  const exists = (root: string) =>
+    fs.promises.stat(root).then(
+      () => true,
+      () => false,
+    );
 
   for (const root of ebookRoots) {
-    if (!fs.existsSync(root)) {
+    if (!(await exists(root))) {
       report.errors.push(`Ebook root does not exist: ${root}`);
       continue;
     }
-    walk(root, root, 0, (abs, rel, ext, stat) => {
-      if (EBOOK_EXTS.has(ext)) {
-        report.ebooks.push({
-          rootDir: root,
-          relPath: rel,
-          sizeBytes: stat.size,
-          contentHash: quickHash(abs, stat),
-        });
-      } else if (KNOWN_UNSUPPORTED_EBOOK.has(ext)) {
-        report.unsupported.push({ relPath: rel, ext });
-      }
+    const found: { abs: string; rel: string; stat: fs.Stats }[] = [];
+    await walk(root, root, 0, (abs, rel, ext, stat) => {
+      if (EBOOK_EXTS.has(ext)) found.push({ abs, rel, stat });
+      else if (KNOWN_UNSUPPORTED_EBOOK.has(ext)) report.unsupported.push({ relPath: rel, ext });
     });
+    const hashes = await inTurn(found, READS_IN_FLIGHT, (f) => quickHash(f.abs, f.stat));
+    found.forEach((f, i) =>
+      report.ebooks.push({
+        rootDir: root,
+        relPath: f.rel,
+        sizeBytes: f.stat.size,
+        contentHash: hashes[i]!,
+      }),
+    );
   }
 
   for (const root of audioRoots) {
-    if (!fs.existsSync(root)) {
+    if (!(await exists(root))) {
       report.errors.push(`Audiobook root does not exist: ${root}`);
       continue;
     }
@@ -150,15 +201,20 @@ export function scanRoots(ebookRoots: string[], audioRoots: string[]): ScanRepor
       string,
       { relPath: string; sizeBytes: number; ext: string; abs: string; stat: fs.Stats }[]
     >();
-    walk(root, root, 0, (abs, rel, ext, stat) => {
+    await walk(root, root, 0, (abs, rel, ext, stat) => {
       if (!AUDIO_EXTS.has(ext)) return;
       const dir = path.dirname(rel);
       const list = byDir.get(dir) ?? [];
       list.push({ relPath: rel, sizeBytes: stat.size, ext, abs, stat });
       byDir.set(dir, list);
     });
+    for (const files of byDir.values()) files.sort((a, b) => naturalCompare(a.relPath, b.relPath));
+    const all = [...byDir.values()].flat();
+    const hashes = new Map<string, string>();
+    await inTurn(all, READS_IN_FLIGHT, async (f) =>
+      hashes.set(f.abs, await quickHash(f.abs, f.stat)),
+    );
     for (const [dir, files] of byDir) {
-      files.sort((a, b) => naturalCompare(a.relPath, b.relPath));
       if (dir === '.') {
         // Loose files at the root: each is its own book.
         for (const f of files) {
@@ -167,14 +223,14 @@ export function scanRoots(ebookRoots: string[], audioRoots: string[]): ScanRepor
             relPath: f.relPath,
             tracks: [{ relPath: f.relPath, sizeBytes: f.sizeBytes, ext: f.ext }],
             sizeBytes: f.sizeBytes,
-            contentHash: quickHash(f.abs, f.stat),
+            contentHash: hashes.get(f.abs)!,
           });
         }
       } else {
         const h = createHash('sha256');
         let size = 0;
         for (const f of files) {
-          h.update(quickHash(f.abs, f.stat));
+          h.update(hashes.get(f.abs)!);
           size += f.sizeBytes;
         }
         report.audiobooks.push({
