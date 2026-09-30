@@ -4,6 +4,15 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.32.2 - 2026-09-30
+
+### Fixed
+
+- **The screen stays on while reading along.** With the voice turning the
+  pages and nobody touching the screen, a phone locked itself after its
+  usual minute or two, mid-chapter. The screen now stays on while
+  read-along plays, and sleeps as usual once it is paused or stopped.
+
 ## 0.32.1 - 2026-09-30
 
 ### Fixed
