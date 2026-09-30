@@ -24,6 +24,10 @@ export const whatsnew = {
   'whatsnew.update.later': 'Not now',
 
   // ---------------------------------------------------------------- 0.29.0
+  'whatsnew.release.onlyInAudiobook':
+    'When the audiobook reads a part the ebook doesn’t have, reading along now says so, counts down to where the text picks up, and waits for you there - or skips ahead.',
+  'whatsnew.release.friendsListening':
+    'A friend listening to the audiobook of the book you’re reading shows at the very sentence they’re hearing.',
   'whatsnew.release.pdfExport':
     'Export as PDF now makes a real little book of your highlights and notes - set in type, dark to the very edge in Night, and shown page by page before you save it.',
   'whatsnew.release.chapterNames':

@@ -4,6 +4,31 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.33.0 - 2026-09-30
+
+### Added
+
+- **Only in the audiobook.** An audiobook sometimes has what its ebook does
+  not: an introduction, a passage one edition kept and the other cut, the
+  music after a part. Reading along used to go quiet there - the highlight
+  let go, the page stopped, and a stretch between two chapters said nothing
+  at all. Now a card above the transport says the voice is reading a part
+  the ebook does not have, counts down to where the text picks up, and
+  offers Skip to the text; the page waits at the sentence the voice comes
+  back to, marked, and Back to the voice goes there. A stretch counts only
+  when, once the untimed text inside it is read at the book's own pace,
+  half a minute of narration or more is left over, so text the aligner
+  could not place and a reworded sentence never set it off.
+
+### Changed
+
+- **Friends in the other format.** A friend listening to the audiobook of
+  the book you are reading (or reading while you listen) is placed at the
+  sentence the narration is on, through the sync, instead of at the same
+  fraction of the other format, and the chapter is named as your book
+  names it. A second narration of the same ebook counts as the same book.
+  The friends bar also asks the server once where it asked twice.
+
 ## 0.32.2 - 2026-09-30
 
 ### Fixed
