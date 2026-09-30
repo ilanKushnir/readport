@@ -18,9 +18,12 @@ import {
 } from '../components/icons';
 import {
   type AlignedSegment,
+  type BeyondText,
+  type BeyondTextNow,
   type ChapterBound,
   type Cue,
   type FollowState,
+  beyondTextAt,
   buildCues,
   cueArriving,
   cueForOffset,
@@ -60,6 +63,14 @@ export interface NarrationApi {
   cues: Cue[];
   /** The sentence the voice was just sent to, until the clock is in it (readalong.cueArriving). */
   arriving: Cue | null;
+  /**
+   * The voice is reading a stretch the ebook does not have - where it is in
+   * it, and where the text picks up. Null the rest of the time, including
+   * while the book's stretches are still loading.
+   */
+  beyond: BeyondTextNow | null;
+  /** Take the voice on to where the text picks up again. */
+  skipBeyond: () => void;
   /** Increments on every deliberate seek; the page follows again when it does. */
   seekNonce: number;
   state: FollowState;
@@ -154,6 +165,8 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
    * past their edge - and opening the right chapter in one move.
    */
   const [bounds, setBounds] = useState<ChapterBound[] | null>(null);
+  /** The stretches of the narration the ebook does not have (readalong.BeyondText). */
+  const [stretches, setStretches] = useState<BeyondText[]>([]);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeedState] = useState(() => speedFor(loadPlayback(), audioBookId ?? ''));
   const [error, setError] = useState<MessageKey | null>(null);
@@ -224,9 +237,21 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
     if (!enabled || !pairId) return;
     let alive = true;
     setBounds(null);
-    void api<{ chapters: ChapterBound[] }>(`/api/pairs/${pairId}/chapters`)
+    setStretches([]);
+    void api<{ chapters: ChapterBound[]; beyondText?: BeyondText[] }>(
+      `/api/pairs/${pairId}/chapters`,
+    )
       .then((d) => {
-        if (alive) setBounds(d.chapters ?? []);
+        if (!alive) return;
+        setBounds(d.chapters ?? []);
+        // A server that predates them says nothing, and nothing is shown.
+        setStretches(
+          Array.isArray(d.beyondText)
+            ? d.beyondText.filter(
+                (b) => Number.isFinite(b?.fromMs) && Number.isFinite(b?.toMs) && b.toMs > b.fromMs,
+              )
+            : [],
+        );
       })
       .catch(() => {
         if (alive) setBounds(null);
@@ -241,6 +266,10 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
       bounds && bounds.length > 0 ? nearestChapter(bounds, at) : null,
     [bounds],
   );
+
+  const beyond = useMemo(() => beyondTextAt(stretches, bookMs), [stretches, bookMs]);
+  /** The chapter the text picks up in, while the voice reads what the ebook does not have. */
+  const resumeSpine = beyond?.stretch.resume?.spineIdx ?? null;
 
   // This chapter's timings. Refetched per chapter: a whole book's segments is
   // megabytes, and the reader only ever needs the page in front of them.
@@ -395,7 +424,11 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
     if (!dir) return;
     // With the chapter bounds known there is nothing to walk: the chapter
     // the voice is in is a lookup, and the page goes there in one move.
-    const target = chapterAt(bookMs);
+    // Narration the ebook does not have is in no chapter at all: the one
+    // that matters is where the text picks up, and the page waits there -
+    // not wherever the playhead happens to be nearer to, which flipped from
+    // the chapter before to the chapter after halfway through.
+    const target = resumeSpine ?? chapterAt(bookMs);
     if (target !== null) {
       if (target === spineIdx) return; // an untimed stretch inside this chapter
       lastWalkRef.current = target > spineIdx ? 'next' : 'prev';
@@ -423,6 +456,7 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
     segments,
     cues.length,
     chapterAt,
+    resumeSpine,
     bookMs,
     spineIdx,
   ]);
@@ -529,6 +563,19 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
     [cues, seekTo, audioBookId, audioLocatorAt],
   );
 
+  /**
+   * On to where the text picks up: the first word of its sentence, lit the
+   * moment it is asked for when it is on this chapter's page.
+   */
+  const skipBeyond = useCallback(() => {
+    const stretch = beyond?.stretch;
+    if (!stretch?.resume) return;
+    const at = stretch.toMs;
+    setArriving(cues.find((c) => c.id === stretch.resume!.sentenceId) ?? null);
+    if (audioBookId) void recordCheckpoint(audioBookId, 'seek', audioLocatorAt(at));
+    seekTo(at, playing);
+  }, [beyond, cues, audioBookId, audioLocatorAt, seekTo, playing]);
+
   const src =
     enabled && audioBookId && tracks.length > 0
       ? `/api/books/${audioBookId}/track/${trackIdx}`
@@ -562,6 +609,8 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
     cue: lookup.cue,
     cues,
     arriving,
+    beyond,
+    skipBeyond,
     seekNonce,
     state: lookup.state,
     bookMs,
@@ -638,11 +687,13 @@ export function NarrationBar({
       ? t('reader.readAlong.finding')
       : n.timingsFailed
         ? t('reader.readAlong.timingsFailed')
-        : n.emptyChapter
-          ? t('reader.readAlong.nothingTimed')
-          : n.state === 'gap'
-            ? t('reader.readAlong.gap')
-            : formatDuration(n.bookMs);
+        : n.beyond
+          ? null
+          : n.emptyChapter
+            ? t('reader.readAlong.nothingTimed')
+            : n.state === 'gap'
+              ? t('reader.readAlong.gap')
+              : formatDuration(n.bookMs);
 
   return (
     <div className="readalong" role="group" aria-label={t('reader.readAlong.group')}>
@@ -674,8 +725,22 @@ export function NarrationBar({
         <IconSkipBack size={18} label={String(n.backSeconds)} />
       </button>
 
-      <span className={`readalong__status ${n.state === 'gap' || n.error ? 'is-warn' : ''}`}>
-        {status}
+      <span
+        className={`readalong__status ${
+          n.error ? 'is-warn' : n.beyond ? 'is-beyond' : n.state === 'gap' ? 'is-warn' : ''
+        }`}
+      >
+        {status ?? (
+          // Only in the audiobook: on a narrow bar the words may shorten, the
+          // time to the text may not - it is the part a listener glances for.
+          <>
+            <span className="readalong__beyond">{t('reader.readAlong.beyond.title')}</span>
+            <span className="readalong__beyond-time">
+              {' · '}
+              {formatDuration(Math.ceil((n.beyond?.remainingMs ?? 0) / 1000) * 1000)}
+            </span>
+          </>
+        )}
       </span>
 
       {/* Shown whenever the page has stopped following, cue or no cue: the

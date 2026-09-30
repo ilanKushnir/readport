@@ -648,6 +648,20 @@ const messages: Record<string, string> = {
   'reader.readAlong.noTimedText': 'このページにはまだ戻れるタイミング付きテキストがありません。',
   'reader.readAlong.reducedMotion':
     'システムでモーション低減が指定されているため、ページは自動的にスクロールしません。',
+  // reader: only in the audiobook
+  'reader.readAlong.beyond.title': 'オーディオブックのみ',
+  'reader.readAlong.beyond.middle': 'そのままお聴きください。あと{time}で本文に戻ります。',
+  'reader.readAlong.beyond.start':
+    'オーディオブックは電子書籍にない部分から始まります。あと{time}で本文が始まります。',
+  'reader.readAlong.beyond.end':
+    '電子書籍はここで終わりですが、オーディオブックはあと{time}続きます。',
+  'reader.readAlong.beyond.skip': '本文へスキップ',
+  'reader.readAlong.beyond.hide': '隠す',
+  'reader.readAlong.beyond.announce':
+    'オーディオブックが電子書籍にない部分を読んでいます。そのままお聴きください。まもなく本文に戻ります。',
+  'reader.readAlong.beyond.marker': 'ここから音声が再開します',
+  'reader.readAlong.beyond.backHere':
+    '音声は電子書籍にない部分を読んでいます。本文はここから続きます。',
   'reader.toast.otherDeviceAt': '別の端末は{pct}の位置にあります',
   'reader.toast.jumpThere': 'そこに移動',
   'reader.toast.markMoved': 'この印の付いた語句に移動しました。作成後に本文が変更されています。',

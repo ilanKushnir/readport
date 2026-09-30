@@ -639,6 +639,19 @@ const messages: Record<string, string> = {
     'Ingen tidsbestemt tekst at vende tilbage til på denne side endnu.',
   'reader.readAlong.reducedMotion':
     'Dit system beder om reduceret bevægelse, så siden vil ikke rulle af sig selv.',
+  // reader: only in the audiobook
+  'reader.readAlong.beyond.title': 'Kun i lydbogen',
+  'reader.readAlong.beyond.middle': 'Bliv ved med at lytte - teksten fortsætter om {time}.',
+  'reader.readAlong.beyond.start':
+    'Lydbogen begynder med en del, som e-bogen ikke har. Teksten begynder om {time}.',
+  'reader.readAlong.beyond.end': 'E-bogen slutter her, men lydbogen fortsætter {time} endnu.',
+  'reader.readAlong.beyond.skip': 'Spring til teksten',
+  'reader.readAlong.beyond.hide': 'Skjul',
+  'reader.readAlong.beyond.announce':
+    'Lydbogen læser en del, som e-bogen ikke har. Bliv ved med at lytte - teksten fortsætter snart.',
+  'reader.readAlong.beyond.marker': 'Her fortsætter stemmen',
+  'reader.readAlong.beyond.backHere':
+    'Stemmen læser en del, som e-bogen ikke har. Teksten fortsætter her.',
   'reader.toast.otherDeviceAt': 'En anden enhed er ved {pct}',
   'reader.toast.jumpThere': 'Hop derhen',
   'reader.toast.markMoved':

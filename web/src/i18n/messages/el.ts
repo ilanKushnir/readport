@@ -664,6 +664,20 @@ const messages: Record<string, string> = {
     'Δεν υπάρχει ακόμα χρονομετρημένο κείμενο για επιστροφή σε αυτή τη σελίδα.',
   'reader.readAlong.reducedMotion':
     'Το σύστημά σου ζητά μειωμένη κίνηση, οπότε η σελίδα δεν θα κάνει κύλιση μόνη της.',
+  // reader: only in the audiobook
+  'reader.readAlong.beyond.title': 'Μόνο στο ηχητικό βιβλίο',
+  'reader.readAlong.beyond.middle': 'Συνέχισε να ακούς - το κείμενο συνεχίζει σε {time}.',
+  'reader.readAlong.beyond.start':
+    'Το ηχητικό βιβλίο ξεκινά με ένα μέρος που δεν έχει το ηλεκτρονικό βιβλίο. Το κείμενο ξεκινά σε {time}.',
+  'reader.readAlong.beyond.end':
+    'Το ηλεκτρονικό βιβλίο τελειώνει εδώ, αλλά το ηχητικό συνεχίζει για άλλα {time}.',
+  'reader.readAlong.beyond.skip': 'Μετάβαση στο κείμενο',
+  'reader.readAlong.beyond.hide': 'Απόκρυψη',
+  'reader.readAlong.beyond.announce':
+    'Το ηχητικό βιβλίο διαβάζει ένα μέρος που δεν έχει το ηλεκτρονικό βιβλίο. Συνέχισε να ακούς - το κείμενο θα συνεχίσει σύντομα.',
+  'reader.readAlong.beyond.marker': 'Εδώ συνεχίζει η φωνή',
+  'reader.readAlong.beyond.backHere':
+    'Η φωνή διαβάζει ένα μέρος που δεν έχει το ηλεκτρονικό βιβλίο. Το κείμενο συνεχίζει από εδώ.',
   'reader.toast.otherDeviceAt': 'Μια άλλη συσκευή βρίσκεται στο {pct}',
   'reader.toast.jumpThere': 'Μετάβαση εκεί',
   'reader.toast.markMoved':

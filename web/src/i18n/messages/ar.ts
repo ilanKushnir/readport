@@ -670,6 +670,20 @@ const messages: Record<string, string> = {
   'reader.readAlong.noTimedText': 'لا يوجد بعد نص مُوقَّت للعودة إليه في هذه الصفحة.',
   'reader.readAlong.reducedMotion':
     'يطلب نظامك تقليل الحركة، لذا لن تُمرَّر الصفحة من تلقاء نفسها.',
+  // reader: only in the audiobook
+  'reader.readAlong.beyond.title': 'في الكتاب الصوتي فقط',
+  'reader.readAlong.beyond.middle': 'تابع الاستماع - يستأنف النص بعد {time}.',
+  'reader.readAlong.beyond.start':
+    'يبدأ الكتاب الصوتي بجزء غير موجود في الكتاب الإلكتروني. يبدأ النص بعد {time}.',
+  'reader.readAlong.beyond.end':
+    'ينتهي الكتاب الإلكتروني هنا، لكن الكتاب الصوتي يستمر {time} أخرى.',
+  'reader.readAlong.beyond.skip': 'انتقل إلى النص',
+  'reader.readAlong.beyond.hide': 'إخفاء',
+  'reader.readAlong.beyond.announce':
+    'يقرأ الكتاب الصوتي جزءًا غير موجود في الكتاب الإلكتروني. تابع الاستماع - سيُستأنف النص قريبًا.',
+  'reader.readAlong.beyond.marker': 'من هنا يستأنف الصوت',
+  'reader.readAlong.beyond.backHere':
+    'يقرأ الصوت جزءًا غير موجود في الكتاب الإلكتروني. يُستأنف النص من هنا.',
 
   'reader.toast.otherDeviceAt': 'جهاز آخر عند {pct}',
   'reader.toast.jumpThere': 'الانتقال إلى هناك',

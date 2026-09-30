@@ -651,6 +651,20 @@ const messages: Record<string, string> = {
     'Niciun text cronometrat la care să revii pe această pagină încă.',
   'reader.readAlong.reducedMotion':
     'Sistemul tău cere mișcare redusă, așa că pagina nu va derula singură.',
+  // reader: only in the audiobook
+  'reader.readAlong.beyond.title': 'Doar în cartea audio',
+  'reader.readAlong.beyond.middle': 'Ascultă mai departe - textul continuă peste {time}.',
+  'reader.readAlong.beyond.start':
+    'Cartea audio începe cu o parte pe care cartea electronică nu o are. Textul începe peste {time}.',
+  'reader.readAlong.beyond.end':
+    'Cartea electronică se termină aici, dar cartea audio mai continuă {time}.',
+  'reader.readAlong.beyond.skip': 'Sari la text',
+  'reader.readAlong.beyond.hide': 'Ascunde',
+  'reader.readAlong.beyond.announce':
+    'Cartea audio citește o parte pe care cartea electronică nu o are. Ascultă mai departe - textul va continua în curând.',
+  'reader.readAlong.beyond.marker': 'Vocea continuă de aici',
+  'reader.readAlong.beyond.backHere':
+    'Vocea citește o parte pe care cartea electronică nu o are. Textul continuă de aici.',
   'reader.toast.otherDeviceAt': 'Un alt dispozitiv este la {pct}',
   'reader.toast.jumpThere': 'Sari acolo',
   'reader.toast.markMoved':

@@ -116,6 +116,19 @@ export const reader = {
   'reader.readAlong.noTimedText': 'No timed text to return to on this page yet.',
   'reader.readAlong.reducedMotion':
     'Your system asks for reduced motion, so the page will not scroll by itself.',
+  // While the voice reads a stretch the ebook does not have
+  'reader.readAlong.beyond.title': 'Only in the audiobook',
+  'reader.readAlong.beyond.middle': 'Keep listening - the text picks up again in {time}.',
+  'reader.readAlong.beyond.start':
+    'The audiobook begins with a part the ebook doesn’t have. The text starts in {time}.',
+  'reader.readAlong.beyond.end': 'The ebook ends here, but the audiobook goes on for {time}.',
+  'reader.readAlong.beyond.skip': 'Skip to the text',
+  'reader.readAlong.beyond.hide': 'Hide',
+  'reader.readAlong.beyond.announce':
+    'The audiobook is reading a part the ebook doesn’t have. Keep listening - the text will pick up again.',
+  'reader.readAlong.beyond.marker': 'The voice picks up here',
+  'reader.readAlong.beyond.backHere':
+    'The voice is reading a part the ebook doesn’t have. The text picks up here.',
 
   // Toasts
   'reader.toast.otherDeviceAt': 'Another device is at {pct}',

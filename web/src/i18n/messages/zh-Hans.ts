@@ -597,6 +597,17 @@ const messages: Record<string, string> = {
   'reader.readAlong.voiceElsewhere': '朗读位于另一章节。按下播放后页面会自动定位到那里。',
   'reader.readAlong.noTimedText': '此页暂时没有可返回的已计时文本。',
   'reader.readAlong.reducedMotion': '你的系统已开启减弱动态效果，因此页面不会自动滚动。',
+  // reader: only in the audiobook
+  'reader.readAlong.beyond.title': '仅在有声书中',
+  'reader.readAlong.beyond.middle': '请继续收听，{time}后回到正文。',
+  'reader.readAlong.beyond.start': '有声书以电子书中没有的内容开场。正文将在{time}后开始。',
+  'reader.readAlong.beyond.end': '电子书到此结束，但有声书还会继续{time}。',
+  'reader.readAlong.beyond.skip': '跳到正文',
+  'reader.readAlong.beyond.hide': '隐藏',
+  'reader.readAlong.beyond.announce':
+    '有声书正在朗读电子书中没有的内容。请继续收听，稍后将回到正文。',
+  'reader.readAlong.beyond.marker': '朗读将从这里继续',
+  'reader.readAlong.beyond.backHere': '朗读正在读电子书中没有的内容。正文从这里继续。',
   'reader.toast.otherDeviceAt': '另一台设备位于{pct}处',
   'reader.toast.jumpThere': '跳转到那里',
   'reader.toast.markMoved': '已定位到此标记对应的文字；自创建以来书籍文本已发生变化。',

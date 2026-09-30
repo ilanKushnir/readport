@@ -655,6 +655,18 @@ const messages: Record<string, string> = {
   'reader.readAlong.voiceElsewhere': 'הקול נמצא בפרק אחר. לחיצה על ניגון תגרום לעמוד למצוא אותו.',
   'reader.readAlong.noTimedText': 'אין עדיין טקסט מתוזמן לחזור אליו בעמוד הזה.',
   'reader.readAlong.reducedMotion': 'המערכת שלך מבקשת תנועה מופחתת, כך שהעמוד לא יגלול מעצמו.',
+  // reader: only in the audiobook
+  'reader.readAlong.beyond.title': 'רק בספר הקול',
+  'reader.readAlong.beyond.middle': 'אפשר להמשיך להאזין - הטקסט יחזור בעוד {time}.',
+  'reader.readAlong.beyond.start':
+    'ספר הקול נפתח בחלק שאין בספר האלקטרוני. הטקסט מתחיל בעוד {time}.',
+  'reader.readAlong.beyond.end': 'הספר האלקטרוני מסתיים כאן, אבל ספר הקול נמשך עוד {time}.',
+  'reader.readAlong.beyond.skip': 'דילוג לטקסט',
+  'reader.readAlong.beyond.hide': 'הסתר',
+  'reader.readAlong.beyond.announce':
+    'ספר הקול קורא עכשיו חלק שאין בספר האלקטרוני. אפשר להמשיך להאזין - הטקסט יחזור בקרוב.',
+  'reader.readAlong.beyond.marker': 'כאן הקול ימשיך',
+  'reader.readAlong.beyond.backHere': 'הקול קורא חלק שאין בספר האלקטרוני. הטקסט ממשיך מכאן.',
 
   'reader.toast.otherDeviceAt': 'מכשיר אחר נמצא ב-{pct}',
   'reader.toast.jumpThere': 'קפיצה לשם',

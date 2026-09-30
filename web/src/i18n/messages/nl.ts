@@ -661,6 +661,20 @@ const messages: Record<string, string> = {
   'reader.readAlong.noTimedText': 'Nog geen getimede tekst om naar terug te keren op deze pagina.',
   'reader.readAlong.reducedMotion':
     'Je systeem vraagt om minder beweging, dus de pagina scrollt niet vanzelf.',
+  // reader: only in the audiobook
+  'reader.readAlong.beyond.title': 'Alleen in het luisterboek',
+  'reader.readAlong.beyond.middle': 'Blijf luisteren - de tekst gaat over {time} verder.',
+  'reader.readAlong.beyond.start':
+    'Het luisterboek begint met een deel dat niet in het e-book staat. De tekst begint over {time}.',
+  'reader.readAlong.beyond.end':
+    'Het e-book eindigt hier, maar het luisterboek gaat nog {time} door.',
+  'reader.readAlong.beyond.skip': 'Naar de tekst',
+  'reader.readAlong.beyond.hide': 'Verbergen',
+  'reader.readAlong.beyond.announce':
+    'Het luisterboek leest een deel voor dat niet in het e-book staat. Blijf luisteren - de tekst gaat zo verder.',
+  'reader.readAlong.beyond.marker': 'Hier gaat de stem verder',
+  'reader.readAlong.beyond.backHere':
+    'De stem leest een deel voor dat niet in het e-book staat. Hier gaat de tekst verder.',
   'reader.toast.otherDeviceAt': 'Een ander apparaat staat bij {pct}',
   'reader.toast.jumpThere': 'Ga daarheen',
   'reader.toast.markMoved':

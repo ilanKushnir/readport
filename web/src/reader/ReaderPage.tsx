@@ -108,6 +108,7 @@ import { beginVisit, settles, type Visit } from './visit';
 import { cachedPlaces, fetchPlaces, forgetPlace } from './places';
 import { PlacesPanel } from './PlacesPanel';
 import { ResumeMarker } from './ResumeMarker';
+import { BeyondTextCard } from './BeyondText';
 import { VoiceMarkGlyph } from './VoiceMarkGlyph';
 import {
   clipRects,
@@ -1895,6 +1896,36 @@ export function ReaderPage() {
     onLeaveChapter,
   });
 
+  /**
+   * The voice reading what the ebook does not have (readalong.BeyondText):
+   * where it is in that stretch, and where the text picks up. `?? null`
+   * because a stand-in narration (the QA harnesses) may not say.
+   */
+  const beyond = readAlong ? (narration.beyond ?? null) : null;
+  const beyondResume = beyond?.stretch.resume ?? null;
+  /** The stretch whose notice the reader put away; the next one is shown. */
+  const [beyondHidden, setBeyondHidden] = useState<number | null>(null);
+  /**
+   * How tall the notice stands while it is up, so a toast rises over it
+   * rather than landing on its way on (the "Reading along" hint does, the
+   * moment read-along starts).
+   */
+  const [beyondCardH, setBeyondCardH] = useState(0);
+  const beyondCardObserver = useRef<ResizeObserver | null>(null);
+  const beyondCardRef = useCallback((el: HTMLElement | null) => {
+    beyondCardObserver.current?.disconnect();
+    beyondCardObserver.current = null;
+    if (!el) {
+      setBeyondCardH(0);
+      return;
+    }
+    const measure = () => setBeyondCardH(Math.round(el.getBoundingClientRect().height));
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    beyondCardObserver.current = observer;
+    measure();
+  }, []);
+
   // Read the media element clock at capture time, not React's last timeupdate.
   narrationOffsetRef.current = () =>
     readAlong && followingRef.current
@@ -2052,6 +2083,18 @@ export function ReaderPage() {
 
   /** "Back to the voice", with a sentence when it cannot be done. */
   const returnToVoice = useCallback(() => {
+    // The voice is reading what the ebook does not have: there is no
+    // sentence of it to go back to, only the one it is coming back to.
+    const resume = readAlong ? narration.beyond?.stretch.resume : null;
+    if (resume) {
+      followingRef.current = true;
+      cueLeftSinceTakeoverRef.current = true;
+      setFollowing(true);
+      if (resume.spineIdx !== spineIdx)
+        onLeaveChapter(resume.spineIdx > spineIdx ? 'next' : 'prev', resume.spineIdx);
+      toast.show(t('reader.readAlong.beyond.backHere'));
+      return;
+    }
     if (resumeFollowing()) return;
     const now = Date.now();
     if (now - resumeRefusedAtRef.current < 4000) return;
@@ -2063,7 +2106,17 @@ export function ReaderPage() {
           ? t('reader.readAlong.voiceElsewhere')
           : t('reader.readAlong.noTimedText'),
     );
-  }, [resumeFollowing, narration.ready, narration.state, toast, t]);
+  }, [
+    resumeFollowing,
+    readAlong,
+    narration.beyond,
+    narration.ready,
+    narration.state,
+    spineIdx,
+    onLeaveChapter,
+    toast,
+    t,
+  ]);
 
   /** The first character of page `n`, measured against the page as it is drawn right now. */
   const pageStartOffset = useCallback(
@@ -2174,6 +2227,50 @@ export function ReaderPage() {
     });
     return () => cancelAnimationFrame(raf);
   }, [readAlong, spineIdx, loadSeq, narration.ready, narration.cues, voiceToPage, pageForOffset]);
+
+  /**
+   * While the voice reads what the ebook does not have, the page waits where
+   * the text picks up: turned (or scrolled) to the sentence the voice will
+   * come back to, which is marked, so the reader can see where they will be
+   * and the voice returns to a page that is already in front of them - not
+   * to a turn, a beat after its first words. The chapter it is in is opened
+   * by the walk (Narration), which heads there during the stretch; here it
+   * is only the page within it. Following, as ever: a reader who has gone
+   * elsewhere is not pulled back.
+   */
+  useEffect(() => {
+    if (!beyondResume || beyondResume.spineIdx !== spineIdx) return;
+    if (!following || !followingRef.current || chapterLoadingRef.current) return;
+    const map = textMapRef.current;
+    if (!map) return;
+    const at = beyondResume.charOffset;
+    const paged = prefs.mode === 'paginated' && !paginationFailed;
+    const box = prefs.mode === 'paginated' ? pagesRef.current : scrollerRef.current;
+    if (spanOnScreen(map, at, box?.getBoundingClientRect())) return;
+    if (paged) {
+      const target = pageForOffset(at);
+      if (target !== null && target !== page) goToPage(target, 'heartbeat', false);
+      if (target !== null) currentOffsetRef.current = at;
+    } else {
+      const range = rangeForSpan(map, at, at + 1);
+      if (!range || !box) return;
+      const r = range.getBoundingClientRect();
+      const base = box.getBoundingClientRect();
+      glideTo(box, box.scrollTop + r.top - base.top - base.height * AUTO_SCROLL_ANCHOR);
+      currentOffsetRef.current = at;
+    }
+  }, [
+    beyondResume,
+    spineIdx,
+    following,
+    loadSeq,
+    prefs.mode,
+    paginationFailed,
+    page,
+    goToPage,
+    glideTo,
+    pageForOffset,
+  ]);
 
   /**
    * Bring the page to the sentence being spoken.
@@ -3454,11 +3551,13 @@ export function ReaderPage() {
    */
   useEffect(() => {
     const root = document.documentElement;
-    root.style.setProperty('--rp-toast-bottom', `${chromeInset.bottom + 12}px`);
+    // Over the "only in the audiobook" notice as well, while it is up.
+    const over = beyondCardH > 0 ? beyondCardH + 10 : 0;
+    root.style.setProperty('--rp-toast-bottom', `${chromeInset.bottom + 12 + over}px`);
     return () => {
       root.style.removeProperty('--rp-toast-bottom');
     };
-  }, [chromeInset.bottom]);
+  }, [chromeInset.bottom, beyondCardH]);
 
   // A mark's popover belongs to the mark, not to the page: turning the page or
   // changing chapter must not leave it hanging over unrelated text.
@@ -3825,6 +3924,19 @@ export function ReaderPage() {
    */
   const overText = (
     <>
+      {beyondResume && beyondResume.spineIdx === spineIdx && (
+        <ResumeMarker
+          target={{ spineIdx, charOffset: beyondResume.charOffset, opacity: 1 }}
+          sentences={sentences}
+          map={getMap}
+          container={getHost}
+          clip={getClip}
+          scroller={getScroller}
+          content={getContent}
+          layoutKey={layoutKey}
+          variant="voice"
+        />
+      )}
       {resumeMark && resumeMark.spineIdx === spineIdx && (
         <ResumeMarker
           target={resumeMark}
@@ -4213,6 +4325,21 @@ export function ReaderPage() {
           </div>
         )}
       </div>
+
+      {beyond && beyondHidden !== beyond.stretch.fromMs && (
+        <BeyondTextCard
+          ref={beyondCardRef}
+          now={beyond}
+          playing={narration.playing}
+          raised={!!backTo && !toolbarShown}
+          onSkip={() => {
+            followingRef.current = true;
+            setFollowing(true);
+            narration.skipBeyond?.();
+          }}
+          onHide={() => setBeyondHidden(beyond.stretch.fromMs)}
+        />
+      )}
 
       {/* Selection actions take precedence; the way back waits until the selection clears. */}
       {backTo && !toolbarShown && (

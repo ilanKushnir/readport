@@ -668,6 +668,19 @@ const messages: Record<string, string> = {
   'reader.readAlong.noTimedText': 'Noch kein zeitlich zugeordneter Text auf dieser Seite.',
   'reader.readAlong.reducedMotion':
     'Das System verlangt reduzierte Bewegung, daher scrollt die Seite nicht von selbst.',
+  // reader: only in the audiobook
+  'reader.readAlong.beyond.title': 'Nur im Hörbuch',
+  'reader.readAlong.beyond.middle': 'Einfach weiterhören - der Text geht in {time} weiter.',
+  'reader.readAlong.beyond.start':
+    'Das Hörbuch beginnt mit einem Teil, den das E-Book nicht hat. Der Text beginnt in {time}.',
+  'reader.readAlong.beyond.end': 'Das E-Book endet hier, das Hörbuch geht aber noch {time} weiter.',
+  'reader.readAlong.beyond.skip': 'Zum Text springen',
+  'reader.readAlong.beyond.hide': 'Verbergen',
+  'reader.readAlong.beyond.announce':
+    'Das Hörbuch liest einen Teil, den das E-Book nicht hat. Einfach weiterhören - der Text geht gleich weiter.',
+  'reader.readAlong.beyond.marker': 'Hier setzt die Stimme wieder ein',
+  'reader.readAlong.beyond.backHere':
+    'Die Stimme liest einen Teil, den das E-Book nicht hat. Hier geht der Text weiter.',
   'reader.toast.otherDeviceAt': 'Ein anderes Gerät steht bei {pct}',
   'reader.toast.jumpThere': 'Dorthin springen',
   'reader.toast.markMoved':

@@ -53,6 +53,7 @@ export function ResumeMarker({
   scroller,
   content,
   layoutKey,
+  variant,
 }: {
   target: ReadingPoint & { opacity: number };
   /** The chapter's sentence index; empty for a book that has none. */
@@ -66,6 +67,12 @@ export function ResumeMarker({
   /** The element a page turn moves; nothing is drawn while it is moving. */
   content: () => HTMLElement | null;
   layoutKey: string;
+  /**
+   * 'voice': where the text picks up again while the voice reads a stretch
+   * the ebook does not have - the same light, its ember breathing, named for
+   * what it is.
+   */
+  variant?: 'voice';
 }) {
   const t = useT();
   const [drawn, setDrawn] = useState<Drawn | null>(null);
@@ -182,13 +189,13 @@ export function ResumeMarker({
   if (!drawn) return null;
   return (
     <div
-      className="line-overlay resume-marker"
+      className={`line-overlay resume-marker${variant === 'voice' ? ' resume-marker--voice' : ''}`}
       data-offset={target.charOffset}
       data-start={drawn.start}
       data-rtl={drawn.rtl ? '' : undefined}
       style={{ opacity: target.opacity }}
       role="note"
-      aria-label={t('reader.resumeMarker')}
+      aria-label={t(variant === 'voice' ? 'reader.readAlong.beyond.marker' : 'reader.resumeMarker')}
     >
       {drawn.boxes.map((b, i) => (
         <span

@@ -648,6 +648,19 @@ const messages: Record<string, string> = {
     'Na tej stronie nie ma jeszcze zsynchronizowanego tekstu, do którego można wrócić.',
   'reader.readAlong.reducedMotion':
     'Twój system prosi o ograniczenie animacji, więc strona nie będzie przewijać się sama.',
+  // reader: only in the audiobook
+  'reader.readAlong.beyond.title': 'Tylko w audiobooku',
+  'reader.readAlong.beyond.middle': 'Słuchaj dalej - tekst wróci za {time}.',
+  'reader.readAlong.beyond.start':
+    'Audiobook zaczyna się od fragmentu, którego nie ma w e-booku. Tekst zaczyna się za {time}.',
+  'reader.readAlong.beyond.end': 'E-book kończy się tutaj, ale audiobook trwa jeszcze {time}.',
+  'reader.readAlong.beyond.skip': 'Przejdź do tekstu',
+  'reader.readAlong.beyond.hide': 'Ukryj',
+  'reader.readAlong.beyond.announce':
+    'Audiobook czyta fragment, którego nie ma w e-booku. Słuchaj dalej - tekst wkrótce wróci.',
+  'reader.readAlong.beyond.marker': 'Tu głos wróci do tekstu',
+  'reader.readAlong.beyond.backHere':
+    'Głos czyta fragment, którego nie ma w e-booku. Tekst wraca tutaj.',
   'reader.toast.otherDeviceAt': 'Inne urządzenie jest na {pct}',
   'reader.toast.jumpThere': 'Przejdź tam',
   'reader.toast.markMoved':

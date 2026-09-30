@@ -642,6 +642,19 @@ const messages: Record<string, string> = {
   'reader.readAlong.noTimedText': 'Bu sayfada henüz dönülecek zamanlanmış metin yok.',
   'reader.readAlong.reducedMotion':
     'Sisteminiz azaltılmış hareket istiyor, bu yüzden sayfa kendiliğinden kaymayacak.',
+  // reader: only in the audiobook
+  'reader.readAlong.beyond.title': 'Yalnızca sesli kitapta',
+  'reader.readAlong.beyond.middle': 'Dinlemeye devam edin - metin {time} sonra devam ediyor.',
+  'reader.readAlong.beyond.start':
+    'Sesli kitap, e-kitapta olmayan bir bölümle başlıyor. Metin {time} sonra başlıyor.',
+  'reader.readAlong.beyond.end': 'E-kitap burada bitiyor, ancak sesli kitap {time} daha sürüyor.',
+  'reader.readAlong.beyond.skip': 'Metne geç',
+  'reader.readAlong.beyond.hide': 'Gizle',
+  'reader.readAlong.beyond.announce':
+    'Sesli kitap, e-kitapta olmayan bir bölümü okuyor. Dinlemeye devam edin - metin birazdan devam edecek.',
+  'reader.readAlong.beyond.marker': 'Ses buradan devam edecek',
+  'reader.readAlong.beyond.backHere':
+    'Ses, e-kitapta olmayan bir bölümü okuyor. Metin buradan devam ediyor.',
   'reader.toast.otherDeviceAt': 'Başka bir cihaz {pct} konumunda',
   'reader.toast.jumpThere': 'Oraya git',
   'reader.toast.markMoved':

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { type SentenceIndexEntry } from '../lib/types';
 import {
+  BEYOND_TEXT_SETTLE_MS,
+  beyondTextAt,
+  type BeyondText,
   type AlignedSegment,
   HOLD_MS,
   buildCues,
@@ -277,5 +280,59 @@ describe('cueForTurn (a page turned with the voice)', () => {
   });
   it('has nothing to start after the last timed sentence', () => {
     expect(cueForTurn(cues, 320, onPage(320, 400))).toBeNull();
+  });
+});
+
+describe('beyondTextAt', () => {
+  // A minute and a half the ebook does not have, between two synced
+  // sentences, and the narration's last minute after the text has ended.
+  const middle: BeyondText = {
+    fromMs: 300_000,
+    toMs: 390_000,
+    extraMs: 90_000,
+    where: 'middle',
+    resume: { spineIdx: 3, sentenceId: 's0', charOffset: 0 },
+  };
+  const end: BeyondText = {
+    fromMs: 900_000,
+    toMs: 960_000,
+    extraMs: 60_000,
+    where: 'end',
+    resume: null,
+  };
+  const opening: BeyondText = {
+    fromMs: 0,
+    toMs: 45_000,
+    extraMs: 45_000,
+    where: 'start',
+    resume: { spineIdx: 0, sentenceId: 's0', charOffset: 0 },
+  };
+
+  it('waits for the pause after the last sentence before saying anything', () => {
+    expect(beyondTextAt([middle], 300_000)).toBeNull();
+    expect(beyondTextAt([middle], 300_000 + BEYOND_TEXT_SETTLE_MS - 1)).toBeNull();
+    expect(beyondTextAt([middle], 300_000 + BEYOND_TEXT_SETTLE_MS)?.stretch).toBe(middle);
+  });
+
+  it('counts down to where the text picks up, and lets go when it does', () => {
+    const now = beyondTextAt([middle, end], 345_000)!;
+    expect(now.remainingMs).toBe(45_000);
+    expect(now.progress).toBeCloseTo(0.5, 5);
+    expect(beyondTextAt([middle, end], 390_000)).toBeNull();
+  });
+
+  it('is said from the first moment of an opening the ebook does not have', () => {
+    expect(beyondTextAt([opening], 0)?.stretch).toBe(opening);
+  });
+
+  it('knows the narration after the last page has nowhere to pick up', () => {
+    const now = beyondTextAt([middle, end], 930_000)!;
+    expect(now.stretch.resume).toBeNull();
+    expect(now.remainingMs).toBe(30_000);
+  });
+
+  it('is nothing outside the stretches, or with none', () => {
+    expect(beyondTextAt([middle, end], 500_000)).toBeNull();
+    expect(beyondTextAt([], 345_000)).toBeNull();
   });
 });

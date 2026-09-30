@@ -639,6 +639,18 @@ const messages: Record<string, string> = {
     'Na této stránce zatím není žádný časovaný text, ke kterému se vrátit.',
   'reader.readAlong.reducedMotion':
     'Váš systém žádá omezení pohybu, takže se stránka nebude posouvat sama.',
+  // reader: only in the audiobook
+  'reader.readAlong.beyond.title': 'Jen v audioknize',
+  'reader.readAlong.beyond.middle': 'Poslouchejte dál - text naváže za {time}.',
+  'reader.readAlong.beyond.start':
+    'Audiokniha začíná částí, kterou e-kniha nemá. Text začne za {time}.',
+  'reader.readAlong.beyond.end': 'E-kniha tady končí, ale audiokniha pokračuje ještě {time}.',
+  'reader.readAlong.beyond.skip': 'Přejít na text',
+  'reader.readAlong.beyond.hide': 'Skrýt',
+  'reader.readAlong.beyond.announce':
+    'Audiokniha čte část, kterou e-kniha nemá. Poslouchejte dál - text brzy naváže.',
+  'reader.readAlong.beyond.marker': 'Tady hlas naváže',
+  'reader.readAlong.beyond.backHere': 'Hlas čte část, kterou e-kniha nemá. Text pokračuje odsud.',
   'reader.toast.otherDeviceAt': 'Jiné zařízení je na {pct}',
   'reader.toast.jumpThere': 'Přejít tam',
   'reader.toast.markMoved':

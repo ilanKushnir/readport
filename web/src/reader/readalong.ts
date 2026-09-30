@@ -392,6 +392,62 @@ export function nearestChapter(bounds: ChapterBound[], bookMs: number): number |
 }
 
 /**
+ * A stretch of the narration with no text in the ebook, as the server works
+ * it out (shared NarrationBeyondText): what is left of a hole in the
+ * alignment once its untimed text has been read aloud, when that is a
+ * passage's worth. Never a mere hole - text the aligner could not place is
+ * not narration the ebook lacks.
+ */
+export interface BeyondText {
+  fromMs: number;
+  toMs: number;
+  extraMs: number;
+  /** Before the book's first synced sentence, between two, or after its last. */
+  where: 'start' | 'middle' | 'end';
+  /** Where the text picks up again; null after the last synced sentence. */
+  resume: { spineIdx: number; sentenceId: string; charOffset: number } | null;
+}
+
+/** Where the voice is in a stretch the ebook does not have. */
+export interface BeyondTextNow {
+  stretch: BeyondText;
+  /** Until the text picks up again, or the narration ends. */
+  remainingMs: number;
+  /** How far through the stretch, 0-1. */
+  progress: number;
+}
+
+/**
+ * The voice has just finished the last sentence before a stretch: it is
+ * given the pause a sentence ends in (HOLD_MS, the highlight's own hold)
+ * before the reader is told anything, so the notice never lands on the
+ * sentence's last word.
+ */
+export const BEYOND_TEXT_SETTLE_MS = HOLD_MS;
+
+/**
+ * The stretch the voice is in at `bookMs`, when it is in one the ebook does
+ * not have - after it has settled into it, and until the text picks up.
+ */
+export function beyondTextAt(
+  stretches: readonly BeyondText[],
+  bookMs: number,
+): BeyondTextNow | null {
+  for (const stretch of stretches) {
+    const from =
+      stretch.where === 'start' ? stretch.fromMs : stretch.fromMs + BEYOND_TEXT_SETTLE_MS;
+    if (bookMs < from || bookMs >= stretch.toMs) continue;
+    const span = Math.max(1, stretch.toMs - stretch.fromMs);
+    return {
+      stretch,
+      remainingMs: Math.max(0, stretch.toMs - bookMs),
+      progress: Math.min(1, Math.max(0, (bookMs - stretch.fromMs) / span)),
+    };
+  }
+  return null;
+}
+
+/**
  * How long the voice may read of the page before, after a turn with the
  * voice, to give the sentence the new page begins in the middle of whole.
  * Longer than this and it starts at the first sentence that begins on the

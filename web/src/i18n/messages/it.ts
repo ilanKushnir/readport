@@ -653,6 +653,19 @@ const messages: Record<string, string> = {
     'Ancora nessun testo sincronizzato a cui tornare in questa pagina.',
   'reader.readAlong.reducedMotion':
     'Il tuo sistema richiede animazioni ridotte, quindi la pagina non scorrerà da sola.',
+  // reader: only in the audiobook
+  'reader.readAlong.beyond.title': 'Solo nell’audiolibro',
+  'reader.readAlong.beyond.middle': 'Continua ad ascoltare - il testo riprende tra {time}.',
+  'reader.readAlong.beyond.start':
+    'L’audiolibro inizia con una parte che l’ebook non ha. Il testo inizia tra {time}.',
+  'reader.readAlong.beyond.end': 'L’ebook finisce qui, ma l’audiolibro continua per altri {time}.',
+  'reader.readAlong.beyond.skip': 'Vai al testo',
+  'reader.readAlong.beyond.hide': 'Nascondi',
+  'reader.readAlong.beyond.announce':
+    'L’audiolibro sta leggendo una parte che l’ebook non ha. Continua ad ascoltare - il testo riprenderà presto.',
+  'reader.readAlong.beyond.marker': 'La voce riprende da qui',
+  'reader.readAlong.beyond.backHere':
+    'La voce sta leggendo una parte che l’ebook non ha. Il testo riprende da qui.',
   'reader.toast.otherDeviceAt': 'Un altro dispositivo è a {pct}',
   'reader.toast.jumpThere': 'Vai lì',
   'reader.toast.markMoved':

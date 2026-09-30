@@ -648,6 +648,20 @@ const messages: Record<string, string> = {
     'На цій сторінці поки немає розміченого тексту, до якого можна повернутися.',
   'reader.readAlong.reducedMotion':
     'Ваша система просить зменшити анімацію, тому сторінка не прокручуватиметься сама.',
+  // reader: only in the audiobook
+  'reader.readAlong.beyond.title': 'Лише в аудіокнизі',
+  'reader.readAlong.beyond.middle': 'Слухайте далі - текст продовжиться через {time}.',
+  'reader.readAlong.beyond.start':
+    'Аудіокнига починається з частини, якої немає в електронній книзі. Текст почнеться через {time}.',
+  'reader.readAlong.beyond.end':
+    'Електронна книга тут закінчується, а аудіокнига триватиме ще {time}.',
+  'reader.readAlong.beyond.skip': 'Перейти до тексту',
+  'reader.readAlong.beyond.hide': 'Приховати',
+  'reader.readAlong.beyond.announce':
+    'Аудіокнига читає частину, якої немає в електронній книзі. Слухайте далі - текст скоро продовжиться.',
+  'reader.readAlong.beyond.marker': 'Тут голос продовжить',
+  'reader.readAlong.beyond.backHere':
+    'Голос читає частину, якої немає в електронній книзі. Текст продовжиться звідси.',
   'reader.toast.otherDeviceAt': 'Інший пристрій перебуває на {pct}',
   'reader.toast.jumpThere': 'Перейти туди',
   'reader.toast.markMoved':

@@ -248,7 +248,17 @@ Where the alignment says nothing, read-along says so rather than guessing:
 - between two sentences, the wash is held for up to 2.5 s, so an ordinary
   pause does not make it blink;
 - past that, in a stretch with no timings, the wash is dropped and the
-  transport reads _the narration is ahead of the timed text_;
+  transport reads _No timed text here_;
+- where the narration has something the ebook does not - an introduction, a
+  passage one edition kept and the other cut, what follows the last page -
+  read-along says _Only in the audiobook_: a card above the transport counts
+  down to where the text picks up and offers _Skip to the text_, the page
+  waits at the sentence the voice will come back to (marked, its ember
+  breathing), and _Back to the voice_ goes there. A stretch counts only when,
+  once the untimed text inside it has been read aloud at the book's own pace,
+  half a minute or more of narration is left over - text the aligner could not
+  place is not narration the ebook lacks, and a reworded sentence is not a
+  passage (server/src/alignment/beyond.ts, `BEYOND_TEXT_MIN_MS`);
 - a chapter with no timings at all - front matter, or one the aligner skipped
   - is walked past rather than dead-ending the feature;
 - a sentence the aligner never timed is never given an interpolated cue. An

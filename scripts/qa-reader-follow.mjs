@@ -99,7 +99,7 @@ async function open(
     // chapter's timings.
     body += seeking
       ? `\nexport function useNarration() {
-      const [n, setN] = useState({ ready: true, playing: true, cue: null, cues: [], bookMs: 0, seekNonce: 0, state: 'gap', speed: 1, backSeconds: 15, element: null, chapterAt: () => null, toggle() {}, back() {}, setSpeed() {} });
+      const [n, setN] = useState({ ready: true, playing: true, cue: null, cues: [], bookMs: 0, seekNonce: 0, state: 'gap', speed: 1, backSeconds: 15, element: null, chapterAt: () => null, beyond: null, skipBeyond() { window.__skips = (window.__skips || 0) + 1; }, toggle() {}, back() {}, setSpeed() {} });
       window.readerClock = patch => setN(prev => ({ ...prev, ...patch }));
       window.__plays = window.__plays || [];
       const playFrom = (offset) => {
@@ -112,7 +112,7 @@ async function open(
       return { ...n, playFrom };
     }\n`
       : `\nexport function useNarration() {
-      const [n, setN] = useState({ ready: true, playing: true, cue: null, cues: [], bookMs: 0, seekNonce: 0, state: 'gap', speed: 1, backSeconds: 15, element: null, chapterAt: () => null, toggle() {}, back() {}, setSpeed() {}, playFrom() {} });
+      const [n, setN] = useState({ ready: true, playing: true, cue: null, cues: [], bookMs: 0, seekNonce: 0, state: 'gap', speed: 1, backSeconds: 15, element: null, chapterAt: () => null, beyond: null, skipBeyond() { window.__skips = (window.__skips || 0) + 1; }, toggle() {}, back() {}, setSpeed() {}, playFrom() {} });
       window.readerClock = patch => setN(prev => ({ ...prev, ...patch }));
       return n;
     }\n`;
@@ -1123,6 +1123,103 @@ try {
       await page.waitForFunction(() => window.__locks.held === 1);
       await page.getByRole('button', { name: 'Stop reading along' }).click();
       await page.waitForFunction(() => window.__locks.held === 0);
+    });
+    await context.close();
+  }
+  // Only in the audiobook: the voice reads a stretch the ebook does not
+  // have. The card says so above the transport, counts down to where the
+  // text picks up, and offers the way on; the bar's status says it too; the
+  // page waits at the sentence the voice comes back to, marked; and all of
+  // it leaves when the text picks up.
+  for (const [label, viewport, theme] of [
+    ['1180', { width: 1180, height: 820 }, 'paper'],
+    ['390', { width: 390, height: 844 }, 'night'],
+  ]) {
+    const { page, context } = await open('paginated', false, 'no-preference', viewport, { theme });
+    await page.getByRole('button', { name: 'Read along', exact: true }).click();
+    // Where the text picks up: the start of a paragraph a few pages on.
+    const at = (paragraph.length + 1) * 24;
+    const stretch = {
+      fromMs: 300_000,
+      toMs: 390_000,
+      extraMs: 90_000,
+      where: 'middle',
+      resume: { spineIdx: 0, sentenceId: 'resume', charOffset: at },
+    };
+    await check(`only in the audiobook ${label}`, async () => {
+      await page.evaluate(
+        (s) =>
+          window.readerClock({
+            cues: [],
+            cue: null,
+            state: 'gap',
+            bookMs: 345_000,
+            playing: true,
+            beyond: { stretch: s, remainingMs: 45_000, progress: 0.5 },
+          }),
+        stretch,
+      );
+      const card = page.locator('.beyond');
+      await card.waitFor();
+      const text = await card.innerText();
+      assert.match(text, /Only in the audiobook/);
+      assert.match(text, /picks up again in 0:45/);
+      assert.equal(await card.getAttribute('data-where'), 'middle');
+      // Over the text, above the transport - not on it.
+      const box = await card.boundingBox();
+      const chrome = await page.locator('.immersive-chrome--bottom').boundingBox();
+      assert.ok(box.y + box.height <= chrome.y - 4, 'the card stands clear of the transport');
+      assert.ok(box.x >= 0 && box.x + box.width <= viewport.width, 'the card fits the screen');
+      assert.match(
+        await page.locator('.readalong__status').innerText(),
+        /Only in the audiobook\s*·\s*0:45/,
+      );
+      // The page has gone on to where the text picks up, and marks it.
+      const marker = page.locator('.resume-marker--voice');
+      await marker.waitFor();
+      const m = await marker.locator('span').first().boundingBox();
+      const pages = await page.locator('.reader-pages').boundingBox();
+      assert.ok(
+        m && m.y >= pages.y && m.y + m.height <= pages.y + pages.height,
+        'the marked line is on screen',
+      );
+      assert.equal(await marker.getAttribute('aria-label'), 'The voice picks up here');
+      await page.waitForTimeout(450);
+      if (shots) await page.screenshot({ path: `${shots}/${label}-beyond.png` });
+      await page.getByRole('button', { name: 'Skip to the text' }).click();
+      assert.equal(await page.evaluate(() => window.__skips), 1);
+      await page.getByRole('button', { name: 'Hide' }).click();
+      assert.equal(await card.count(), 0);
+      // Put away, the bar still says it.
+      assert.match(await page.locator('.readalong__status').innerText(), /Only in the audiobook/);
+      await page.evaluate(() => window.readerClock({ beyond: null }));
+      await page.waitForTimeout(100);
+      assert.equal(await marker.count(), 0);
+      assert.doesNotMatch(await page.locator('.readalong__status').innerText(), /audiobook/);
+    });
+    await check(`only in the audiobook, after the last page ${label}`, async () => {
+      await page.evaluate(() =>
+        window.readerClock({
+          beyond: {
+            stretch: {
+              fromMs: 900_000,
+              toMs: 960_000,
+              extraMs: 60_000,
+              where: 'end',
+              resume: null,
+            },
+            remainingMs: 30_000,
+            progress: 0.5,
+          },
+        }),
+      );
+      const card = page.locator('.beyond');
+      await card.waitFor();
+      assert.match(await card.innerText(), /goes on for 0:30/);
+      assert.equal(await page.getByRole('button', { name: 'Skip to the text' }).count(), 0);
+      if (shots && label === '390')
+        await page.screenshot({ path: `${shots}/${label}-beyond-end.png` });
+      await page.evaluate(() => window.readerClock({ beyond: null }));
     });
     await context.close();
   }

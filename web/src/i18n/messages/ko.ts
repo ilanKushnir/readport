@@ -627,6 +627,19 @@ const messages: Record<string, string> = {
   'reader.readAlong.noTimedText': '이 페이지에는 아직 돌아갈 타이밍 텍스트가 없습니다.',
   'reader.readAlong.reducedMotion':
     '시스템에서 동작 줄이기를 요청하여 페이지가 자동으로 스크롤되지 않습니다.',
+  // reader: only in the audiobook
+  'reader.readAlong.beyond.title': '오디오북에만 있는 부분',
+  'reader.readAlong.beyond.middle': '계속 들어 주세요. {time} 후에 텍스트로 돌아갑니다.',
+  'reader.readAlong.beyond.start':
+    '오디오북은 전자책에 없는 부분으로 시작합니다. {time} 후에 텍스트가 시작됩니다.',
+  'reader.readAlong.beyond.end': '전자책은 여기서 끝나지만 오디오북은 {time} 더 이어집니다.',
+  'reader.readAlong.beyond.skip': '텍스트로 건너뛰기',
+  'reader.readAlong.beyond.hide': '숨기기',
+  'reader.readAlong.beyond.announce':
+    '오디오북이 전자책에 없는 부분을 읽고 있습니다. 계속 들어 주세요. 곧 텍스트로 돌아갑니다.',
+  'reader.readAlong.beyond.marker': '여기서 낭독이 다시 이어집니다',
+  'reader.readAlong.beyond.backHere':
+    '낭독이 전자책에 없는 부분을 읽고 있습니다. 텍스트는 여기서 이어집니다.',
   'reader.toast.otherDeviceAt': '다른 기기는 {pct} 지점에 있습니다',
   'reader.toast.jumpThere': '거기로 이동',
   'reader.toast.markMoved':

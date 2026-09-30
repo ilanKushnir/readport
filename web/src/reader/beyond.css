@@ -1,0 +1,275 @@
+/* Only in the audiobook (BeyondTextCard): a pane of the page's own paper,
+   frosted, floating over the text just above the transport - there and
+   gone, never a row in the bar (which would re-lay the chapter out). The
+   voice's colour runs through it: the bars that move while it speaks, the
+   line that fills as the stretch goes by, the way on. */
+.beyond {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--rd-chrome-bottom, 152px) + 12px);
+  z-index: 12;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: min(440px, calc(100% - 32px));
+  padding: 12px 6px 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--rd-link) 28%, transparent);
+  border-radius: 18px;
+  color: var(--rd-text);
+  background:
+    linear-gradient(to right, color-mix(in srgb, var(--rd-link) 11%, transparent), transparent 60%),
+    color-mix(in srgb, var(--rd-bg) 84%, transparent);
+  backdrop-filter: blur(14px) saturate(1.15);
+  -webkit-backdrop-filter: blur(14px) saturate(1.15);
+  box-shadow: var(--rp-shadow-2);
+  font-family: var(--rp-font-ui, inherit);
+  transform: translateX(-50%);
+  animation: beyond-in 420ms var(--rp-ease) both;
+}
+[dir='rtl'] .beyond {
+  padding: 12px 14px 12px 6px;
+  background:
+    linear-gradient(to left, color-mix(in srgb, var(--rd-link) 11%, transparent), transparent 60%),
+    color-mix(in srgb, var(--rd-bg) 84%, transparent);
+}
+/* The way-back pill is showing as well: the card stands on it, not over it. */
+.beyond.is-raised {
+  bottom: calc(var(--rd-chrome-bottom, 152px) + 68px);
+}
+@keyframes beyond-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%);
+  }
+}
+
+/* The voice, going on: four bars in a disc of its colour. They move while
+   it speaks and rest, at odd heights, while it is paused. */
+.beyond__voice {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2.5px;
+  width: 34px;
+  height: 34px;
+  margin-top: 1px;
+  border-radius: 50%;
+  color: var(--rd-link);
+  background: color-mix(in srgb, var(--rd-link) 14%, transparent);
+}
+.beyond__voice i {
+  display: block;
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  background: currentColor;
+  transform-origin: center;
+}
+.beyond__voice i:nth-child(1) {
+  transform: scaleY(0.45);
+}
+.beyond__voice i:nth-child(2) {
+  transform: scaleY(0.9);
+}
+.beyond__voice i:nth-child(3) {
+  transform: scaleY(0.6);
+}
+.beyond__voice i:nth-child(4) {
+  transform: scaleY(0.35);
+}
+.beyond.is-playing .beyond__voice i {
+  animation: beyond-voice 1.15s ease-in-out infinite;
+}
+.beyond.is-playing .beyond__voice i:nth-child(1) {
+  animation-delay: -0.95s;
+}
+.beyond.is-playing .beyond__voice i:nth-child(2) {
+  animation-delay: -0.55s;
+}
+.beyond.is-playing .beyond__voice i:nth-child(3) {
+  animation-delay: -0.25s;
+}
+.beyond.is-playing .beyond__voice i:nth-child(4) {
+  animation-delay: -0.7s;
+}
+@keyframes beyond-voice {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.beyond__body {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+.beyond__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: 0.005em;
+}
+.beyond__line {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--rd-soft);
+  font-variant-numeric: tabular-nums;
+  text-wrap: pretty;
+}
+.beyond__foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 7px;
+}
+/* How far through the stretch: a hairline that fills in the voice's colour. */
+.beyond__track {
+  flex: 1;
+  min-width: 48px;
+  height: 3px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--rd-text) 12%, transparent);
+}
+.beyond__track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--rd-link);
+  transform-origin: left center;
+  transition: transform 600ms linear;
+}
+[dir='rtl'] .beyond__track > span {
+  transform-origin: right center;
+}
+.beyond__skip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--rd-link) 42%, transparent);
+  border-radius: var(--radius-pill, 999px);
+  background: color-mix(in srgb, var(--rd-link) 10%, transparent);
+  color: var(--rd-link);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--rp-duration-base, 220ms) var(--rp-ease),
+    border-color var(--rp-duration-base, 220ms) var(--rp-ease);
+}
+.beyond__skip:hover {
+  background: color-mix(in srgb, var(--rd-link) 18%, transparent);
+  border-color: color-mix(in srgb, var(--rd-link) 60%, transparent);
+}
+.beyond__x {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  margin-top: -4px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--rd-text);
+  opacity: 0.55;
+  cursor: pointer;
+}
+.beyond__x:hover {
+  opacity: 1;
+  background: color-mix(in srgb, var(--rd-text) 8%, transparent);
+}
+.beyond__skip:focus-visible,
+.beyond__x:focus-visible {
+  outline: 2px solid var(--rd-link);
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .beyond__skip {
+    min-height: 40px;
+  }
+  .beyond__x {
+    width: 40px;
+    height: 40px;
+    margin-top: -8px;
+  }
+}
+@media (max-width: 380px) {
+  .beyond {
+    gap: 10px;
+    padding-inline-start: 12px;
+  }
+  .beyond__voice {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+/* Where the text picks up, while the voice reads what it does not have:
+   the resume marker's lit line, with its ember breathing - a place being
+   kept for the voice, not one the reader left. */
+.resume-marker--voice .resume-marker__tick {
+  animation:
+    rd-resume-tick 700ms var(--rp-ease) 120ms both,
+    beyond-wait 2.4s ease-in-out 900ms infinite;
+}
+@keyframes beyond-wait {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .beyond {
+    animation: none;
+  }
+  .beyond.is-playing .beyond__voice i,
+  .resume-marker--voice .resume-marker__tick {
+    animation: none;
+  }
+  .beyond__track > span {
+    transition: none;
+  }
+}
+
+/* The transport's status while the voice is beyond the text: in the voice's
+   colour, the words free to shorten on a narrow bar, the time never. */
+.readalong__status.is-beyond {
+  display: flex;
+  align-items: baseline;
+  color: var(--rd-link);
+  font-weight: 600;
+}
+.readalong__beyond {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.readalong__beyond-time {
+  flex: none;
+  white-space: pre;
+  font-variant-numeric: tabular-nums;
+}

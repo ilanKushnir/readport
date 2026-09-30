@@ -636,6 +636,19 @@ const messages: Record<string, string> = {
   'reader.readAlong.noTimedText': 'Ingen tidsatt text att återgå till på den här sidan än.',
   'reader.readAlong.reducedMotion':
     'Ditt system efterfrågar minskad rörelse, så sidan rullar inte av sig själv.',
+  // reader: only in the audiobook
+  'reader.readAlong.beyond.title': 'Bara i ljudboken',
+  'reader.readAlong.beyond.middle': 'Fortsätt lyssna - texten tar vid igen om {time}.',
+  'reader.readAlong.beyond.start':
+    'Ljudboken börjar med en del som e-boken inte har. Texten börjar om {time}.',
+  'reader.readAlong.beyond.end': 'E-boken slutar här, men ljudboken fortsätter i {time} till.',
+  'reader.readAlong.beyond.skip': 'Hoppa till texten',
+  'reader.readAlong.beyond.hide': 'Dölj',
+  'reader.readAlong.beyond.announce':
+    'Ljudboken läser en del som e-boken inte har. Fortsätt lyssna - texten tar snart vid igen.',
+  'reader.readAlong.beyond.marker': 'Här tar rösten vid igen',
+  'reader.readAlong.beyond.backHere':
+    'Rösten läser en del som e-boken inte har. Texten fortsätter här.',
   'reader.toast.otherDeviceAt': 'En annan enhet är vid {pct}',
   'reader.toast.jumpThere': 'Hoppa dit',
   'reader.toast.markMoved':

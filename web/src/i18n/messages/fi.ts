@@ -641,6 +641,19 @@ const messages: Record<string, string> = {
   'reader.readAlong.noTimedText': 'Ei ajoitettua tekstiä, johon palata tällä sivulla vielä.',
   'reader.readAlong.reducedMotion':
     'Järjestelmäsi pyytää vähennettyä liikettä, joten sivu ei vieritä itsestään.',
+  // reader: only in the audiobook
+  'reader.readAlong.beyond.title': 'Vain äänikirjassa',
+  'reader.readAlong.beyond.middle': 'Jatka kuuntelua - teksti jatkuu {time} kuluttua.',
+  'reader.readAlong.beyond.start':
+    'Äänikirja alkaa osalla, jota e-kirjassa ei ole. Teksti alkaa {time} kuluttua.',
+  'reader.readAlong.beyond.end': 'E-kirja päättyy tähän, mutta äänikirja jatkuu vielä {time}.',
+  'reader.readAlong.beyond.skip': 'Siirry tekstiin',
+  'reader.readAlong.beyond.hide': 'Piilota',
+  'reader.readAlong.beyond.announce':
+    'Äänikirja lukee osaa, jota e-kirjassa ei ole. Jatka kuuntelua - teksti jatkuu pian.',
+  'reader.readAlong.beyond.marker': 'Ääni jatkaa tästä',
+  'reader.readAlong.beyond.backHere':
+    'Ääni lukee osaa, jota e-kirjassa ei ole. Teksti jatkuu tästä.',
   'reader.toast.otherDeviceAt': 'Toinen laite on kohdassa {pct}',
   'reader.toast.jumpThere': 'Hyppää sinne',
   'reader.toast.markMoved':

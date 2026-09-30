@@ -35,6 +35,41 @@ export const alignmentGapSchema = z.object({
 });
 export type AlignmentGap = z.infer<typeof alignmentGapSchema>;
 
+/**
+ * How much of the narration a stretch must have that the ebook cannot
+ * account for before read-along says "only in the audiobook".
+ *
+ * A gap in the alignment is not, by itself, narration the ebook lacks: text
+ * the aligner could not place leaves a hole the same shape. What it lacks is
+ * what is left of the hole once the untimed text inside it has been read
+ * aloud at the book's own pace - a missing passage, an introduction, the
+ * music after a part. Half a minute of that is a passage; less is a
+ * reworded sentence or two, and saying so would be crying wolf.
+ */
+export const BEYOND_TEXT_MIN_MS = 30_000;
+
+/** A stretch of the narration with no text in the ebook (see BEYOND_TEXT_MIN_MS). */
+export const narrationBeyondTextSchema = z.object({
+  /** Book-absolute milliseconds: from the end of the last synced sentence before it... */
+  fromMs: z.number().int().min(0),
+  /** ...to the start of the first one after it, or the end of the audiobook. */
+  toMs: z.number().int().min(0),
+  /** The narration in it that the untimed text between the two cannot account for. */
+  extraMs: z.number().int().min(0),
+  /** Before the book's first synced sentence, between two, or after its last. */
+  where: z.enum(['start', 'middle', 'end']),
+  /** Where the text picks up again; null after the last synced sentence. */
+  resume: z
+    .object({
+      spineIdx: z.number().int().min(0),
+      sentenceId: z.string(),
+      /** The sentence's first character, in its chapter. */
+      charOffset: z.number().int().min(0),
+    })
+    .nullable(),
+});
+export type NarrationBeyondText = z.infer<typeof narrationBeyondTextSchema>;
+
 export const alignmentSummarySchema = z.object({
   pairId: z.string(),
   version: z.number().int(),

@@ -661,6 +661,20 @@ const messages: Record<string, string> = {
   'reader.readAlong.reducedMotion':
     "Votre système demande une animation réduite, la page ne défilera donc pas d'elle-même.",
   'reader.toast.otherDeviceAt': 'Un autre appareil est à {pct}',
+  // reader: only in the audiobook
+  'reader.readAlong.beyond.title': 'Uniquement dans le livre audio',
+  'reader.readAlong.beyond.middle': 'Continuez d’écouter - le texte reprend dans {time}.',
+  'reader.readAlong.beyond.start':
+    'Le livre audio commence par une partie absente du livre numérique. Le texte commence dans {time}.',
+  'reader.readAlong.beyond.end':
+    'Le livre numérique s’arrête ici, mais le livre audio continue encore {time}.',
+  'reader.readAlong.beyond.skip': 'Aller au texte',
+  'reader.readAlong.beyond.hide': 'Masquer',
+  'reader.readAlong.beyond.announce':
+    'Le livre audio lit une partie absente du livre numérique. Continuez d’écouter - le texte va reprendre.',
+  'reader.readAlong.beyond.marker': 'La voix reprend ici',
+  'reader.readAlong.beyond.backHere':
+    'La voix lit une partie absente du livre numérique. Le texte reprend ici.',
   'reader.toast.jumpThere': 'Y aller',
   'reader.toast.markMoved':
     'Arrivé aux mots de ce repère ; le texte du livre a changé depuis sa création.',

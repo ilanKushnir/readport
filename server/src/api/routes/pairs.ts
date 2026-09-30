@@ -1,5 +1,10 @@
 import { type FastifyInstance } from 'fastify';
-import { alignManySchema, locatorSchema, type BookPairing } from '@readport/shared';
+import {
+  alignManySchema,
+  locatorSchema,
+  type BookPairing,
+  type NarrationBeyondText,
+} from '@readport/shared';
 import { z } from 'zod';
 import { requireRole } from '../../auth/roles.js';
 import { resolveSettings } from '../../domain/settings.js';
@@ -16,6 +21,7 @@ import {
   type ResolveContext,
 } from '../../alignment/service.js';
 import { loadManifest, loadSentences } from '../../epub/extract.js';
+import { narrationBeyondText } from '../../alignment/beyond.js';
 import {
   CANDIDATE_THRESHOLD,
   languageCode,
@@ -620,6 +626,26 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
           GROUP BY spine_idx ORDER BY spine_idx`,
       )
       .all(handle.alignmentId) as Record<string, unknown>[];
+    // And the stretches of the narration the ebook does not have, so the
+    // reader can say so instead of going quiet: read here, with the bounds,
+    // because it is one answer for the whole book and wanted as soon as
+    // reading along starts. Worked out against the ebook's sentence index;
+    // without one there is nothing to say, not an error.
+    let beyondText: NarrationBeyondText[] = [];
+    const pair = db.prepare('SELECT ebook_id FROM pairs WHERE id = ?').get(id) as
+      { ebook_id: string } | undefined;
+    if (pair) {
+      const dir = activeDerivedDir(ctx, pair.ebook_id);
+      const sentences = loadSentences(dir);
+      if (sentences)
+        beyondText = narrationBeyondText(
+          db,
+          handle.alignmentId,
+          handle.summary.gaps,
+          sentences,
+          `${handle.alignmentId}:${dir}`,
+        );
+    }
     return {
       chapters: rows.map((r) => ({
         spineIdx: Number(r.spine_idx),
@@ -627,6 +653,7 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
         lastMs: Number(r.last_ms),
         segments: Number(r.n),
       })),
+      beyondText,
     };
   });
 
