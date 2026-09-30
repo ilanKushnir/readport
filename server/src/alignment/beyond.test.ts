@@ -110,6 +110,19 @@ describe('narration the ebook does not have', () => {
     expect(found[0]!.resume).toEqual({ spineIdx: 0, sentenceId: 'c0s34', charOffset: 3400 });
   });
 
+  it('is the whole hole when the text in it is text the narration leaves out', () => {
+    // The same untimed sentences 30-45 as above - but the aligner found the
+    // narration leaves them out (a preface), so none of the hole is theirs:
+    // it is the audiobook's own announcement, all 85 seconds of it.
+    const found = judge(
+      [...spoken(0, 0, 29, 0), ...spoken(0, 46, 59, 235_000), ...spoken(1, 0, 39, 305_000)],
+      [hole(150_000, 235_000), { fromMs: 150_000, toMs: 235_000, reason: 'text-only' }],
+    );
+    expect(found).toHaveLength(1);
+    expect(found[0]!.extraMs).toBe(85_000);
+    expect(found[0]!.resume?.sentenceId).toBe('c0s46');
+  });
+
   it('is not a sentence or two told differently', () => {
     // Twenty seconds with nothing between, and 35 s with two untimed
     // sentences in it (10 s of reading): neither is a passage.

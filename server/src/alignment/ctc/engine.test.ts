@@ -191,6 +191,30 @@ describe('alignWithCtc', () => {
     expect(exact / out.result.segments.length).toBeGreaterThan(0.95);
   });
 
+  it('records a part the narration leaves out as text-only, and times none of it', async () => {
+    // Sentences 100-130 are a part of their own - a preface - that the
+    // narrator goes straight past.
+    const book = makeBook(7, 300);
+    book.sentences.forEach((s, i) => {
+      s.spineIdx = i < 100 ? 0 : i <= 130 ? 1 : 2;
+    });
+    const heard = narrate(book.text, { skip: [100, 131] });
+
+    const out = await alignWithCtc(request(book, heard));
+
+    const placed = byOrd(out.result.segments);
+    for (let i = 100; i < 131; i++) expect(placed.has(i), `sentence ${i} was timed`).toBe(false);
+    // Either side, the timeline is the narration's own.
+    expect(Math.abs(placed.get(99)!.startMs - heard.truth[99]!.startMs)).toBeLessThanOrEqual(1_000);
+    expect(Math.abs(placed.get(131)!.startMs - heard.truth[131]!.startMs)).toBeLessThanOrEqual(
+      1_000,
+    );
+    const leftOut = out.result.gaps.filter((g) => g.reason === 'text-only');
+    expect(leftOut).toEqual([
+      { fromMs: placed.get(99)!.endMs, toMs: placed.get(131)!.startMs, reason: 'text-only' },
+    ]);
+  });
+
   it('REFUSES a pairing whose audio narrates a different book', async () => {
     const book = makeBook(2, 200);
     // Same length, same language, same rate - only the words differ, which is

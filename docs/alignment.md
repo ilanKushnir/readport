@@ -109,18 +109,28 @@ its duty cycle suggests.
    `romanize.ts`). Script mapping is keyed on the character, not the book's
    language, so a Russian name in an English novel still produces letters.
 2. **Choose where to listen** (`sparse.ts`). Under `standard`, one 8-second
-   probe every 150 seconds to start with. Then, for each stretch between two
-   consecutive anchors wider than 50 seconds, the implied reading rate (book
-   characters per millisecond) is compared against the book's median: a
-   stretch off by more than a factor of 1.2 either way, or that produced no
-   anchors at all, gets another probe placed in the middle of the widest part
-   of it that nothing has listened to yet. Up to three rounds, with a probe
-   budget of 60% of the first pass. A chapter break shows up as a stretch that
-   is too slow, a passage the narration skips as one that is too fast, and a
-   probe that landed in music as one with no anchors - all three are the same
-   signal, and all three are exactly where interpolation goes wrong. The
-   unanchored head and tail of the book are always suspect: there is no rate
-   to judge them by, and they are every bit as unmapped.
+   probe every 60 seconds to start with. (It was every 150 seconds. Measured
+   against what a Russian narration actually said at points no probe had
+   listened to, the minute halved the median error to 0.6 s and cut the worst
+   from 11.5 s to 5.8 s, for two and a half times the listening: the error
+   between two probes is interpolation, and it grows with the distance
+   between them.) Then, for each stretch between two consecutive anchors, the
+   implied reading rate (book characters per millisecond) is compared against
+   the book's median: a stretch off by more than a factor of 1.2 either way,
+   or that produced no anchors at all, gets another probe placed in the
+   middle of the widest part of it that nothing has listened to yet. Stretches
+   are ranked by what they leave unexplained, either way round: the time a
+   pause adds that its characters cannot account for, or the characters a
+   skipped passage adds that its time cannot - ranking by the first alone put
+   every skip last, and a preface the narrator left out was interpolated
+   across a minute of narration. A stretch that skipped text is chased down
+   to two probes wide (anything else only while it is wider than a third of
+   the grid). Up to six rounds, with a probe budget of 60% of the first pass.
+   A chapter break shows up as a stretch that is too slow, a passage the
+   narration skips as one that is too fast, and a probe that landed in music
+   as one with no anchors - all three are exactly where interpolation goes
+   wrong. The unanchored head and tail of the book are always suspect: there
+   is no rate to judge them by, and they are every bit as unmapped.
 3. **Decode the audio** (`emissions.ts`). The bundled ffmpeg resamples every
    track to 16 kHz mono. `exact` consumes it as a stream in 30-second chunks
    with one second of context on each side (frames near a hard cut decode
@@ -142,8 +152,22 @@ its duty cycle suggests.
    unambiguous by construction, so no similarity threshold is needed. A
    longest-increasing-subsequence pass discards any candidate that would
    require the narrator to jump backwards.
-5. **Interpolate, and say how much that is worth.** Linear interpolation
-   between consecutive anchors maps any book character position to a
+5. **Take out what the narration skipped, then interpolate, and say how much
+   that is worth.** A stretch between two anchors - or before the first, or
+   after the last - whose text would take one and a half times its duration
+   or more to read at the narrator's own median pace (and at least ten
+   seconds more) has had something skipped, and the book's parts say what:
+   the whole parts (chapter files) strictly between the two anchors - a
+   preface, a chapter's summary page, the front matter, a glossary - and,
+   when those are not all of it, up to 1,500 characters of the opening of the
+   part the narration resumes in (a heading, an introduction). The first of
+   those that leaves text readable in the stretch's time is taken: its
+   sentences get no timing, and are reported as a `text-only` gap at the
+   moment the narration passes over them; the rest is timed at the
+   narrator's pace outward from the two anchors, and whatever time is left is
+   time with no text in it - an announcement, a pause, music. Linear
+   interpolation between consecutive anchors (and the inferred ones either
+   side of each skip) maps any other book character position to a
    millisecond. A sentence whose nearest anchor is more than 3000 characters
    away is reported as a gap instead of a timing; closer than that, its score
    falls linearly from 1 at an anchor to 0 at the cut-off. Each timing also
@@ -259,7 +283,12 @@ language nobody can trace.
 - **Un-narrated matter becomes a gap, not an error.** Title pages,
   copyright, dedications, "end of part one", an index: no anchors, so those
   sentences are reported as gaps and the reader refuses the handoff there
-  rather than landing somewhere plausible-looking. Decoding the validated
+  rather than landing somewhere plausible-looking. Un-narrated parts close
+  to narrated ones - a preface between a spoken title and chapter one, a
+  chapter's summary page - are taken out by step 5 when the book is divided
+  into parts, and recorded as `text-only` gaps; the narration's own
+  announcements in their place become the `narration-only` stretches the
+  reader shows as "Only in the audiobook". Decoding the validated
   book contiguously - hearing every second of it - still timed only about 94%
   of its sentences; the rest were gaps or too far from an anchor to trust.
   Those are not what sampling costs. They are what the narration does not

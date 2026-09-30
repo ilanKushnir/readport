@@ -49,7 +49,8 @@ describe('planFor', () => {
 
   it('gives the standard setting a schedule that samples a small share', () => {
     const plan = planFor('standard')!;
-    expect(plan.windowMs / plan.everyMs).toBeLessThan(0.1);
+    // A probe a minute: about an eighth of the audio, before refinement.
+    expect(plan.windowMs / plan.everyMs).toBeLessThan(0.15);
   });
 });
 
@@ -132,15 +133,47 @@ describe('refineWindows', () => {
   it('spends a small budget on the widest unmapped stretches first', () => {
     const anchors: Anchor[] = [
       { ms: 0, bookPos: 0 },
-      // A 400 s hole, then a 120 s one. Both are suspicious; only one fits.
+      // A 400 s hole with next to nothing read in it, then a 120 s stretch
+      // that reads a minute too much. Both are suspicious; only one fits, and
+      // five minutes nobody can account for is the worse of the two.
       { ms: 400_000, bookPos: 1_000 },
-      { ms: 520_000, bookPos: 7_800 },
-      { ms: 620_000, bookPos: 9_300 },
+      { ms: 520_000, bookPos: 3_700 },
+      { ms: 620_000, bookPos: 5_200 },
     ];
     const out = refineWindows(anchors, [], 900_000, PLAN, 1);
     expect(out).toHaveLength(1);
     expect(out[0]!.startMs).toBeGreaterThan(150_000);
     expect(out[0]!.startMs).toBeLessThan(250_000);
+  });
+
+  it('chases a skipped passage before a pause of about its size', () => {
+    // At 15 characters a second: a 60 s stretch holding 3,000 characters (two
+    // minutes of text skipped - a preface), and a 150 s one holding 1,950 (a
+    // twenty-second pause). The budget buys one probe; the skip gets it.
+    const anchors: Anchor[] = [
+      { ms: 0, bookPos: 0 },
+      { ms: 100_000, bookPos: 1_500 },
+      { ms: 160_000, bookPos: 4_500 },
+      { ms: 310_000, bookPos: 6_450 },
+      { ms: 410_000, bookPos: 7_950 },
+      { ms: 510_000, bookPos: 9_450 },
+    ];
+    const out = refineWindows(anchors, [], 510_000, PLAN, 1);
+    expect(out).toHaveLength(1);
+    expect(out[0]!.startMs).toBeGreaterThan(100_000);
+    expect(out[0]!.startMs).toBeLessThan(160_000);
+  });
+
+  it('follows a skip into a stretch narrower than the grid would bother with', () => {
+    // Earlier rounds have closed in on a skipped preface: 30 s of audio now
+    // holds 2,000 characters. Too narrow for a pause to be worth a probe,
+    // not for text read in no time.
+    const anchors = anchorsAtRate(10, 0.015);
+    anchors.splice(5, 0, { ms: 430_000, bookPos: 6_450 + 2_000 });
+    for (let i = 6; i < anchors.length; i++) anchors[i]!.bookPos += 2_000;
+    anchors[4] = { ms: 400_000, bookPos: 6_000 };
+    const out = refineWindows(anchors, [], 900_000, PLAN, 10);
+    expect(out.some((w) => w.startMs >= 400_000 && w.startMs < 430_000)).toBe(true);
   });
 
   it('proposes nothing when the budget is spent', () => {

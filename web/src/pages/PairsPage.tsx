@@ -1118,16 +1118,23 @@ function PairDetails({
             <span className="soft">
               <bdi>{pair.alignment.model}</bdi> · {f.languageName(pair.alignment.language)}
             </span>
-            {pair.alignment.gaps.length > 0 && (
-              <span className="soft">
-                {t('pairs.aligned.gaps', {
-                  n: pair.alignment.gaps.length,
-                  reason: pair.alignment.gaps[0]!.reason,
-                  from: formatDuration(pair.alignment.gaps[0]!.fromMs),
-                  to: formatDuration(pair.alignment.gaps[0]!.toMs),
-                })}
-              </span>
-            )}
+            {(() => {
+              // Stretches of the audio, not text the narration leaves out:
+              // those are recorded for the reader (text-only), not flagged here.
+              const heard = pair.alignment.gaps.filter((g) => g.reason !== 'text-only');
+              return (
+                heard.length > 0 && (
+                  <span className="soft">
+                    {t('pairs.aligned.gaps', {
+                      n: heard.length,
+                      reason: heard[0]!.reason,
+                      from: formatDuration(heard[0]!.fromMs),
+                      to: formatDuration(heard[0]!.toMs),
+                    })}
+                  </span>
+                )
+              );
+            })()}
           </div>
           <CoverageStrip pair={pair} />
         </div>

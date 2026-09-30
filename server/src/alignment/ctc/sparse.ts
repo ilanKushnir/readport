@@ -42,13 +42,23 @@ export interface SparsePlan {
 
 /**
  * Defaults, measured on real narration rather than chosen: see
- * docs/alignment.md. A 6-hour audiobook plans ~145 probes of 8 seconds,
- * about 5% of the audio.
+ * docs/alignment.md. A 6-hour audiobook plans ~360 probes of 8 seconds,
+ * about 13% of the audio, plus refinement.
+ *
+ * A probe every minute rather than every two and a half: measured against
+ * what the narration actually says at points no probe listened to, on three
+ * hours of a Russian audiobook, the median error fell from 1.2 s to 0.6 s,
+ * the share within two seconds rose from 72% to 83% and the worst from
+ * 11.5 s to 5.8 s - for two and a half times the listening. Interpolation
+ * between two probes is the whole of the error, and it grows with the
+ * distance between them.
  */
 export const DEFAULT_SPARSE_PLAN: SparsePlan = {
   windowMs: 8_000,
-  everyMs: 150_000,
-  refineRounds: 3,
+  everyMs: 60_000,
+  // Enough rounds to halve a skipped passage's stretch from a grid interval
+  // down to a couple of probes wide, one probe per round.
+  refineRounds: 6,
   rateTolerance: 0.2,
   refineBudget: 0.6,
 };
@@ -82,6 +92,8 @@ interface Span {
   toMs: number;
   /** Book characters per millisecond implied by the two anchors. */
   rate: number;
+  /** Book characters between the two anchors. */
+  chars: number;
 }
 
 /**
@@ -106,21 +118,27 @@ export function refineWindows(
   // already as well anchored as this schedule can make it.
   const minSpanMs = Math.max(2 * win, Math.round(plan.everyMs / 3));
 
+  // Stretches that skipped text may be narrower: a preface skipped between
+  // two probes is only pinned down once a probe has landed close to where the
+  // reading resumes, and halving a grid interval gets there in a few rounds.
+  const minSkipSpanMs = 2 * win;
   const spans: Span[] = [];
   for (let i = 1; i < anchors.length; i++) {
     const a = anchors[i - 1]!;
     const b = anchors[i]!;
     const dt = b.ms - a.ms;
-    if (dt < minSpanMs) continue;
-    spans.push({ fromMs: a.ms, toMs: b.ms, rate: (b.bookPos - a.bookPos) / Math.max(1, dt) });
+    if (dt < minSkipSpanMs) continue;
+    const chars = b.bookPos - a.bookPos;
+    spans.push({ fromMs: a.ms, toMs: b.ms, rate: chars / Math.max(1, dt), chars });
   }
   // Unanchored head and tail: no rate to judge, but every bit as unmapped.
   const first = anchors[0];
   const last = anchors[anchors.length - 1];
   const blind: Span[] = [];
-  if (first && first.ms >= minSpanMs) blind.push({ fromMs: 0, toMs: first.ms, rate: NaN });
+  if (first && first.ms >= minSpanMs)
+    blind.push({ fromMs: 0, toMs: first.ms, rate: NaN, chars: 0 });
   if (last && audioMs - last.ms >= minSpanMs) {
-    blind.push({ fromMs: last.ms, toMs: audioMs, rate: NaN });
+    blind.push({ fromMs: last.ms, toMs: audioMs, rate: NaN, chars: 0 });
   }
 
   const rates = spans
@@ -150,22 +168,42 @@ export function refineWindows(
     if (!(s.rate > 0) || median <= 0) return width;
     return Math.max(0, width * (1 - s.rate / median));
   };
+  /**
+   * Text a span cannot account for: how much longer its characters take to
+   * read at the median rate than the span lasted.
+   *
+   * The mirror of the slack above, and the signature of a SKIP - a preface,
+   * a chapter's summary the narrator leaves out. Slack alone ranked these
+   * last (a skip adds characters, not seconds), so the budget went on pauses
+   * while a skipped preface was interpolated across a minute of narration
+   * and the highlight swept through it with the voice a chapter away.
+   */
+  const excessMs = (s: Span): number =>
+    s.rate > 0 && median > 0 ? Math.max(0, s.chars / median - (s.toMs - s.fromMs)) : 0;
+  /** What a span leaves unexplained, either way round. */
+  const needMs = (s: Span): number => Math.max(slackMs(s), excessMs(s));
   // Comfortably above ordinary variation in reading rate, and well below a
   // chapter break - the point is to catch silences, not to chase noise.
   const SUSPECT_SLACK_MS = 4_000;
 
-  const suspect = spans.filter(
-    (s) =>
+  const suspect = spans.filter((s) => {
+    const width = s.toMs - s.fromMs;
+    // A skip is worth chasing into a narrow span; anything else only in a
+    // span wider than the schedule's own resolution.
+    if (width < minSpanMs && excessMs(s) < SUSPECT_SLACK_MS) return false;
+    return (
       !(s.rate > 0) ||
       median <= 0 ||
       Math.abs(Math.log(s.rate / median)) > tol ||
-      slackMs(s) >= SUSPECT_SLACK_MS,
-  );
-  // Worst first, measured by unaccounted time rather than by width: five
-  // minutes nobody has listened to matters more than a fifteen-second pause,
-  // and both matter more than a long stretch that simply reads a little fast.
+      needMs(s) >= SUSPECT_SLACK_MS
+    );
+  });
+  // Worst first, measured by what is unaccounted for rather than by width:
+  // five minutes nobody has listened to, or a preface's worth of text read in
+  // no time at all, matters more than a fifteen-second pause, and all of them
+  // matter more than a long stretch that simply reads a little fast.
   const ranked = [...blind, ...suspect].sort(
-    (a, b) => slackMs(b) - slackMs(a) || b.toMs - b.fromMs - (a.toMs - a.fromMs),
+    (a, b) => needMs(b) - needMs(a) || b.toMs - b.fromMs - (a.toMs - a.fromMs),
   );
 
   const out: ProbeWindow[] = [];

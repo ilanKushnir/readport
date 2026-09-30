@@ -326,3 +326,75 @@ function expectNonDecreasing(timings: { startMs: number; endMs: number }[]): voi
     floor = t.startMs;
   }
 }
+
+describe('matchChars, where the narration skips a part of the book', () => {
+  // A title page, a two-page preface the narrator never reads, and a chapter
+  // that is read: the shape of a book whose audio edition leaves out the
+  // front matter. The narrator reads the title, then an announcement that is
+  // in no text, then the chapter - at 60 ms a character throughout.
+  const title = randomText(60, 21);
+  const preface = randomText(2000, 22);
+  const chapter = randomText(6000, 23);
+  const INTRO_MS = 30_000;
+  const TITLE_AT = 1_000;
+  const CHAPTER_AT = TITLE_AT + title.length * MS_PER_CHAR + INTRO_MS;
+
+  /** What a sparse decode hears: eight seconds every minute, a break between probes. */
+  function probes(stream: HeardChar[]): HeardChar[] {
+    const out: HeardChar[] = [];
+    let last = -1;
+    for (const h of stream) {
+      const w = Math.floor(h.ms / 60_000);
+      if (h.ms - w * 60_000 > 8_000) continue;
+      if (last >= 0 && w !== last) out.push({ c: '|', ms: w * 60_000 });
+      out.push(h);
+      last = w;
+    }
+    return out;
+  }
+  const heard = probes([...narrate(title, TITLE_AT), ...narrate(chapter, CHAPTER_AT)]);
+  const withParts = (parts: boolean): BookSentence[] => [
+    { index: 0, romanized: title, ...(parts ? { block: 0 } : {}) },
+    ...sentencesOf(preface, 100, 1).map((s) => (parts ? { ...s, block: 1 } : s)),
+    ...sentencesOf(chapter, 100, 21).map((s) => (parts ? { ...s, block: 2 } : s)),
+  ];
+
+  it('leaves the skipped part untimed, and times the chapter where it is read', () => {
+    const { timings } = matchChars(withParts(true), heard, {
+      audioMs: CHAPTER_AT + chapter.length * MS_PER_CHAR,
+    });
+    const prefaceTimings = timings.slice(1, 21);
+    expect(prefaceTimings.every((t) => t.gap)).toBe(true);
+    // The chapter's first sentence, where the voice begins it - not a minute
+    // late behind a preface spread across the announcement.
+    expect(Math.abs(timings[21]!.startMs - CHAPTER_AT)).toBeLessThan(1_500);
+    // Nothing is placed in the announcement.
+    expect(
+      timings.filter(
+        (t) => !t.gap && t.startMs > TITLE_AT + 5_000 && t.startMs < CHAPTER_AT - 1_500,
+      ),
+    ).toEqual([]);
+  });
+
+  it('infers nothing without the parts, and interpolates as before', () => {
+    const { timings } = matchChars(withParts(false), heard, {
+      audioMs: CHAPTER_AT + chapter.length * MS_PER_CHAR,
+    });
+    expect(timings.slice(1, 21).some((t) => !t.gap)).toBe(true);
+    expect(timings[21]!.startMs - CHAPTER_AT).toBeGreaterThan(10_000);
+  });
+
+  it('leaves a glossary after the last read sentence untimed', () => {
+    const glossary = randomText(2500, 24);
+    const book: BookSentence[] = [
+      ...sentencesOf(chapter, 100, 0).map((s) => ({ ...s, block: 0 })),
+      ...sentencesOf(glossary, 100, 60).map((s) => ({ ...s, block: 1 })),
+    ];
+    const end = TITLE_AT + chapter.length * MS_PER_CHAR + 20_000; // a closing credit
+    const { timings } = matchChars(book, probes(narrate(chapter, TITLE_AT)), { audioMs: end });
+    expect(timings.slice(60).every((t) => t.gap)).toBe(true);
+    // The chapter's last sentences are still read where they are read.
+    const last = timings[59]!;
+    expect(Math.abs(last.startMs - (TITLE_AT + 5_900 * MS_PER_CHAR))).toBeLessThan(1_500);
+  });
+});

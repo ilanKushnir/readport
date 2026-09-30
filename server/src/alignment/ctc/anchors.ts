@@ -44,6 +44,17 @@ export interface HeardChar {
 export interface BookSentence {
   index: number;
   romanized: string;
+  /**
+   * The part of the book it is in: its chapter file (spine item).
+   *
+   * A narration leaves out whole parts - the front matter, a preface, a
+   * chapter's summary page - far more often than a few sentences inside one,
+   * and knowing where the parts begin and end is what lets a stretch whose
+   * text could not have been read in its time say WHICH text that was (see
+   * `findSkips`). Absent, nothing is inferred and the stretch is interpolated
+   * as it always was.
+   */
+  block?: number;
 }
 
 export interface SentenceTiming {
@@ -54,6 +65,11 @@ export interface SentenceTiming {
   score: number;
   /** True when no anchor is near enough for the timing to be trustworthy. */
   gap: boolean;
+  /**
+   * The narration left this sentence out (see `findSkips`): not a sentence
+   * nobody could place, but one the audiobook does not read.
+   */
+  skipped?: boolean;
   /**
    * How far `startMs` could be wrong, in milliseconds. Zero on an anchor and
    * growing with the audio distance to the nearest one, because everything
@@ -268,7 +284,19 @@ export function matchChars(
     return rates[rates.length >> 1]!;
   })();
 
-  // --- 4 + 5. interpolate, then gate on anchor distance ---
+  // --- 4. text the narration left out ---
+  // Between two anchors the timeline is interpolated by characters, which is
+  // right while the narrator reads everything in between and badly wrong when
+  // they skip something: a two-page preface between the book's title and its
+  // first chapter was spread across the first minute of narration, and the
+  // highlight swept through it while the voice read chapter one. Where the
+  // book's parts say what was skipped, it is taken out of the timeline.
+  const skips = findSkips(book, spans, anchorBook, anchorMs, readingMsPerChar, durationMs);
+  const timeBook = skips.anchors.length
+    ? mergeAnchors(anchorBook, anchorMs, skips.anchors)
+    : { book: anchorBook, ms: anchorMs };
+
+  // --- 5 + 6. interpolate, then gate on anchor distance ---
   const timings: SentenceTiming[] = [];
   let floorMs = 0;
   for (let i = 0; i < book.length; i++) {
@@ -277,16 +305,17 @@ export function matchChars(
     const dist = nearestAnchorDistance(anchorBook, span.start);
     // Measured from the sentence start, as validated. An empty sentence (a
     // heading, or one that romanized to nothing) has no characters to anchor,
-    // so we never claim a timing for it.
-    const gap = length === 0 || anchorBook.length === 0 || dist > gapChars;
+    // so we never claim a timing for it; nor for one the narration skipped.
+    const gap =
+      length === 0 || anchorBook.length === 0 || dist > gapChars || skips.skipped[i] === 1;
 
-    let startMs = clamp(msAtBookPos(anchorBook, anchorMs, span.start), 0, durationMs);
+    let startMs = clamp(msAtBookPos(timeBook.book, timeBook.ms, span.start), 0, durationMs);
     // Monotone in position by construction; the running floor makes it a
     // guarantee the caller can rely on rather than a property of the anchors.
     startMs = Math.max(startMs, floorMs);
     const endMs = Math.max(
       startMs,
-      clamp(msAtBookPos(anchorBook, anchorMs, span.end), 0, durationMs),
+      clamp(msAtBookPos(timeBook.book, timeBook.ms, span.end), 0, durationMs),
     );
     floorMs = startMs;
 
@@ -314,12 +343,176 @@ export function matchChars(
       endMs,
       score: gap ? 0 : Math.max(0, 1 - dist / gapChars),
       gap,
+      ...(skips.skipped[i] === 1 ? { skipped: true } : {}),
       uncertaintyMs: Math.round(uncertaintyBaseMs + doubt),
     });
   }
   stats.alignedSentences = timings.reduce((n, t) => n + (t.gap ? 0 : 1), 0);
 
   return { timings, stats, anchors: anchorList };
+}
+
+/**
+ * A stretch whose text would take this many times its duration to read, at
+ * the narrator's own measured pace, has text in it the narrator did not
+ * read...
+ */
+const SKIP_RATIO = 1.5;
+/** ...when the text it cannot account for is at least this much reading. */
+const SKIP_MIN_MS = 10_000;
+/**
+ * Once the skipped text is taken out, what is left has to be readable in the
+ * stretch's time - allowing a narrator this much faster than their median.
+ */
+const FIT_MAX = 1.2;
+/**
+ * How much of the opening of a part may be taken for a heading and an
+ * introduction the narrator left out, when the parts in between do not
+ * account for the whole of the skip.
+ */
+const HEAD_MAX_CHARS = 1_500;
+
+interface Skips {
+  /** 1 for a sentence the narration left out. */
+  skipped: Uint8Array;
+  /** Where narration stops and resumes around each skip, as inferred anchors. */
+  anchors: Anchor[];
+}
+
+/**
+ * The text the narration left out, found stretch by stretch.
+ *
+ * A stretch between two anchors (or between the start of the audio and the
+ * first anchor, or the last and the end) whose text cannot have been read in
+ * its time has had something skipped. The book's parts say what: the whole
+ * parts strictly between the two anchors - a preface, a chapter's summary
+ * page, the front matter - and, when those are not all of it, the opening of
+ * the part the narration resumes in (a heading, an introduction). The first
+ * of those that leaves text the narrator could have read in the time is
+ * taken. What remains is timed at the narrator's pace outward from the
+ * anchors - the text after the first anchor from it, the text before the
+ * second up to it - and the rest of the time is simply time with no text:
+ * an announcement, a pause, music.
+ *
+ * Without the parts nothing is inferred: the book gives no way to tell a
+ * skipped preface from a skipped sentence, and interpolation is left to do
+ * what it always did.
+ */
+function findSkips(
+  book: BookSentence[],
+  spans: { start: number; end: number }[],
+  anchorBook: number[],
+  anchorMs: number[],
+  msPerChar: number,
+  durationMs: number,
+): Skips {
+  const skipped = new Uint8Array(book.length);
+  const anchors: Anchor[] = [];
+  if (book.length === 0 || anchorBook.length === 0 || !(msPerChar > 0)) return { skipped, anchors };
+  if (book.some((s) => s.block === undefined)) return { skipped, anchors };
+  const total = spans[spans.length - 1]!.end;
+  /** The sentence a book position falls in. */
+  const sentenceAt = (pos: number): number => {
+    let lo = 0;
+    let hi = spans.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      if (spans[mid]!.start <= pos) lo = mid;
+      else hi = mid - 1;
+    }
+    return lo;
+  };
+  // The stretches: before the first anchor, between each two, after the last.
+  const edges: { b0: number; m0: number; b1: number; m1: number; head: boolean; tail: boolean }[] =
+    [];
+  edges.push({ b0: 0, m0: 0, b1: anchorBook[0]!, m1: anchorMs[0]!, head: true, tail: false });
+  for (let k = 1; k < anchorBook.length; k++) {
+    edges.push({
+      b0: anchorBook[k - 1]!,
+      m0: anchorMs[k - 1]!,
+      b1: anchorBook[k]!,
+      m1: anchorMs[k]!,
+      head: false,
+      tail: false,
+    });
+  }
+  edges.push({
+    b0: anchorBook[anchorBook.length - 1]!,
+    m0: anchorMs[anchorMs.length - 1]!,
+    b1: total,
+    m1: Math.max(anchorMs[anchorMs.length - 1]!, durationMs),
+    head: false,
+    tail: true,
+  });
+
+  for (const e of edges) {
+    const T = e.m1 - e.m0;
+    const C = e.b1 - e.b0;
+    if (C <= 0 || C * msPerChar <= T * SKIP_RATIO || C * msPerChar - T < SKIP_MIN_MS) continue;
+    // The sentences the two anchors are in are heard; only those strictly
+    // between them can have been skipped. At the edges of the book there is
+    // no sentence on the far side.
+    const iL = e.head ? -1 : sentenceAt(e.b0);
+    const iR = e.tail ? book.length : sentenceAt(e.b1);
+    if (iR - iL < 2) continue;
+    const blockL = iL >= 0 ? book[iL]!.block! : -Infinity;
+    const blockR = iR < book.length ? book[iR]!.block! : Infinity;
+    // The skip candidates, in order: whole parts strictly between the anchors'
+    // own parts, then as much of the opening of the right-hand part as it
+    // takes (never more than HEAD_MAX_CHARS).
+    let innerFrom = iL + 1;
+    while (innerFrom < iR && book[innerFrom]!.block === blockL) innerFrom++;
+    let innerTo = innerFrom; // exclusive
+    while (innerTo < iR && book[innerTo]!.block !== blockR) innerTo++;
+    const charsOf = (a: number, b: number) => (b > a ? spans[b - 1]!.end - spans[a]!.start : 0);
+    const fits = (skipChars: number) => (C - skipChars) * msPerChar <= T * FIT_MAX;
+    let from = -1;
+    let to = -1;
+    if (innerTo > innerFrom && fits(charsOf(innerFrom, innerTo))) {
+      from = innerFrom;
+      to = innerTo;
+    } else {
+      // Take the right-hand part's opening, a sentence at a time.
+      let head = innerTo;
+      while (head < iR && charsOf(innerTo, head + 1) <= HEAD_MAX_CHARS) {
+        head++;
+        if (fits(charsOf(innerFrom, head))) {
+          from = innerFrom;
+          to = head;
+          break;
+        }
+      }
+    }
+    if (from < 0 || to <= from) continue;
+    for (let i = from; i < to; i++) skipped[i] = 1;
+    // What is left is read at the narrator's pace outward from the anchors -
+    // or a touch faster, when it only just fits.
+    const left = spans[from]!.start - e.b0;
+    const right = e.b1 - spans[to - 1]!.end;
+    const pace = left + right > 0 ? Math.min(msPerChar, T / (left + right)) : msPerChar;
+    anchors.push({ bookPos: spans[from]!.start, ms: Math.round(e.m0 + left * pace) });
+    anchors.push({ bookPos: spans[to - 1]!.end, ms: Math.round(e.m1 - right * pace) });
+  }
+  return { skipped, anchors };
+}
+
+/** Real and inferred anchors in one book-ordered timeline, strictly increasing in both. */
+function mergeAnchors(
+  anchorBook: number[],
+  anchorMs: number[],
+  extra: Anchor[],
+): { book: number[]; ms: number[] } {
+  const all = anchorBook.map((b, i) => ({ bookPos: b, ms: anchorMs[i]! }));
+  for (const a of extra) all.push(a);
+  all.sort((x, y) => x.bookPos - y.bookPos || x.ms - y.ms);
+  const book: number[] = [];
+  const ms: number[] = [];
+  for (const a of all) {
+    if (book.length && a.bookPos <= book[book.length - 1]!) continue;
+    ms.push(Math.max(a.ms, ms.length ? ms[ms.length - 1]! : 0));
+    book.push(a.bookPos);
+  }
+  return { book, ms };
 }
 
 /**

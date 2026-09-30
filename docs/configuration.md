@@ -186,10 +186,10 @@ lower the concurrency rather than raising the threads.
 
 `alignPrecision` is the one knob with a real cost attached.
 
-| `alignPrecision`     | What goes through the model                                                                             | Cost                                       |
-| -------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| `standard` (default) | A short probe every 150 seconds, plus refinement passes over the stretches where the timing looks wrong | About six minutes for a six-hour audiobook |
-| `exact`              | Every sample                                                                                            | Roughly fifteen times that                 |
+| `alignPrecision`     | What goes through the model                                                                        | Cost                                           |
+| -------------------- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `standard` (default) | A short probe every minute, plus refinement passes over the stretches where the timing looks wrong | About fifteen minutes for a six-hour audiobook |
+| `exact`              | Every sample                                                                                       | Roughly fifteen times that                     |
 
 Sampling works because narration is close to a constant rate over a couple of
 minutes: the aligner does not need to hear a book to time it, only to find

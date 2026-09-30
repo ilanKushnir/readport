@@ -1,5 +1,12 @@
 import { segmentsFromTimings, type AlignerResult, type EbookSentenceInput } from '../timings.js';
-import { matchChars, type BookSentence, type MatchResult, type MatchStats } from './anchors.js';
+import {
+  matchChars,
+  type BookSentence,
+  type MatchResult,
+  type MatchStats,
+  type SentenceTiming,
+} from './anchors.js';
+import { type AlignmentGap, type AlignmentSegment } from '@readport/shared';
 import {
   decodeBook,
   openProbeDecoder,
@@ -142,9 +149,12 @@ export const EXACT_SCORE = 0.9;
 export const EXACT_UNCERTAINTY_MS = 2_500;
 
 export async function alignWithCtc(req: CtcAlignRequest): Promise<CtcAlignResult> {
-  const book: BookSentence[] = req.sentences.map((_, i) => ({
+  const book: BookSentence[] = req.sentences.map((s, i) => ({
     index: i,
     romanized: romanize(req.sentenceText[i] ?? '', req.language),
+    // The chapter file: what lets a stretch of text the narration skipped be
+    // told from text it read (anchors.findSkips).
+    block: s.spineIdx,
   }));
   const bookChars = book.reduce((a, s) => a + s.romanized.length, 0);
   if (bookChars === 0) {
@@ -184,6 +194,10 @@ export async function alignWithCtc(req: CtcAlignRequest): Promise<CtcAlignResult
     },
     { audioMs: heard.audioMs },
   );
+  result.gaps = [
+    ...result.gaps,
+    ...textOnlyGaps(req.sentences, heard.match.timings, result.segments),
+  ].sort((a, b) => a.fromMs - b.fromMs);
 
   const decodedFraction = heard.audioMs > 0 ? heard.decodedMs / heard.audioMs : 1;
   return {
@@ -195,6 +209,42 @@ export async function alignWithCtc(req: CtcAlignRequest): Promise<CtcAlignResult
     probes: heard.probes,
     narrationRatio: decodedFraction > 0 ? heard.match.stats.charRatio / decodedFraction : 0,
   };
+}
+
+/**
+ * The text the narration leaves out, as `text-only` gaps: one for each run of
+ * sentences the matcher found skipped, placed at the moment the narration
+ * passes over it - from the end of the last timed sentence before the run to
+ * the start of the first after it.
+ *
+ * Recorded so that what reads the alignment can tell text the audiobook does
+ * not read from text nobody could place: the "only in the audiobook" notice
+ * (beyond.ts) asks exactly that of every stretch of narration with no text.
+ */
+function textOnlyGaps(
+  sentences: EbookSentenceInput[],
+  timings: SentenceTiming[],
+  segments: AlignmentSegment[],
+): AlignmentGap[] {
+  const skipped = new Set(timings.filter((t) => t.skipped).map((t) => t.index));
+  if (skipped.size === 0) return [];
+  const segById = new Map(segments.map((s) => [s.sentenceId, s]));
+  const timedAt = (i: number) => segById.get(sentences[i]!.sentenceId);
+  const gaps: AlignmentGap[] = [];
+  for (let i = 0; i < sentences.length; i++) {
+    if (!skipped.has(i)) continue;
+    let j = i;
+    while (j + 1 < sentences.length && skipped.has(j + 1)) j++;
+    let before: AlignmentSegment | undefined;
+    for (let a = i - 1; a >= 0 && !before; a--) before = timedAt(a);
+    let after: AlignmentSegment | undefined;
+    for (let b = j + 1; b < sentences.length && !after; b++) after = timedAt(b);
+    const fromMs = Math.round(before ? before.endMs : 0);
+    const toMs = Math.round(after ? Math.max(fromMs, after.startMs) : fromMs);
+    gaps.push({ fromMs, toMs, reason: 'text-only' });
+    i = j;
+  }
+  return gaps;
 }
 
 interface Heard {

@@ -104,6 +104,10 @@ function judge(
   const msPerChar = paceOf(timed, length);
   const byTime = [...timed].sort((a, b) => a.startMs - b.startMs);
 
+  // Text the aligner found the narration leaves out (a `text-only` gap) is
+  // not text that could have been read in the hole: a preface skipped at the
+  // start of a part, with the audiobook's own announcement in its place.
+  const leftOut = gaps.filter((g) => g.reason === 'text-only');
   const out: NarrationBeyondText[] = [];
   for (const hole of holes) {
     // The synced sentences either side: the last one heard before the
@@ -112,7 +116,8 @@ function judge(
     const before = lastEndingBy(byTime, hole.fromMs + 1);
     const after = firstStartingFrom(byTime, hole.toMs - 1);
     if (before && after && readingOrder(after, before) <= 0) continue;
-    const untimed = untimedChars(sentences, isTimed, length, before, after);
+    const knownUnread = leftOut.some((g) => g.fromMs < hole.toMs && g.toMs > hole.fromMs);
+    const untimed = knownUnread ? 0 : untimedChars(sentences, isTimed, length, before, after);
     const extraMs = Math.round(hole.toMs - hole.fromMs - untimed * msPerChar);
     if (extraMs < BEYOND_TEXT_MIN_MS) continue;
     const resumeAt = after ? sentenceAt(after.spine, after.ord) : null;
