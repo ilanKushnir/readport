@@ -281,6 +281,13 @@
   font-size: 15px;
   outline: none;
 }
+/* 16px or larger on a touch screen, or iOS zooms the page in when the field
+   takes focus - the sheet then opens half off the screen. */
+@media (pointer: coarse) {
+  .edition-search input {
+    font-size: max(16px, 1rem);
+  }
+}
 .edition-search + .edition-list {
   margin-block-start: var(--sp-3);
 }

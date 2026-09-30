@@ -20,6 +20,16 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
   if (!document.querySelector('.reader-page')) applyAppThemeColor();
 });
 
+// No pinch zoom on a touch screen. iOS ignores the viewport's
+// `user-scalable=no`, and `touch-action` (base.css) has not always held a
+// pinch there; refusing its own gesture events does. The pointer check
+// leaves a trackpad on a Mac to zoom as it always has.
+if (matchMedia('(pointer: coarse)').matches) {
+  for (const type of ['gesturestart', 'gesturechange'] as const) {
+    document.addEventListener(type, (e) => e.preventDefault(), { passive: false });
+  }
+}
+
 const root = createRoot(document.getElementById('root')!);
 root.render(
   <React.StrictMode>

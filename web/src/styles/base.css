@@ -15,6 +15,11 @@ html {
      again, so a reader's type size was lost to one rotation. */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  /* An app, not a page: two fingers and a double tap do not zoom it. A
+     zoomed shell is a window sliding over the app, and a sheet opened in
+     one opens half off the screen. Scrolling either way is left alone, and
+     type has its own sizes in the reader's settings. */
+  touch-action: pan-x pan-y;
 }
 body {
   margin: 0;
@@ -4582,9 +4587,14 @@ body[data-rp-dragging] * {
 }
 
 /* The plus on a cover. It is a SIBLING of the card's link, never a child:
-   a button inside an anchor is invalid and swallows the keyboard. */
+   a button inside an anchor is invalid and swallows the keyboard - so it
+   is placed against the card, and the card is a size container for it:
+   the cover is the card's whole width at two to three, so its foot is at
+   150% of that width, whatever the title and author below it run to. */
 .book-card {
+  --add-size: 30px;
   position: relative;
+  container-type: inline-size;
 }
 .book-card__link {
   display: flex;
@@ -4596,12 +4606,14 @@ body[data-rp-dragging] * {
 }
 .book-card__add {
   position: absolute;
-  /* The bottom corner: a cover's title sits at the top, in whichever
-     direction the book reads, and on a phone the button is always shown. */
-  bottom: var(--sp-2);
+  /* The cover's bottom corner: a cover's title sits at the top, in
+     whichever direction the book reads, and on a phone the button is
+     always shown. Placed from the top of the card, because the bottom of
+     the card is the bottom of its title and author. */
+  top: calc(150cqi - var(--add-size) - var(--sp-2));
   inset-inline-end: var(--sp-2);
-  width: 30px;
-  height: 30px;
+  width: var(--add-size);
+  height: var(--add-size);
   display: grid;
   place-items: center;
   border: 0;
@@ -4623,6 +4635,14 @@ body[data-rp-dragging] * {
   .book-card:hover .book-card__add,
   .book-card:focus-within .book-card__add {
     opacity: 1;
+  }
+}
+/* Where the plus is always there, the saved-here dot sits beside it rather
+   than under it. */
+@media (hover: none) {
+  .book-card__offline {
+    inset-inline-end: calc(var(--sp-2) + var(--add-size) + 6px);
+    bottom: calc(var(--sp-2) + (var(--add-size) - 22px) / 2);
   }
 }
 
@@ -5408,9 +5428,8 @@ body[data-rp-dragging] * {
     min-height: 44px;
     padding-inline: var(--sp-4);
   }
-  .book-card__add {
-    width: 44px;
-    height: 44px;
+  .book-card {
+    --add-size: 44px;
   }
   .membership__chip {
     padding: 0 0 0 12px;

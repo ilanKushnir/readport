@@ -153,8 +153,8 @@
   /* A sideways swipe is a page turn, the reader's to handle: a browser left
      to decide took some for a pan of its own and cancelled the pointer, so
      the swipe never arrived. Up and down still scroll a chapter that fell
-     back to scrolling, and two fingers still zoom. */
-  touch-action: pan-y pinch-zoom;
+     back to scrolling. Two fingers do not zoom here either (base.css). */
+  touch-action: pan-y;
 }
 .reader-content--paginated {
   height: 100%;
