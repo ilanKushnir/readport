@@ -8,6 +8,8 @@ import { openMemoryDatabase } from '../../db/index.js';
 import { segmentSentences } from '../../util/text.js';
 import { matchEditions } from '../../translations/store.js';
 import { type AppContext } from '../../context.js';
+import { storeAlignment } from '../../alignment/service.js';
+import { type AlignmentSegment } from '@readport/shared';
 
 /**
  * The same book in other languages, through the API: linking (a curator's
@@ -405,5 +407,96 @@ describe('unlinking and saying no', () => {
     const res = await as('cyd', '/api/translations/suggestions');
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.json().suggestions)).toBe(true);
+  });
+});
+
+describe('a friend in the other format of the book', () => {
+  /** A sync for the English pair: every sentence three seconds, in reading order. */
+  function syncEnglishPair(): {
+    at: (spine: number, k: number) => { startMs: number; pct: number };
+  } {
+    const en = texts.en!;
+    const segments: AlignmentSegment[] = [];
+    const where = new Map<string, { startMs: number; pct: number }>();
+    let t = 0;
+    en.chapters.forEach((c, spineIdx) =>
+      c.sentences.forEach((s, k) => {
+        segments.push({
+          sentenceId: s.id,
+          spineIdx,
+          sentenceOrd: s.ord,
+          startMs: t,
+          endMs: t + 3000,
+          confidence: 0.95,
+          source: 'exact',
+          uncertaintyMs: 0,
+        });
+        where.set(`${spineIdx}:${k}`, { startMs: t, pct: (c.cumChars + s.start) / en.totalChars });
+        t += 3000;
+      }),
+    );
+    db.prepare(
+      `INSERT INTO audio_tracks (book_id, idx, rel_path, duration_ms, size_bytes, format, start_ms_absolute)
+       VALUES ('en-audio', 0, 'en-audio/01.m4b', ?, 1, 'm4b', 0)`,
+    ).run(t);
+    storeAlignment(
+      db,
+      'p-en',
+      'en',
+      'test',
+      { segments, gaps: [], coverage: 1, meanConfidence: 0.95 },
+      {},
+    );
+    return { at: (spine, k) => where.get(`${spine}:${k}`)! };
+  }
+
+  function listenAt(bookId: string, locator: Record<string, unknown>, updatedAt: string) {
+    db.prepare(
+      `INSERT OR REPLACE INTO progress_state (user_id, book_id, revision, locator_json, intent, occurred_at, session_uuid, device_id, seq, finished, updated_at)
+       VALUES (?, ?, 1, ?, 'heartbeat', ?, 's', 'd', 1, 0, ?)`,
+    ).run(idOf('mira'), bookId, JSON.stringify(locator), updatedAt, updatedAt);
+  }
+
+  it('is at the sentence being read aloud to them, in the chapter this book names', async () => {
+    const sync = syncEnglishPair();
+    const sentence = sync.at(2, 4);
+    // Their own share of the audiobook says nothing useful about the page.
+    listenAt(
+      'en-audio',
+      {
+        medium: 'audio',
+        trackIdx: 0,
+        positionMs: sentence.startMs + 1000,
+        bookMs: sentence.startMs + 1000,
+        pct: 0.02,
+      },
+      new Date(Date.now() + 60_000).toISOString(),
+    );
+    const friends = (await as('dana', '/api/friends/progress?bookId=en-ebook')).json().friends;
+    expect(friends).toHaveLength(1);
+    expect(friends[0].edition).toBeUndefined();
+    expect(friends[0].chapterTitle).toBe('First Light');
+    expect(friends[0].pct).toBeCloseTo(sentence.pct, 4);
+  });
+
+  it('and a reader is at the minute their sentence is spoken, on the audiobook', async () => {
+    const en = texts.en!;
+    const s = en.chapters[1]!.sentences[3]!;
+    listenAt(
+      'en-ebook',
+      {
+        medium: 'ebook',
+        spineIdx: 1,
+        sentenceId: s.id,
+        charOffset: s.start,
+        pct: (en.chapters[1]!.cumChars + s.start) / en.totalChars,
+      },
+      new Date(Date.now() + 120_000).toISOString(),
+    );
+    const onAudio = (await as('dana', '/api/friends/progress?bookId=en-audio')).json().friends;
+    expect(onAudio).toHaveLength(1);
+    const total = en.chapters.reduce((n, c) => n + c.sentences.length, 0) * 3000;
+    const before = en.chapters[0]!.sentences.length + 3;
+    expect(onAudio[0].pct).toBeCloseTo((before * 3000) / total, 4);
   });
 });

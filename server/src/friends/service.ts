@@ -5,8 +5,10 @@ import { getProgressState, READING_NOW_WHERE } from '../progress/service.js';
 import { readPref } from '../api/routes/prefs.js';
 import { bookVisible, visiblePairSql, visibleSql } from '../library/visibility.js';
 import { defaultFriendColour, type FriendColourId } from './prefs.js';
-import { translationBookIds } from '../translations/groups.js';
+import { titleBooks, translationBookIds } from '../translations/groups.js';
 import { carryPlace } from '../translations/map.js';
+import { pairResolveContext } from '../alignment/resolve-context.js';
+import { resolveSwitch, type ResolveContext } from '../alignment/service.js';
 
 /**
  * Friendships and what they let two people see of each other.
@@ -223,18 +225,80 @@ export interface FriendProgress extends Person {
 }
 
 /**
- * The other editions this book is linked to: the confirmed or automatic
- * pairs it sits in, as far as the viewer can see them.
+ * The other books of this title: the confirmed or automatic pairs it sits
+ * in, and past them whatever those are paired with - an ebook narrated
+ * twice has two audiobooks, and a friend on the other one is in the book
+ * too. Only through pairs the viewer can see.
  */
-function linkedEditionsOf(db: DB, bookId: string, sees: boolean): string[] {
-  const rows = db
+function titleEditionsOf(db: DB, bookId: string, sees: boolean): string[] {
+  const partners = db.prepare(
+    `SELECT CASE WHEN p.ebook_id = ? THEN p.audio_id ELSE p.ebook_id END AS id FROM pairs p
+      WHERE (p.ebook_id = ? OR p.audio_id = ?) AND p.status IN ('auto', 'confirmed')
+        AND ${visiblePairSql(sees, 'p')}`,
+  );
+  const seen = [bookId];
+  for (let i = 0; i < seen.length && seen.length < 16; i++) {
+    const id = seen[i]!;
+    for (const row of partners.all(id, id, id) as { id: string }[]) {
+      if (!seen.includes(row.id)) seen.push(row.id);
+    }
+  }
+  return seen.slice(1);
+}
+
+/** The settled pair between two books, the confirmed one first; null when they are not paired. */
+function pairBetween(db: DB, a: string, b: string): string | null {
+  const row = db
     .prepare(
-      `SELECT p.ebook_id, p.audio_id FROM pairs p
-        WHERE (p.ebook_id = ? OR p.audio_id = ?) AND p.status IN ('auto', 'confirmed')
-          AND ${visiblePairSql(sees, 'p')}`,
+      `SELECT id FROM pairs
+        WHERE ((ebook_id = ? AND audio_id = ?) OR (ebook_id = ? AND audio_id = ?))
+          AND status IN ('auto', 'confirmed')
+        ORDER BY CASE status WHEN 'confirmed' THEN 0 ELSE 1 END, score DESC LIMIT 1`,
     )
-    .all(bookId, bookId) as { ebook_id: string; audio_id: string }[];
-  return rows.map((r) => (r.ebook_id === bookId ? r.audio_id : r.ebook_id));
+    .get(a, b, b, a) as { id: string } | undefined;
+  return row?.id ?? null;
+}
+
+/**
+ * A place in one book of a title, found in another through the sync that
+ * joins them: a listener's minute becomes the sentence being read aloud
+ * there, a reader's sentence the minute it is spoken. The second narration
+ * of an ebook is reached through the ebook they share. Where the sync has
+ * no verified point, the nearest one it has; null when there is no sync to
+ * go through, and the caller keeps the rough share it had.
+ *
+ * `contexts` holds each pair's sentence index for the length of one
+ * request: loading it is reading the book's index from disk, and several
+ * friends may be in the same audiobook.
+ */
+function placeInTitle(
+  ctx: AppContext,
+  contexts: Map<string, ResolveContext | null>,
+  fromId: string,
+  from: Locator,
+  toId: string,
+): Locator | null {
+  const through = (pairId: string, at: Locator): Locator | null => {
+    if (!contexts.has(pairId)) contexts.set(pairId, pairResolveContext(ctx, pairId)?.rctx ?? null);
+    const rctx = contexts.get(pairId);
+    if (!rctx) return null;
+    const out = resolveSwitch(rctx, at);
+    return out.to ?? out.anchors?.before?.to ?? out.anchors?.after?.to ?? null;
+  };
+  const direct = pairBetween(ctx.db, fromId, toId);
+  if (direct) return through(direct, from);
+  // Two books of the title that are not paired to each other: an ebook's
+  // two narrations, or a narration of two ebooks. Through the one both are
+  // paired with.
+  for (const via of titleBooks(ctx.db, fromId)) {
+    if (via === fromId || via === toId) continue;
+    const first = pairBetween(ctx.db, fromId, via);
+    const second = pairBetween(ctx.db, via, toId);
+    if (!first || !second) continue;
+    const mid = through(first, from);
+    return mid ? through(second, mid) : null;
+  }
+  return null;
 }
 
 /**
@@ -257,10 +321,11 @@ export function friendProgress(
   const friends = acceptedFriends(ctx.db, viewerId).map(personOf);
   const colours = friendColours(ctx, viewerId, friends);
   // A linked pair is one work: a friend listening to the audiobook is in
-  // the book you are reading, at a comparable fraction of it. And so is the
-  // same book in another language - a friend reading the translation is in
-  // it too, at the matching paragraph.
-  const sameTitle = [bookId, ...linkedEditionsOf(ctx.db, bookId, viewerSeesHidden)];
+  // the book you are reading, at the sentence being read aloud to them. And
+  // so is the same book in another language - a friend reading the
+  // translation is in it too, at the matching paragraph.
+  const sameTitle = [bookId, ...titleEditionsOf(ctx.db, bookId, viewerSeesHidden)];
+  const contexts = new Map<string, ResolveContext | null>();
   const translated = translationBookIds(ctx.db, bookId).filter(
     (id) => !sameTitle.includes(id) && bookVisible(ctx.db, id, viewerSeesHidden),
   );
@@ -289,6 +354,17 @@ export function friendProgress(
       live: liveNow(state.locator.medium, state.updatedAt),
       chapterTitle: chapterTitleFor(ctx.db, edition, state.locator),
     };
+    if (edition !== bookId && !translated.includes(edition) && !state.finished) {
+      // The other format of this book: where they are in it, found here -
+      // the bead on the bar at the sentence they are hearing, and the
+      // chapter named as this book names it. A pair not synced yet keeps
+      // their own share, a fair guess of the same place.
+      const here = placeInTitle(ctx, contexts, edition, state.locator, bookId);
+      if (here) {
+        entry.pct = here.pct;
+        entry.chapterTitle = chapterTitleFor(ctx.db, bookId, here) ?? entry.chapterTitle;
+      }
+    }
     if (translated.includes(edition)) {
       // Their place, found in this book: the marker goes where they are in
       // the story, and the chapter is named as this edition names it - their

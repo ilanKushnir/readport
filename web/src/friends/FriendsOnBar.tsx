@@ -105,21 +105,6 @@ export function useFriendsOnBook(bookId: string | null) {
     };
   }, [bookId, load]);
 
-  // A friend's place moves while you read; ask again now and then, and when
-  // the tab comes back. Cheap: one small request.
-  useEffect(() => {
-    if (!bookId) return;
-    const every = setInterval(() => void load(), 90_000);
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') void load();
-    };
-    document.addEventListener('visibilitychange', onVisible);
-    return () => {
-      clearInterval(every);
-      document.removeEventListener('visibilitychange', onVisible);
-    };
-  }, [bookId, load]);
-
   // A book with no entry draws everyone: a friend appears on your bar the
   // moment they open the same book, and the button explains who they are.
   // The first switch you turn off writes the explicit list.
