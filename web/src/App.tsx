@@ -263,13 +263,13 @@ function Shell() {
 
   // A tab tapped on the page it opens takes that page back to its top, the
   // way a phone's tab bar does. Tapped from anywhere else, the page starts
-  // at its top: the library, its shelves and its groupings are one page, and
-  // the scroll used to carry over from whichever of them was open before.
+  // at its top - except the library, which comes back where it was left,
+  // the way a phone's tabs keep their place (LibraryPage, libraryMemory).
   const topNext = useRef(false);
   const pane = () => shell.current?.querySelector<HTMLElement>('.app-body > .app-main') ?? null;
   const tabClick = (to: string) => () => {
     if (location.pathname !== to) {
-      topNext.current = true;
+      if (to !== '/') topNext.current = true;
       return;
     }
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches;

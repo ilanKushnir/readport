@@ -8,6 +8,13 @@ import { inLastDays, isStatsResponse, streak, summarise, type StatsResponse } fr
 import './stats.css';
 
 /**
+ * The figures last shown, so coming back to the library draws the strip at
+ * once instead of a moment later - when it would push the grid down under
+ * a reader who has just been put back where they were.
+ */
+let lastShown: StatsResponse | null = null;
+
+/**
  * One line on the library home: this week so far, and the way to the rest.
  *
  * Rendered only once there is something to say. A reader who has never
@@ -17,12 +24,14 @@ import './stats.css';
 export function StatsStrip() {
   const t = useT();
   const f = useFormat();
-  const [data, setData] = useState<StatsResponse | null>(null);
+  const [data, setData] = useState<StatsResponse | null>(lastShown);
   useEffect(() => {
     let live = true;
     api<unknown>('/api/stats?days=14')
       .then((d) => {
-        if (live && isStatsResponse(d)) setData(d);
+        if (!isStatsResponse(d)) return;
+        lastShown = d;
+        if (live) setData(d);
       })
       .catch(() => {
         /* older server, or offline: no strip */

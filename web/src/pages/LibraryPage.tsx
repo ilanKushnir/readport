@@ -18,6 +18,16 @@ import { useT } from '../i18n';
 import { useFormat } from '../i18n/useFormat';
 import { type MessageKey } from '../i18n/messages/en';
 import { ReadingNow } from './ReadingNow';
+import {
+  anchorOf,
+  placeIn,
+  recallAnswer,
+  recallView,
+  rememberAnswer,
+  rememberPlace,
+  rememberView,
+  restorePlace,
+} from './libraryMemory';
 import { AddToSheet } from '../components/AddToSheet';
 import { Cover, EmptyState } from '../components/ui';
 import { LanguagePicker } from '../components/LanguagePicker';
@@ -69,6 +79,13 @@ interface LibraryData {
   scanActive: boolean;
 }
 
+/** The last answer a view had, as this page keeps it (libraryMemory). */
+interface Answer {
+  data: LibraryData;
+  shelfName: string | null;
+  missingCount: number;
+}
+
 /** Which shelf this page is showing, worked out from the route. */
 type Showing =
   | { kind: 'library' }
@@ -104,6 +121,44 @@ function parseLangParam(raw: string | null): string[] {
 function inLanguages(language: string | null, langs: string[]): boolean {
   const base = (language ?? '').trim().toLowerCase().split(/[-_]/)[0] ?? '';
   return base ? langs.includes(base) : langs.includes(UNKNOWN_LANGUAGE);
+}
+
+/**
+ * The order a shelf opens in. Inside "Recently added" the point IS recency,
+ * and Reading Now is defined as most recent first, so those two start on
+ * their own order rather than on the alphabet.
+ */
+function defaultSort(shelfKey: string): Sort {
+  return shelfKey === 'auto:recently-added'
+    ? 'added'
+    : shelfKey === 'auto:reading-now'
+      ? 'recent'
+      : 'title';
+}
+
+/** The request that answers a view: what `load` fetches, and what its answer is remembered under. */
+function requestFor(
+  showing: Showing,
+  query: string,
+  kind: Kind,
+  langKey: string,
+  sort: Sort,
+): string {
+  if (showing.kind === 'user') {
+    return `/api/shelves/${showing.id}/books?sort=${sort === 'recent' ? 'manual' : sort}`;
+  }
+  const params = new URLSearchParams();
+  if (query.trim()) params.set('query', query.trim());
+  if (kind !== 'all') params.set('kind', kind);
+  if (langKey) params.set('lang', langKey);
+  if (showing.kind === 'auto') params.set('filter', showing.id);
+  if (showing.kind === 'hidden') params.set('filter', 'hidden');
+  if (showing.kind === 'facet') params.set('facet', formatFacet(showing.facet, showing.value));
+  // What this browser downloaded is decided here, not by the server, and
+  // a downloaded audiobook must not vanish behind its undownloaded ebook.
+  if (showing.kind === 'device') params.set('collapse', 'none');
+  params.set('sort', sort);
+  return `/api/library?${params}`;
 }
 
 function useDebounced<T>(value: T, ms: number): T {
@@ -151,9 +206,35 @@ export function LibraryPage() {
     return { kind: 'library' };
   }, [params.shelfId, params.autoShelf, params.facetKind, params.facetValue]);
 
-  const [data, setData] = useState<LibraryData | null>(null);
-  const [shelfName, setShelfName] = useState<string | null>(null);
-  const [missingCount, setMissingCount] = useState(0);
+  const shelfKey =
+    showing.kind === 'library'
+      ? 'library'
+      : showing.kind === 'facet'
+        ? `facet:${showing.facet}:${showing.value}`
+        : `${showing.kind}:${'id' in showing ? showing.id : ''}`;
+  /**
+   * The view as the way back knows it: which shelf, in which language. It
+   * keeps its search, format, order, last answer and scroll for as long as
+   * the app is open (libraryMemory), so coming back to it - by the back
+   * gesture, the back button or the Library tab - is coming back to it.
+   */
+  const viewKey = `${shelfKey}|${langKey}`;
+  const [remembered] = useState(() => recallView<Kind, Sort>(viewKey));
+
+  const [query, setQuery] = useState(remembered?.query ?? '');
+  const debouncedQuery = useDebounced(query, 220);
+  const [kind, setKind] = useState<Kind>(remembered?.kind ?? 'all');
+  const kindSeg = useRef<HTMLDivElement>(null);
+  useSegmentsFit(kindSeg);
+  const [sort, setSort] = useState<Sort>(remembered?.sort ?? defaultSort(shelfKey));
+  const requestKey = requestFor(showing, debouncedQuery, kind, langKey, sort);
+  const [firstAnswer] = useState(() => recallAnswer<Answer>(requestKey));
+
+  const [data, setData] = useState<LibraryData | null>(firstAnswer?.data ?? null);
+  /** The request the page's books answered, so the scroll is put back only onto its own view. */
+  const [dataFor, setDataFor] = useState<string | null>(firstAnswer ? requestKey : null);
+  const [shelfName, setShelfName] = useState<string | null>(firstAnswer?.shelfName ?? null);
+  const [missingCount, setMissingCount] = useState(firstAnswer?.missingCount ?? 0);
   /** This shelf answered 404: it was removed, here or on another device. */
   const [gone, setGone] = useState(false);
   const [error, setError] = useState<MessageKey | null>(null);
@@ -161,12 +242,6 @@ export function LibraryPage() {
   /** What this device is fetching right now - shown on the On-this-device shelf. */
   const [active, setActive] = useState<DownloadState[]>([]);
   const [downloaded, setDownloaded] = useState<Set<string>>(new Set());
-  const [query, setQuery] = useState('');
-  const debouncedQuery = useDebounced(query, 220);
-  const [kind, setKind] = useState<Kind>('all');
-  const kindSeg = useRef<HTMLDivElement>(null);
-  useSegmentsFit(kindSeg);
-  const [sort, setSort] = useState<Sort>('title');
   const [addTo, setAddTo] = useState<BookSummary | null>(null);
   /**
    * Edit mode: a card chooses its book instead of opening it, and the bar at
@@ -180,30 +255,23 @@ export function LibraryPage() {
   const requestSeq = useRef(0);
   const chipsRef = useRef<HTMLElement>(null);
 
-  const shelfKey =
-    showing.kind === 'library'
-      ? 'library'
-      : showing.kind === 'facet'
-        ? `facet:${showing.facet}:${showing.value}`
-        : `${showing.kind}:${'id' in showing ? showing.id : ''}`;
-
-  // Arriving at a different shelf starts fresh. Inside "Recently added" the
-  // point IS recency, and Reading Now is defined as most recent first, so
-  // those two start on their own order rather than on the alphabet.
+  // Arriving at a different shelf starts it as it was last left - or fresh,
+  // the first time. Not on arriving at the page itself: the state above
+  // was already read from what this view was left at.
+  const shelfShown = useRef(shelfKey);
   useEffect(() => {
+    if (shelfShown.current === shelfKey) return;
+    shelfShown.current = shelfKey;
+    const left = recallView<Kind, Sort>(viewKey);
     setData(null);
+    setDataFor(null);
     setOfflineBooks(null);
-    setSort(
-      shelfKey === 'auto:recently-added'
-        ? 'added'
-        : shelfKey === 'auto:reading-now'
-          ? 'recent'
-          : 'title',
-    );
-    setQuery('');
-    setKind('all');
+    setSort(left?.sort ?? defaultSort(shelfKey));
+    setQuery(left?.query ?? '');
+    setKind(left?.kind ?? 'all');
     setEditing(false);
     setChosen(new Map());
+    // Only the shelf moves this; the view key comes along with it.
   }, [shelfKey]);
 
   // The chip you are on must be the chip you can see; a row that scrolls
@@ -255,6 +323,26 @@ export function LibraryPage() {
 
   const load = useCallback(async () => {
     const seq = ++requestSeq.current;
+    const key = requestFor(showing, debouncedQuery, kind, langKey, sort);
+    // What this view showed last time, at once, while the fresh answer loads.
+    const kept = recallAnswer<Answer>(key);
+    if (kept) {
+      setData(kept.data);
+      setShelfName(kept.shelfName);
+      setMissingCount(kept.missingCount);
+      setDataFor(key);
+      setError(null);
+      setOfflineBooks(null);
+    }
+    const show = (answer: Answer) => {
+      rememberAnswer(key, answer);
+      setData(answer.data);
+      setShelfName(answer.shelfName);
+      setMissingCount(answer.missingCount);
+      setDataFor(key);
+      setError(null);
+      setOfflineBooks(null);
+    };
     try {
       setGone(false);
       if (showing.kind === 'user') {
@@ -262,38 +350,24 @@ export function LibraryPage() {
           shelf: { name: string };
           books: BookSummary[];
           missingCount: number;
-        }>(`/api/shelves/${showing.id}/books?sort=${sort === 'recent' ? 'manual' : sort}`);
+        }>(key);
         if (seq !== requestSeq.current) return;
-        setShelfName(res.shelf.name);
-        setMissingCount(res.missingCount);
-        setData({ books: res.books, continueRail: [], scanActive: false });
-        setError(null);
-        setOfflineBooks(null);
+        show({
+          data: { books: res.books, continueRail: [], scanActive: false },
+          shelfName: res.shelf.name,
+          missingCount: res.missingCount,
+        });
         return;
       }
-      const params = new URLSearchParams();
-      if (debouncedQuery.trim()) params.set('query', debouncedQuery.trim());
-      if (kind !== 'all') params.set('kind', kind);
-      if (langKey) params.set('lang', langKey);
-      if (showing.kind === 'auto') params.set('filter', showing.id);
-      if (showing.kind === 'hidden') params.set('filter', 'hidden');
-      if (showing.kind === 'facet') params.set('facet', formatFacet(showing.facet, showing.value));
-      // What this browser downloaded is decided here, not by the server, and
-      // a downloaded audiobook must not vanish behind its undownloaded ebook.
-      if (showing.kind === 'device') params.set('collapse', 'none');
-      params.set('sort', sort);
-      const res = await api<LibraryData>(`/api/library?${params}`);
+      const res = await api<LibraryData>(key);
       if (seq !== requestSeq.current) return;
-      setData(res);
-      setShelfName(null);
-      setMissingCount(0);
-      setError(null);
-      setOfflineBooks(null);
+      show({ data: res, shelfName: null, missingCount: 0 });
     } catch (err) {
       if (seq !== requestSeq.current) return;
       if (showing.kind === 'auto' && showing.id === 'reading-now') {
         // An unavailable filtered shelf must never masquerade as the whole library.
         setData(null);
+        setDataFor(key);
         setOfflineBooks([]);
         setError('library.readingNowRefreshFailed');
         return;
@@ -304,6 +378,7 @@ export function LibraryPage() {
       if (showing.kind === 'user' && err instanceof ApiError && err.status === 404) {
         setGone(true);
         setData({ books: [], continueRail: [], scanActive: false });
+        setDataFor(key);
         setShelfName(null);
         setMissingCount(0);
         setError(null);
@@ -317,6 +392,9 @@ export function LibraryPage() {
         list.filter((d) => d.status === 'done').map((d) => cachedBookSummary(d.bookId)),
       );
       const books = summaries.filter((b): b is BookSummary => !!b);
+      // What was remembered is not what can be opened now: the downloads are.
+      setData(null);
+      setDataFor(key);
       setOfflineBooks(books);
       setError(books.length > 0 ? 'library.offlineShowingDownloads' : 'library.loadFailed');
     }
@@ -325,6 +403,70 @@ export function LibraryPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  /* ------------------------------------------- where the view was left */
+
+  const mainRef = useRef<HTMLElement>(null);
+  /** The view whose scroll has been put back; nothing is remembered over it before then. */
+  const placedFor = useRef<string | null>(null);
+  /** Stops holding a restored place, while one is being held. */
+  const holding = useRef<(() => void) | null>(null);
+
+  // Its search, format and order, as they change.
+  useEffect(() => {
+    rememberView(viewKey, { query, kind, sort, place: recallView(viewKey)?.place ?? null });
+  }, [viewKey, query, kind, sort]);
+
+  // The scroll goes back once the view's own books are drawn: to where the
+  // view was left, or to its top the first time it is shown. Before paint,
+  // so it is never seen at the top first.
+  useLayoutEffect(() => {
+    const main = mainRef.current;
+    if (!main || placedFor.current === viewKey || dataFor !== requestKey) return;
+    placedFor.current = viewKey;
+    holding.current?.();
+    const place = recallView(viewKey)?.place;
+    if (place) {
+      holding.current = restorePlace(main, place, {
+        onDone: () => {
+          holding.current = null;
+        },
+      });
+    } else {
+      main.scrollTop = 0;
+    }
+  }, [viewKey, requestKey, dataFor]);
+
+  // And is remembered as the reader scrolls - not while a place is still
+  // being put back, which would remember the way there instead.
+  useEffect(() => {
+    const main = mainRef.current;
+    if (!main) return;
+    let raf = 0;
+    const save = () => {
+      raf = 0;
+      if (placedFor.current !== viewKey || holding.current) return;
+      rememberPlace(viewKey, placeIn(main));
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(save);
+    };
+    main.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      main.removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, [viewKey]);
+  useEffect(() => () => holding.current?.(), []);
+
+  /** The book opened from here holds the place: coming back finds its card where it was. */
+  const holdPlaceAt = (e: React.MouseEvent) => {
+    const main = mainRef.current;
+    const card = (e.target as Element).closest('[data-book]');
+    if (!main || !card || placedFor.current !== viewKey) return;
+    holding.current?.();
+    rememberPlace(viewKey, { top: main.scrollTop, anchor: anchorOf(card, main) });
+  };
   useEffect(() => {
     void loadDownloads();
   }, [loadDownloads]);
@@ -592,7 +734,13 @@ export function LibraryPage() {
   ];
 
   return (
-    <main className="app-main" id="main-content" tabIndex={-1}>
+    <main
+      className="app-main"
+      id="main-content"
+      tabIndex={-1}
+      ref={mainRef}
+      onClickCapture={holdPlaceAt}
+    >
       <h1 className="visually-hidden">{heading}</h1>
 
       {/* Moving between shelves on a narrow screen: a swipe and a tap, no
@@ -1255,6 +1403,7 @@ function BookCard({
       className={`book-card ${pair ? 'book-card--multiformat' : ''} ${book.hidden ? 'is-hidden' : ''}${
         selected ? ' is-selected' : ''
       }`}
+      data-book={book.id}
     >
       <CardFrame
         selecting={selecting}
