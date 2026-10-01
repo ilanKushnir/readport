@@ -478,6 +478,8 @@ const messages: Record<string, string> = {
   'library.book.readAlong': 'Lecture accompagnée',
   'library.book.readAlongHint': 'La page, avec la narration jouée par-dessus',
   'library.book.readAlongNotReady': 'La lecture accompagnée se débloque une fois la paire alignée',
+  'library.book.readAlongSyncing':
+    'Prêt dès le début - le reste du livre est encore en cours de synchronisation',
   'library.book.opening': 'Ouverture…',
   'library.book.part': 'Partie {n}',
   'library.book.otherNotOnDevice':
@@ -626,6 +628,8 @@ const messages: Record<string, string> = {
   'reader.tandem.notReadyHint':
     "L'alignement n'est pas prêt - la narration ne peut pas encore suivre le texte",
   'reader.tandem.listenInstead': 'Écouter à la place',
+  'reader.tandem.readAlongSyncingHint':
+    'Lecture accompagnée dès le début, dès maintenant - le reste du livre est encore en cours de synchronisation',
   'reader.tandem.listenHint': 'Quitter la page et basculer vers le livre audio à cette phrase',
   'reader.switch.notStoredOffline':
     "Cet endroit n'a pas été enregistré pour la bascule hors ligne.",
@@ -661,6 +665,12 @@ const messages: Record<string, string> = {
   'reader.readAlong.reducedMotion':
     "Votre système demande une animation réduite, la page ne défilera donc pas d'elle-même.",
   'reader.toast.otherDeviceAt': 'Un autre appareil est à {pct}',
+  // reader: while the book is still syncing
+  'reader.readAlong.sync.preparing': 'Préparation de la lecture accompagnée…',
+  'reader.readAlong.sync.pending': 'Synchronisation de cette partie…',
+  'reader.readAlong.sync.pendingLabel': 'Synchronisation de cette partie',
+  'reader.readAlong.sync.eta': 'environ {n, plural, one {# min} other {# min}}',
+  'reader.readAlong.sync.stopped': 'Cette partie n’est pas encore synchronisée',
   // reader: only in the audiobook
   'reader.readAlong.beyond.title': 'Uniquement dans le livre audio',
   'reader.readAlong.beyond.middle': 'Continuez d’écouter - le texte reprend dans {time}.',

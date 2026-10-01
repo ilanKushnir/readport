@@ -131,6 +131,22 @@ its duty cycle suggests.
    as one with no anchors - all three are exactly where interpolation goes
    wrong. The unanchored head and tail of the book are always suspect: there
    is no rate to judge them by, and they are every bit as unmapped.
+
+   All of this happens a **stage** at a time, from the start of the book
+   forward: the first three minutes of narration, then on to ten, twenty-five
+   and fifty-five minutes, then an hour a stage (`sparse.stagesOf`). A
+   stage's grid probes are heard and its stretches refined before the next
+   stage begins; a stage refines only its own stretch, and the budget is
+   dealt out the same way - 60% of each stage's own grid, with whatever a
+   stage leaves carried to the next, and four probes lent to the opening
+   stage, which is short and is where a narration most often departs from
+   its text. It is what makes a book readable along with before its sync is
+   done (below), and it costs nothing: refining is local to the stretch it
+   refines, the total is the same, and on three hours of a Russian narration
+   it measured as close as the whole-book refinement it replaced (half the
+   checks within 0.5 s against 0.6 s, nine in ten within 1.8 s against
+   2.1 s, the worst 4.9 s against 5.9 s), for the same 278 probes.
+
 3. **Decode the audio** (`emissions.ts`). The bundled ffmpeg resamples every
    track to 16 kHz mono. `exact` consumes it as a stream in 30-second chunks
    with one second of context on each side (frames near a hard cut decode
@@ -183,6 +199,69 @@ its duty cycle suggests.
    trusts less than that, emits explicit `narration-only` gaps for unaligned
    stretches over 15 seconds, and computes coverage and mean confidence. An
    engine cannot mint an over-confident segment by accident.
+
+### Reading along before the sync is done
+
+A long book's sync takes the better part of two hours, and nobody who has
+just added a book wants to wait that long to start it. They do not have to.
+Everything up to the last place both the text and the narration were heard
+to agree is as final as it will get once its stage is done - a later stage
+only ever adds what comes after it - so at the end of each stage the engine
+hands that opening of the book over (`onPartial`): every sentence that ends
+before the edge, timed by the same layer the finished alignment is.
+
+The edge is the last anchor, with one precaution (`settledEdge`). The last
+anchor of a sync under way can be a leap far ahead: a real one, the
+narration leaving out a preface just as the stage ended, or a stray - a few
+characters heard wrong that happen to match text an hour on. A stray at the
+end of the book is harmless; at the end of a stage it would hand over an
+hour of text interpolated across audio nobody has listened to. So a leap
+more than four times faster than the narrator reads, over at least a
+thousand characters, marks the edge until ten anchors after it confirm the
+narration reading on from where it landed. Before anything is handed over
+there must be twenty anchors, at the refusal threshold's density over the
+settled text, so audio of a different book never reaches a reader as a
+half-done sync.
+
+The job keeps the opening as the pair's **partial alignment**: an
+`alignments` row of status `partial`, one per pair, its segments replaced
+as it grows. Nothing that reads a finished sync sees it - `latestAlignment`
+reads `ready` rows only - so switching to the player at the same sentence,
+friends' places, exports and the rest wait for the finished sync exactly as
+before. Only read along asks for it (`readAlongSource`): the finished sync
+when there is one, otherwise the partial, otherwise - when a sync is queued
+or running - nothing yet, and a `syncing` record that says how far the sync
+has got (`throughMs`, the chapter it has reached, its pace). The reader
+offers Read along on that alone, asks every few seconds while it is waiting
+on the sync and every twenty while the voice is well inside what is done,
+fetches a chapter's timings again only while the sync is still in that
+chapter, and swaps to the finished sync when it lands. The partial is
+deleted when the finished sync is stored, or when the narration turns out
+to be a different book. A sync of a book that is already synced writes no
+partial: the finished sync stays what read along follows until the new one
+replaces it.
+
+Measured on the same three hours of the Russian narration, on a desktop:
+the first three minutes of the book were ready to read along with six
+seconds after the sync started, nine minutes at thirteen, fifty-four
+minutes after a minute, an hour and fifty minutes after two - about twenty
+times faster than anyone can listen. Every opening handed over matched the
+finished sync to within 0.2 s in all but one sentence (1.5 s).
+
+### A restart picks up where the sync stopped
+
+What a sync hears is kept as it goes, one file per pair,
+`<data dir>/align-cache/<pair>.ndjson`: a header naming what the probes were
+heard from (the model and every track's path, length and size), then a line
+per probe, appended a batch at a time. A sync that starts again - after a
+deploy, a crash, a server restarted under it - over a cache it left behind
+serves those probes from disk and only listens to what it had not reached,
+and a line cut short by a crash is simply where the cache ends. A cache for
+other audio or another model is never served, and is started afresh. The
+file is deleted when the sync is stored or refused, and one nothing has
+touched for two weeks (a sync that failed for good and was never asked for
+again) is pruned. A cache that cannot be written makes a sync that will not
+resume, never a sync that stops.
 
 ### Why anchors rather than a global warp
 

@@ -481,6 +481,8 @@ const messages: Record<string, string> = {
   'library.book.readAlong': 'Meelezen',
   'library.book.readAlongHint': 'De pagina, met de vertelling erover afgespeeld',
   'library.book.readAlongNotReady': 'Meelezen komt beschikbaar zodra het paar is uitgelijnd',
+  'library.book.readAlongSyncing':
+    'Klaar vanaf het begin - de rest van het boek wordt nog gesynchroniseerd',
   'library.book.opening': 'Wordt geopend…',
   'library.book.part': 'Deel {n}',
   'library.book.otherNotOnDevice':
@@ -628,6 +630,8 @@ const messages: Record<string, string> = {
   'reader.tandem.readAlongHint': 'Speel de vertelling af bij de pagina die je leest',
   'reader.tandem.notReadyHint':
     'Synchronisatie nog niet klaar – de vertelling kan de tekst nog niet volgen',
+  'reader.tandem.readAlongSyncingHint':
+    'Lees nu al mee vanaf het begin - de rest van het boek wordt nog gesynchroniseerd',
   'reader.tandem.listenInstead': 'In plaats daarvan luisteren',
   'reader.tandem.listenHint': 'Verlaat de pagina en wissel naar het luisterboek bij deze zin',
   'reader.switch.notStoredOffline': 'Deze plek is niet bewaard voor offline wisselen.',
@@ -661,6 +665,12 @@ const messages: Record<string, string> = {
   'reader.readAlong.noTimedText': 'Nog geen getimede tekst om naar terug te keren op deze pagina.',
   'reader.readAlong.reducedMotion':
     'Je systeem vraagt om minder beweging, dus de pagina scrollt niet vanzelf.',
+  // reader: while the book is still syncing
+  'reader.readAlong.sync.preparing': 'Meelezen wordt voorbereid…',
+  'reader.readAlong.sync.pending': 'Dit deel wordt gesynchroniseerd…',
+  'reader.readAlong.sync.pendingLabel': 'Dit deel wordt gesynchroniseerd',
+  'reader.readAlong.sync.eta': 'ongeveer {n, plural, one {# min} other {# min}}',
+  'reader.readAlong.sync.stopped': 'Dit deel is nog niet gesynchroniseerd',
   // reader: only in the audiobook
   'reader.readAlong.beyond.title': 'Alleen in het luisterboek',
   'reader.readAlong.beyond.middle': 'Blijf luisteren - de tekst gaat over {time} verder.',

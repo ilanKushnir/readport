@@ -74,6 +74,8 @@ export const reader = {
   'reader.tandem.aligning': 'Audio · aligning…',
   'reader.tandem.readAlongHint': 'Play the narration over the page you are reading',
   'reader.tandem.notReadyHint': 'Alignment not ready - the narration cannot follow the text yet',
+  'reader.tandem.readAlongSyncingHint':
+    'Read along from the start now - the rest of the book is still syncing',
   'reader.tandem.listenInstead': 'Listen instead',
   'reader.tandem.listenHint': 'Leave the page and switch to the audiobook at this sentence',
 
@@ -116,6 +118,14 @@ export const reader = {
   'reader.readAlong.noTimedText': 'No timed text to return to on this page yet.',
   'reader.readAlong.reducedMotion':
     'Your system asks for reduced motion, so the page will not scroll by itself.',
+  // While the book is still syncing: read along follows what is done so far
+  'reader.readAlong.sync.preparing': 'Getting read along ready…',
+  'reader.readAlong.sync.pending': 'Syncing this part…',
+  // The same, with how long it will take beside it: the words may shorten
+  // on a narrow bar, the time may not.
+  'reader.readAlong.sync.pendingLabel': 'Syncing this part',
+  'reader.readAlong.sync.eta': 'about {n, plural, one {# min} other {# min}}',
+  'reader.readAlong.sync.stopped': 'This part isn’t synced yet',
   // While the voice reads a stretch the ebook does not have
   'reader.readAlong.beyond.title': 'Only in the audiobook',
   'reader.readAlong.beyond.middle': 'Keep listening - the text picks up again in {time}.',

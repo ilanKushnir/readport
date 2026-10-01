@@ -14,6 +14,8 @@ import {
   AlignmentRefusedError,
   EXACT_SCORE,
   EXACT_UNCERTAINTY_MS,
+  settledEdge,
+  type PartialAlignment,
 } from './engine.js';
 import { romanize } from './romanize.js';
 import { type SparsePlan } from './sparse.js';
@@ -487,8 +489,9 @@ describe('alignWithCtc, sampling the narration', () => {
     const seen: ProbeWindow[] = [];
     await alignWithCtc(sparseRequest(book, heard, PLAN, seen));
 
-    const grid = Math.ceil(heard.audioMs / PLAN.everyMs);
-    const extra = seen.slice(grid);
+    // The grid is every `everyMs` from the top; anything else is refinement,
+    // listened to stage by stage between the grid's own probes.
+    const extra = seen.filter((w) => w.startMs % PLAN.everyMs !== 0);
     expect(extra.length).toBeGreaterThan(0);
     // The refinement probes cluster on the pause rather than spreading evenly.
     const nearPause = extra.filter(
@@ -544,6 +547,106 @@ describe('alignWithCtc, sampling the narration', () => {
     }
     expect(reported.at(-1)).toBeGreaterThanOrEqual(0.97);
     expect(reported.at(-1)).toBeLessThanOrEqual(1);
+  });
+});
+
+describe('alignWithCtc, read along while it syncs', () => {
+  /** A probe a minute, as the real schedule does - the stages are cut in minutes. */
+  const PLAN: SparsePlan = {
+    windowMs: 8_000,
+    everyMs: 60_000,
+    refineRounds: 2,
+    rateTolerance: 0.2,
+    refineBudget: 0.6,
+  };
+
+  it('hands over a longer opening of the book at every stage, each one as final as the sync', async () => {
+    // About two hours of narration: five stages before the last.
+    const book = makeBook(21, 1200);
+    const heard = narrate(book.text);
+    const partials: PartialAlignment[] = [];
+
+    const out = await alignWithCtc({
+      ...sparseRequest(book, heard, PLAN),
+      onPartial: (p) => partials.push(p),
+    });
+
+    expect(partials.length).toBeGreaterThanOrEqual(4);
+    // The first after one short stage, not after the book.
+    expect(partials[0]!.throughMs).toBeLessThan(4 * 60_000);
+    for (let i = 1; i < partials.length; i++) {
+      expect(partials[i]!.throughMs).toBeGreaterThan(partials[i - 1]!.throughMs);
+    }
+    // Never the whole book: that is the return value.
+    expect(partials.at(-1)!.sentences).toBeLessThan(book.sentences.length);
+
+    const final = new Map(out.result.segments.map((s) => [s.sentenceId, s]));
+    for (const p of partials) {
+      // An opening of the book - only its first `sentences`...
+      expect(p.result.segments.every((s) => Number(s.sentenceId.slice(1)) < p.sentences)).toBe(
+        true,
+      );
+      // ...timed as the finished sync times them...
+      for (const s of p.result.segments) {
+        const f = final.get(s.sentenceId);
+        expect(f).toBeDefined();
+        expect(Math.abs(s.startMs - f!.startMs)).toBeLessThan(TOLERANCE_MS * 10);
+      }
+      // ...ending where read along is told it ends, and counted against the
+      // whole book, so the share grows as the sync goes on.
+      expect(p.result.segments.at(-1)!.endMs).toBe(p.throughMs);
+      expect(p.result.coverage).toBeCloseTo(p.result.segments.length / book.sentences.length, 2);
+      expect(p.audioMs).toBe(heard.audioMs);
+    }
+  });
+
+  it('hands nothing over from audio of a different book', async () => {
+    const book = makeBook(22, 900);
+    const heard = narrate(makeBook(23, 900).text);
+    const partials: PartialAlignment[] = [];
+
+    await expect(
+      alignWithCtc({ ...sparseRequest(book, heard, PLAN), onPartial: (p) => partials.push(p) }),
+    ).rejects.toBeInstanceOf(AlignmentRefusedError);
+    expect(partials).toEqual([]);
+  });
+
+  it('times the book exactly as closely as a sync nobody reads along with', async () => {
+    const book = makeBook(24, 1200);
+    const heard = narrate(book.text);
+    const plain = await alignWithCtc(sparseRequest(book, heard, PLAN));
+    const along = await alignWithCtc({ ...sparseRequest(book, heard, PLAN), onPartial: () => {} });
+    expect(along.result).toEqual(plain.result);
+    expect(along.probes).toBe(plain.probes);
+  });
+});
+
+describe('settledEdge', () => {
+  // Fifteen characters a second, an anchor a second.
+  const steady = Array.from({ length: 30 }, (_, i) => ({ ms: i * 1000, bookPos: i * 15 }));
+
+  it('is the last anchor while the narration simply reads on', () => {
+    expect(settledEdge(steady)).toEqual(steady.at(-1));
+  });
+
+  it('does not trust a leap far ahead until the narration is heard reading on from it', () => {
+    // A few characters heard wrong, matching text hours further on: as the
+    // last anchor of a stage it would hand over everything in between.
+    const stray = [...steady, { ms: 30_500, bookPos: 200_000 }];
+    expect(settledEdge(stray)).toEqual(steady.at(-1));
+    // A real leap - a preface left out - is followed by the reading.
+    const confirmed = [
+      ...stray,
+      ...Array.from({ length: 12 }, (_, i) => ({
+        ms: 31_000 + i * 1000,
+        bookPos: 200_015 + i * 15,
+      })),
+    ];
+    expect(settledEdge(confirmed)).toEqual(confirmed.at(-1));
+  });
+
+  it('is nothing without anchors', () => {
+    expect(settledEdge([])).toBeNull();
   });
 });
 

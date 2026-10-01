@@ -1857,7 +1857,20 @@ export function ReaderPage() {
 
   const pair =
     detail?.book.pair && detail.book.pair.status !== 'candidate' ? detail.book.pair : null;
+  /**
+   * Read along is on offer once the pair is synced - or while it is still
+   * syncing: the sync works from the start of the book forward and read
+   * along follows whatever it has done, so a book paired a moment ago can
+   * be read along with from the beginning straight away. Switching to the
+   * player at the same sentence still waits for the finished sync.
+   */
+  const canReadAlong = !!pair && (pair.switchable || !!pair.syncing);
   const startOffset = useCallback(() => currentOffsetRef.current, []);
+  /** Where the page is in the whole book, for how long a sync under way needs to reach it. */
+  const pagePct = useCallback(
+    () => (manifest ? pctFor(manifest, spineIdx, currentOffsetRef.current) : 0),
+    [manifest, spineIdx],
+  );
 
   /**
    * The narration has run off the end (or the start) of this chapter. Follow
@@ -1893,6 +1906,7 @@ export function ReaderPage() {
     spineIdx,
     sentences,
     startOffset,
+    pagePct,
     onLeaveChapter,
   });
 
@@ -2830,10 +2844,10 @@ export function ReaderPage() {
   // still aligning simply opens the page, as the button warned it would.
   const alongRequestedRef = useRef(searchParams.get('along') === '1');
   useEffect(() => {
-    if (!alongRequestedRef.current || !html || !pair?.switchable || readAlong) return;
+    if (!alongRequestedRef.current || !html || !canReadAlong || readAlong) return;
     alongRequestedRef.current = false;
     startReadAlong();
-  }, [html, pair?.switchable, readAlong, startReadAlong]);
+  }, [html, canReadAlong, readAlong, startReadAlong]);
 
   // Keyboard.
   useEffect(() => {
@@ -4771,10 +4785,10 @@ export function ReaderPage() {
                 <button
                   className="tandem-btn tandem-btn--lead"
                   onClick={readAlong ? () => setReadAlong(false) : startReadAlong}
-                  disabled={!pair.switchable}
+                  disabled={!canReadAlong}
                   aria-pressed={readAlong}
                   aria-label={
-                    !pair.switchable
+                    !canReadAlong
                       ? t('reader.tandem.aligning')
                       : readAlong
                         ? t('reader.tandem.readingAlong')
@@ -4783,7 +4797,9 @@ export function ReaderPage() {
                   title={
                     pair.switchable
                       ? t('reader.tandem.readAlongHint')
-                      : t('reader.tandem.notReadyHint')
+                      : pair.syncing
+                        ? t('reader.tandem.readAlongSyncingHint')
+                        : t('reader.tandem.notReadyHint')
                   }
                 >
                   <IconReadAlong size={18} />

@@ -456,6 +456,8 @@ const messages: Record<string, string> = {
   'library.book.readAlong': '읽으며 듣기',
   'library.book.readAlongHint': '페이지 위에서 낭독을 재생합니다',
   'library.book.readAlongNotReady': '쌍이 정렬되면 읽으며 듣기를 사용할 수 있습니다',
+  'library.book.readAlongSyncing':
+    '처음부터 사용할 수 있습니다 - 책의 나머지는 아직 동기화 중입니다',
   'library.book.opening': '여는 중…',
   'library.book.part': '파트 {n}',
   'library.book.otherNotOnDevice':
@@ -594,6 +596,8 @@ const messages: Record<string, string> = {
   'reader.tandem.aligning': '오디오 · 정렬 중…',
   'reader.tandem.readAlongHint': '읽고 있는 페이지에 맞춰 낭독 재생',
   'reader.tandem.notReadyHint': '정렬이 준비되지 않아 낭독이 아직 텍스트를 따라갈 수 없습니다',
+  'reader.tandem.readAlongSyncingHint':
+    '지금 처음부터 읽으며 듣기 - 책의 나머지는 아직 동기화 중입니다',
   'reader.tandem.listenInstead': '대신 듣기',
   'reader.tandem.listenHint': '페이지를 벗어나 이 문장에서 오디오북으로 전환',
   'reader.switch.notStoredOffline': '이 위치는 오프라인 전환용으로 저장되지 않았습니다.',
@@ -627,6 +631,12 @@ const messages: Record<string, string> = {
   'reader.readAlong.noTimedText': '이 페이지에는 아직 돌아갈 타이밍 텍스트가 없습니다.',
   'reader.readAlong.reducedMotion':
     '시스템에서 동작 줄이기를 요청하여 페이지가 자동으로 스크롤되지 않습니다.',
+  // reader: while the book is still syncing
+  'reader.readAlong.sync.preparing': '읽으며 듣기를 준비하는 중…',
+  'reader.readAlong.sync.pending': '이 부분을 동기화하는 중…',
+  'reader.readAlong.sync.pendingLabel': '이 부분을 동기화하는 중',
+  'reader.readAlong.sync.eta': '약 {n, plural, other {#분}}',
+  'reader.readAlong.sync.stopped': '이 부분은 아직 동기화되지 않았습니다',
   // reader: only in the audiobook
   'reader.readAlong.beyond.title': '오디오북에만 있는 부분',
   'reader.readAlong.beyond.middle': '계속 들어 주세요. {time} 후에 텍스트로 돌아갑니다.',

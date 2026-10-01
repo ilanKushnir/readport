@@ -150,6 +150,7 @@ export const library = {
   'library.book.readAlong': 'Read along',
   'library.book.readAlongHint': 'The page, with the narration playing over it',
   'library.book.readAlongNotReady': 'Read along unlocks once the pair is aligned',
+  'library.book.readAlongSyncing': 'Ready from the start - the rest of the book is still syncing',
   'library.book.opening': 'Opening…',
   'library.book.part': 'Part {n}',
   // The book's own file, as opposed to Save offline

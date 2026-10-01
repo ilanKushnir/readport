@@ -448,6 +448,58 @@ export function beyondTextAt(
 }
 
 /**
+ * A sync still under way (shared ReadAlongSync): read along follows what it
+ * has settled - the book from the start as far as `throughMs` - while it
+ * works on the rest.
+ */
+export interface SyncingNow {
+  /** Read along can follow the narration this far, in book ms (0: not yet). */
+  throughMs: number;
+  /** The chapter the synced part ends in; every chapter before it is wholly synced. */
+  throughSpine: number;
+  audioMs: number;
+  /** Narration synced per millisecond of the sync's own time; 0 until measured. */
+  rate: number;
+  updatedAt: string | null;
+  /** Still working on the rest, rather than stopped. */
+  active: boolean;
+}
+
+/**
+ * Whether a chapter is still waiting on the sync: it is the one the synced
+ * part ends in, or one after it. A chapter before it is as synced as it
+ * will get, so a chapter there with nothing timed has nothing narrated.
+ */
+export function chapterSyncing(syncing: SyncingNow | null, spineIdx: number): boolean {
+  return !!syncing && spineIdx >= syncing.throughSpine;
+}
+
+/**
+ * Whether the voice has run on past what the sync has settled - nothing is
+ * timed there to follow until the sync catches up. A breath (HOLD_MS) past
+ * the last synced sentence is still the sentence.
+ */
+export function voiceAheadOfSync(syncing: SyncingNow | null, bookMs: number): boolean {
+  return !!syncing && bookMs > syncing.throughMs + HOLD_MS;
+}
+
+/**
+ * Roughly how long until the sync reaches `targetMs` of the narration, from
+ * the pace it has kept so far; null when there is no pace to go on yet, or
+ * the sync has stopped. Coarse on purpose: it is said as "about N minutes".
+ */
+export function syncEta(
+  syncing: SyncingNow | null,
+  targetMs: number,
+  nowMs = Date.now(),
+): number | null {
+  if (!syncing?.active || !(syncing.rate > 0)) return null;
+  const since = syncing.updatedAt ? Math.max(0, nowMs - Date.parse(syncing.updatedAt)) : 0;
+  const left = (targetMs - syncing.throughMs) / syncing.rate - (Number.isFinite(since) ? since : 0);
+  return Math.max(0, left);
+}
+
+/**
  * How long the voice may read of the page before, after a turn with the
  * voice, to give the sentence the new page begins in the middle of whole.
  * Longer than this and it starts at the first sentence that begins on the

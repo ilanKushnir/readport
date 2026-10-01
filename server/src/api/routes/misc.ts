@@ -198,7 +198,9 @@ export function registerSettingsRoutes(app: FastifyInstance, ctx: AppContext): v
       pairsCandidate: count(
         `SELECT COUNT(*) AS c FROM pairs p WHERE status = 'candidate' AND ${pair}`,
       ),
-      pairsAligned: count('SELECT COUNT(DISTINCT pair_id) AS c FROM alignments'),
+      pairsAligned: count(
+        "SELECT COUNT(DISTINCT pair_id) AS c FROM alignments WHERE status = 'ready'",
+      ),
       jobsRunning: count("SELECT COUNT(*) AS c FROM jobs WHERE state = 'running'"),
       jobsQueued: count("SELECT COUNT(*) AS c FROM jobs WHERE state = 'queued'"),
       jobsFailed: count("SELECT COUNT(*) AS c FROM jobs WHERE state = 'failed'"),

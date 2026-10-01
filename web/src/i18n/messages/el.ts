@@ -482,6 +482,7 @@ const messages: Record<string, string> = {
   'library.book.readAlongHint': 'Η σελίδα, με την αφήγηση να παίζει από πάνω της',
   'library.book.readAlongNotReady':
     'Η ανάγνωση με τον ήχο ξεκλειδώνει μόλις ευθυγραμμιστεί το ζεύγος',
+  'library.book.readAlongSyncing': 'Έτοιμο από την αρχή - το υπόλοιπο βιβλίο συγχρονίζεται ακόμη',
   'library.book.opening': 'Άνοιγμα…',
   'library.book.part': 'Μέρος {n}',
   'library.book.otherNotOnDevice':
@@ -627,6 +628,8 @@ const messages: Record<string, string> = {
   'reader.tandem.readAlongHint': 'Αναπαραγωγή της αφήγησης πάνω στη σελίδα που διαβάζεις',
   'reader.tandem.notReadyHint':
     'Η ευθυγράμμιση δεν είναι έτοιμη - η αφήγηση δεν μπορεί να ακολουθήσει ακόμα το κείμενο',
+  'reader.tandem.readAlongSyncingHint':
+    'Διάβασε με τον ήχο από την αρχή τώρα - το υπόλοιπο βιβλίο συγχρονίζεται ακόμη',
   'reader.tandem.listenInstead': 'Άκου αντί αυτού',
   'reader.tandem.listenHint':
     'Φύγε από τη σελίδα και πέρασε στο ηχητικό βιβλίο σε αυτή την πρόταση',
@@ -664,6 +667,12 @@ const messages: Record<string, string> = {
     'Δεν υπάρχει ακόμα χρονομετρημένο κείμενο για επιστροφή σε αυτή τη σελίδα.',
   'reader.readAlong.reducedMotion':
     'Το σύστημά σου ζητά μειωμένη κίνηση, οπότε η σελίδα δεν θα κάνει κύλιση μόνη της.',
+  // reader: while the book is still syncing
+  'reader.readAlong.sync.preparing': 'Προετοιμασία ανάγνωσης με τον ήχο…',
+  'reader.readAlong.sync.pending': 'Συγχρονίζεται αυτό το μέρος…',
+  'reader.readAlong.sync.pendingLabel': 'Συγχρονίζεται αυτό το μέρος',
+  'reader.readAlong.sync.eta': 'περίπου {n, plural, one {# λεπτό} other {# λεπτά}}',
+  'reader.readAlong.sync.stopped': 'Αυτό το μέρος δεν έχει συγχρονιστεί ακόμη',
   // reader: only in the audiobook
   'reader.readAlong.beyond.title': 'Μόνο στο ηχητικό βιβλίο',
   'reader.readAlong.beyond.middle': 'Συνέχισε να ακούς - το κείμενο συνεχίζει σε {time}.',

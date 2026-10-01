@@ -465,6 +465,7 @@ const messages: Record<string, string> = {
   'library.book.readAlong': 'Číst s vyprávěním',
   'library.book.readAlongHint': 'Stránka s vyprávěním přehrávaným nad ní',
   'library.book.readAlongNotReady': 'Čtení s vyprávěním se odemkne, jakmile bude dvojice zarovnána',
+  'library.book.readAlongSyncing': 'Připraveno od začátku - zbytek knihy se ještě synchronizuje',
   'library.book.opening': 'Otevírání…',
   'library.book.part': 'Část {n}',
   'library.book.otherNotOnDevice':
@@ -604,6 +605,8 @@ const messages: Record<string, string> = {
   'reader.tandem.aligning': 'Zvuk · zarovnávání…',
   'reader.tandem.readAlongHint': 'Přehrávat vyprávění nad stránkou, kterou čtete',
   'reader.tandem.notReadyHint': 'Zarovnání není připraveno – vyprávění zatím nemůže sledovat text',
+  'reader.tandem.readAlongSyncingHint':
+    'Čtěte s vyprávěním od začátku hned teď - zbytek knihy se ještě synchronizuje',
   'reader.tandem.listenInstead': 'Raději poslouchat',
   'reader.tandem.listenHint': 'Opustit stránku a přepnout na audioknihu u této věty',
   'reader.switch.notStoredOffline': 'Toto místo nebylo uloženo pro přepínání offline.',
@@ -639,6 +642,13 @@ const messages: Record<string, string> = {
     'Na této stránce zatím není žádný časovaný text, ke kterému se vrátit.',
   'reader.readAlong.reducedMotion':
     'Váš systém žádá omezení pohybu, takže se stránka nebude posouvat sama.',
+  // reader: while the book is still syncing
+  'reader.readAlong.sync.preparing': 'Připravuje se čtení s vyprávěním…',
+  'reader.readAlong.sync.pending': 'Synchronizuje se tato část…',
+  'reader.readAlong.sync.pendingLabel': 'Synchronizuje se tato část',
+  'reader.readAlong.sync.eta':
+    'asi {n, plural, one {# min} few {# min} many {# min} other {# min}}',
+  'reader.readAlong.sync.stopped': 'Tato část ještě není synchronizovaná',
   // reader: only in the audiobook
   'reader.readAlong.beyond.title': 'Jen v audioknize',
   'reader.readAlong.beyond.middle': 'Poslouchejte dál - text naváže za {time}.',

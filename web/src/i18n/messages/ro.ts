@@ -474,6 +474,7 @@ const messages: Record<string, string> = {
   'library.book.readAlongHint': 'Pagina, cu narațiunea redată peste ea',
   'library.book.readAlongNotReady':
     'Citește pe măsură se deblochează odată ce perechea este aliniată',
+  'library.book.readAlongSyncing': 'Gata de la început - restul cărții încă se sincronizează',
   'library.book.opening': 'Se deschide…',
   'library.book.part': 'Partea {n}',
   'library.book.otherNotOnDevice':
@@ -616,6 +617,8 @@ const messages: Record<string, string> = {
   'reader.tandem.aligning': 'Audio · se aliniază…',
   'reader.tandem.readAlongHint': 'Redă narațiunea peste pagina pe care o citești',
   'reader.tandem.notReadyHint': 'Alinierea nu este gata - narațiunea nu poate urmări încă textul',
+  'reader.tandem.readAlongSyncingHint':
+    'Citește pe măsură de la început chiar acum - restul cărții încă se sincronizează',
   'reader.tandem.listenInstead': 'Ascultă în loc',
   'reader.tandem.listenHint': 'Părăsește pagina și comută la cartea audio, la această propoziție',
   'reader.switch.notStoredOffline': 'Acest loc nu a fost salvat pentru comutare offline.',
@@ -651,6 +654,12 @@ const messages: Record<string, string> = {
     'Niciun text cronometrat la care să revii pe această pagină încă.',
   'reader.readAlong.reducedMotion':
     'Sistemul tău cere mișcare redusă, așa că pagina nu va derula singură.',
+  // reader: while the book is still syncing
+  'reader.readAlong.sync.preparing': 'Se pregătește Citește pe măsură…',
+  'reader.readAlong.sync.pending': 'Se sincronizează această parte…',
+  'reader.readAlong.sync.pendingLabel': 'Se sincronizează această parte',
+  'reader.readAlong.sync.eta': 'cam {n, plural, one {# min} few {# min} other {# min}}',
+  'reader.readAlong.sync.stopped': 'Partea aceasta nu este încă sincronizată',
   // reader: only in the audiobook
   'reader.readAlong.beyond.title': 'Doar în cartea audio',
   'reader.readAlong.beyond.middle': 'Ascultă mai departe - textul continuă peste {time}.',

@@ -469,6 +469,7 @@ const messages: Record<string, string> = {
   'library.book.readAlong': 'Birlikte oku',
   'library.book.readAlongHint': 'Sayfa, üzerinde anlatı çalarken',
   'library.book.readAlongNotReady': 'Çift hizalandığında birlikte okuma açılır',
+  'library.book.readAlongSyncing': 'Baştan itibaren hazır - kitabın geri kalanı hâlâ eşitleniyor',
   'library.book.opening': 'Açılıyor…',
   'library.book.part': '{n}. Bölüm',
   'library.book.otherNotOnDevice':
@@ -609,6 +610,8 @@ const messages: Record<string, string> = {
   'reader.tandem.aligning': 'Ses · hizalanıyor…',
   'reader.tandem.readAlongHint': 'Anlatıyı okuduğunuz sayfanın üzerinde çal',
   'reader.tandem.notReadyHint': 'Hizalama hazır değil - anlatı metni henüz takip edemiyor',
+  'reader.tandem.readAlongSyncingHint':
+    'Şimdi baştan birlikte okuyun - kitabın geri kalanı hâlâ eşitleniyor',
   'reader.tandem.listenInstead': 'Bunun yerine dinle',
   'reader.tandem.listenHint': 'Sayfadan çıkıp bu cümlede sesli kitaba geç',
   'reader.switch.notStoredOffline': 'Bu nokta çevrimdışı geçiş için saklanmamıştı.',
@@ -642,6 +645,12 @@ const messages: Record<string, string> = {
   'reader.readAlong.noTimedText': 'Bu sayfada henüz dönülecek zamanlanmış metin yok.',
   'reader.readAlong.reducedMotion':
     'Sisteminiz azaltılmış hareket istiyor, bu yüzden sayfa kendiliğinden kaymayacak.',
+  // reader: while the book is still syncing
+  'reader.readAlong.sync.preparing': 'Birlikte okuma hazırlanıyor…',
+  'reader.readAlong.sync.pending': 'Bu bölüm eşitleniyor…',
+  'reader.readAlong.sync.pendingLabel': 'Bu bölüm eşitleniyor',
+  'reader.readAlong.sync.eta': 'yaklaşık {n, plural, one {# dk} other {# dk}}',
+  'reader.readAlong.sync.stopped': 'Bu bölüm henüz eşitlenmedi',
   // reader: only in the audiobook
   'reader.readAlong.beyond.title': 'Yalnızca sesli kitapta',
   'reader.readAlong.beyond.middle': 'Dinlemeye devam edin - metin {time} sonra devam ediyor.',

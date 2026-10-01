@@ -1,7 +1,14 @@
-import { segmentsFromTimings, type AlignerResult, type EbookSentenceInput } from '../timings.js';
+import {
+  segmentsFromTimings,
+  type AlignerResult,
+  type EbookSentenceInput,
+  type RawTiming,
+} from '../timings.js';
 import {
   matchChars,
+  type Anchor,
   type BookSentence,
+  type MatchOptions,
   type MatchResult,
   type MatchStats,
   type SentenceTiming,
@@ -22,6 +29,7 @@ import {
   assembleProbes,
   gridWindows,
   refineWindows,
+  stagesOf,
   type ProbeRun,
   type SparsePlan,
 } from './sparse.js';
@@ -97,6 +105,13 @@ export interface CtcAlignRequest {
    */
   plan?: SparsePlan;
   /**
+   * Hear about each longer opening of the book as it is settled, while the
+   * sync works on the rest - what lets a reader read along from the start of
+   * a book whose sync has only just begun. Sampled syncs only, and never
+   * called with the whole book: that is the return value.
+   */
+  onPartial?: (partial: PartialAlignment) => void;
+  /**
    * The acoustic front ends, defaulting to the real ones. The only reason they
    * are injectable is testing: everything this module actually decides -
    * refusal, refinement, gaps, how timings become segments - is downstream of
@@ -127,6 +142,31 @@ export interface CtcAlignResult {
    * the same thing at every precision.
    */
   narrationRatio: number;
+}
+
+/**
+ * The opening of a book a sync has finished with, while it is still working
+ * on the rest.
+ *
+ * A sync listens to the narration from the start forward, a stage at a time
+ * (sparse.stagesOf), and everything up to the last place both the text and
+ * the narration were heard to agree is as final as it will get: a later
+ * stage only ever adds what comes after it. So it can be handed to a reader
+ * as soon as it is reached, and the book read along with from the beginning
+ * while the sync carries on through the rest.
+ */
+export interface PartialAlignment {
+  /**
+   * Segments and gaps for the settled sentences only - a prefix of the book.
+   * `coverage` is of the whole book, so it grows as the sync goes on.
+   */
+  result: AlignerResult;
+  /** Read along can follow the narration this far, in book milliseconds. */
+  throughMs: number;
+  /** How many sentences, from the first, are settled. */
+  sentences: number;
+  model: string;
+  audioMs: number;
 }
 
 /**
@@ -179,21 +219,9 @@ export async function alignWithCtc(req: CtcAlignRequest): Promise<CtcAlignResult
   // One shared layer owns monotonicity, interpolation, gaps and confidence, so
   // this engine cannot invent a segment shape of its own.
   const byIndex = new Map(heard.match.timings.map((t) => [t.index, t]));
-  const result = segmentsFromTimings(
-    req.sentences,
-    (i) => {
-      const t = byIndex.get(i);
-      if (!t || t.gap) return null;
-      return {
-        startMs: t.startMs,
-        endMs: t.endMs,
-        score: t.score,
-        exact: t.score >= EXACT_SCORE && t.uncertaintyMs <= EXACT_UNCERTAINTY_MS,
-        uncertaintyMs: t.uncertaintyMs,
-      };
-    },
-    { audioMs: heard.audioMs },
-  );
+  const result = segmentsFromTimings(req.sentences, (i) => rawTiming(byIndex.get(i)), {
+    audioMs: heard.audioMs,
+  });
   result.gaps = [
     ...result.gaps,
     ...textOnlyGaps(req.sentences, heard.match.timings, result.segments),
@@ -208,6 +236,18 @@ export async function alignWithCtc(req: CtcAlignRequest): Promise<CtcAlignResult
     decodedMs: heard.decodedMs,
     probes: heard.probes,
     narrationRatio: decodedFraction > 0 ? heard.match.stats.charRatio / decodedFraction : 0,
+  };
+}
+
+/** What the shared timing layer is told about one sentence's matcher timing. */
+function rawTiming(t: SentenceTiming | undefined): RawTiming | null {
+  if (!t || t.gap) return null;
+  return {
+    startMs: t.startMs,
+    endMs: t.endMs,
+    score: t.score,
+    exact: t.score >= EXACT_SCORE && t.uncertaintyMs <= EXACT_UNCERTAINTY_MS,
+    uncertaintyMs: t.uncertaintyMs,
   };
 }
 
@@ -283,9 +323,27 @@ async function listenThroughout(req: CtcAlignRequest, book: BookSentence[]): Pro
 }
 
 /**
+ * Probes the opening stage may spend on refinement, whatever its share.
+ *
+ * The opening is where a narration most often departs from its text - a
+ * producer's announcement, a preface it leaves out - and it is the first
+ * thing anybody reads along with. Its stage is three minutes long, which
+ * would buy it a single refinement probe; it borrows a few from the stages
+ * after it, which the overall budget still caps.
+ */
+const OPENING_REFINE_PROBES = 4;
+
+/**
  * Decode a grid of short probes, then spend a bounded number of extra probes
  * on the stretches whose implied reading rate says the interpolation between
  * them cannot be trusted.
+ *
+ * Both happen a stage at a time, from the start of the book forward
+ * (sparse.stagesOf): a stage's grid, then its refinement, then on to the
+ * next. That is what lets a reader start reading along at once - each stage
+ * settles a longer opening of the book (`onPartial`) - and it costs nothing:
+ * refining is local to the stretch it refines, and the budget is the same,
+ * dealt out stage by stage with whatever a stage leaves carried to the next.
  *
  * The rounds are re-matched from scratch rather than patched: matching a
  * 50,000-character book against its anchors takes milliseconds, and rebuilding
@@ -343,18 +401,54 @@ async function listenSparsely(
     };
 
     report();
-    await decodeRound(grid);
-    let match = matchChars(book, assembleProbes(runs), { audioMs });
+    const stages = stagesOf(grid, audioMs);
+    // Where each sentence's text ends in the book string the matcher builds,
+    // to tell which sentences an anchor has settled.
+    const ends: number[] = [];
+    book.reduce((at, s) => {
+      ends.push(at + s.romanized.length);
+      return at + s.romanized.length;
+    }, 0);
 
+    let match: MatchResult | null = null;
     let spent = 0;
-    for (let round = 0; round < plan.refineRounds && spent < budget; round++) {
-      const covered = runs.map((r) => r.window);
-      const extra = refineWindows(match.anchors, covered, audioMs, plan, budget - spent);
-      if (extra.length === 0) break;
-      await decodeRound(extra);
-      spent += extra.length;
-      match = matchChars(book, assembleProbes(runs), { audioMs });
+    let allowance = 0;
+    // The end of what has been handed over: refinement looks only past it.
+    let settledMs = 0;
+    for (let k = 0; k < stages.length; k++) {
+      const stage = stages[k]!;
+      const last = k === stages.length - 1;
+      // Before the last stage the book has only been heard in part, and the
+      // refusal threshold - anchors for the WHOLE book's length - would
+      // refuse every opening. The last stage is matched as a whole-book
+      // listen always was, refusal and all.
+      const opts: MatchOptions = last ? { audioMs } : { audioMs, minAnchorsPerKiloChar: 0 };
+      await decodeRound(stage.windows);
+      match = matchChars(book, assembleProbes(runs), opts);
+
+      allowance += Math.floor(stage.windows.length * Math.max(0, plan.refineBudget));
+      if (k === 0) allowance = Math.max(allowance, OPENING_REFINE_PROBES);
+      const horizon = { fromMs: settledMs, toMs: last ? audioMs : stage.endMs, last };
+      for (let round = 0; round < plan.refineRounds; round++) {
+        const limit = Math.min(budget, allowance) - spent;
+        if (limit <= 0) break;
+        const covered = runs.map((r) => r.window);
+        const extra = refineWindows(match.anchors, covered, audioMs, plan, limit, horizon);
+        if (extra.length === 0) break;
+        await decodeRound(extra);
+        spent += extra.length;
+        match = matchChars(book, assembleProbes(runs), opts);
+      }
+
+      if (!last) {
+        const partial = settle(req, ends, match, decoder.model, audioMs);
+        if (partial && partial.throughMs > settledMs) {
+          settledMs = partial.throughMs;
+          req.onPartial?.(partial);
+        }
+      }
     }
+    if (!match) match = matchChars(book, assembleProbes(runs), { audioMs });
 
     // Refinement is done, whether or not it used its whole budget. Closing the
     // gap here is the one forward jump the bar is allowed.
@@ -375,4 +469,105 @@ async function listenSparsely(
   } finally {
     await decoder.close();
   }
+}
+
+/** Anchors a sync must have before any of the book is handed to a reader. */
+const PARTIAL_MIN_ANCHORS = 20;
+/**
+ * Anchors per thousand characters of the settled text below which it is not
+ * handed over: the refusal threshold (anchors.ts), applied to what has been
+ * heard rather than to the whole book, so audio of a different book never
+ * reaches a reader as a half-finished sync.
+ */
+const PARTIAL_MIN_DENSITY = 2;
+/**
+ * A step through the text this many times faster than the narrator reads,
+ * over at least JUMP_MIN_CHARS...
+ */
+const JUMP_FACTOR = 4;
+const JUMP_MIN_CHARS = 1_000;
+/** ...is only taken as read once this many anchors after it agree. */
+const JUMP_CONFIRM_ANCHORS = 10;
+
+/**
+ * The last anchor that can be trusted as the edge of what is settled.
+ *
+ * Normally simply the last one. But the last anchor of a sync still under
+ * way can be a jump: either a real one - the narration leaving out a preface
+ * just before the stage ended - or a stray, a few characters heard wrong that
+ * happen to match text far ahead. A stray at the end of the book does no harm;
+ * at the end of a stage it would hand over hours of text interpolated across
+ * audio nobody has listened to. The two look alike until more is heard, and
+ * a real jump is followed by the narration reading on from where it landed:
+ * so a jump marks the edge until enough anchors after it confirm it.
+ */
+export function settledEdge(anchors: Anchor[]): Anchor | null {
+  if (anchors.length === 0) return null;
+  const paces: number[] = [];
+  for (let i = 1; i < anchors.length; i++) {
+    const chars = anchors[i]!.bookPos - anchors[i - 1]!.bookPos;
+    const ms = anchors[i]!.ms - anchors[i - 1]!.ms;
+    if (chars > 0 && ms > 0) paces.push(ms / chars);
+  }
+  const lastAnchor = anchors[anchors.length - 1]!;
+  if (paces.length === 0) return lastAnchor;
+  paces.sort((a, b) => a - b);
+  const msPerChar = paces[paces.length >> 1]!;
+  for (let i = anchors.length - 1; i >= 1; i--) {
+    const a = anchors[i - 1]!;
+    const b = anchors[i]!;
+    const chars = b.bookPos - a.bookPos;
+    const jump = chars >= JUMP_MIN_CHARS && (b.ms - a.ms) * JUMP_FACTOR < chars * msPerChar;
+    if (!jump) continue;
+    return anchors.length - i >= JUMP_CONFIRM_ANCHORS ? lastAnchor : a;
+  }
+  return lastAnchor;
+}
+
+/**
+ * The opening of the book a stage has settled, as a reader can use it: every
+ * sentence that ends before the settled edge (settledEdge), timed by the
+ * same layer the finished alignment is, or null when too little is known.
+ */
+function settle(
+  req: CtcAlignRequest,
+  ends: number[],
+  match: MatchResult,
+  model: string,
+  audioMs: number,
+): PartialAlignment | null {
+  if (match.anchors.length < PARTIAL_MIN_ANCHORS) return null;
+  const edge = settledEdge(match.anchors);
+  if (!edge || edge.bookPos <= 0) return null;
+  if ((match.anchors.length * 1000) / edge.bookPos < PARTIAL_MIN_DENSITY) return null;
+  // Sentences wholly before the edge: the first whose text runs past it is
+  // not settled, and neither is anything after it.
+  let lo = 0;
+  let hi = ends.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (ends[mid]! <= edge.bookPos) lo = mid + 1;
+    else hi = mid;
+  }
+  const n = lo;
+  if (n === 0) return null;
+  const settled = req.sentences.slice(0, n);
+  const byIndex = new Map(match.timings.map((t) => [t.index, t]));
+  const result = segmentsFromTimings(settled, (i) => rawTiming(byIndex.get(i)));
+  result.gaps = [
+    ...result.gaps,
+    ...textOnlyGaps(
+      settled,
+      match.timings.filter((t) => t.index < n),
+      result.segments,
+    ),
+  ].sort((a, b) => a.fromMs - b.fromMs);
+  const lastSegment = result.segments[result.segments.length - 1];
+  if (!lastSegment) return null;
+  // Of the whole book, so that it grows as the sync goes on.
+  result.coverage =
+    req.sentences.length > 0
+      ? Math.round((result.segments.length / req.sentences.length) * 1000) / 1000
+      : 0;
+  return { result, throughMs: lastSegment.endMs, sentences: n, model, audioMs };
 }

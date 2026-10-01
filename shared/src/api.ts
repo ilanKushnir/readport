@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { handoffStatusSchema } from './alignment.js';
+import { handoffStatusSchema, readAlongSyncSchema } from './alignment.js';
 import { locatorSchema } from './locator.js';
 
 /** DTOs shared between the API and the web client. */
@@ -79,6 +79,14 @@ export const bookSummarySchema = z.object({
       /** Handoff is available (does NOT claim sentence exactness - see handoff). */
       switchable: z.boolean(),
       handoff: handoffStatusSchema.nullable(),
+      /**
+       * The pair is not synced yet, but a sync has started (or is waiting its
+       * turn) and read along can use what it has settled: from the start of
+       * the book, as far as `throughMs`. Null when the pair is fully synced
+       * or nothing is under way; optional so an older server's summary
+       * still parses.
+       */
+      syncing: readAlongSyncSchema.nullable().optional(),
     })
     .nullable(),
   progress: z

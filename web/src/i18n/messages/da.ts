@@ -467,6 +467,7 @@ const messages: Record<string, string> = {
   'library.book.readAlong': 'Læs med',
   'library.book.readAlongHint': 'Siden, med oplæsningen afspillet over den',
   'library.book.readAlongNotReady': 'Læs med låses op, når parret er justeret',
+  'library.book.readAlongSyncing': 'Klar fra begyndelsen - resten af bogen synkroniseres stadig',
   'library.book.opening': 'Åbner…',
   'library.book.part': 'Del {n}',
   'library.book.otherNotOnDevice':
@@ -605,6 +606,8 @@ const messages: Record<string, string> = {
   'reader.tandem.readAlongHint': 'Afspil oplæsningen over siden, du læser',
   'reader.tandem.notReadyHint':
     'Synkroniseringen er ikke klar – oplæsningen kan ikke følge teksten endnu',
+  'reader.tandem.readAlongSyncingHint':
+    'Læs med fra begyndelsen nu - resten af bogen synkroniseres stadig',
   'reader.tandem.listenInstead': 'Lyt i stedet',
   'reader.tandem.listenHint': 'Forlad siden og skift til lydbogen ved denne sætning',
   'reader.switch.notStoredOffline': 'Dette sted blev ikke gemt til offline-skift.',
@@ -639,6 +642,12 @@ const messages: Record<string, string> = {
     'Ingen tidsbestemt tekst at vende tilbage til på denne side endnu.',
   'reader.readAlong.reducedMotion':
     'Dit system beder om reduceret bevægelse, så siden vil ikke rulle af sig selv.',
+  // reader: while the book is still syncing
+  'reader.readAlong.sync.preparing': 'Gør Læs med klar…',
+  'reader.readAlong.sync.pending': 'Synkroniserer denne del…',
+  'reader.readAlong.sync.pendingLabel': 'Synkroniserer denne del',
+  'reader.readAlong.sync.eta': 'cirka {n, plural, one {# min.} other {# min.}}',
+  'reader.readAlong.sync.stopped': 'Denne del er ikke synkroniseret endnu',
   // reader: only in the audiobook
   'reader.readAlong.beyond.title': 'Kun i lydbogen',
   'reader.readAlong.beyond.middle': 'Bliv ved med at lytte - teksten fortsætter om {time}.',

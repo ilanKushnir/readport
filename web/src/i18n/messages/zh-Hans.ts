@@ -439,6 +439,7 @@ const messages: Record<string, string> = {
   'library.book.readAlong': '跟读',
   'library.book.readAlongHint': '在页面上同步播放朗读',
   'library.book.readAlongNotReady': '配对完成对齐后即可跟读',
+  'library.book.readAlongSyncing': '已可从头使用 - 本书其余部分仍在同步',
   'library.book.opening': '打开中…',
   'library.book.part': '第{n}部分',
   'library.book.otherNotOnDevice':
@@ -566,6 +567,7 @@ const messages: Record<string, string> = {
   'reader.tandem.aligning': '音频 · 对齐中…',
   'reader.tandem.readAlongHint': '在你阅读的页面上同步播放朗读',
   'reader.tandem.notReadyHint': '对齐尚未就绪——朗读还无法跟随文本',
+  'reader.tandem.readAlongSyncingHint': '现在就能从头跟读 - 本书其余部分仍在同步',
   'reader.tandem.listenInstead': '改为收听',
   'reader.tandem.listenHint': '离开页面，切换到此句对应的有声书',
   'reader.switch.notStoredOffline': '此位置未保存供离线切换使用。',
@@ -597,6 +599,12 @@ const messages: Record<string, string> = {
   'reader.readAlong.voiceElsewhere': '朗读位于另一章节。按下播放后页面会自动定位到那里。',
   'reader.readAlong.noTimedText': '此页暂时没有可返回的已计时文本。',
   'reader.readAlong.reducedMotion': '你的系统已开启减弱动态效果，因此页面不会自动滚动。',
+  // reader: while the book is still syncing
+  'reader.readAlong.sync.preparing': '正在准备跟读…',
+  'reader.readAlong.sync.pending': '正在同步这一部分…',
+  'reader.readAlong.sync.pendingLabel': '正在同步这一部分',
+  'reader.readAlong.sync.eta': '约{n, plural, other {#分钟}}',
+  'reader.readAlong.sync.stopped': '这一部分尚未同步',
   // reader: only in the audiobook
   'reader.readAlong.beyond.title': '仅在有声书中',
   'reader.readAlong.beyond.middle': '请继续收听，{time}后回到正文。',

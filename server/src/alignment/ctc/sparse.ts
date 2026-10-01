@@ -84,6 +84,67 @@ export function gridWindows(audioMs: number, plan: SparsePlan): ProbeWindow[] {
 }
 
 /**
+ * Where each stage of a sync ends, on the narration's clock.
+ *
+ * A sync works forward through the book a stage at a time, and the reader
+ * can follow along as far as the stages have got. The first is short so read
+ * along is there from the beginning about half a minute after the sync
+ * starts; the ones after it grow, because by then the sync is far ahead of
+ * anyone listening (it runs about twenty times faster than the narration)
+ * and a longer stage costs fewer re-matches.
+ */
+export const STAGE_ENDS_MS = [180_000, 600_000, 1_500_000, 3_300_000];
+/** Past the opening stages, one stage per hour of narration. */
+export const STAGE_STEP_MS = 3_600_000;
+
+/** One stage of a sync: the grid probes it listens to, and where it ends. */
+export interface Stage {
+  windows: ProbeWindow[];
+  /** The end of the stretch this stage owns: the next stage's start, or the end of the audio. */
+  endMs: number;
+}
+
+/** The grid, cut into stages (STAGE_ENDS_MS), in the order they are listened to. */
+export function stagesOf(grid: ProbeWindow[], audioMs: number): Stage[] {
+  const stages: Stage[] = [];
+  let k = 0;
+  let endMs = 0;
+  const nextEnd = () => (k < STAGE_ENDS_MS.length ? STAGE_ENDS_MS[k++]! : endMs + STAGE_STEP_MS);
+  let current: ProbeWindow[] = [];
+  endMs = nextEnd();
+  for (const w of grid) {
+    while (w.startMs >= endMs) {
+      if (current.length) stages.push({ windows: current, endMs });
+      current = [];
+      endMs = nextEnd();
+    }
+    current.push(w);
+  }
+  if (current.length) stages.push({ windows: current, endMs });
+  // The last stage owns the rest of the audio, whatever its nominal end.
+  if (stages.length) stages[stages.length - 1]!.endMs = Math.max(audioMs, 0);
+  return stages;
+}
+
+/**
+ * The part of the narration a refinement round may spend probes on.
+ *
+ * A sync that works forward a stage at a time refines each stage as it gets
+ * there, and only that stage: a stretch before `fromMs` has been settled and
+ * handed to the reader already, and one past `toMs` belongs to a stage that
+ * has not been listened to. Only the last stage looks past the last anchor
+ * to the end of the audio - an earlier one ends where the next one's grid
+ * takes over, and probing that gap would spend a probe on what the next
+ * stage hears anyway.
+ */
+export interface RefineHorizon {
+  fromMs: number;
+  toMs: number;
+  /** This is the last stage: an unanchored tail up to `toMs` is fair game. */
+  last: boolean;
+}
+
+/**
  * A stretch of narration between two consecutive anchors, long enough that
  * nothing was decoded inside it.
  */
@@ -111,6 +172,7 @@ export function refineWindows(
   audioMs: number,
   plan: SparsePlan,
   limit: number,
+  horizon: RefineHorizon = { fromMs: 0, toMs: audioMs, last: true },
 ): ProbeWindow[] {
   if (limit <= 0) return [];
   const win = Math.max(1000, Math.round(plan.windowMs));
@@ -137,9 +199,12 @@ export function refineWindows(
   const blind: Span[] = [];
   if (first && first.ms >= minSpanMs)
     blind.push({ fromMs: 0, toMs: first.ms, rate: NaN, chars: 0 });
-  if (last && audioMs - last.ms >= minSpanMs) {
-    blind.push({ fromMs: last.ms, toMs: audioMs, rate: NaN, chars: 0 });
+  const tailTo = Math.min(audioMs, horizon.toMs);
+  if (last && horizon.last && tailTo - last.ms >= minSpanMs) {
+    blind.push({ fromMs: last.ms, toMs: tailTo, rate: NaN, chars: 0 });
   }
+  /** Whether a stretch is this round's to refine (RefineHorizon). */
+  const inHorizon = (s: Span) => s.toMs > horizon.fromMs && s.fromMs < horizon.toMs;
 
   const rates = spans
     .map((s) => s.rate)
@@ -186,7 +251,10 @@ export function refineWindows(
   // chapter break - the point is to catch silences, not to chase noise.
   const SUSPECT_SLACK_MS = 4_000;
 
+  // The median above is the whole book's so far; only what is judged is
+  // limited to the horizon.
   const suspect = spans.filter((s) => {
+    if (!inHorizon(s)) return false;
     const width = s.toMs - s.fromMs;
     // A skip is worth chasing into a narrow span; anything else only in a
     // span wider than the schedule's own resolution.
@@ -202,7 +270,7 @@ export function refineWindows(
   // five minutes nobody has listened to, or a preface's worth of text read in
   // no time at all, matters more than a fifteen-second pause, and all of them
   // matter more than a long stretch that simply reads a little fast.
-  const ranked = [...blind, ...suspect].sort(
+  const ranked = [...blind.filter(inHorizon), ...suspect].sort(
     (a, b) => needMs(b) - needMs(a) || b.toMs - b.fromMs - (a.toMs - a.fromMs),
   );
 

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
@@ -18,7 +19,13 @@ import { facetsForBook, writeFacets } from '../library/facets.js';
 import { formatBytes } from '../util/format.js';
 import { AUDIO_EXTS, AUDIO_NAMING_REV, FACETS_REV } from '../scanner/scan.js';
 import { CANDIDATE_THRESHOLD, scorePair } from '../pairing/score.js';
-import { latestAlignment, storeAlignment } from '../alignment/service.js';
+import {
+  dropPartialAlignment,
+  latestAlignment,
+  partialAlignment,
+  storeAlignment,
+  storePartialAlignment,
+} from '../alignment/service.js';
 import { textFingerprint, timelineFingerprint } from '../alignment/portable.js';
 import { exportAlignments, importAlignments, saveAlignmentFile } from '../alignment/library.js';
 import { detectLanguageFromText, detectLanguageFromWindows } from '../alignment/detect-language.js';
@@ -46,7 +53,13 @@ import {
   recordAlignSpeed,
   resolveSettings,
 } from '../domain/settings.js';
-import { alignWithCtc, AlignmentRefusedError } from '../alignment/ctc/engine.js';
+import {
+  alignWithCtc,
+  AlignmentRefusedError,
+  type PartialAlignment,
+} from '../alignment/ctc/engine.js';
+import { openProbeDecoder, type ProbeWindow } from '../alignment/ctc/emissions.js';
+import { dropProbeCache, pruneProbeCaches, withProbeCache } from '../alignment/ctc/probe-cache.js';
 import { planFor } from '../alignment/ctc/sparse.js';
 import {
   ensureMatches,
@@ -1106,6 +1119,23 @@ export async function runPairScan(ctx: AppContext, job: JobRow, guard: LeaseGuar
   }
 }
 
+/**
+ * A sync's kept probes (probe-cache.ts) that nothing has touched for this
+ * long belong to a sync that failed for good and was never asked for again.
+ */
+const PROBE_CACHE_MAX_AGE_MS = 14 * 86_400_000;
+/** How far back a sync's pace is measured from, for the reader's estimate. */
+const SYNC_RATE_WINDOW_MS = 10 * 60_000;
+
+/** A book position as h:mm:ss, for the job's own status line. */
+function clockTime(ms: number): string {
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+}
+
 export async function runAlign(ctx: AppContext, job: JobRow, guard: LeaseGuard): Promise<void> {
   const { db, config } = ctx;
   const payload = JSON.parse(job.payload_json) as { pairId: string; force?: boolean };
@@ -1219,6 +1249,73 @@ export async function runAlign(ctx: AppContext, job: JobRow, guard: LeaseGuard):
     const stopOnLostLease = setInterval(() => {
       if (guard.isLost()) controller.abort();
     }, 5_000);
+
+    // What the sync hears, kept so a restart - a deploy, a crash - picks up
+    // where it stopped instead of at the first second of the narration
+    // (probe-cache.ts). Keyed to the model and the audio files, so a cache
+    // of anything else is never served.
+    const cacheDir = path.join(config.dataDir, 'align-cache');
+    pruneProbeCaches(cacheDir, PROBE_CACHE_MAX_AGE_MS);
+    const cacheFile = path.join(cacheDir, `${pairId}.ndjson`);
+    const signature = createHash('sha1')
+      .update(
+        JSON.stringify({
+          model: aligner.modelPath,
+          modelBytes: fs.statSync(aligner.modelPath, { throwIfNoEntry: false })?.size ?? 0,
+          tracks: trackRows.map((t) => [t.rel_path, t.duration_ms, t.size_bytes]),
+        }),
+      )
+      .digest('hex');
+    const spans = trackRows.map((t) => ({
+      from: Number(t.start_ms_absolute ?? 0),
+      to: Number(t.start_ms_absolute ?? 0) + Number(t.duration_ms ?? 0),
+    }));
+    /** What a probe puts through the model: clipped to its track, nothing under a second. */
+    const heardMsOf = (w: ProbeWindow) => {
+      const span = spans.find((t) => w.startMs >= t.from && w.startMs < t.to);
+      const core = span ? Math.min(w.durationMs, span.to - w.startMs) : 0;
+      return core >= 1000 ? core : 0;
+    };
+
+    // Read along from the start while the rest syncs: each opening of the
+    // book the sync settles becomes the pair's partial alignment, which read
+    // along follows until the finished one replaces it. Only for a pair with
+    // no finished sync - a re-sync leaves the one being read alone.
+    const readingFinished = latestAlignment(db, pairId) !== null;
+    let ownsPartial = false;
+    let readyThroughMs = 0;
+    const published: { at: number; throughMs: number }[] = [];
+    const onPartial = (p: PartialAlignment) => {
+      // A sync starting over its cache passes through openings shorter than
+      // the one a reader may already be using: that stays until this run
+      // has got past it.
+      if (!ownsPartial) {
+        const before = partialAlignment(db, pairId)?.progress.throughMs ?? 0;
+        if (before > p.throughMs) return;
+        ownsPartial = true;
+      }
+      const now = Date.now();
+      published.push({ at: now, throughMs: p.throughMs });
+      while (published.length > 2 && now - published[0]!.at > SYNC_RATE_WINDOW_MS)
+        published.shift();
+      const first = published[0]!;
+      guard.assertHeld();
+      try {
+        storePartialAlignment(db, pairId, language, p.model, p.result, {
+          throughMs: p.throughMs,
+          throughSpine: p.result.segments[p.result.segments.length - 1]?.spineIdx ?? 0,
+          audioMs: p.audioMs,
+          rate: now > first.at ? (p.throughMs - first.throughMs) / (now - first.at) : 0,
+          updatedAt: nowIso(),
+        });
+        readyThroughMs = p.throughMs;
+      } catch (err) {
+        // Reading along early is a head start, not the job: a write that
+        // fails here must not throw away the sync that is still running.
+        ctx.log.warn(`Could not save the synced opening of ${pairId}: ${(err as Error).message}`);
+      }
+    };
+
     let ctc;
     try {
       ctc = await alignWithCtc({
@@ -1234,10 +1331,29 @@ export async function runAlign(ctx: AppContext, job: JobRow, guard: LeaseGuard):
         plan: planFor(settings.alignPrecision) ?? undefined,
         signal: controller.signal,
         onProgress: (f: number, detail: string) =>
-          jobProgress(db, job.id, job.lease_token, 0.03 + 0.93 * f, detail),
+          jobProgress(
+            db,
+            job.id,
+            job.lease_token,
+            0.03 + 0.93 * f,
+            readyThroughMs > 0
+              ? `Read along ready to ${clockTime(readyThroughMs)} · ${detail}`
+              : detail,
+          ),
+        onPartial: readingFinished ? undefined : onPartial,
+        openDecoder: async (opts) =>
+          withProbeCache(await openProbeDecoder(opts), {
+            file: cacheFile,
+            signature,
+            heardMsOf,
+          }),
       });
     } catch (err) {
       if (err instanceof AlignmentRefusedError) {
+        // Not this book: nothing it heard is worth keeping, and nothing it
+        // settled may be read along with.
+        dropProbeCache(cacheFile);
+        if (!guard.isLost()) dropPartialAlignment(db, pairId);
         const refusal: AlignmentRefusedError = err;
         // Not a crash: the evidence says these are different works. Record it
         // where the operator will see it and leave the pair undecided.
@@ -1309,6 +1425,9 @@ export async function runAlign(ctx: AppContext, job: JobRow, guard: LeaseGuard):
       probes: ctc.probes,
       decodedMs: ctc.decodedMs,
     });
+    // The finished sync is what read along follows from here on.
+    dropPartialAlignment(db, pairId);
+    dropProbeCache(cacheFile);
 
     // An aligned automatic pair is a verified pair: each side may now lend
     // the other its language.

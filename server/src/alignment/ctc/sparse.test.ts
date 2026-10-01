@@ -3,10 +3,13 @@ import { matchChars, type Anchor, type BookSentence } from './anchors.js';
 import { PROBE_BREAK, type DecodedChar, type ProbeWindow } from './emissions.js';
 import {
   DEFAULT_SPARSE_PLAN,
+  STAGE_ENDS_MS,
+  STAGE_STEP_MS,
   assembleProbes,
   gridWindows,
   planFor,
   refineWindows,
+  stagesOf,
   type ProbeRun,
   type SparsePlan,
 } from './sparse.js';
@@ -179,6 +182,81 @@ describe('refineWindows', () => {
   it('proposes nothing when the budget is spent', () => {
     const anchors = anchorsAtRate(4, 0.015, 240_000);
     expect(refineWindows(anchors, [], 900_000, PLAN, 0)).toEqual([]);
+  });
+});
+
+describe('stagesOf', () => {
+  const minute = 60_000;
+  const grid = gridWindows(5 * 3_600_000, { ...DEFAULT_SPARSE_PLAN, everyMs: minute });
+
+  it('takes the book from the start forward, a short stage first and longer ones after', () => {
+    const stages = stagesOf(grid, 5 * 3_600_000);
+    // Every grid probe, once, in playback order.
+    expect(stages.flatMap((s) => s.windows)).toEqual(grid);
+    expect(stages[0]!.windows.map((w) => w.startMs)).toEqual([0, minute, 2 * minute]);
+    expect(stages.map((s) => s.endMs).slice(0, STAGE_ENDS_MS.length)).toEqual(STAGE_ENDS_MS);
+    // An hour a stage once past the opening ones...
+    expect(stages[STAGE_ENDS_MS.length]!.endMs).toBe(STAGE_ENDS_MS.at(-1)! + STAGE_STEP_MS);
+    // ...and the last one owns whatever is left of the audio.
+    expect(stages.at(-1)!.endMs).toBe(5 * 3_600_000);
+    for (const s of stages) {
+      expect(s.windows.every((w) => w.startMs < s.endMs)).toBe(true);
+    }
+  });
+
+  it('makes a short book a single stage, which is a sync as it always was', () => {
+    const short = gridWindows(150_000, { ...DEFAULT_SPARSE_PLAN, everyMs: minute });
+    expect(stagesOf(short, 150_000)).toEqual([{ windows: short, endMs: 150_000 }]);
+  });
+
+  it('has nothing to cut in a book with no audio', () => {
+    expect(stagesOf([], 0)).toEqual([]);
+  });
+});
+
+describe('refineWindows, a stage at a time', () => {
+  // Read at 15 characters a second, except for two stretches that took far
+  // longer: one before the horizon, one inside it.
+  const anchors: Anchor[] = [
+    { ms: 0, bookPos: 0 },
+    { ms: 100_000, bookPos: 1_500 },
+    { ms: 200_000, bookPos: 1_800 },
+    { ms: 300_000, bookPos: 3_300 },
+    { ms: 400_000, bookPos: 4_800 },
+    { ms: 500_000, bookPos: 5_100 },
+    { ms: 600_000, bookPos: 6_600 },
+  ];
+
+  it('only spends probes on the stage it is refining', () => {
+    const out = refineWindows(anchors, [], 3_600_000, PLAN, 10, {
+      fromMs: 300_000,
+      toMs: 700_000,
+      last: false,
+    });
+    expect(out.length).toBeGreaterThan(0);
+    // The slow stretch before 300 s was settled and handed over already.
+    expect(out.every((w) => w.startMs >= 300_000 && w.startMs < 700_000)).toBe(true);
+    expect(out.some((w) => w.startMs > 400_000 && w.startMs < 500_000)).toBe(true);
+  });
+
+  it('leaves the gap after the last anchor to the next stage', () => {
+    // Nothing anchored between 600 s and the stage's end at 900 s: the next
+    // stage's grid starts there anyway.
+    const out = refineWindows(anchors, [], 3_600_000, PLAN, 10, {
+      fromMs: 550_000,
+      toMs: 900_000,
+      last: false,
+    });
+    expect(out.filter((w) => w.startMs > 600_000)).toEqual([]);
+  });
+
+  it('chases an unanchored tail in the last stage, up to the end of the audio', () => {
+    const out = refineWindows(anchors, [], 900_000, PLAN, 10, {
+      fromMs: 550_000,
+      toMs: 900_000,
+      last: true,
+    });
+    expect(out.some((w) => w.startMs > 600_000 && w.startMs < 900_000)).toBe(true);
   });
 });
 

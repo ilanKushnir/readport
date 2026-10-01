@@ -23,13 +23,17 @@ import {
   type ChapterBound,
   type Cue,
   type FollowState,
+  type SyncingNow,
   beyondTextAt,
   buildCues,
+  chapterSyncing,
   cueArriving,
   cueForOffset,
   hasArrived,
   locateInTracks,
   nearestChapter,
+  syncEta,
+  voiceAheadOfSync,
 } from './readalong';
 
 /**
@@ -47,6 +51,25 @@ import {
 
 const SPEEDS = [0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2];
 
+/**
+ * How often a book still syncing is asked how far it has got: often while
+ * the reader is waiting on it, now and then while the voice is well inside
+ * what is synced already.
+ */
+const SYNC_POLL_WAITING_MS = 4_000;
+const SYNC_POLL_MS = 20_000;
+
+/**
+ * Read along is waiting on a sync still under way (readalong.SyncingNow):
+ * the book has none of it yet, or this part of it is not synced yet.
+ */
+export interface SyncWait {
+  /** Nothing synced yet; `pending`: not this far yet; `stopped`: the sync stopped short of here. */
+  kind: 'preparing' | 'pending' | 'stopped';
+  /** Roughly how long until it is, when the sync's pace is known. */
+  etaMs: number | null;
+}
+
 export interface NarrationApi {
   /** True once the audiobook and this chapter's timings have loaded. */
   ready: boolean;
@@ -54,6 +77,12 @@ export interface NarrationApi {
   emptyChapter: boolean;
   /** The timings request failed, as opposed to this chapter having none. */
   timingsFailed: boolean;
+  /**
+   * Read along is waiting on a sync still under way - the book was paired a
+   * moment ago, or the voice has run ahead of what is synced. Null when
+   * nothing is waiting, including when the book is fully synced.
+   */
+  syncWait: SyncWait | null;
   /** Walk forward to the next chapter, used to leave an untimed stretch. */
   skipUntimed: () => void;
   playing: boolean;
@@ -108,6 +137,11 @@ export interface NarrationOptions {
   /** Where the reader is now, used to place the needle when it starts. */
   startOffset: () => number;
   /**
+   * How far through the whole book the page is, 0-1: where in the narration
+   * it roughly falls, for how long a sync still under way needs to get there.
+   */
+  pagePct?: () => number;
+  /**
    * The narration has left this chapter; the reader should move. `target`
    * names the chapter the voice is actually in when that is known, so the
    * reader can go straight there; without it, one step in `direction`.
@@ -131,6 +165,7 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
     spineIdx,
     sentences,
     startOffset,
+    pagePct,
     onLeaveChapter,
   } = opts;
 
@@ -167,6 +202,15 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
   const [bounds, setBounds] = useState<ChapterBound[] | null>(null);
   /** The stretches of the narration the ebook does not have (readalong.BeyondText). */
   const [stretches, setStretches] = useState<BeyondText[]>([]);
+  /**
+   * A sync still under way, and which alignment the timings are from: a
+   * book paired a moment ago reads along with as much as its sync has done,
+   * and both say when this chapter's timings are worth asking for again.
+   */
+  const [syncing, setSyncing] = useState<SyncingNow | null>(null);
+  const [alignmentId, setAlignmentId] = useState<string | null>(null);
+  /** Bumped to ask a book still syncing how far it has got. */
+  const [syncPoll, setSyncPoll] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeedState] = useState(() => speedFor(loadPlayback(), audioBookId ?? ''));
   const [error, setError] = useState<MessageKey | null>(null);
@@ -231,16 +275,27 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
     };
   }, [enabled, audioBookId]);
 
-  // The book's chapter bounds, once. Absent on a server that predates the
-  // route, in which case the walker steps a chapter at a time as before.
+  // A different book (or read along switched off) starts from nothing.
+  useEffect(() => {
+    setBounds(null);
+    setStretches([]);
+    setSyncing(null);
+    setAlignmentId(null);
+  }, [enabled, pairId]);
+
+  // The book's chapter bounds - once, or, while its sync is still under way,
+  // again every so often, since the bounds grow with it. Absent on a server
+  // that predates the route, in which case the walker steps a chapter at a
+  // time as before.
   useEffect(() => {
     if (!enabled || !pairId) return;
     let alive = true;
-    setBounds(null);
-    setStretches([]);
-    void api<{ chapters: ChapterBound[]; beyondText?: BeyondText[] }>(
-      `/api/pairs/${pairId}/chapters`,
-    )
+    void api<{
+      chapters: ChapterBound[];
+      beyondText?: BeyondText[];
+      alignmentId?: string | null;
+      syncing?: SyncingNow | null;
+    }>(`/api/pairs/${pairId}/chapters`)
       .then((d) => {
         if (!alive) return;
         setBounds(d.chapters ?? []);
@@ -252,14 +307,16 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
               )
             : [],
         );
+        setSyncing(d.syncing ?? null);
+        setAlignmentId(d.alignmentId ?? null);
       })
       .catch(() => {
-        if (alive) setBounds(null);
+        if (alive) setBounds((b) => b ?? null);
       });
     return () => {
       alive = false;
     };
-  }, [enabled, pairId]);
+  }, [enabled, pairId, syncPoll]);
 
   const chapterAt = useCallback(
     (at: number): number | null =>
@@ -268,20 +325,75 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
   );
 
   const beyond = useMemo(() => beyondTextAt(stretches, bookMs), [stretches, bookMs]);
+
+  /** This chapter is still waiting on the sync (readalong.chapterSyncing). */
+  const thisChapterSyncing = chapterSyncing(syncing, spineIdx);
+  /**
+   * What read along is waiting on, if anything: the sync has settled
+   * nothing yet, or not this chapter, or the voice has run on past it.
+   */
+  const syncWait = useMemo((): SyncWait | null => {
+    if (!syncing) return null;
+    if (syncing.throughMs <= 0) return syncing.active ? { kind: 'preparing', etaMs: null } : null;
+    const ahead = voiceAheadOfSync(syncing, bookMs) && playing;
+    const waiting = (thisChapterSyncing && segments !== null && segments.length === 0) || ahead;
+    if (!waiting) return null;
+    if (!syncing.active) return { kind: 'stopped', etaMs: null };
+    // Where the sync has to get to: a little past the voice when it is the
+    // voice that is waiting, or about where the page falls in the narration.
+    const target = ahead
+      ? bookMs + 60_000
+      : Math.max(syncing.throughMs, (pagePct?.() ?? 0) * syncing.audioMs);
+    return { kind: 'pending', etaMs: syncEta(syncing, target) };
+  }, [syncing, bookMs, playing, thisChapterSyncing, segments, pagePct]);
+
+  // While a sync is under way, ask now and then how far it has got - often
+  // when read along is waiting on it. A finished or stopped sync is not asked
+  // again. Keyed on whether anything waits rather than on the wait itself,
+  // which changes with every tick of the clock and would keep restarting
+  // the timer before it could fire.
+  const waitingOnSync = syncWait !== null;
+  useEffect(() => {
+    if (!enabled || !pairId || !syncing?.active) return;
+    const id = setTimeout(
+      () => setSyncPoll((n) => n + 1),
+      waitingOnSync ? SYNC_POLL_WAITING_MS : SYNC_POLL_MS,
+    );
+    return () => clearTimeout(id);
+  }, [enabled, pairId, syncing, waitingOnSync]);
   /** The chapter the text picks up in, while the voice reads what the ebook does not have. */
   const resumeSpine = beyond?.stretch.resume?.spineIdx ?? null;
+
+  /**
+   * When this chapter's timings are worth asking for again: when a sync under
+   * way has got further into it (or past it), and once more when the
+   * finished sync takes over from it. A chapter the sync is done with keeps
+   * the timings it has.
+   */
+  const timingsRevision = `${alignmentId ?? ''}|${thisChapterSyncing ? (syncing?.throughMs ?? 0) : 'done'}`;
+  /** The chapter the timings on hand belong to, so a refresh can keep them until it lands. */
+  const timingsSpineRef = useRef<number | null>(null);
 
   // This chapter's timings. Refetched per chapter: a whole book's segments is
   // megabytes, and the reader only ever needs the page in front of them.
   useEffect(() => {
     if (!enabled || !pairId || spineIdx < 0) return;
     let alive = true;
-    setSegments(null);
+    // A new chapter starts from nothing; the same chapter, asked again as a
+    // sync goes on, keeps what it has until the update lands - otherwise the
+    // highlight would blink off at every step of the sync.
+    if (timingsSpineRef.current !== spineIdx) {
+      timingsSpineRef.current = spineIdx;
+      setSegments(null);
+    }
     setSegmentsFailed(false);
-    void api<{ segments: AlignedSegment[] }>(`/api/pairs/${pairId}/segments/${spineIdx}`)
+    void api<{ segments: AlignedSegment[]; syncing?: SyncingNow | null }>(
+      `/api/pairs/${pairId}/segments/${spineIdx}`,
+    )
       .then((d) => {
         if (!alive) return;
         setSegments(d.segments ?? []);
+        if (d.syncing !== undefined) setSyncing(d.syncing);
         setError(null);
       })
       .catch(() => {
@@ -296,7 +408,7 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
     return () => {
       alive = false;
     };
-  }, [enabled, pairId, spineIdx]);
+  }, [enabled, pairId, spineIdx, timingsRevision]);
 
   /* ------------------------------------------------------------- seeking */
 
@@ -402,6 +514,11 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
    */
   useEffect(() => {
     if (!enabled || !playing || !following || segments === null) return;
+    // A chapter the sync has not got to yet, or the voice run on past what
+    // it has: the page waits here for the sync to catch up. Walking on would
+    // find nothing timed in the chapters after it either, and leave the
+    // reader at the end of the book.
+    if (thisChapterSyncing && (cues.length === 0 || voiceAheadOfSync(syncing, bookMs))) return;
     // A chapter with no timings at all - front matter, or one the aligner
     // skipped - would otherwise dead-end the whole feature: the voice plays
     // on, the page never moves, and nothing says why. Walking forward is both
@@ -459,6 +576,8 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
     resumeSpine,
     bookMs,
     spineIdx,
+    thisChapterSyncing,
+    syncing,
   ]);
 
   /* --------------------------------------------------------- audio events */
@@ -597,8 +716,10 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
 
   return {
     ready: tracks.length > 0 && segments !== null,
-    emptyChapter: segments !== null && cues.length === 0,
+    // A chapter the sync has not reached is not an empty one: it is waiting.
+    emptyChapter: segments !== null && cues.length === 0 && !thisChapterSyncing,
     timingsFailed: segmentsFailed,
+    syncWait,
     skipUntimed: () => {
       lastWalkRef.current = 'next';
       lastWalkAtRef.current = Date.now();
@@ -681,26 +802,66 @@ export function NarrationBar({
     };
   }, [speedOpen]);
 
-  const status = n.error
+  /**
+   * What read along is waiting on, said plainly: a sync is still working on
+   * this part, and roughly how long it will be. Like the time to the text
+   * beside "Only in the audiobook", the words may shorten on a narrow bar
+   * and the estimate may not - it is the part a listener glances for.
+   */
+  const syncStatus = (w: SyncWait): React.ReactNode => {
+    const minutes =
+      w.kind === 'pending' && w.etaMs !== null ? Math.max(1, Math.round(w.etaMs / 60_000)) : null;
+    return (
+      <>
+        <span className="readalong__sync-label">
+          {w.kind === 'preparing'
+            ? t('reader.readAlong.sync.preparing')
+            : w.kind === 'stopped'
+              ? t('reader.readAlong.sync.stopped')
+              : minutes === null
+                ? t('reader.readAlong.sync.pending')
+                : t('reader.readAlong.sync.pendingLabel')}
+        </span>
+        {minutes !== null && (
+          <span className="readalong__sync-time">
+            {' · '}
+            {t('reader.readAlong.sync.eta', { n: minutes })}
+          </span>
+        )}
+      </>
+    );
+  };
+
+  const status: React.ReactNode = n.error
     ? t(n.error)
-    : !n.ready
-      ? t('reader.readAlong.finding')
-      : n.timingsFailed
-        ? t('reader.readAlong.timingsFailed')
-        : n.beyond
-          ? null
-          : n.emptyChapter
-            ? t('reader.readAlong.nothingTimed')
-            : n.state === 'gap'
-              ? t('reader.readAlong.gap')
-              : formatDuration(n.bookMs);
+    : n.syncWait?.kind === 'preparing'
+      ? syncStatus(n.syncWait)
+      : !n.ready
+        ? t('reader.readAlong.finding')
+        : n.timingsFailed
+          ? t('reader.readAlong.timingsFailed')
+          : n.syncWait
+            ? syncStatus(n.syncWait)
+            : n.beyond
+              ? null
+              : n.emptyChapter
+                ? t('reader.readAlong.nothingTimed')
+                : n.state === 'gap'
+                  ? t('reader.readAlong.gap')
+                  : formatDuration(n.bookMs);
 
   return (
     <div className="readalong" role="group" aria-label={t('reader.readAlong.group')}>
       <button
         className="readalong__play"
         onClick={n.toggle}
-        disabled={!n.ready || (n.emptyChapter && !n.playing)}
+        // Nothing to play from in a chapter the sync has not reached: the
+        // voice would start wherever the audio happens to be, not here.
+        disabled={
+          !n.ready ||
+          (n.emptyChapter && !n.playing) ||
+          (!!n.syncWait && n.cues.length === 0 && !n.playing)
+        }
         aria-label={n.playing ? t('reader.readAlong.pause') : t('reader.readAlong.play')}
       >
         {n.playing ? <IconPause size={20} /> : <IconPlay size={20} />}
@@ -727,7 +888,15 @@ export function NarrationBar({
 
       <span
         className={`readalong__status ${
-          n.error ? 'is-warn' : n.beyond ? 'is-beyond' : n.state === 'gap' ? 'is-warn' : ''
+          n.error
+            ? 'is-warn'
+            : n.syncWait
+              ? 'is-syncing'
+              : n.beyond
+                ? 'is-beyond'
+                : n.state === 'gap'
+                  ? 'is-warn'
+                  : ''
         }`}
       >
         {status ?? (

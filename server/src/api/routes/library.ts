@@ -25,7 +25,12 @@ import { requireRole } from '../../auth/roles.js';
 import { libraryRoots } from '../../domain/settings.js';
 import { type AppContext } from '../../context.js';
 import { enqueueJob } from '../../jobs/queue.js';
-import { handoffStatus, latestAlignment, isSwitchable } from '../../alignment/service.js';
+import {
+  handoffStatus,
+  latestAlignment,
+  isSwitchable,
+  readAlongSource,
+} from '../../alignment/service.js';
 import {
   FINISHED_WHERE,
   READING_NOW_WHERE,
@@ -101,6 +106,12 @@ export function bookRowToSummary(
       status: String(pairRow.status) as NonNullable<BookSummary['pair']>['status'],
       switchable: isSwitchable(handle),
       handoff: handoffStatus(handle),
+      // Not synced yet, but read along can start on what a sync under way
+      // has settled. Only asked when there is no finished sync to read.
+      syncing:
+        !handle && ['auto', 'confirmed'].includes(String(pairRow.status))
+          ? (readAlongSource(db, String(pairRow.id))?.syncing ?? null)
+          : null,
     };
   }
   const state = getProgressState(db, userId, id);

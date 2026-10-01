@@ -486,6 +486,7 @@ const messages: Record<string, string> = {
   'library.book.readAlong': 'القراءة مع السرد',
   'library.book.readAlongHint': 'الصفحة، مع تشغيل السرد فوقها',
   'library.book.readAlongNotReady': 'تُتاح القراءة مع السرد بعد محاذاة الزوج',
+  'library.book.readAlongSyncing': 'جاهز من البداية - بقية الكتاب لا تزال قيد المزامنة',
   'library.book.opening': 'جارٍ الفتح…',
   'library.book.part': 'الجزء {n}',
   'library.book.otherNotOnDevice':
@@ -634,6 +635,8 @@ const messages: Record<string, string> = {
   'reader.tandem.aligning': 'الصوت · جارٍ المزامنة…',
   'reader.tandem.readAlongHint': 'تشغيل السرد فوق الصفحة التي تقرؤها',
   'reader.tandem.notReadyHint': 'المزامنة غير جاهزة بعد - لا يمكن للسرد متابعة النص بعد',
+  'reader.tandem.readAlongSyncingHint':
+    'اقرأ مع السرد من البداية الآن - بقية الكتاب لا تزال قيد المزامنة',
   'reader.tandem.listenInstead': 'الاستماع بدلًا من ذلك',
   'reader.tandem.listenHint': 'مغادرة الصفحة والتبديل إلى الكتاب الصوتي عند هذه الجملة',
 
@@ -670,6 +673,13 @@ const messages: Record<string, string> = {
   'reader.readAlong.noTimedText': 'لا يوجد بعد نص مُوقَّت للعودة إليه في هذه الصفحة.',
   'reader.readAlong.reducedMotion':
     'يطلب نظامك تقليل الحركة، لذا لن تُمرَّر الصفحة من تلقاء نفسها.',
+  // reader: while the book is still syncing
+  'reader.readAlong.sync.preparing': 'جارٍ تجهيز القراءة مع السرد…',
+  'reader.readAlong.sync.pending': 'جارٍ مزامنة هذا الجزء…',
+  'reader.readAlong.sync.pendingLabel': 'جارٍ مزامنة هذا الجزء',
+  'reader.readAlong.sync.eta':
+    '{n, plural, zero {نحو دقيقة} one {نحو دقيقة} two {نحو دقيقتين} few {نحو # دقائق} many {نحو # دقيقة} other {نحو # دقيقة}}',
+  'reader.readAlong.sync.stopped': 'لم تتم مزامنة هذا الجزء بعد',
   // reader: only in the audiobook
   'reader.readAlong.beyond.title': 'في الكتاب الصوتي فقط',
   'reader.readAlong.beyond.middle': 'تابع الاستماع - يستأنف النص بعد {time}.',

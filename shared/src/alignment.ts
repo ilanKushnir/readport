@@ -70,6 +70,30 @@ export const narrationBeyondTextSchema = z.object({
 });
 export type NarrationBeyondText = z.infer<typeof narrationBeyondTextSchema>;
 
+/**
+ * A sync still under way, as read along sees it.
+ *
+ * A sync works through the book from the start forward, and everything it
+ * has settled can be read along with at once - so a book is ready to read
+ * along with from the beginning about half a minute after its sync starts,
+ * not when the sync ends. This says how far that is.
+ */
+export const readAlongSyncSchema = z.object({
+  /** Read along can follow the narration this far, in book milliseconds (0: not yet). */
+  throughMs: z.number().min(0),
+  /** The chapter (spine index) the synced part ends in; every chapter before it is wholly synced. -1: none yet. */
+  throughSpine: z.number().int(),
+  /** The whole narration, in milliseconds. */
+  audioMs: z.number().min(0),
+  /** Narration synced per millisecond of the sync's own time, for an estimate; 0 until measured. */
+  rate: z.number().min(0),
+  /** When `throughMs` last moved; null before it has. */
+  updatedAt: z.string().nullable(),
+  /** The sync is still working on the rest (or waiting its turn), rather than stopped. */
+  active: z.boolean(),
+});
+export type ReadAlongSync = z.infer<typeof readAlongSyncSchema>;
+
 export const alignmentSummarySchema = z.object({
   pairId: z.string(),
   version: z.number().int(),

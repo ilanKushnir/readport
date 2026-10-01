@@ -474,6 +474,8 @@ const messages: Record<string, string> = {
   'library.book.readAlong': 'Ler com a voz',
   'library.book.readAlongHint': 'A página, com a narração a tocar por cima',
   'library.book.readAlongNotReady': 'Ler com a voz fica disponível quando o par estiver alinhado',
+  'library.book.readAlongSyncing':
+    'Pronto desde o início - o resto do livro ainda está a sincronizar',
   'library.book.opening': 'A abrir…',
   'library.book.part': 'Parte {n}',
   'library.book.otherNotOnDevice':
@@ -619,6 +621,8 @@ const messages: Record<string, string> = {
   'reader.tandem.readAlongHint': 'Reproduz a narração sobre a página que estás a ler',
   'reader.tandem.notReadyHint':
     'O alinhamento não está pronto: a narração ainda não consegue seguir o texto',
+  'reader.tandem.readAlongSyncingHint':
+    'Lê com a voz desde o início já - o resto do livro ainda está a sincronizar',
   'reader.tandem.listenInstead': 'Ouvir em vez disso',
   'reader.tandem.listenHint': 'Sai da página e muda para o audiolivro nesta frase',
   'reader.switch.notStoredOffline': 'Este ponto não foi guardado para mudar sem ligação.',
@@ -653,6 +657,12 @@ const messages: Record<string, string> = {
   'reader.readAlong.noTimedText': 'Ainda não há texto temporizado para onde voltar nesta página.',
   'reader.readAlong.reducedMotion':
     'O teu sistema pede movimento reduzido, por isso a página não se desloca sozinha.',
+  // reader: while the book is still syncing
+  'reader.readAlong.sync.preparing': 'A preparar Ler com a voz…',
+  'reader.readAlong.sync.pending': 'A sincronizar esta parte…',
+  'reader.readAlong.sync.pendingLabel': 'A sincronizar esta parte',
+  'reader.readAlong.sync.eta': 'cerca de {n, plural, one {# min} other {# min}}',
+  'reader.readAlong.sync.stopped': 'Esta parte ainda não está sincronizada',
   // reader: only in the audiobook
   'reader.readAlong.beyond.title': 'Só no audiolivro',
   'reader.readAlong.beyond.middle': 'Continua a ouvir - o texto retoma daqui a {time}.',

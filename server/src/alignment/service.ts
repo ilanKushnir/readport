@@ -26,10 +26,7 @@ export function storeAlignment(
   result: AlignerResult,
   provenance: Record<string, unknown>,
 ): string {
-  const prev = db
-    .prepare('SELECT MAX(version) AS v FROM alignments WHERE pair_id = ?')
-    .get(pairId) as { v: number | null };
-  const version = (prev?.v ?? 0) + 1;
+  const version = nextVersion(db, pairId);
   const id = newId('align');
   db.exec('BEGIN');
   try {
@@ -48,30 +45,220 @@ export function storeAlignment(
       JSON.stringify(result.gaps),
       nowIso(),
     );
-    const ins = db.prepare(
-      `INSERT INTO alignment_segments (alignment_id, ord, sentence_id, spine_idx, sentence_ord, start_ms, end_ms, confidence, source, uncertainty_ms)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    );
-    result.segments.forEach((s, ord) =>
-      ins.run(
-        id,
-        ord,
-        s.sentenceId,
-        s.spineIdx,
-        s.sentenceOrd,
-        s.startMs,
-        s.endMs,
-        s.confidence,
-        s.source,
-        s.uncertaintyMs,
-      ),
-    );
+    insertSegments(db, id, result.segments);
     db.exec('COMMIT');
   } catch (err) {
     db.exec('ROLLBACK');
     throw err;
   }
   return id;
+}
+
+function nextVersion(db: DB, pairId: string): number {
+  const prev = db
+    .prepare('SELECT MAX(version) AS v FROM alignments WHERE pair_id = ?')
+    .get(pairId) as { v: number | null };
+  return (prev?.v ?? 0) + 1;
+}
+
+function insertSegments(db: DB, alignmentId: string, segments: AlignmentSegment[]): void {
+  const ins = db.prepare(
+    `INSERT INTO alignment_segments (alignment_id, ord, sentence_id, spine_idx, sentence_ord, start_ms, end_ms, confidence, source, uncertainty_ms)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  );
+  segments.forEach((s, ord) =>
+    ins.run(
+      alignmentId,
+      ord,
+      s.sentenceId,
+      s.spineIdx,
+      s.sentenceOrd,
+      s.startMs,
+      s.endMs,
+      s.confidence,
+      s.source,
+      s.uncertaintyMs,
+    ),
+  );
+}
+
+/**
+ * How far a sync still under way has got.
+ *
+ * A sync works through a book from the start forward and settles a longer
+ * opening of it at every stage (ctc/engine PartialAlignment). For a book with
+ * no finished sync, that opening is what read along follows, so a reader can
+ * start at the beginning while the sync works on the rest.
+ */
+export interface SyncProgress {
+  /** Read along can follow the narration this far, in book milliseconds. */
+  throughMs: number;
+  /** The chapter the settled part ends in: every chapter before it is wholly synced. */
+  throughSpine: number;
+  /** The whole narration, in milliseconds. */
+  audioMs: number;
+  /** Narration settled per millisecond of the sync's own time; 0 until measured. */
+  rate: number;
+  /** When `throughMs` last moved. */
+  updatedAt: string | null;
+}
+
+/**
+ * Keep the opening a sync has settled so far as the pair's partial
+ * alignment - one per pair, replaced as it grows.
+ *
+ * A partial is an `alignments` row of its own status, invisible to everything
+ * that reads a finished sync (`latestAlignment` reads `ready` rows only), so
+ * handoff, export, friends and the rest go on exactly as before; only read
+ * along asks for it (`readAlongSource`). Its segments are replaced whole each
+ * time rather than appended: a later stage can still refine the last stretch
+ * before the old edge.
+ */
+export function storePartialAlignment(
+  db: DB,
+  pairId: string,
+  language: string,
+  model: string,
+  result: AlignerResult,
+  progress: SyncProgress,
+): string {
+  db.exec('BEGIN');
+  try {
+    const row = db
+      .prepare(`SELECT id FROM alignments WHERE pair_id = ? AND status = 'partial'`)
+      .get(pairId) as { id: string } | undefined;
+    const fields = [
+      language,
+      model,
+      result.coverage,
+      result.meanConfidence,
+      JSON.stringify({ sync: progress }),
+      JSON.stringify(result.gaps),
+    ] as const;
+    let id: string;
+    if (row) {
+      id = row.id;
+      db.prepare(
+        `UPDATE alignments SET language = ?, model = ?, coverage = ?, mean_confidence = ?,
+           provenance_json = ?, gaps_json = ? WHERE id = ?`,
+      ).run(...fields, id);
+      db.prepare('DELETE FROM alignment_segments WHERE alignment_id = ?').run(id);
+    } else {
+      id = newId('align');
+      db.prepare(
+        `INSERT INTO alignments (id, pair_id, version, status, language, model, coverage, mean_confidence, provenance_json, gaps_json, created_at)
+         VALUES (?, ?, ?, 'partial', ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(id, pairId, nextVersion(db, pairId), ...fields, nowIso());
+    }
+    insertSegments(db, id, result.segments);
+    db.exec('COMMIT');
+    return id;
+  } catch (err) {
+    db.exec('ROLLBACK');
+    throw err;
+  }
+}
+
+/** A pair's partial alignment (storePartialAlignment), if it has one. */
+export function partialAlignment(
+  db: DB,
+  pairId: string,
+): { alignmentId: string; gaps: AlignmentGap[]; progress: SyncProgress } | null {
+  const row = db
+    .prepare(
+      `SELECT id, gaps_json, provenance_json FROM alignments WHERE pair_id = ? AND status = 'partial' LIMIT 1`,
+    )
+    .get(pairId) as { id: string; gaps_json: string; provenance_json: string } | undefined;
+  if (!row) return null;
+  let gaps: AlignmentGap[] = [];
+  let sync: Partial<SyncProgress> = {};
+  try {
+    gaps = JSON.parse(row.gaps_json) as AlignmentGap[];
+    sync = (JSON.parse(row.provenance_json) as { sync?: Partial<SyncProgress> }).sync ?? {};
+  } catch {
+    /* damaged columns: what is left still reads along */
+  }
+  const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+  return {
+    alignmentId: row.id,
+    gaps: Array.isArray(gaps) ? gaps : [],
+    progress: {
+      throughMs: num(sync.throughMs),
+      throughSpine: num(sync.throughSpine),
+      audioMs: num(sync.audioMs),
+      rate: num(sync.rate),
+      updatedAt: typeof sync.updatedAt === 'string' ? sync.updatedAt : null,
+    },
+  };
+}
+
+/** Forget a pair's partial alignment: the sync finished, or found a different book. */
+export function dropPartialAlignment(db: DB, pairId: string): void {
+  // Segments go with it (ON DELETE CASCADE).
+  db.prepare(`DELETE FROM alignments WHERE pair_id = ? AND status = 'partial'`).run(pairId);
+}
+
+/** Whether a sync for the pair is running, or waiting its turn. */
+export function syncActive(db: DB, pairId: string): boolean {
+  return (
+    db
+      .prepare(
+        `SELECT 1 AS x FROM jobs WHERE dedupe_key = ? AND state IN ('queued','running') LIMIT 1`,
+      )
+      .get(`align:${pairId}`) !== undefined
+  );
+}
+
+/** A sync under way, as read along is told about it. */
+export interface SyncState extends SyncProgress {
+  /** Still working on the rest (or waiting its turn), rather than stopped. */
+  active: boolean;
+}
+
+/**
+ * What read along follows for a pair: the finished sync when there is one;
+ * otherwise as much as a sync under way has settled, with how far it has got.
+ *
+ * `alignmentId` is null while a sync has started but settled nothing yet -
+ * the first half minute of a new book - and the whole answer is null when
+ * there is neither a sync nor one coming.
+ */
+export interface ReadAlongSource {
+  alignmentId: string | null;
+  gaps: AlignmentGap[];
+  syncing: SyncState | null;
+}
+
+export function readAlongSource(db: DB, pairId: string): ReadAlongSource | null {
+  const ready = latestAlignment(db, pairId);
+  if (ready) return { alignmentId: ready.alignmentId, gaps: ready.summary.gaps, syncing: null };
+  const partial = partialAlignment(db, pairId);
+  const active = syncActive(db, pairId);
+  if (partial) {
+    return {
+      alignmentId: partial.alignmentId,
+      gaps: partial.gaps,
+      syncing: { ...partial.progress, active },
+    };
+  }
+  if (!active) return null;
+  const audio = db
+    .prepare(
+      'SELECT b.duration_ms AS ms FROM pairs p JOIN books b ON b.id = p.audio_id WHERE p.id = ?',
+    )
+    .get(pairId) as { ms: number | null } | undefined;
+  return {
+    alignmentId: null,
+    gaps: [],
+    syncing: {
+      throughMs: 0,
+      throughSpine: -1,
+      audioMs: Number(audio?.ms ?? 0),
+      rate: 0,
+      updatedAt: null,
+      active: true,
+    },
+  };
 }
 
 export interface AlignmentHandle {

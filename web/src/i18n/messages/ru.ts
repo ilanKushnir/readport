@@ -468,6 +468,7 @@ const messages: Record<string, string> = {
   'library.book.readAlong': 'Чтение с голосом',
   'library.book.readAlongHint': 'Страница, поверх которой звучит начитка',
   'library.book.readAlongNotReady': 'Чтение с голосом станет доступно, когда пара будет выровнена',
+  'library.book.readAlongSyncing': 'Готово с начала - остальная часть книги ещё синхронизируется',
   'library.book.opening': 'Открывается…',
   'library.book.part': 'Часть {n}',
   'library.book.otherNotOnDevice':
@@ -609,6 +610,8 @@ const messages: Record<string, string> = {
   'reader.tandem.readAlongHint': 'Включить начитку поверх страницы, которую вы читаете',
   'reader.tandem.notReadyHint':
     'Выравнивание ещё не готово — начитка пока не может следовать за текстом',
+  'reader.tandem.readAlongSyncingHint':
+    'Читайте с голосом с самого начала уже сейчас - остальная часть книги ещё синхронизируется',
   'reader.tandem.listenInstead': 'Послушать вместо этого',
   'reader.tandem.listenHint': 'Покинуть страницу и переключиться на аудиокнигу с этого предложения',
   'reader.switch.notStoredOffline': 'Это место не было сохранено для офлайн-переключения.',
@@ -645,6 +648,13 @@ const messages: Record<string, string> = {
     'На этой странице пока нет размеченного текста, к которому можно вернуться.',
   'reader.readAlong.reducedMotion':
     'Ваша система просит снизить анимацию, поэтому страница не будет прокручиваться сама.',
+  // reader: while the book is still syncing
+  'reader.readAlong.sync.preparing': 'Готовим чтение с голосом…',
+  'reader.readAlong.sync.pending': 'Синхронизируем эту часть…',
+  'reader.readAlong.sync.pendingLabel': 'Синхронизируем эту часть',
+  'reader.readAlong.sync.eta':
+    '{n, plural, one {около # мин} few {около # мин} many {около # мин} other {около # мин}}',
+  'reader.readAlong.sync.stopped': 'Эта часть ещё не синхронизирована',
   // reader: only in the audiobook
   'reader.readAlong.beyond.title': 'Только в аудиокниге',
   'reader.readAlong.beyond.middle': 'Слушайте дальше - текст продолжится через {time}.',

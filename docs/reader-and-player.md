@@ -205,6 +205,18 @@ at the sentence in front of you, a mark in the margin (or a wash, your
 choice) keeps to the sentence being read, and the page turns itself to keep
 up. The player is untouched by this - this is the reader, with a voice.
 
+A book paired a moment ago does not have to finish syncing first. The sync
+works through the book from the beginning, and read along follows whatever it
+has done: the first minutes are ready about half a minute after the sync
+starts, and the sync runs some twenty times faster than the narration, so
+someone who starts at the beginning never catches up with it. Until then the
+bar says what it is waiting for, beside a dot that breathes - _Getting read
+along ready…_, and, for a chapter the sync has not reached or a voice that
+has run on past it, _Syncing this part_ with roughly how long it will be. The
+page waits there rather than walking on, and the highlight picks up by
+itself when the sync arrives. Switching to the player at the same sentence
+still waits for the finished sync.
+
 How the voice is shown is a choice (Reading settings → Following the
 voice, two small drawings of a page): a **mark in the margin**, the
 default, a small tick beside the line being spoken that moves at the

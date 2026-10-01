@@ -466,6 +466,7 @@ const messages: Record<string, string> = {
   'library.book.readAlong': 'Lue mukana',
   'library.book.readAlongHint': 'Sivu, jonka päällä lukeminen soi',
   'library.book.readAlongNotReady': 'Lue mukana avautuu, kun pari on kohdistettu',
+  'library.book.readAlongSyncing': 'Valmis alusta alkaen - kirjan loppua synkronoidaan vielä',
   'library.book.opening': 'Avataan…',
   'library.book.part': 'Osa {n}',
   'library.book.otherNotOnDevice':
@@ -608,6 +609,8 @@ const messages: Record<string, string> = {
   'reader.tandem.readAlongHint': 'Toista lukeminen sivun päällä, jota luet',
   'reader.tandem.notReadyHint':
     'Synkronointi ei ole valmis - lukeminen ei voi vielä seurata tekstiä',
+  'reader.tandem.readAlongSyncingHint':
+    'Lue mukana alusta alkaen jo nyt - kirjan loppua synkronoidaan vielä',
   'reader.tandem.listenInstead': 'Kuuntele sen sijaan',
   'reader.tandem.listenHint': 'Poistu sivulta ja vaihda äänikirjaan tästä lauseesta',
   'reader.switch.notStoredOffline': 'Tätä kohtaa ei tallennettu offline-vaihtoa varten.',
@@ -641,6 +644,12 @@ const messages: Record<string, string> = {
   'reader.readAlong.noTimedText': 'Ei ajoitettua tekstiä, johon palata tällä sivulla vielä.',
   'reader.readAlong.reducedMotion':
     'Järjestelmäsi pyytää vähennettyä liikettä, joten sivu ei vieritä itsestään.',
+  // reader: while the book is still syncing
+  'reader.readAlong.sync.preparing': 'Valmistellaan Lue mukana -tilaa…',
+  'reader.readAlong.sync.pending': 'Tätä osaa synkronoidaan…',
+  'reader.readAlong.sync.pendingLabel': 'Tätä osaa synkronoidaan',
+  'reader.readAlong.sync.eta': 'noin {n, plural, one {# min} other {# min}}',
+  'reader.readAlong.sync.stopped': 'Tätä osaa ei ole vielä synkronoitu',
   // reader: only in the audiobook
   'reader.readAlong.beyond.title': 'Vain äänikirjassa',
   'reader.readAlong.beyond.middle': 'Jatka kuuntelua - teksti jatkuu {time} kuluttua.',

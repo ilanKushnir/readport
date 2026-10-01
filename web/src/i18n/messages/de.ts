@@ -485,6 +485,8 @@ const messages: Record<string, string> = {
   'library.book.readAlongHint': 'Die Seite, mit der Erzählung darüber',
   'library.book.readAlongNotReady':
     'Mitlesen wird freigeschaltet, sobald das Paar ausgerichtet ist',
+  'library.book.readAlongSyncing':
+    'Ab dem Anfang bereit - der Rest des Buchs wird noch synchronisiert',
   'library.book.opening': 'Wird geöffnet…',
   'library.book.part': 'Teil {n}',
   'library.book.otherNotOnDevice':
@@ -634,6 +636,8 @@ const messages: Record<string, string> = {
   'reader.tandem.readAlongHint': 'Erzählung zur gelesenen Seite abspielen',
   'reader.tandem.notReadyHint':
     'Synchronisierung noch nicht bereit – die Erzählung kann dem Text noch nicht folgen',
+  'reader.tandem.readAlongSyncingHint':
+    'Jetzt von Anfang an mitlesen - der Rest des Buchs wird noch synchronisiert',
   'reader.tandem.listenInstead': 'Stattdessen hören',
   'reader.tandem.listenHint': 'Seite verlassen und bei diesem Satz zum Hörbuch wechseln',
   'reader.switch.notStoredOffline': 'Diese Stelle wurde nicht für den Offline-Wechsel gesichert.',
@@ -668,6 +672,12 @@ const messages: Record<string, string> = {
   'reader.readAlong.noTimedText': 'Noch kein zeitlich zugeordneter Text auf dieser Seite.',
   'reader.readAlong.reducedMotion':
     'Das System verlangt reduzierte Bewegung, daher scrollt die Seite nicht von selbst.',
+  // reader: while the book is still syncing
+  'reader.readAlong.sync.preparing': 'Mitlesen wird vorbereitet…',
+  'reader.readAlong.sync.pending': 'Dieser Teil wird synchronisiert…',
+  'reader.readAlong.sync.pendingLabel': 'Dieser Teil wird synchronisiert',
+  'reader.readAlong.sync.eta': 'etwa {n, plural, one {# Min.} other {# Min.}}',
+  'reader.readAlong.sync.stopped': 'Dieser Teil ist noch nicht synchronisiert',
   // reader: only in the audiobook
   'reader.readAlong.beyond.title': 'Nur im Hörbuch',
   'reader.readAlong.beyond.middle': 'Einfach weiterhören - der Text geht in {time} weiter.',

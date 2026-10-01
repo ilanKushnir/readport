@@ -2331,6 +2331,54 @@
   color: var(--rd-text);
   font-weight: 600;
 }
+/* Waiting on a sync still under way: work in progress, not a fault - so a
+   dot that breathes before the words, in the voice's colour, rather than
+   the warning weight alone. */
+.readalong__status.is-syncing {
+  display: flex;
+  align-items: center;
+  color: var(--rd-text);
+  font-weight: 600;
+}
+.readalong__sync-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.readalong__sync-time {
+  flex: none;
+  white-space: pre;
+  font-variant-numeric: tabular-nums;
+}
+.readalong__status.is-syncing::before {
+  content: '';
+  flex: none;
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-inline-end: 7px;
+  border-radius: 50%;
+  background: var(--rd-link);
+  animation: readalong-syncing 1.6s ease-in-out infinite;
+}
+@keyframes readalong-syncing {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .readalong__status.is-syncing::before {
+    animation: none;
+    opacity: 0.8;
+  }
+}
 /* Shown only once the reader has turned the page away from the voice. */
 .readalong__resume {
   display: inline-flex;

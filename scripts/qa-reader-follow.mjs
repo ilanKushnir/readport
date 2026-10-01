@@ -57,8 +57,12 @@ async function open(
   viewport = { width: 1180, height: 820 },
   extraPrefs = {},
   // A narration stand-in whose playFrom really moves the voice, for the
-  // checks that follow what a seek does to the page.
-  { seeking = false } = {},
+  // checks that follow what a seek does to the page; and the pair as the
+  // book's summary gives it, for the checks of a pair still syncing.
+  {
+    seeking = false,
+    pair = { pairId: 'pair', otherBookId: 'audio', status: 'confirmed', switchable: true },
+  } = {},
 ) {
   const context = await browser.newContext({
     viewport,
@@ -159,13 +163,7 @@ async function open(
             createdAt: '2026-01-01T00:00:00Z',
           })),
         };
-      else if (url.pathname === '/api/books/qa')
-        data = {
-          book: {
-            id: 'qa',
-            pair: { pairId: 'pair', otherBookId: 'audio', status: 'confirmed', switchable: true },
-          },
-        };
+      else if (url.pathname === '/api/books/qa') data = { book: { id: 'qa', pair } };
       await route.fulfill({ json: data });
     },
   );
@@ -1220,6 +1218,119 @@ try {
       if (shots && label === '390')
         await page.screenshot({ path: `${shots}/${label}-beyond-end.png` });
       await page.evaluate(() => window.readerClock({ beyond: null }));
+    });
+    await context.close();
+  }
+  // A book paired a moment ago: its sync is still working through it, and
+  // read along follows what it has done - so it is on offer straight away,
+  // the bar says plainly what it is waiting for, and switching to the player
+  // at the same sentence waits for the finished sync.
+  for (const [label, viewport, theme] of [
+    ['1180', { width: 1180, height: 820 }, 'paper'],
+    ['390', { width: 390, height: 844 }, 'night'],
+  ]) {
+    const syncing = {
+      throughMs: 0,
+      throughSpine: -1,
+      audioMs: 36_000_000,
+      rate: 0,
+      updatedAt: null,
+      active: true,
+    };
+    const { page, context } = await open(
+      'paginated',
+      false,
+      'no-preference',
+      viewport,
+      { theme },
+      {
+        pair: {
+          pairId: 'pair',
+          otherBookId: 'audio',
+          status: 'confirmed',
+          switchable: false,
+          syncing,
+        },
+      },
+    );
+    await check(`read along is offered while the book syncs ${label}`, async () => {
+      const button = page.getByRole('button', { name: 'Read along', exact: true });
+      assert.equal(await button.isEnabled(), true);
+      assert.match(await button.getAttribute('title'), /still syncing/);
+      // The player at the same sentence waits for the finished sync.
+      assert.equal(await page.getByRole('button', { name: 'Listen instead' }).count(), 0);
+      await button.click();
+    });
+    const status = page.locator('.readalong__status');
+    const play = page.locator('.readalong__play');
+    await check(`the bar says read along is getting ready ${label}`, async () => {
+      await page.evaluate(() =>
+        window.readerClock({
+          ready: false,
+          playing: false,
+          cues: [],
+          syncWait: { kind: 'preparing', etaMs: null },
+        }),
+      );
+      await page.waitForTimeout(50);
+      assert.equal((await status.innerText()).trim(), 'Getting read along ready…');
+      assert.match(await status.getAttribute('class'), /is-syncing/);
+      assert.equal(await play.isDisabled(), true);
+      if (shots) await page.screenshot({ path: `${shots}/${label}-sync-preparing.png` });
+    });
+    await check(`a part not synced yet says how long it will be ${label}`, async () => {
+      await page.evaluate(() =>
+        window.readerClock({
+          ready: true,
+          playing: false,
+          cues: [],
+          syncWait: { kind: 'pending', etaMs: 120_000 },
+        }),
+      );
+      await page.waitForTimeout(50);
+      // The words may shorten on a narrow bar; the estimate never does.
+      assert.match(await status.innerText(), /^Syncing this part\s*·\s*about 2 min$/);
+      const time = page.locator('.readalong__sync-time');
+      const bar = await status.boundingBox();
+      const t = await time.boundingBox();
+      assert.ok(t && t.x + t.width <= bar.x + bar.width + 0.5, 'the estimate is whole');
+      // Nothing to play from in a chapter the sync has not reached.
+      assert.equal(await play.isDisabled(), true);
+      await page.evaluate(() => window.readerClock({ syncWait: { kind: 'pending', etaMs: null } }));
+      await page.waitForTimeout(50);
+      assert.equal((await status.innerText()).trim(), 'Syncing this part…');
+      // The voice ran on past what is synced: it can still be paused.
+      await page.evaluate(
+        (c) =>
+          window.readerClock({
+            playing: true,
+            cues: [c],
+            syncWait: { kind: 'pending', etaMs: 60_000 },
+          }),
+        cue(0, 0),
+      );
+      await page.waitForTimeout(50);
+      assert.equal(await play.isDisabled(), false);
+      if (shots) await page.screenshot({ path: `${shots}/${label}-sync-pending.png` });
+    });
+    await check(`a sync that stopped short says so ${label}`, async () => {
+      await page.evaluate(() =>
+        window.readerClock({
+          playing: false,
+          cues: [],
+          syncWait: { kind: 'stopped', etaMs: null },
+        }),
+      );
+      await page.waitForTimeout(50);
+      assert.equal((await status.innerText()).trim(), 'This part isn’t synced yet');
+      // And once the sync has caught up, the bar is back to the voice's time.
+      await page.evaluate(
+        (c) => window.readerClock({ syncWait: null, cues: [c], state: 'on', bookMs: 125_000 }),
+        cue(0, 0),
+      );
+      await page.waitForTimeout(50);
+      assert.equal((await status.innerText()).trim(), '2:05');
+      assert.doesNotMatch(await status.getAttribute('class'), /is-syncing/);
     });
     await context.close();
   }

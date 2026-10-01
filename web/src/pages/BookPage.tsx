@@ -548,11 +548,15 @@ export function BookPage() {
                 <button
                   className="btn btn--secondary"
                   onClick={() => void openEdition(true)}
-                  disabled={switching || !pair.switchable}
+                  // Still syncing is no reason to wait: read along follows the
+                  // sync from the start of the book as it goes.
+                  disabled={switching || !(pair.switchable || pair.syncing)}
                   title={
                     pair.switchable
                       ? t('library.book.readAlongHint')
-                      : t('library.book.readAlongNotReady')
+                      : pair.syncing
+                        ? t('library.book.readAlongSyncing')
+                        : t('library.book.readAlongNotReady')
                   }
                 >
                   <IconReadAlong size={17} />

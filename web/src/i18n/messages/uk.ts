@@ -470,6 +470,7 @@ const messages: Record<string, string> = {
   'library.book.readAlong': 'Читання з голосом',
   'library.book.readAlongHint': 'Сторінка, поверх якої звучить начитка',
   'library.book.readAlongNotReady': 'Читання з голосом стане доступним, коли пару буде вирівняно',
+  'library.book.readAlongSyncing': 'Готово від початку - решта книги ще синхронізується',
   'library.book.opening': 'Відкривається…',
   'library.book.part': 'Частина {n}',
   'library.book.otherNotOnDevice':
@@ -612,6 +613,8 @@ const messages: Record<string, string> = {
   'reader.tandem.readAlongHint': 'Увімкнути начитку поверх сторінки, яку ви читаєте',
   'reader.tandem.notReadyHint':
     'Вирівнювання ще не готове — начитка поки не може слідувати за текстом',
+  'reader.tandem.readAlongSyncingHint':
+    'Читайте з голосом від самого початку вже зараз - решта книги ще синхронізується',
   'reader.tandem.listenInstead': 'Послухати натомість',
   'reader.tandem.listenHint': 'Покинути сторінку і перемкнутися на аудіокнигу з цього речення',
   'reader.switch.notStoredOffline': 'Це місце не було збережено для офлайн-перемикання.',
@@ -648,6 +651,13 @@ const messages: Record<string, string> = {
     'На цій сторінці поки немає розміченого тексту, до якого можна повернутися.',
   'reader.readAlong.reducedMotion':
     'Ваша система просить зменшити анімацію, тому сторінка не прокручуватиметься сама.',
+  // reader: while the book is still syncing
+  'reader.readAlong.sync.preparing': 'Готуємо читання з голосом…',
+  'reader.readAlong.sync.pending': 'Синхронізуємо цю частину…',
+  'reader.readAlong.sync.pendingLabel': 'Синхронізуємо цю частину',
+  'reader.readAlong.sync.eta':
+    '{n, plural, one {близько # хв} few {близько # хв} many {близько # хв} other {близько # хв}}',
+  'reader.readAlong.sync.stopped': 'Ця частина ще не синхронізована',
   // reader: only in the audiobook
   'reader.readAlong.beyond.title': 'Лише в аудіокнизі',
   'reader.readAlong.beyond.middle': 'Слухайте далі - текст продовжиться через {time}.',

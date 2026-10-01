@@ -471,6 +471,7 @@ const messages: Record<string, string> = {
   'library.book.readAlong': '一緒に読む',
   'library.book.readAlongHint': 'ページの上でナレーションを再生します',
   'library.book.readAlongNotReady': 'ペアの整列が完了すると「一緒に読む」が使えます',
+  'library.book.readAlongSyncing': '最初から利用できます。本の残りはまだ同期中です',
   'library.book.opening': '開いています…',
   'library.book.part': '第{n}部',
   'library.book.otherNotOnDevice':
@@ -615,6 +616,7 @@ const messages: Record<string, string> = {
   'reader.tandem.aligning': '音声 · 整合中…',
   'reader.tandem.readAlongHint': '読んでいるページに合わせてナレーションを再生します',
   'reader.tandem.notReadyHint': '整合が未完了です。ナレーションはまだテキストに追従できません',
+  'reader.tandem.readAlongSyncingHint': '最初から今すぐ一緒に読めます。本の残りはまだ同期中です',
   'reader.tandem.listenInstead': '代わりに聴く',
   'reader.tandem.listenHint': 'ページを離れ、この文からオーディオブックに切り替えます',
   'reader.switch.notStoredOffline': 'この位置はオフライン切り替え用に保存されていません。',
@@ -648,6 +650,12 @@ const messages: Record<string, string> = {
   'reader.readAlong.noTimedText': 'このページにはまだ戻れるタイミング付きテキストがありません。',
   'reader.readAlong.reducedMotion':
     'システムでモーション低減が指定されているため、ページは自動的にスクロールしません。',
+  // reader: while the book is still syncing
+  'reader.readAlong.sync.preparing': '「一緒に読む」を準備しています…',
+  'reader.readAlong.sync.pending': 'この部分を同期しています…',
+  'reader.readAlong.sync.pendingLabel': 'この部分を同期中',
+  'reader.readAlong.sync.eta': '約{n, plural, other {#分}}',
+  'reader.readAlong.sync.stopped': 'この部分はまだ同期されていません',
   // reader: only in the audiobook
   'reader.readAlong.beyond.title': 'オーディオブックのみ',
   'reader.readAlong.beyond.middle': 'そのままお聴きください。あと{time}で本文に戻ります。',

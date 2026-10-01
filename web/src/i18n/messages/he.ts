@@ -475,6 +475,7 @@ const messages: Record<string, string> = {
   'library.book.readAlong': 'קריאה מלווה',
   'library.book.readAlongHint': 'העמוד, והקריינות מתנגנת מעליו',
   'library.book.readAlongNotReady': 'קריאה מלווה תיפתח ברגע שהצמד יהיה מיושר',
+  'library.book.readAlongSyncing': 'מוכן מההתחלה - שאר הספר עדיין בסנכרון',
   'library.book.opening': 'פותח…',
   'library.book.part': 'חלק {n}',
   'library.book.otherNotOnDevice':
@@ -620,6 +621,8 @@ const messages: Record<string, string> = {
   'reader.tandem.aligning': 'שמע · מסנכרן…',
   'reader.tandem.readAlongHint': 'ניגון הקריינות מעל העמוד שאתה קורא',
   'reader.tandem.notReadyHint': 'הסנכרון עדיין לא מוכן - הקריינות עוד לא יכולה לעקוב אחרי הטקסט',
+  'reader.tandem.readAlongSyncingHint':
+    'אפשר כבר לקרוא בקריאה מלווה מההתחלה - שאר הספר עדיין בסנכרון',
   'reader.tandem.listenInstead': 'האזנה במקום זאת',
   'reader.tandem.listenHint': 'יציאה מהעמוד ומעבר לספר הקול במשפט הזה',
 
@@ -655,6 +658,13 @@ const messages: Record<string, string> = {
   'reader.readAlong.voiceElsewhere': 'הקול נמצא בפרק אחר. לחיצה על ניגון תגרום לעמוד למצוא אותו.',
   'reader.readAlong.noTimedText': 'אין עדיין טקסט מתוזמן לחזור אליו בעמוד הזה.',
   'reader.readAlong.reducedMotion': 'המערכת שלך מבקשת תנועה מופחתת, כך שהעמוד לא יגלול מעצמו.',
+  // reader: while the book is still syncing
+  'reader.readAlong.sync.preparing': 'מכין את הקריאה המלווה…',
+  'reader.readAlong.sync.pending': 'מסנכרן את החלק הזה…',
+  'reader.readAlong.sync.pendingLabel': 'מסנכרן את החלק הזה',
+  'reader.readAlong.sync.eta':
+    '{n, plural, one {בערך דקה} two {בערך שתי דקות} other {בערך # דקות}}',
+  'reader.readAlong.sync.stopped': 'החלק הזה עוד לא מסונכרן',
   // reader: only in the audiobook
   'reader.readAlong.beyond.title': 'רק בספר הקול',
   'reader.readAlong.beyond.middle': 'אפשר להמשיך להאזין - הטקסט יחזור בעוד {time}.',

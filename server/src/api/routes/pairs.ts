@@ -17,6 +17,7 @@ import {
   handoffStatus,
   isSwitchable,
   latestAlignment,
+  readAlongSource,
   resolveSwitch,
   type ResolveContext,
 } from '../../alignment/service.js';
@@ -121,6 +122,8 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
           }
         : null,
       alignment: handle?.summary ?? null,
+      // Read along on a pair still syncing: how far the sync has got.
+      syncing: handle ? null : (readAlongSource(db, String(row.id))?.syncing ?? null),
       // `switchable` means "handoff available", never "exact everywhere";
       // `handoff` carries the honest exact-sentence coverage numbers.
       switchable: isSwitchable(handle),
@@ -161,7 +164,7 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
            FROM pairs p
            JOIN books b ON b.id = p.audio_id
           WHERE p.status IN ('auto', 'confirmed') AND ${visiblePairSql(sees, 'p')}
-            AND NOT EXISTS (SELECT 1 FROM alignments a WHERE a.pair_id = p.id)
+            AND NOT EXISTS (SELECT 1 FROM alignments a WHERE a.pair_id = p.id AND a.status = 'ready')
             AND NOT EXISTS (
               SELECT 1 FROM jobs j
                WHERE j.type = 'align'
@@ -582,17 +585,23 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
    */
   app.get('/api/pairs/:id/segments/:spineIdx', async (req, reply) => {
     const { id, spineIdx } = req.params as { id: string; spineIdx: string };
-    const handle = latestAlignment(db, id);
-    if (!handle) return reply.code(404).send({ error: 'no-alignment' });
-    const rows = db
-      .prepare(
-        `SELECT sentence_id, sentence_ord, start_ms, end_ms, confidence, source, uncertainty_ms
-           FROM alignment_segments WHERE alignment_id = ? AND spine_idx = ?
-          ORDER BY sentence_ord`,
-      )
-      .all(handle.alignmentId, Number(spineIdx)) as Record<string, unknown>[];
+    // The finished sync, or as much as a sync under way has settled: a
+    // chapter it has not reached yet is simply one with no timings, and
+    // `syncing` says why.
+    const source = readAlongSource(db, id);
+    if (!source) return reply.code(404).send({ error: 'no-alignment' });
+    const rows = source.alignmentId
+      ? (db
+          .prepare(
+            `SELECT sentence_id, sentence_ord, start_ms, end_ms, confidence, source, uncertainty_ms
+               FROM alignment_segments WHERE alignment_id = ? AND spine_idx = ?
+              ORDER BY sentence_ord`,
+          )
+          .all(source.alignmentId, Number(spineIdx)) as Record<string, unknown>[])
+      : [];
     return {
       spineIdx: Number(spineIdx),
+      syncing: source.syncing,
       segments: rows.map((r) => ({
         sentenceId: String(r.sentence_id),
         sentenceOrd: Number(r.sentence_ord),
@@ -617,15 +626,18 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
    */
   app.get('/api/pairs/:id/chapters', async (req, reply) => {
     const { id } = req.params as { id: string };
-    const handle = latestAlignment(db, id);
-    if (!handle) return reply.code(404).send({ error: 'no-alignment' });
-    const rows = db
-      .prepare(
-        `SELECT spine_idx, MIN(start_ms) AS first_ms, MAX(end_ms) AS last_ms, COUNT(*) AS n
-           FROM alignment_segments WHERE alignment_id = ?
-          GROUP BY spine_idx ORDER BY spine_idx`,
-      )
-      .all(handle.alignmentId) as Record<string, unknown>[];
+    const source = readAlongSource(db, id);
+    if (!source) return reply.code(404).send({ error: 'no-alignment' });
+    const alignmentId = source.alignmentId;
+    const rows = alignmentId
+      ? (db
+          .prepare(
+            `SELECT spine_idx, MIN(start_ms) AS first_ms, MAX(end_ms) AS last_ms, COUNT(*) AS n
+               FROM alignment_segments WHERE alignment_id = ?
+              GROUP BY spine_idx ORDER BY spine_idx`,
+          )
+          .all(alignmentId) as Record<string, unknown>[])
+      : [];
     // And the stretches of the narration the ebook does not have, so the
     // reader can say so instead of going quiet: read here, with the bounds,
     // because it is one answer for the whole book and wanted as soon as
@@ -634,16 +646,18 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
     let beyondText: NarrationBeyondText[] = [];
     const pair = db.prepare('SELECT ebook_id FROM pairs WHERE id = ?').get(id) as
       { ebook_id: string } | undefined;
-    if (pair) {
+    if (pair && alignmentId) {
       const dir = activeDerivedDir(ctx, pair.ebook_id);
       const sentences = loadSentences(dir);
       if (sentences)
         beyondText = narrationBeyondText(
           db,
-          handle.alignmentId,
-          handle.summary.gaps,
+          alignmentId,
+          source.gaps,
           sentences,
-          `${handle.alignmentId}:${dir}`,
+          // A sync under way rewrites its alignment as it goes, so the
+          // answer kept for it is kept per stage.
+          `${alignmentId}:${source.syncing ? source.syncing.throughMs : 'done'}:${dir}`,
         );
     }
     return {
@@ -654,6 +668,10 @@ export function registerPairRoutes(app: FastifyInstance, ctx: AppContext): void 
         segments: Number(r.n),
       })),
       beyondText,
+      // Which alignment these are, so a reader can tell when a sync under
+      // way has finished and its chapter's timings are worth fetching again.
+      alignmentId,
+      syncing: source.syncing,
     };
   });
 

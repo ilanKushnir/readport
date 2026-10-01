@@ -16,6 +16,10 @@ import {
   nearestChapter,
   paceOffset,
   shouldFollow,
+  chapterSyncing,
+  syncEta,
+  voiceAheadOfSync,
+  type SyncingNow,
 } from './readalong';
 
 /**
@@ -334,5 +338,48 @@ describe('beyondTextAt', () => {
   it('is nothing outside the stretches, or with none', () => {
     expect(beyondTextAt([middle, end], 500_000)).toBeNull();
     expect(beyondTextAt([], 345_000)).toBeNull();
+  });
+});
+
+describe('a book still syncing', () => {
+  /** Synced into chapter 3, as far as 20 minutes; twenty times faster than the voice. */
+  const syncing: SyncingNow = {
+    throughMs: 1_200_000,
+    throughSpine: 3,
+    audioMs: 36_000_000,
+    rate: 20,
+    updatedAt: '2026-10-01T10:00:00.000Z',
+    active: true,
+  };
+  const at = Date.parse('2026-10-01T10:00:00.000Z');
+
+  it('waits on the chapter the synced part ends in, and every one after it', () => {
+    expect(chapterSyncing(syncing, 2)).toBe(false);
+    expect(chapterSyncing(syncing, 3)).toBe(true);
+    expect(chapterSyncing(syncing, 9)).toBe(true);
+    // A finished book waits on nothing.
+    expect(chapterSyncing(null, 9)).toBe(false);
+  });
+
+  it('lets the voice be ahead of the sync only once it is past the last synced breath', () => {
+    expect(voiceAheadOfSync(syncing, 1_200_000)).toBe(false);
+    expect(voiceAheadOfSync(syncing, 1_200_000 + HOLD_MS)).toBe(false);
+    expect(voiceAheadOfSync(syncing, 1_200_000 + HOLD_MS + 1)).toBe(true);
+    expect(voiceAheadOfSync(null, 99_999_999)).toBe(false);
+  });
+
+  it('says how long the sync needs to get somewhere, from its own pace', () => {
+    // An hour of narration ahead, at twenty times the voice: three minutes.
+    expect(syncEta(syncing, 1_200_000 + 3_600_000, at)).toBe(180_000);
+    // A minute after the last word from the sync, a minute of that is gone.
+    expect(syncEta(syncing, 1_200_000 + 3_600_000, at + 60_000)).toBe(120_000);
+    // Somewhere it has already been: no wait at all.
+    expect(syncEta(syncing, 600_000, at)).toBe(0);
+  });
+
+  it('gives no estimate before the pace is known, or once the sync has stopped', () => {
+    expect(syncEta({ ...syncing, rate: 0 }, 9_000_000, at)).toBeNull();
+    expect(syncEta({ ...syncing, active: false }, 9_000_000, at)).toBeNull();
+    expect(syncEta(null, 9_000_000, at)).toBeNull();
   });
 });
