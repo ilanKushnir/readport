@@ -4,6 +4,31 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.36.0 - 2026-10-01
+
+### Added
+
+- **Invitations in the language of the person you invite.** An invitation,
+  and the approval of someone who asked to join, can name a language: the
+  sign-up page opens in it, the message you send them is written in it,
+  and their account keeps it. Approving a request offers the language they
+  asked in first.
+- **Set someone's app language yourself.** When you add a person, and for
+  anyone already on the server under Manage, choose the language ReadPort
+  speaks to them; they can still change it in Settings.
+- **Sign in with an email address.** An account can carry an email - the
+  one a join request was approved for, or one an admin gives it - and the
+  sign-in page takes it in place of the username.
+
+### Fixed
+
+- **Approving a join request now gets the person in.** The invitation it
+  made only reached them if they reopened their share link in the same
+  browser, and the admin had nothing to send. Approving now hands you the
+  link and the code, with an Email button that writes the message for you,
+  and "Send the link" stays on the request until they sign up; their share
+  page, if they left it open, turns into the account form by itself.
+
 ## 0.35.0 - 2026-10-01
 
 ### Added

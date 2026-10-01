@@ -24,6 +24,10 @@ export const whatsnew = {
   'whatsnew.update.later': 'Not now',
 
   // ---------------------------------------------------------------- 0.29.0
+  'whatsnew.release.invitesInLanguage':
+    'Invite someone in their own language - the sign-up page, the message and the app all speak it - and approving a request to join now hands you the link to send them.',
+  'whatsnew.release.signInWithEmail':
+    'You can sign in with your email address as well as your username, once your account has one.',
   'whatsnew.release.readAlongWhileSyncing':
     'A book you just paired is ready to read along with from the beginning in about half a minute - the rest of it syncs while you read.',
   'whatsnew.release.closerSync':
