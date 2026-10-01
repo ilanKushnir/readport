@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { handoffStatusSchema, readAlongSyncSchema } from './alignment.js';
+import { uiLocaleSchema } from './locales.js';
 import { locatorSchema } from './locator.js';
 
 /** DTOs shared between the API and the web client. */
@@ -237,6 +238,24 @@ const displayNameSchema = z
   .trim()
   .min(1, 'Enter a name, or leave it blank')
   .max(80, 'At most 80 characters');
+/**
+ * An account's email address: a second name to sign in with, and where an
+ * invitation is sent. Never required. Kept lower-case, so the same address
+ * typed twice is the same address.
+ */
+export const accountEmailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(3, 'Enter an email address')
+  .max(254, 'That address is too long')
+  .regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Enter an email address');
+/**
+ * The language the app speaks to an account, as an admin sets it for them:
+ * one of the interface's own languages, or null for "whatever their device
+ * asks for".
+ */
+export const accountLocaleSchema = uiLocaleSchema.nullable();
 
 /**
  * May this person take a copy of a book off the server?
@@ -260,6 +279,10 @@ export const userDtoSchema = z.object({
   lastLoginAt: z.string().nullable(),
   /** When they last used ReadPort at all: any signed-in request, not only a login. */
   lastSeenAt: z.string().nullable().optional(),
+  /** Their email address, when the account has one: a second way to sign in. */
+  email: z.string().nullable().optional(),
+  /** The language the app speaks to them; null follows their device. */
+  locale: z.string().nullable().optional(),
   /** Signs in through the reverse proxy (no local password). */
   proxyManaged: z.boolean(),
   sessions: z.number().int(),
@@ -273,6 +296,9 @@ export const createUserSchema = z.object({
   role: roleSchema.default('reader'),
   canExport: canExportSchema.default(false),
   displayName: displayNameSchema.optional(),
+  email: accountEmailSchema.optional(),
+  /** The app's language for them from the first sign-in; absent or null follows their device. */
+  locale: accountLocaleSchema.optional(),
 });
 export const updateUserSchema = z.object({
   role: roleSchema.optional(),
@@ -281,6 +307,10 @@ export const updateUserSchema = z.object({
   displayName: displayNameSchema.nullable().optional(),
   /** Admin-set new password; signs the user out everywhere. */
   password: passwordSchema.optional(),
+  /** Null takes the address off the account. */
+  email: accountEmailSchema.nullable().optional(),
+  /** Null hands the choice back to their device. */
+  locale: accountLocaleSchema.optional(),
 });
 export const createInviteSchema = z.object({
   role: roleSchema.default('reader'),
@@ -290,6 +320,10 @@ export const createInviteSchema = z.object({
   /** Suggested username, editable by the invitee. */
   username: usernameSchema.optional(),
   expiresInDays: z.number().int().min(1).max(30).default(7),
+  /** Who it is for: the account it opens carries the address, and it fills in the email. */
+  email: accountEmailSchema.optional(),
+  /** The language the sign-up page opens in and the new account keeps; null follows their device. */
+  language: accountLocaleSchema.optional(),
 });
 export const inviteDtoSchema = z.object({
   id: z.string(),
@@ -301,6 +335,8 @@ export const inviteDtoSchema = z.object({
   createdAt: z.string(),
   expiresAt: z.string(),
   usedAt: z.string().nullable(),
+  email: z.string().nullable().optional(),
+  language: z.string().nullable().optional(),
 });
 export type InviteDto = z.infer<typeof inviteDtoSchema>;
 export const acceptInviteSchema = z.object({
@@ -320,7 +356,8 @@ export const changePasswordSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  username: z.string().min(1).max(64),
+  /** A username, or the email address the account carries. */
+  username: z.string().min(1).max(254),
   password: z.string().min(1).max(1024),
 });
 

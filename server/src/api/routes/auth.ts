@@ -207,11 +207,15 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
     if (!accountThrottle.allow(acctKey) || !ipThrottle.allow(ipKey)) {
       return reply.code(429).send({ error: 'rate-limited' });
     }
+    // A username, or the email address an account carries: usernames
+    // cannot hold an @, so the one never passes for the other.
+    const byEmail = body.data.username.includes('@');
     const row = db
       .prepare(
-        'SELECT id, username, password_hash, role, display_name, status FROM users WHERE lower(username) = lower(?)',
+        `SELECT id, username, password_hash, role, display_name, status FROM users
+          WHERE ${byEmail ? 'lower(email) = lower(?)' : 'lower(username) = lower(?)'}`,
       )
-      .get(body.data.username) as
+      .get(body.data.username.trim()) as
       | {
           id: string;
           username: string;

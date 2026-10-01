@@ -1,11 +1,18 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { type InviteDto, type Role, type UserDto } from '@readport/shared';
+import { UI_LOCALES, type InviteDto, type Role, type UserDto } from '@readport/shared';
 import { api, ApiError } from '../api/client';
 import { useSession } from '../state/session';
 import { Sheet, useToast } from '../components/ui';
-import { IconAlert, IconCheck, IconClose, IconLink } from '../components/icons';
-import { useT, type TranslateFn } from '../i18n';
+import {
+  IconAlert,
+  IconCheck,
+  IconClose,
+  IconLink,
+  IconMail,
+  IconShare,
+} from '../components/icons';
+import { translatorFor, useLocale, useT, type TranslateFn } from '../i18n';
 import { useFormat } from '../i18n/useFormat';
 import { type JoinRequestDto } from '../share/api';
 
@@ -20,6 +27,8 @@ function errorText(err: unknown, fallback: string, t: TranslateFn): string {
   switch (err.code) {
     case 'username-taken':
       return t('people.error.usernameTaken');
+    case 'email-taken':
+      return t('people.error.emailTaken');
     case 'last-admin':
       return t('people.error.lastAdmin');
     case 'self-lockout':
@@ -44,12 +53,9 @@ export function PeoplePage() {
   const [requests, setRequests] = useState<JoinRequestDto[]>([]);
   const [sheet, setSheet] = useState<'none' | 'add' | 'invite'>('none');
   const [editing, setEditing] = useState<UserDto | null>(null);
-  const [link, setLink] = useState<{
-    url: string;
-    code: string;
-    role: Role;
-    expiresAt: string;
-  } | null>(null);
+  const [link, setLink] = useState<InviteLink | null>(null);
+  /** The request whose approval is being decided, in its own sheet. */
+  const [approving, setApproving] = useState<JoinRequestDto | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -86,14 +92,12 @@ export function PeoplePage() {
   }
 
   const pending = requests.filter((r) => r.status === 'pending');
-  const decide = async (r: JoinRequestDto, decision: 'approve' | 'decline') => {
+  // Let in, and not signed up yet: their link is still worth sending.
+  const waiting = requests.filter((r) => r.status === 'approved' && r.invite);
+  const decline = async (r: JoinRequestDto) => {
     try {
-      await api(`/api/join-requests/${r.id}/${decision}`, { method: 'POST' });
-      toast.show(
-        decision === 'approve'
-          ? t('people.joinRequests.approved')
-          : t('people.joinRequests.declined'),
-      );
+      await api(`/api/join-requests/${r.id}/decline`, { method: 'POST' });
+      toast.show(t('people.joinRequests.declined'));
       await load();
       // The count the shell shows comes with the session.
       void refreshSession();
@@ -101,6 +105,20 @@ export function PeoplePage() {
       toast.show(t('people.joinRequests.failed'));
     }
   };
+  /** An approved request's invitation, as the link sheet sends it. */
+  const linkFor = (r: JoinRequestDto): InviteLink | null =>
+    r.invite
+      ? {
+          url: r.invite.url ?? `${location.origin}${r.invite.path}`,
+          code: r.invite.code,
+          role: 'reader',
+          expiresAt: r.invite.expiresAt,
+          email: r.email,
+          language: r.invite.language,
+          name: r.name,
+          bookTitle: r.book?.title ?? null,
+        }
+      : null;
 
   const revokeInvite = async (id: string) => {
     try {
@@ -137,11 +155,13 @@ export function PeoplePage() {
         </div>
       </header>
 
-      {pending.length > 0 && (
+      {pending.length + waiting.length > 0 && (
         <section className="settings-section" aria-label={t('people.joinRequests.title')}>
           <h2>
             {t('people.joinRequests.title')}{' '}
-            <span className="section-title__count">{f.number(pending.length)}</span>
+            {pending.length > 0 && (
+              <span className="section-title__count">{f.number(pending.length)}</span>
+            )}
           </h2>
           <p className="settings-section__lede">{t('people.joinRequests.lede')}</p>
           <ul className="people">
@@ -177,17 +197,44 @@ export function PeoplePage() {
                     </span>
                   )}
                   <span className="manage-row">
-                    <button className="btn btn--sm" onClick={() => void decide(r, 'approve')}>
+                    <button className="btn btn--sm" onClick={() => setApproving(r)}>
                       <IconCheck size={14} /> {t('people.joinRequests.approve')}
                     </button>
-                    <button
-                      className="btn btn--ghost btn--sm"
-                      onClick={() => void decide(r, 'decline')}
-                    >
+                    <button className="btn btn--ghost btn--sm" onClick={() => void decline(r)}>
                       {t('people.joinRequests.decline')}
                     </button>
                   </span>
                 </span>
+              </li>
+            ))}
+            {waiting.map((r) => (
+              <li key={r.id} className="person">
+                <span className="person__avatar person__avatar--invite" aria-hidden="true">
+                  <IconCheck size={16} />
+                </span>
+                <span className="person__body">
+                  <span className="person__name">
+                    {r.name ?? r.email}
+                    {r.name && (
+                      <span className="person__user">
+                        {' '}
+                        <bdi>{r.email}</bdi>
+                      </span>
+                    )}
+                  </span>
+                  <span className="person__meta">
+                    <span>{t('people.joinRequests.waiting')}</span>
+                    <span>
+                      ·{' '}
+                      {t('people.joinRequests.linkUntil', {
+                        date: f.date(r.invite!.expiresAt),
+                      })}
+                    </span>
+                  </span>
+                </span>
+                <button className="btn btn--secondary btn--sm" onClick={() => setLink(linkFor(r))}>
+                  <IconMail size={14} /> {t('people.joinRequests.sendLink')}
+                </button>
               </li>
             ))}
           </ul>
@@ -232,6 +279,11 @@ export function PeoplePage() {
                   </span>
                   <span className="person__meta">
                     <span className={`badge badge--role-${u.role}`}>{roleLabel(t, u.role)}</span>
+                    {u.email && (
+                      <span>
+                        <bdi>{u.email}</bdi>
+                      </span>
+                    )}
                     {u.status === 'disabled' && (
                       <span className="badge badge--muted">{t('people.accounts.disabled')}</span>
                     )}
@@ -314,44 +366,21 @@ export function PeoplePage() {
           }}
         />
       )}
-      {link && (
-        <Sheet title={t('people.link.title')} onClose={() => setLink(null)}>
-          <p style={{ marginTop: 0 }}>
-            {t('people.link.shareOnce', { role: link.role, date: f.date(link.expiresAt) })}
-          </p>
-          <div className="field">
-            <label htmlFor="iv-code">{t('people.link.codeLabel')}</label>
-            <input
-              id="iv-code"
-              className="input invitecode"
-              dir="ltr"
-              readOnly
-              value={link.code}
-              onFocus={(e) => e.currentTarget.select()}
-            />
-            <span className="hint">{t('people.link.codeHint')}</span>
-          </div>
-          <div className="linkbox">
-            <input
-              className="input"
-              dir="ltr"
-              readOnly
-              value={link.url}
-              onFocus={(e) => e.currentTarget.select()}
-            />
-            <button
-              className="btn"
-              onClick={() => {
-                void navigator.clipboard?.writeText(link.url).then(
-                  () => toast.show(t('people.link.copied')),
-                  () => toast.show(t('people.link.copyFailed')),
-                );
-              }}
-            >
-              {t('people.link.copy')}
-            </button>
-          </div>
-        </Sheet>
+      {link && <InviteLinkSheet link={link} onClose={() => setLink(null)} />}
+      {approving && (
+        <ApproveSheet
+          request={approving}
+          onClose={() => setApproving(null)}
+          onApproved={(r) => {
+            setApproving(null);
+            toast.show(t('people.joinRequests.approved'));
+            void load();
+            void refreshSession();
+            // Straight on to sending them their way in.
+            const l = linkFor(r);
+            if (l) setLink(l);
+          }}
+        />
       )}
       {editing && (
         <ManageSheet
@@ -408,6 +437,8 @@ function AddPersonSheet({ onClose, onDone }: { onClose: () => void; onDone: () =
   const [displayName, setDisplayName] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
+  const [language, setLanguage] = useState<string | null>(null);
   const [role, setRole] = useState<Role>('reader');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -418,7 +449,14 @@ function AddPersonSheet({ onClose, onDone }: { onClose: () => void; onDone: () =
     try {
       await api('/api/users', {
         method: 'POST',
-        body: { username, password, role, displayName: displayName.trim() || undefined },
+        body: {
+          username,
+          password,
+          role,
+          displayName: displayName.trim() || undefined,
+          email: email.trim() || undefined,
+          locale: language,
+        },
       });
       toast.show(t('people.add.added', { name: displayName.trim() || username }));
       onDone();
@@ -475,6 +513,8 @@ function AddPersonSheet({ onClose, onDone }: { onClose: () => void; onDone: () =
           />
           <span className="hint">{t('people.add.passwordHint')}</span>
         </div>
+        <EmailField id="ap-email" value={email} onChange={setEmail} />
+        <LanguageField id="ap-lang" value={language} onChange={setLanguage} />
         <div className="field">
           <label>{t('people.form.role')}</label>
           <RolePicker value={role} onChange={setRole} />
@@ -492,10 +532,12 @@ function InviteSheet({
   onDone,
 }: {
   onClose: () => void;
-  onDone: (l: { url: string; code: string; role: Role; expiresAt: string }) => void;
+  onDone: (l: InviteLink) => void;
 }) {
   const t = useT();
   const [displayName, setDisplayName] = useState('');
+  const [email, setEmail] = useState('');
+  const [language, setLanguage] = useState<string | null>(null);
   const [role, setRole] = useState<Role>('reader');
   const [canExport, setCanExport] = useState(false);
   const [days, setDays] = useState(7);
@@ -518,6 +560,8 @@ function InviteSheet({
           canExport,
           displayName: displayName.trim() || undefined,
           expiresInDays: days,
+          email: email.trim() || undefined,
+          language,
         },
       });
       onDone({
@@ -528,6 +572,10 @@ function InviteSheet({
         code: res.code,
         role: res.invite.role,
         expiresAt: res.invite.expiresAt,
+        email: email.trim() || null,
+        language,
+        name: displayName.trim() || null,
+        bookTitle: null,
       });
     } catch (err) {
       setError(errorText(err, t('people.invite.failed'), t));
@@ -553,6 +601,13 @@ function InviteSheet({
             placeholder={t('people.invite.namePlaceholder')}
           />
         </div>
+        <EmailField
+          id="iv-email"
+          value={email}
+          onChange={setEmail}
+          hint={t('people.invite.emailHint')}
+        />
+        <LanguageField id="iv-lang" value={language} onChange={setLanguage} />
         <div className="field">
           <label>{t('people.form.role')}</label>
           <RolePicker value={role} onChange={setRole} />
@@ -613,6 +668,8 @@ function ManageSheet({
   const t = useT();
   const toast = useToast();
   const [displayName, setDisplayName] = useState(user.displayName ?? '');
+  const [email, setEmail] = useState(user.email ?? '');
+  const [language, setLanguage] = useState<string | null>(user.locale ?? null);
   const [role, setRole] = useState<Role>(user.role);
   const [canExport, setCanExport] = useState(user.canExport);
   const [newPassword, setNewPassword] = useState('');
@@ -638,6 +695,8 @@ function ManageSheet({
 
   const dirty =
     displayName.trim() !== (user.displayName ?? '') ||
+    email.trim().toLowerCase() !== (user.email ?? '') ||
+    language !== (user.locale ?? null) ||
     role !== user.role ||
     canExport !== user.canExport;
 
@@ -657,6 +716,13 @@ function ManageSheet({
           onChange={(e) => setDisplayName(e.target.value)}
         />
       </div>
+      <EmailField id="mg-email" value={email} onChange={setEmail} />
+      <LanguageField
+        id="mg-lang"
+        value={language}
+        onChange={setLanguage}
+        hint={t('people.manage.languageHint')}
+      />
       <div className="field">
         <label>{t('people.form.role')}</label>
         <RolePicker value={role} onChange={setRole} disabled={isSelf} />
@@ -686,6 +752,10 @@ function ManageSheet({
           void patch(
             {
               displayName: displayName.trim() || null,
+              ...(email.trim().toLowerCase() !== (user.email ?? '')
+                ? { email: email.trim() || null }
+                : {}),
+              ...(language !== (user.locale ?? null) ? { locale: language } : {}),
               ...(role !== user.role ? { role } : {}),
               ...(canExport !== user.canExport ? { canExport } : {}),
             },
@@ -812,6 +882,285 @@ function ManageSheet({
           )}
         </div>
       )}
+    </Sheet>
+  );
+}
+
+/** An invitation as the link sheet sends it: the way in, and who and what it is for. */
+interface InviteLink {
+  url: string;
+  code: string;
+  role: Role;
+  expiresAt: string;
+  /** Who it is for, when that is known: the mail goes to them. */
+  email?: string | null;
+  /** The language the invitation is in; null writes it in this admin's own. */
+  language?: string | null;
+  /** Their name, as the request or the invitation gave it. */
+  name?: string | null;
+  /** The book they asked about, for an approved join request. */
+  bookTitle?: string | null;
+}
+
+/**
+ * The app's language for somebody else: each language listed in its own
+ * name, as the Settings picker lists them, and first the choice to leave it
+ * to their device.
+ */
+function LanguageField({
+  id,
+  value,
+  onChange,
+  hint,
+}: {
+  id: string;
+  value: string | null;
+  onChange: (code: string | null) => void;
+  hint?: string;
+}) {
+  const t = useT();
+  return (
+    <div className="field">
+      <label htmlFor={id}>{t('people.form.language')}</label>
+      <select
+        id={id}
+        className="input input--select"
+        value={value ?? ''}
+        onChange={(e) => onChange(e.target.value || null)}
+      >
+        <option value="">{t('people.form.languageDevice')}</option>
+        {UI_LOCALES.map((l) => (
+          <option key={l.code} value={l.code} lang={l.code}>
+            {l.native}
+          </option>
+        ))}
+      </select>
+      <span className="hint">{hint ?? t('people.form.languageHint')}</span>
+    </div>
+  );
+}
+
+/** An optional email address: a second name to sign in with. */
+function EmailField({
+  id,
+  value,
+  onChange,
+  hint,
+}: {
+  id: string;
+  value: string;
+  onChange: (email: string) => void;
+  hint?: string;
+}) {
+  const t = useT();
+  return (
+    <div className="field">
+      <label htmlFor={id}>{t('people.form.email')}</label>
+      <input
+        id={id}
+        className="input"
+        type="email"
+        dir="ltr"
+        autoComplete="off"
+        autoCapitalize="none"
+        autoCorrect="off"
+        placeholder={t('people.add.optional')}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      <span className="hint">{hint ?? t('people.form.emailHint')}</span>
+    </div>
+  );
+}
+
+/**
+ * Let a join request in: the language their sign-up page opens in and their
+ * account keeps - the one they asked in, unless the admin knows better - and
+ * then straight on to the link to send them.
+ */
+function ApproveSheet({
+  request,
+  onClose,
+  onApproved,
+}: {
+  request: JoinRequestDto;
+  onClose: () => void;
+  onApproved: (r: JoinRequestDto) => void;
+}) {
+  const t = useT();
+  const [language, setLanguage] = useState<string | null>(request.language ?? null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const approve = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await api<{ request: JoinRequestDto | null }>(
+        `/api/join-requests/${request.id}/approve`,
+        { method: 'POST', body: { language } },
+      );
+      if (res.request) onApproved(res.request);
+      else onClose();
+    } catch (err) {
+      setError(errorText(err, t('people.joinRequests.failed'), t));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Sheet
+      title={t('people.joinRequests.approveTitle', { name: request.name ?? request.email })}
+      onClose={onClose}
+    >
+      {error && (
+        <div className="banner banner--error" role="alert">
+          <IconAlert size={16} /> <bdi>{error}</bdi>
+        </div>
+      )}
+      <p style={{ marginTop: 0 }}>
+        {t('people.joinRequests.approveLede', { email: request.email })}
+      </p>
+      <LanguageField
+        id="jr-lang"
+        value={language}
+        onChange={setLanguage}
+        hint={t('people.joinRequests.languageHint')}
+      />
+      <button
+        className="btn"
+        disabled={busy}
+        style={{ width: '100%' }}
+        onClick={() => void approve()}
+      >
+        <IconCheck size={16} /> {t('people.joinRequests.approveConfirm')}
+      </button>
+    </Sheet>
+  );
+}
+
+/**
+ * The way in, ready to hand over. ReadPort sends no mail of its own, so the
+ * message is written here - in the language the invitation is in, whatever
+ * this admin's app speaks - and goes out through their own mail, the phone's
+ * share sheet, or the clipboard.
+ */
+function InviteLinkSheet({ link, onClose }: { link: InviteLink; onClose: () => void }) {
+  const t = useT();
+  const f = useFormat();
+  const toast = useToast();
+  const here = useLocale();
+  const { user: me } = useSession();
+  const [message, setMessage] = useState<{ subject: string; body: string } | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    const language = link.language ?? here;
+    void translatorFor(language).then((tl) => {
+      if (!alive) return;
+      let date: string;
+      try {
+        date = new Intl.DateTimeFormat(language, { dateStyle: 'long' }).format(
+          new Date(link.expiresAt),
+        );
+      } catch {
+        date = link.expiresAt.slice(0, 10);
+      }
+      // A date that ends in its own full stop - Russian "8 октября 2026 г." -
+      // ends the sentence with it, rather than with a second one after it.
+      date = date.replace(/\.$/, '');
+      const values = {
+        name: me?.displayName ?? me?.username ?? '',
+        title: link.bookTitle ?? '',
+        url: link.url,
+        code: link.code,
+        date,
+      };
+      setMessage({
+        subject: tl('people.link.mailSubject'),
+        body: link.bookTitle
+          ? tl('people.link.mailBodyBook', values)
+          : tl('people.link.mailBody', values),
+      });
+    });
+    return () => {
+      alive = false;
+    };
+  }, [link, here, me]);
+
+  const mailto = message
+    ? `mailto:${encodeURIComponent(link.email ?? '')}?subject=${encodeURIComponent(
+        message.subject,
+      )}&body=${encodeURIComponent(message.body)}`
+    : undefined;
+  const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+
+  return (
+    <Sheet title={t('people.link.title')} onClose={onClose}>
+      <p style={{ marginTop: 0 }}>
+        {t('people.link.shareOnce', { role: link.role, date: f.date(link.expiresAt) })}
+      </p>
+      {(link.email || link.language) && (
+        <p className="hint" style={{ marginTop: 0 }}>
+          {link.email && <bdi>{t('people.link.forEmail', { email: link.email })}</bdi>}
+          {link.email && link.language && ' · '}
+          {link.language && (
+            <span lang={link.language}>
+              {UI_LOCALES.find((l) => l.code === link.language)?.native ?? link.language}
+            </span>
+          )}
+        </p>
+      )}
+      <div className="field">
+        <label htmlFor="iv-code">{t('people.link.codeLabel')}</label>
+        <input
+          id="iv-code"
+          className="input invitecode"
+          dir="ltr"
+          readOnly
+          value={link.code}
+          onFocus={(e) => e.currentTarget.select()}
+        />
+        <span className="hint">{t('people.link.codeHint')}</span>
+      </div>
+      <div className="linkbox">
+        <input
+          className="input"
+          dir="ltr"
+          readOnly
+          value={link.url}
+          onFocus={(e) => e.currentTarget.select()}
+        />
+        <button
+          className="btn"
+          onClick={() => {
+            void navigator.clipboard?.writeText(link.url).then(
+              () => toast.show(t('people.link.copied')),
+              () => toast.show(t('people.link.copyFailed')),
+            );
+          }}
+        >
+          {t('people.link.copy')}
+        </button>
+      </div>
+      <div className="manage-row" style={{ marginTop: 12 }}>
+        <a
+          className={`btn btn--secondary btn--sm ${mailto ? '' : 'is-disabled'}`}
+          href={mailto}
+          aria-disabled={!mailto}
+        >
+          <IconMail size={15} /> {t('people.link.email')}
+        </a>
+        {canShare && message && (
+          <button
+            className="btn btn--secondary btn--sm"
+            onClick={() =>
+              void navigator.share({ title: message.subject, text: message.body }).catch(() => {})
+            }
+          >
+            <IconShare size={15} /> {t('people.link.share')}
+          </button>
+        )}
+      </div>
     </Sheet>
   );
 }

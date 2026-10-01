@@ -50,7 +50,8 @@ export const share = {
   'share.join.failed': 'Could not send the request. Is the server reachable?',
   'share.join.tooMany': 'Too many requests from here - try again later.',
   'share.join.pendingTitle': 'Request sent',
-  'share.join.pendingBody': 'An admin has to approve it; come back to this link afterwards.',
+  'share.join.pendingBody':
+    'An admin has to approve it. They’ll send you a link - or keep this page open and it carries on here.',
   'share.join.pendingAs': 'Asked as {email}',
   'share.join.notYou': 'Not you? Ask with a different address',
   'share.join.declinedTitle': 'Not this time',

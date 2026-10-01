@@ -224,6 +224,7 @@ const messages: Record<string, string> = {
   'auth.login.wrongCredentials': 'Onjuiste gebruikersnaam of onjuist wachtwoord.',
   'auth.login.failed': 'Aanmelden mislukt. Is de server bereikbaar?',
   'auth.form.username': 'Gebruikersnaam',
+  'auth.form.usernameOrEmail': 'Gebruikersnaam of e-mail',
   'auth.form.password': 'Wachtwoord',
   'auth.form.confirmPassword': 'Wachtwoord bevestigen',
   'auth.form.displayName': 'Weergavenaam',
@@ -242,6 +243,8 @@ const messages: Record<string, string> = {
   'auth.join.expiredLede':
     'Uitnodigingen zijn eenmalig en tijdgebonden. Vraag degene die je heeft uitgenodigd om een nieuwe link.',
   'auth.join.title': 'Je bent uitgenodigd',
+  'auth.join.emailNote':
+    'Je account krijgt {email} - je kunt ermee inloggen, of met je gebruikersnaam.',
   'auth.join.invitedBy':
     '{name} nodigt je uit als {role, select, admin {beheerder} curator {curator} reader {lezer} other {lid}}.',
   'auth.join.invited':
@@ -1028,10 +1031,28 @@ const messages: Record<string, string> = {
   'people.link.copy': 'Kopiëren',
   'people.link.copied': 'Link gekopieerd',
   'people.link.copyFailed': 'Selecteer en kopieer de link',
+  'people.link.forEmail': 'Voor {email}',
+  'people.link.email': 'E-mail',
+  'people.link.share': 'Delen',
+  'people.link.mailSubject': 'Je uitnodiging voor ReadPort',
+  'people.link.mailBody':
+    '{name} heeft je uitgenodigd voor ReadPort.\n\nMaak hier je account aan:\n{url}\n\nDe link is geldig tot {date}. Gaat hij niet open, vul dan deze code in op de inlogpagina van ReadPort: {code}',
+  'people.link.mailBodyBook':
+    '{name} heeft je toegelaten om ‘{title}’ te lezen op ReadPort.\n\nMaak hier je account aan:\n{url}\n\nDe link is geldig tot {date}. Gaat hij niet open, vul dan deze code in op de inlogpagina van ReadPort: {code}',
   'people.form.displayName': 'Weergavenaam',
   'people.form.role': 'Rol',
   'people.form.letThemSave': 'Kopieën laten bewaren',
   'people.form.adminsAlwaysDownload': 'Beheerders kunnen de bestanden altijd downloaden.',
+  'people.form.email': 'E-mail',
+  'people.form.emailHint':
+    'Optioneel - ze kunnen er in plaats van hun gebruikersnaam mee inloggen.',
+  'people.form.language': 'Taal',
+  'people.form.languageDevice': 'De taal van hun apparaat',
+  'people.form.languageHint':
+    'ReadPort opent voor hen in deze taal. Ze kunnen die altijd wijzigen.',
+  'people.invite.emailHint': 'Optioneel - het account krijgt het, en E-mail vult het voor je in.',
+  'people.manage.languageHint':
+    'ReadPort schakelt erop over zodra ze het weer openen. Ze kunnen die altijd wijzigen.',
   'people.add.title': 'Persoon toevoegen',
   'people.add.optional': 'Optioneel',
   'people.add.username': 'Gebruikersnaam',
@@ -1079,6 +1100,7 @@ const messages: Record<string, string> = {
   'people.manage.accountDeleted': 'Account verwijderd',
   'people.manage.deleteFailed': 'Kon niet worden verwijderd.',
   'people.error.usernameTaken': 'Die gebruikersnaam is al bezet.',
+  'people.error.emailTaken': 'Een ander account gebruikt dit e-mailadres al.',
   'people.error.lastAdmin': 'Dit is de laatste actieve beheerder – bevorder eerst iemand anders.',
   'people.error.selfLockout': 'Je kunt je eigen beheerderstoegang niet verwijderen.',
   'people.error.proxyManaged':
@@ -1678,14 +1700,22 @@ const messages: Record<string, string> = {
   // people
   'people.joinRequests.title': 'Verzoeken om lid te worden',
   'people.joinRequests.lede':
-    'Mensen die een deellink volgden en vroegen om lid te worden. Goedkeuren maakt er een lezersuitnodiging van, die via diezelfde link aankomt.',
+    'Mensen die een deellink volgden en vroegen om lid te worden. Goedkeuren geeft ze een lezersuitnodiging: stuur ze de link, of ze vinden hem via de deellink.',
   'people.joinRequests.askedFor': 'vroeg naar {title}, gedeeld door {name}',
   'people.joinRequests.askedForUnknown': 'kwam binnen via een link die inmiddels is ingetrokken',
   'people.joinRequests.when': 'Gevraagd {when}',
   'people.joinRequests.approve': 'Goedkeuren',
   'people.joinRequests.decline': 'Weigeren',
-  'people.joinRequests.approved':
-    'Goedgekeurd – via de deellink kan nu een account worden aangemaakt',
+  'people.joinRequests.approved': 'Goedgekeurd - stuur ze nu de link',
+  'people.joinRequests.waiting': 'Goedgekeurd - nog niet aangemeld',
+  'people.joinRequests.linkUntil': 'link geldig tot {date}',
+  'people.joinRequests.sendLink': 'Link sturen',
+  'people.joinRequests.approveTitle': '{name} toelaten',
+  'people.joinRequests.approveLede':
+    'Ze krijgen een lezersaccount met {email}. Stuur ze daarna de link - per e-mail, in een bericht, of lees de code voor.',
+  'people.joinRequests.languageHint':
+    'De aanmeldpagina, de uitnodiging en ReadPort zelf zijn in deze taal. Eerst is het de taal waarin ze het vroegen.',
+  'people.joinRequests.approveConfirm': 'Goedkeuren en link ophalen',
   'people.joinRequests.declined': 'Verzoek geweigerd',
   'people.joinRequests.failed': 'Dat is niet gelukt – controleer je verbinding.',
 
@@ -1754,7 +1784,7 @@ const messages: Record<string, string> = {
   'share.join.tooMany': 'Te veel verzoeken vanaf hier – probeer het later opnieuw.',
   'share.join.pendingTitle': 'Verzoek verzonden',
   'share.join.pendingBody':
-    'Een beheerder moet het nog goedkeuren; kom daarna terug via deze link.',
+    'Een beheerder moet het nog goedkeuren. Je krijgt dan een link - of laat deze pagina openstaan, dan gaat het hier verder.',
   'share.join.pendingAs': 'Gevraagd als {email}',
   'share.join.notYou': 'Niet jouw verzoek? Vraag het met een ander adres aan.',
   'share.join.declinedTitle': 'Deze keer niet',

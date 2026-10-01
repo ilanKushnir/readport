@@ -218,6 +218,7 @@ const messages: Record<string, string> = {
   'auth.login.wrongCredentials': 'Fel användarnamn eller lösenord.',
   'auth.login.failed': 'Inloggningen misslyckades. Är servern nåbar?',
   'auth.form.username': 'Användarnamn',
+  'auth.form.usernameOrEmail': 'Användarnamn eller e-post',
   'auth.form.password': 'Lösenord',
   'auth.form.confirmPassword': 'Bekräfta lösenord',
   'auth.form.displayName': 'Visningsnamn',
@@ -236,6 +237,8 @@ const messages: Record<string, string> = {
   'auth.join.expiredLede':
     'Inbjudningar gäller bara en gång och är tidsbegränsade. Be den som bjöd in dig om en ny länk.',
   'auth.join.title': 'Du är inbjuden',
+  'auth.join.emailNote':
+    'Ditt konto får {email} - du kan logga in med den eller med ditt användarnamn.',
   'auth.join.invitedBy':
     '{name} har bjudit in dig att gå med som {role, select, admin {admin} curator {kurator} reader {läsare} other {medlem}}.',
   'auth.join.invited':
@@ -991,10 +994,27 @@ const messages: Record<string, string> = {
   'people.link.copy': 'Kopiera',
   'people.link.copied': 'Länk kopierad',
   'people.link.copyFailed': 'Markera och kopiera länken',
+  'people.link.forEmail': 'Till {email}',
+  'people.link.email': 'E-post',
+  'people.link.share': 'Dela',
+  'people.link.mailSubject': 'Din inbjudan till ReadPort',
+  'people.link.mailBody':
+    '{name} har bjudit in dig till ReadPort.\n\nSkapa ditt konto här:\n{url}\n\nLänken gäller till {date}. Om den inte öppnas, ange den här koden på inloggningssidan för ReadPort: {code}',
+  'people.link.mailBodyBook':
+    '{name} har släppt in dig för att läsa ”{title}” på ReadPort.\n\nSkapa ditt konto här:\n{url}\n\nLänken gäller till {date}. Om den inte öppnas, ange den här koden på inloggningssidan för ReadPort: {code}',
   'people.form.displayName': 'Visningsnamn',
   'people.form.role': 'Roll',
   'people.form.letThemSave': 'Låt dem spara kopior',
   'people.form.adminsAlwaysDownload': 'Admins kan alltid ladda ner filerna.',
+  'people.form.email': 'E-post',
+  'people.form.emailHint': 'Valfritt - de kan logga in med den i stället för användarnamnet.',
+  'people.form.language': 'Språk',
+  'people.form.languageDevice': 'Språket på deras enhet',
+  'people.form.languageHint':
+    'ReadPort öppnas på det här språket för dem. De kan ändra det när som helst.',
+  'people.invite.emailHint': 'Valfritt - kontot får den, och E-post fyller i den åt dig.',
+  'people.manage.languageHint':
+    'ReadPort byter till det nästa gång de öppnar det. De kan ändra det när som helst.',
   'people.add.title': 'Lägg till en person',
   'people.add.optional': 'Valfritt',
   'people.add.username': 'Användarnamn',
@@ -1043,6 +1063,7 @@ const messages: Record<string, string> = {
   'people.manage.accountDeleted': 'Konto borttaget',
   'people.manage.deleteFailed': 'Kunde inte ta bort.',
   'people.error.usernameTaken': 'Det användarnamnet är redan upptaget.',
+  'people.error.emailTaken': 'Ett annat konto använder redan den e-postadressen.',
   'people.error.lastAdmin': 'Det här är den sista aktiva admin – utse någon annan först.',
   'people.error.selfLockout': 'Du kan inte ta bort din egen adminåtkomst.',
   'people.error.proxyManaged':
@@ -1630,13 +1651,22 @@ const messages: Record<string, string> = {
   // people
   'people.joinRequests.title': 'Förfrågningar om att gå med',
   'people.joinRequests.lede':
-    'Personer som följde en delningslänk och bad om att bli insläppta. Att godkänna skapar en läsarinbjudan, som samma länk ger dem.',
+    'Personer som följde en delningslänk och bad om att bli insläppta. Att godkänna ger dem en läsarinbjudan: skicka länken till dem, eller så hittar de den via delningslänken.',
   'people.joinRequests.askedFor': 'Bad om {title}, delad av {name}',
   'people.joinRequests.askedForUnknown': 'Bad om tillgång via en länk som sedan har återkallats',
   'people.joinRequests.when': 'Bett {when}',
   'people.joinRequests.approve': 'Godkänn',
   'people.joinRequests.decline': 'Avböj',
-  'people.joinRequests.approved': 'Godkänt – de kan skapa sitt konto från delningslänken',
+  'people.joinRequests.approved': 'Godkänd - skicka länken till dem nu',
+  'people.joinRequests.waiting': 'Godkänd - har inte registrerat sig än',
+  'people.joinRequests.linkUntil': 'länken gäller till {date}',
+  'people.joinRequests.sendLink': 'Skicka länken',
+  'people.joinRequests.approveTitle': 'Släpp in {name}',
+  'people.joinRequests.approveLede':
+    'De får ett läsarkonto med {email}. Skicka sedan länken - via e-post, i ett meddelande, eller läs upp koden för dem.',
+  'people.joinRequests.languageHint':
+    'Registreringssidan, inbjudan och ReadPort självt blir på det här språket. Från början är det språket de frågade på.',
+  'people.joinRequests.approveConfirm': 'Godkänn och hämta länken',
   'people.joinRequests.declined': 'Förfrågan avböjd',
   'people.joinRequests.failed': 'Det gick inte igenom – kontrollera anslutningen.',
 
@@ -1704,7 +1734,7 @@ const messages: Record<string, string> = {
   'share.join.tooMany': 'För många förfrågningar härifrån – försök igen senare.',
   'share.join.pendingTitle': 'Förfrågan skickad',
   'share.join.pendingBody':
-    'En admin måste godkänna den; kom tillbaka till den här länken efteråt.',
+    'En admin måste godkänna den. Du får en länk - eller låt den här sidan vara öppen så fortsätter den här.',
   'share.join.pendingAs': 'Bett som {email}',
   'share.join.notYou': 'Inte du? Be igen med en annan adress',
   'share.join.declinedTitle': 'Inte den här gången',

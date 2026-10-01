@@ -84,19 +84,19 @@ The agent API requires a key; sessions remain for the ordinary browser API.
 
 ## Auth & setup
 
-| Method | Path                    | Notes                                                                                     |
-| ------ | ----------------------- | ----------------------------------------------------------------------------------------- |
-| GET    | `/api/health`           | public; liveness - `{status, version, time}`                                              |
-| GET    | `/api/setup/status`     | public; `{needsSetup, setupTokenRequired, libraries, languages, defaultLanguage}`         |
-| POST   | `/api/setup/verify`     | public until first user exists; checks `RP_SETUP_TOKEN` when one is set, else `{ok:true}` |
-| POST   | `/api/setup/test-paths` | admin; before setup, `x-rp-setup-token` if locked, else open; `{paths, kind?}`            |
-| GET    | `/api/setup/browse`     | admin; before setup, `x-rp-setup-token` if locked, else open; folder picker               |
-| POST   | `/api/setup`            | public until first user exists; creates admin (+ folders, language), starts the scan      |
-| POST   | `/api/auth/login`       | rate limited; `403 account-disabled` for disabled accounts                                |
-| POST   | `/api/auth/logout`      |                                                                                           |
-| GET    | `/api/auth/me`          | `{user, via, needsLibraries, librariesEnvPinned, locale}`                                 |
-| PATCH  | `/api/auth/me`          | own display name                                                                          |
-| POST   | `/api/auth/password`    | own password (current + new); revokes other sessions                                      |
+| Method | Path                    | Notes                                                                                                                  |
+| ------ | ----------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/health`           | public; liveness - `{status, version, time}`                                                                           |
+| GET    | `/api/setup/status`     | public; `{needsSetup, setupTokenRequired, libraries, languages, defaultLanguage}`                                      |
+| POST   | `/api/setup/verify`     | public until first user exists; checks `RP_SETUP_TOKEN` when one is set, else `{ok:true}`                              |
+| POST   | `/api/setup/test-paths` | admin; before setup, `x-rp-setup-token` if locked, else open; `{paths, kind?}`                                         |
+| GET    | `/api/setup/browse`     | admin; before setup, `x-rp-setup-token` if locked, else open; folder picker                                            |
+| POST   | `/api/setup`            | public until first user exists; creates admin (+ folders, language), starts the scan                                   |
+| POST   | `/api/auth/login`       | rate limited; `{username, password}` - a username or the account's email; `403 account-disabled` for disabled accounts |
+| POST   | `/api/auth/logout`      |                                                                                                                        |
+| GET    | `/api/auth/me`          | `{user, via, needsLibraries, librariesEnvPinned, locale}`                                                              |
+| PATCH  | `/api/auth/me`          | own display name                                                                                                       |
+| POST   | `/api/auth/password`    | own password (current + new); revokes other sessions                                                                   |
 
 `libraries` in the status payload covers all three folder lists - `ebookDirs`,
 `audiobookDirs` and `alignmentDirs` - each with a flag saying whether an
@@ -114,17 +114,28 @@ step.
 
 ## People (admin)
 
-| Method | Path                                 | Notes                                                               |
-| ------ | ------------------------------------ | ------------------------------------------------------------------- |
-| GET    | `/api/users`                         | accounts + pending invites                                          |
-| POST   | `/api/users`                         | `{username, password, role, displayName?}`                          |
-| PATCH  | `/api/users/:id`                     | `{role?, status?, displayName?, password?}`; last-admin/self guards |
-| POST   | `/api/users/:id/sign-out-everywhere` |                                                                     |
-| DELETE | `/api/users/:id`                     | removes the account and its personal data                           |
-| POST   | `/api/invites`                       | `{role, displayName?, username?, expiresInDays}` → one-time link    |
-| DELETE | `/api/invites/:id`                   | revoke                                                              |
-| GET    | `/api/invites/:token`                | public, rate limited; what the link offers                          |
-| POST   | `/api/invites/:token/accept`         | public; `{username, password, displayName?}` → account + session    |
+| Method | Path                                 | Notes                                                                                |
+| ------ | ------------------------------------ | ------------------------------------------------------------------------------------ |
+| GET    | `/api/users`                         | accounts (each with `email` and `locale`) + pending invites                          |
+| POST   | `/api/users`                         | `{username, password, role, displayName?, email?, locale?}`                          |
+| PATCH  | `/api/users/:id`                     | `{role?, status?, displayName?, password?, email?, locale?}`; last-admin/self guards |
+| POST   | `/api/users/:id/sign-out-everywhere` |                                                                                      |
+| DELETE | `/api/users/:id`                     | removes the account and its personal data                                            |
+| POST   | `/api/invites`                       | `{role, displayName?, username?, expiresInDays, email?, language?}` → one-time link  |
+| DELETE | `/api/invites/:id`                   | revoke                                                                               |
+| GET    | `/api/invites/:token`                | public, rate limited; what the link offers, with its `email` and `language`          |
+| POST   | `/api/invites/:token/accept`         | public; `{username, password, displayName?}` → account + session                     |
+
+An account may carry an **email address**: a second name to sign in with
+(`/api/auth/login` takes it in place of the username, in any capitalisation),
+never a requirement, and never shared by two accounts (`409 email-taken`).
+`locale` is the language the app speaks to the account - one of the
+interface's languages, or null to follow their device - the same setting the
+person changes in Settings; an admin may set it when creating an account or
+later, and it takes effect the next time they open the app. An invitation may
+carry both: `email` says who it is for, and the account it opens carries the
+address (unless another account already has it); `language` is what the
+sign-up page switches to and what the new account keeps.
 
 ## Library & books
 
@@ -836,21 +847,21 @@ something about a book - the teaser a link preview shows, and the page the
 person lands on - and the way in for whoever follows it: sign in, or ask to
 join and wait for an admin.
 
-| Method | Path                             | Notes                                                                                            |
-| ------ | -------------------------------- | ------------------------------------------------------------------------------------------------ |
-| GET    | `/api/books/:id/share`           | the caller's live share for this book if one exists, else `{url: null, token: null}`; makes none |
-| POST   | `/api/books/:id/share`           | the caller's live share for this book, made on first ask → exactly `{url, token}`                |
-| DELETE | `/api/share/:token`              | revoke; the creator or an admin. A miss is 404, never 403                                        |
-| POST   | `/api/share/:token/add`          | the shared book onto the caller's reading list, credited to the sharer → `{added, bookId}`       |
-| GET    | `/api/share/:token`              | public, rate limited; `{valid: true, book, sharedBy: {displayName}}` or `{valid: false}`         |
-| POST   | `/api/share/:token/join`         | public, rate limited; `{email, name?, message?}` → 201 `{status: 'pending'}` (200 if it was)     |
-| GET    | `/api/share/:token/join?email=`  | public, rate limited; `{status: none \| pending \| approved \| declined, inviteToken?}`          |
-| GET    | `/s/:token`                      | public; the app shell with the book's Open Graph tags in the head                                |
-| GET    | `/s/:token/image.png`            | public; the 1200×630 link preview, cached an hour                                                |
-| GET    | `/s/:token/cover`                | public; the cover on its own, for the share page's teaser                                        |
-| GET    | `/api/join-requests`             | admin; pending requests first, then what was decided in the last 30 days                         |
-| POST   | `/api/join-requests/:id/approve` | admin; mints a reader invitation (7 days, named after the request) → `{request}`                 |
-| POST   | `/api/join-requests/:id/decline` | admin → `{request}`; a decided request answers 409 `already-decided`                             |
+| Method | Path                             | Notes                                                                                                                                                                          |
+| ------ | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| GET    | `/api/books/:id/share`           | the caller's live share for this book if one exists, else `{url: null, token: null}`; makes none                                                                               |
+| POST   | `/api/books/:id/share`           | the caller's live share for this book, made on first ask → exactly `{url, token}`                                                                                              |
+| DELETE | `/api/share/:token`              | revoke; the creator or an admin. A miss is 404, never 403                                                                                                                      |
+| POST   | `/api/share/:token/add`          | the shared book onto the caller's reading list, credited to the sharer → `{added, bookId}`                                                                                     |
+| GET    | `/api/share/:token`              | public, rate limited; `{valid: true, book, sharedBy: {displayName}}` or `{valid: false}`                                                                                       |
+| POST   | `/api/share/:token/join`         | public, rate limited; `{email, name?, message?, language?}` → 201 `{status: 'pending'}` (200 if it was)                                                                        |
+| GET    | `/api/share/:token/join?email=`  | public, rate limited; `{status: none \| pending \| approved \| declined, inviteToken?, language?}`                                                                             |
+| GET    | `/s/:token`                      | public; the app shell with the book's Open Graph tags in the head                                                                                                              |
+| GET    | `/s/:token/image.png`            | public; the 1200×630 link preview, cached an hour                                                                                                                              |
+| GET    | `/s/:token/cover`                | public; the cover on its own, for the share page's teaser                                                                                                                      |
+| GET    | `/api/join-requests`             | admin; pending requests first, then what was decided in the last 30 days; each with the `language` it was asked in, and an approved one with its `invite` while that is open   |
+| POST   | `/api/join-requests/:id/approve` | admin; `{language?}` → mints a reader invitation (7 days, named after the request, for its address, in the chosen language - by default the one it was asked in) → `{request}` |
+| POST   | `/api/join-requests/:id/decline` | admin → `{request}`; a decided request answers 409 `already-decided`                                                                                                           |
 
 The token is 24 random bytes as base64url and the whole credential; the
 routes accept 22 to 64 URL-safe characters. `url` is built from the
@@ -882,9 +893,16 @@ answer, and the address is normalised (trimmed, lower-cased) so a differently
 cased second ask is the same ask. The status route answers only for a
 request left through the link it is asked on, and `inviteToken` is present
 only while the request is approved and its invitation still open - the code
-the same link then accepts through `POST /api/invites/:token/accept`. The
-invitation's code is derived from the request id under the session secret
-and never stored in the clear; the admin routes never return it. A declined
+the same link then accepts through `POST /api/invites/:token/accept`, with the
+`language` the admin chose, which the page switches to. The invitation's code
+is derived from the request id under the session secret and never stored in
+the clear. ReadPort sends no mail of its own, so the admin routes do hand it
+to an admin - as an approved request's `invite`: `{code, path, url,
+expiresAt, language}`, `url` built on `publicUrl` (null without one), for
+as long as it can be used - to send on by email, a message or a code read
+out. The share page, left open on a request still waiting, asks again every
+thirty seconds while it is on screen, so an approval turns it into the
+account form without anyone sending anything. A declined
 request answers `declined`; asking again after that is allowed. Ask-to-join
 is limited to 10 per address and 5 per email address in ten minutes, status
 checks to 60 per address, and the page, picture and cover to 120 per address

@@ -165,6 +165,7 @@ interface JoinRequestRow {
   invite_id: string | null;
   created_at: string;
   decided_at: string | null;
+  language: string | null;
 }
 
 /** How long a decided request stays on the admin's list. */
@@ -178,7 +179,7 @@ const DECIDED_KEEP_DAYS = 30;
  */
 export function createJoinRequest(
   db: DB,
-  input: { email: string; name?: string; message?: string; shareToken: string },
+  input: { email: string; name?: string; message?: string; language?: string; shareToken: string },
 ): { status: 'pending' | 'approved'; created: boolean } {
   const latest = latestJoinRequest(db, input.email, input.shareToken);
   if (latest?.status === 'pending') return { status: 'pending', created: false };
@@ -188,8 +189,8 @@ export function createJoinRequest(
   }
   try {
     db.prepare(
-      `INSERT INTO join_requests (id, email, name, message, share_token, status, created_at)
-       VALUES (?, ?, ?, ?, ?, 'pending', ?)`,
+      `INSERT INTO join_requests (id, email, name, message, share_token, status, created_at, language)
+       VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)`,
     ).run(
       newId('jr'),
       input.email,
@@ -197,6 +198,7 @@ export function createJoinRequest(
       input.message ?? null,
       input.shareToken,
       nowIso(),
+      input.language ?? null,
     );
   } catch (err) {
     // The same address asked through another link a moment ago.
@@ -223,12 +225,21 @@ function latestJoinRequest(db: DB, email: string, shareToken: string): JoinReque
 }
 
 function openInvite(db: DB, inviteId: string | null): boolean {
-  if (!inviteId) return false;
-  return (
-    db
-      .prepare('SELECT 1 FROM invites WHERE id = ? AND used_at IS NULL AND expires_at > ?')
-      .get(inviteId, nowIso()) !== undefined
-  );
+  return openInviteOf(db, inviteId) !== null;
+}
+
+/** An invitation that can still be used: when it lapses, and the language it opens in. */
+function openInviteOf(
+  db: DB,
+  inviteId: string | null,
+): { expiresAt: string; language: string | null } | null {
+  if (!inviteId) return null;
+  const row = db
+    .prepare(
+      'SELECT expires_at, language FROM invites WHERE id = ? AND used_at IS NULL AND expires_at > ?',
+    )
+    .get(inviteId, nowIso()) as { expires_at: string; language: string | null } | undefined;
+  return row ? { expiresAt: row.expires_at, language: row.language ?? null } : null;
 }
 
 /**
@@ -270,8 +281,13 @@ export function joinStatus(
   // Approved, but the invitation has been used or has lapsed: the status
   // still says so, and the page offers sign-in rather than a form that
   // would fail. Asking again is allowed - a lapsed approval is not a no.
-  if (!openInvite(db, row.invite_id)) return { status: 'approved' };
-  return { status: 'approved', inviteToken: deriveInviteToken(secret, row.id) };
+  const invite = openInviteOf(db, row.invite_id);
+  if (!invite) return { status: 'approved' };
+  return {
+    status: 'approved',
+    inviteToken: deriveInviteToken(secret, row.id),
+    language: invite.language,
+  };
 }
 
 export function pendingJoinRequestCount(db: DB): number {
@@ -289,8 +305,18 @@ export function getJoinRequest(db: DB, id: string): JoinRequestRow | undefined {
     JoinRequestRow | undefined;
 }
 
-/** Pending requests, oldest first, then what was decided recently. */
-export function listJoinRequests(db: DB): JoinRequestDto[] {
+/**
+ * Pending requests, oldest first, then what was decided recently.
+ *
+ * An approved request whose invitation is still open carries it - the code,
+ * and the link built on `linkBase` - so the admin who let them in can send it
+ * to them: ReadPort sends no mail of its own, and without this the only way
+ * the person heard was by happening to open their share link again.
+ */
+export function listJoinRequests(
+  db: DB,
+  invites?: { secret: string; linkBase: string },
+): JoinRequestDto[] {
   const since = new Date(Date.now() - DECIDED_KEEP_DAYS * 86_400_000).toISOString();
   const rows = db
     .prepare(
@@ -334,7 +360,28 @@ export function listJoinRequests(db: DB): JoinRequestDto[] {
           }
         : null,
     sharedBy: r.username ? { displayName: r.display_name ?? r.username } : null,
+    language: r.language ?? null,
+    invite: invites && r.status === 'approved' ? inviteFor(db, r, invites) : null,
   }));
+}
+
+/** An approved request's invitation, while it can be used, as the admin sends it. */
+function inviteFor(
+  db: DB,
+  r: JoinRequestRow,
+  invites: { secret: string; linkBase: string },
+): NonNullable<JoinRequestDto['invite']> | null {
+  const open = openInviteOf(db, r.invite_id);
+  if (!open) return null;
+  const code = deriveInviteToken(invites.secret, r.id);
+  const path = `/join/${encodeURIComponent(code)}`;
+  return {
+    code,
+    path,
+    url: invites.linkBase ? `${invites.linkBase}${path}` : null,
+    expiresAt: open.expiresAt,
+    language: open.language,
+  };
 }
 
 /** Record a decision on a request that is still pending. */

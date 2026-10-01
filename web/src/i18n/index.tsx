@@ -106,6 +106,18 @@ const Ctx = createContext<I18nCtx>({
   locales: UI_LOCALES,
 });
 
+/**
+ * Words in a language other than the one on screen: an invitation an admin
+ * sends is written in the language of the person it is for, whatever the
+ * admin's own app speaks. Falls back to English for an unknown code, and
+ * key by key for anything a language has not caught up with.
+ */
+export async function translatorFor(code: string | null | undefined): Promise<TranslateFn> {
+  const locale = uiLocale(code ?? '')?.code ?? DEFAULT_UI_LOCALE;
+  const messages = await loadMessages(locale);
+  return (key, values) => formatMessage(locale, messages[key] ?? en[key] ?? key, values);
+}
+
 export const useI18n = () => useContext(Ctx);
 export const useT = (): TranslateFn => useContext(Ctx).t;
 export const useLocale = () => useContext(Ctx).locale;

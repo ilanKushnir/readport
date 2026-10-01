@@ -222,6 +222,7 @@ const messages: Record<string, string> = {
   'auth.login.wrongCredentials': 'ユーザー名またはパスワードが正しくありません。',
   'auth.login.failed': 'サインインに失敗しました。サーバーに接続できていますか?',
   'auth.form.username': 'ユーザー名',
+  'auth.form.usernameOrEmail': 'ユーザー名またはメールアドレス',
   'auth.form.password': 'パスワード',
   'auth.form.confirmPassword': 'パスワードの確認',
   'auth.form.displayName': '表示名',
@@ -240,6 +241,8 @@ const messages: Record<string, string> = {
   'auth.join.expiredLede':
     '招待は1回限り有効で、期限もあります。招待した相手に新しいリンクを頼んでください。',
   'auth.join.title': '招待されました',
+  'auth.join.emailNote':
+    'アカウントには {email} が登録されます。このアドレスかユーザー名でサインインできます。',
   'auth.join.invitedBy':
     '{name}さんがあなたを{role, select, admin {管理者} curator {キュレーター} reader {リーダー} other {メンバー}}として招待しました。',
   'auth.join.invited':
@@ -1005,10 +1008,26 @@ const messages: Record<string, string> = {
   'people.link.copy': 'コピー',
   'people.link.copied': 'リンクをコピーしました',
   'people.link.copyFailed': 'リンクを選択してコピーしてください',
+  'people.link.forEmail': '{email} 宛て',
+  'people.link.email': 'メール',
+  'people.link.share': '共有',
+  'people.link.mailSubject': 'ReadPort への招待',
+  'people.link.mailBody':
+    '{name} さんから ReadPort への招待が届いています。\n\nこちらからアカウントを作成してください:\n{url}\n\nリンクの有効期限は {date} です。開けない場合は、ReadPort のサインインページでこのコードを入力してください: {code}',
+  'people.link.mailBodyBook':
+    '{name} さんが ReadPort で『{title}』を読めるようにしました。\n\nこちらからアカウントを作成してください:\n{url}\n\nリンクの有効期限は {date} です。開けない場合は、ReadPort のサインインページでこのコードを入力してください: {code}',
   'people.form.displayName': '表示名',
   'people.form.role': '役割',
   'people.form.letThemSave': 'コピーの保存を許可',
   'people.form.adminsAlwaysDownload': '管理者は常にファイルをダウンロードできます。',
+  'people.form.email': 'メールアドレス',
+  'people.form.emailHint': '任意。ユーザー名の代わりにこれでサインインできます。',
+  'people.form.language': '言語',
+  'people.form.languageDevice': '端末の言語',
+  'people.form.languageHint': 'ReadPort はこの言語で開きます。本人はいつでも変更できます。',
+  'people.invite.emailHint': '任意。アカウントに登録され、「メール」ボタンで宛先に入ります。',
+  'people.manage.languageHint':
+    '次に開いたときから ReadPort がこの言語になります。本人はいつでも変更できます。',
   'people.add.title': '人を追加',
   'people.add.optional': '任意',
   'people.add.username': 'ユーザー名',
@@ -1056,6 +1075,7 @@ const messages: Record<string, string> = {
   'people.manage.accountDeleted': 'アカウントを削除しました',
   'people.manage.deleteFailed': '削除できませんでした。',
   'people.error.usernameTaken': 'そのユーザー名はすでに使われています。',
+  'people.error.emailTaken': 'このメールアドレスはすでに別のアカウントで使われています。',
   'people.error.lastAdmin':
     'これは最後の有効な管理者です。先に別の人を管理者に昇格させてください。',
   'people.error.selfLockout': '自分自身の管理者権限を削除することはできません。',
@@ -1648,13 +1668,22 @@ const messages: Record<string, string> = {
   // people
   'people.joinRequests.title': '参加リクエスト',
   'people.joinRequests.lede':
-    '共有リンクから参加をリクエストした人たちです。承認するとリーダーの招待が作成され、同じリンクからその人に渡されます。',
+    '共有リンクから参加をリクエストした人たちです。承認するとリーダーの招待が作成されます。リンクを送るか、本人が共有リンクから受け取れます。',
   'people.joinRequests.askedFor': '『{title}』をリクエスト · {name}さんが共有',
   'people.joinRequests.askedForUnknown': 'すでに取り消されたリンクからのリクエスト',
   'people.joinRequests.when': '{when}にリクエスト',
   'people.joinRequests.approve': '承認',
   'people.joinRequests.decline': '却下',
-  'people.joinRequests.approved': '承認済み - 共有リンクからアカウントを作成できます',
+  'people.joinRequests.approved': '承認しました。リンクを送ってください',
+  'people.joinRequests.waiting': '承認済み・まだ登録していません',
+  'people.joinRequests.linkUntil': 'リンクの有効期限 {date}',
+  'people.joinRequests.sendLink': 'リンクを送る',
+  'people.joinRequests.approveTitle': '{name} さんを承認',
+  'people.joinRequests.approveLede':
+    '{email} でリーダーのアカウントが作られます。そのあとリンクを送ってください。メール、メッセージ、またはコードを読み上げて伝えられます。',
+  'people.joinRequests.languageHint':
+    '登録ページ、招待、ReadPort 自体がこの言語になります。最初はリクエストしたときの言語です。',
+  'people.joinRequests.approveConfirm': '承認してリンクを取得',
   'people.joinRequests.declined': 'リクエストを却下しました',
   'people.joinRequests.failed': '送信できませんでした。接続を確認してください。',
 
@@ -1723,7 +1752,8 @@ const messages: Record<string, string> = {
   'share.join.tooMany':
     'ここからのリクエストが多すぎます。しばらくしてからもう一度お試しください。',
   'share.join.pendingTitle': 'リクエストを送信しました',
-  'share.join.pendingBody': '管理者の承認が必要です。その後、このリンクに戻ってきてください。',
+  'share.join.pendingBody':
+    '管理者の承認が必要です。リンクが届きます。またはこのページを開いたままにしておけば、ここから続けられます。',
   'share.join.pendingAs': '{email}としてリクエストしました',
   'share.join.notYou': 'ご自身ではない場合は、別のメールアドレスでリクエストしてください',
   'share.join.declinedTitle': '今回は見送りとなりました',

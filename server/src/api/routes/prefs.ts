@@ -87,6 +87,20 @@ function writePref(ctx: AppContext, userId: string, key: PrefKey, value: unknown
 }
 
 /**
+ * The language the app speaks to an account; null hands the choice back to
+ * their device. The account's own choice in Settings and an admin's choice
+ * for them (an invitation, an account an admin made or manages) are the same
+ * setting: the most recent one wins, and the person can always change it.
+ */
+export function setAccountLocale(ctx: AppContext, userId: string, locale: string | null): void {
+  if (locale === null) {
+    ctx.db.prepare("DELETE FROM user_prefs WHERE user_id = ? AND key = 'locale'").run(userId);
+  } else {
+    writePref(ctx, userId, 'locale', { locale });
+  }
+}
+
+/**
  * Mark a brand-new account as already up to date.
  *
  * "What's new" is for people who were here before the release, so an account
@@ -174,13 +188,7 @@ export function registerPrefsRoutes(app: FastifyInstance, ctx: AppContext): void
   app.put('/api/prefs/locale', async (req, reply) => {
     const body = z.object({ locale: uiLocaleSchema.nullable() }).safeParse(req.body);
     if (!body.success) return reply.code(400).send({ error: 'unsupported-locale' });
-    if (body.data.locale === null) {
-      ctx.db
-        .prepare("DELETE FROM user_prefs WHERE user_id = ? AND key = 'locale'")
-        .run(req.user!.id);
-    } else {
-      writePref(ctx, req.user!.id, 'locale', { locale: body.data.locale });
-    }
+    setAccountLocale(ctx, req.user!.id, body.data.locale);
     return { locale: body.data.locale };
   });
 

@@ -222,6 +222,7 @@ const messages: Record<string, string> = {
   'auth.login.wrongCredentials': 'Nesprávné uživatelské jméno nebo heslo.',
   'auth.login.failed': 'Přihlášení se nezdařilo. Je server dostupný?',
   'auth.form.username': 'Uživatelské jméno',
+  'auth.form.usernameOrEmail': 'Uživatelské jméno nebo e-mail',
   'auth.form.password': 'Heslo',
   'auth.form.confirmPassword': 'Potvrďte heslo',
   'auth.form.displayName': 'Zobrazované jméno',
@@ -240,6 +241,8 @@ const messages: Record<string, string> = {
   'auth.join.expiredLede':
     'Pozvánky jsou jednorázové a časově omezené. Požádejte toho, kdo vás pozval, o nový odkaz.',
   'auth.join.title': 'Máte pozvánku',
+  'auth.join.emailNote':
+    'Váš účet ponese adresu {email} - můžete se přihlašovat jí nebo uživatelským jménem.',
   'auth.join.invitedBy':
     '{name} vás zve, abyste se připojili jako {role, select, admin {administrátor} curator {kurátor} reader {čtenář} other {člen}}.',
   'auth.join.invited':
@@ -1003,10 +1006,26 @@ const messages: Record<string, string> = {
   'people.link.copy': 'Kopírovat',
   'people.link.copied': 'Odkaz zkopírován',
   'people.link.copyFailed': 'Vyberte a zkopírujte odkaz',
+  'people.link.forEmail': 'Pro {email}',
+  'people.link.email': 'E-mail',
+  'people.link.share': 'Sdílet',
+  'people.link.mailSubject': 'Vaše pozvánka do ReadPortu',
+  'people.link.mailBody':
+    '{name} vás zve do ReadPortu.\n\nÚčet si vytvořte zde:\n{url}\n\nOdkaz platí do {date}. Pokud se neotevře, zadejte tento kód na přihlašovací stránce ReadPortu: {code}',
+  'people.link.mailBodyBook':
+    '{name} vás pustil(a) ke čtení knihy „{title}“ v ReadPortu.\n\nÚčet si vytvořte zde:\n{url}\n\nOdkaz platí do {date}. Pokud se neotevře, zadejte tento kód na přihlašovací stránce ReadPortu: {code}',
   'people.form.displayName': 'Zobrazované jméno',
   'people.form.role': 'Role',
   'people.form.letThemSave': 'Umožnit jim ukládat kopie',
   'people.form.adminsAlwaysDownload': 'Administrátoři mohou soubory stahovat vždy.',
+  'people.form.email': 'E-mail',
+  'people.form.emailHint': 'Nepovinné - mohou se jím přihlašovat místo uživatelského jména.',
+  'people.form.language': 'Jazyk',
+  'people.form.languageDevice': 'Jazyk jejich zařízení',
+  'people.form.languageHint': 'ReadPort se jim otevře v tomto jazyce. Mohou ho kdykoli změnit.',
+  'people.invite.emailHint': 'Nepovinné - účet ho ponese a tlačítko E-mail ho vyplní za vás.',
+  'people.manage.languageHint':
+    'ReadPort se na něj přepne, až ho příště otevřou. Mohou ho kdykoli změnit.',
   'people.add.title': 'Přidat osobu',
   'people.add.optional': 'Nepovinné',
   'people.add.username': 'Uživatelské jméno',
@@ -1055,6 +1074,7 @@ const messages: Record<string, string> = {
   'people.manage.accountDeleted': 'Účet smazán',
   'people.manage.deleteFailed': 'Nepodařilo se smazat.',
   'people.error.usernameTaken': 'Toto uživatelské jméno je již obsazené.',
+  'people.error.emailTaken': 'Tuto e-mailovou adresu už používá jiný účet.',
   'people.error.lastAdmin':
     'Toto je poslední aktivní administrátor – nejprve povyšte někoho jiného.',
   'people.error.selfLockout': 'Nemůžete odebrat vlastní administrátorský přístup.',
@@ -1659,13 +1679,22 @@ const messages: Record<string, string> = {
   // people
   'people.joinRequests.title': 'Žádosti o připojení',
   'people.joinRequests.lede':
-    'Lidé, kteří otevřeli sdílený odkaz a požádali o vstup. Potvrzení vytvoří pozvánku pro čtenáře, kterou jim předá stejný odkaz.',
+    'Lidé, kteří otevřeli sdílený odkaz a požádali o vstup. Potvrzení jim dá pozvánku pro čtenáře: pošlete jim odkaz, nebo ji najdou na sdíleném odkazu.',
   'people.joinRequests.askedFor': 'žádá o {title}, odkaz od {name}',
   'people.joinRequests.askedForUnknown': 'žádá přes odkaz, který byl mezitím odvolán',
   'people.joinRequests.when': 'Žádost {when}',
   'people.joinRequests.approve': 'Potvrdit',
   'people.joinRequests.decline': 'Odmítnout',
-  'people.joinRequests.approved': 'Potvrzeno – účet si teď mohou vytvořit přes sdílený odkaz',
+  'people.joinRequests.approved': 'Potvrzeno - teď jim pošlete odkaz',
+  'people.joinRequests.waiting': 'Potvrzeno - zatím se nezaregistrovali',
+  'people.joinRequests.linkUntil': 'odkaz platí do {date}',
+  'people.joinRequests.sendLink': 'Poslat odkaz',
+  'people.joinRequests.approveTitle': 'Pustit dovnitř: {name}',
+  'people.joinRequests.approveLede':
+    'Dostanou účet čtenáře s adresou {email}. Pak jim pošlete odkaz - e-mailem, ve zprávě, nebo jim přečtěte kód.',
+  'people.joinRequests.languageHint':
+    'Stránka registrace, pozvánka i samotný ReadPort budou v tomto jazyce. Výchozí je ten, ve kterém žádali.',
+  'people.joinRequests.approveConfirm': 'Potvrdit a získat odkaz',
   'people.joinRequests.declined': 'Žádost odmítnuta',
   'people.joinRequests.failed': 'Nepodařilo se to odeslat – zkontrolujte připojení.',
 
@@ -1732,7 +1761,8 @@ const messages: Record<string, string> = {
   'share.join.failed': 'Žádost se nepodařilo odeslat. Je server dostupný?',
   'share.join.tooMany': 'Příliš mnoho žádostí odtud – zkuste to znovu později.',
   'share.join.pendingTitle': 'Žádost odeslána',
-  'share.join.pendingBody': 'Musí ji potvrdit administrátor; potom se vraťte na tento odkaz.',
+  'share.join.pendingBody':
+    'Musí ji potvrdit administrátor. Pošle vám odkaz - nebo nechte tuto stránku otevřenou a bude pokračovat tady.',
   'share.join.pendingAs': 'Požádáno jako {email}',
   'share.join.notYou': 'Nejste to vy? Požádejte s jinou adresou',
   'share.join.declinedTitle': 'Tentokrát ne',

@@ -217,6 +217,7 @@ const messages: Record<string, string> = {
   'auth.login.wrongCredentials': '사용자 이름 또는 비밀번호가 올바르지 않습니다.',
   'auth.login.failed': '로그인에 실패했습니다. 서버에 연결할 수 있나요?',
   'auth.form.username': '사용자 이름',
+  'auth.form.usernameOrEmail': '사용자 이름 또는 이메일',
   'auth.form.password': '비밀번호',
   'auth.form.confirmPassword': '비밀번호 확인',
   'auth.form.displayName': '표시 이름',
@@ -235,6 +236,8 @@ const messages: Record<string, string> = {
   'auth.join.expiredLede':
     '초대는 1회용이며 기한이 있습니다. 초대한 사람에게 새 링크를 요청하세요.',
   'auth.join.title': '초대받으셨습니다',
+  'auth.join.emailNote':
+    '계정에 {email}이(가) 등록됩니다 - 이 주소나 사용자 이름으로 로그인할 수 있습니다.',
   'auth.join.invitedBy':
     '{name}님이 {role, select, admin {관리자} curator {큐레이터} reader {독자} other {구성원}}(으)로 참여하도록 초대했습니다.',
   'auth.join.invited':
@@ -976,10 +979,26 @@ const messages: Record<string, string> = {
   'people.link.copy': '복사',
   'people.link.copied': '링크 복사됨',
   'people.link.copyFailed': '링크를 선택하여 복사하세요',
+  'people.link.forEmail': '받는 사람: {email}',
+  'people.link.email': '이메일',
+  'people.link.share': '공유',
+  'people.link.mailSubject': 'ReadPort 초대장',
+  'people.link.mailBody':
+    '{name} 님이 ReadPort에 초대했습니다.\n\n여기에서 계정을 만드세요:\n{url}\n\n링크는 {date}까지 유효합니다. 열리지 않으면 ReadPort 로그인 페이지에서 이 코드를 입력하세요: {code}',
+  'people.link.mailBodyBook':
+    '{name} 님이 ReadPort에서 『{title}』을(를) 읽을 수 있도록 허락했습니다.\n\n여기에서 계정을 만드세요:\n{url}\n\n링크는 {date}까지 유효합니다. 열리지 않으면 ReadPort 로그인 페이지에서 이 코드를 입력하세요: {code}',
   'people.form.displayName': '표시 이름',
   'people.form.role': '역할',
   'people.form.letThemSave': '사본 저장 허용',
   'people.form.adminsAlwaysDownload': '관리자는 항상 파일을 다운로드할 수 있습니다.',
+  'people.form.email': '이메일',
+  'people.form.emailHint': '선택 사항 - 사용자 이름 대신 이것으로 로그인할 수 있습니다.',
+  'people.form.language': '언어',
+  'people.form.languageDevice': '기기의 언어',
+  'people.form.languageHint': 'ReadPort가 이 언어로 열립니다. 언제든지 바꿀 수 있습니다.',
+  'people.invite.emailHint': '선택 사항 - 계정에 등록되며, 이메일 버튼이 받는 사람을 채워 줍니다.',
+  'people.manage.languageHint':
+    '다음에 열 때부터 ReadPort가 이 언어로 바뀝니다. 언제든지 바꿀 수 있습니다.',
   'people.add.title': '구성원 추가',
   'people.add.optional': '선택 사항',
   'people.add.username': '사용자 이름',
@@ -1026,6 +1045,7 @@ const messages: Record<string, string> = {
   'people.manage.accountDeleted': '계정이 삭제됨',
   'people.manage.deleteFailed': '삭제할 수 없습니다.',
   'people.error.usernameTaken': '이미 사용 중인 사용자 이름입니다.',
+  'people.error.emailTaken': '다른 계정에서 이미 이 이메일 주소를 사용하고 있습니다.',
   'people.error.lastAdmin': '마지막 남은 활성 관리자입니다. 먼저 다른 사람을 관리자로 지정하세요.',
   'people.error.selfLockout': '자신의 관리자 권한은 제거할 수 없습니다.',
   'people.error.proxyManaged':
@@ -1611,13 +1631,22 @@ const messages: Record<string, string> = {
   // people
   'people.joinRequests.title': '가입 요청',
   'people.joinRequests.lede':
-    '공유 링크를 통해 가입을 요청한 사람들입니다. 승인하면 독자 초대가 생성되고, 같은 링크로 전달됩니다.',
+    '공유 링크를 통해 가입을 요청한 사람들입니다. 승인하면 독자 초대가 만들어집니다. 링크를 보내거나, 공유 링크에서 직접 받을 수 있습니다.',
   'people.joinRequests.askedFor': '{title} 요청 · {name}님이 공유',
   'people.joinRequests.askedForUnknown': '이미 철회된 링크를 통한 요청',
   'people.joinRequests.when': '{when} 요청',
   'people.joinRequests.approve': '승인',
   'people.joinRequests.decline': '거절',
-  'people.joinRequests.approved': '승인됨 - 공유 링크에서 계정을 만들 수 있습니다',
+  'people.joinRequests.approved': '승인했습니다 - 이제 링크를 보내세요',
+  'people.joinRequests.waiting': '승인됨 - 아직 가입하지 않음',
+  'people.joinRequests.linkUntil': '링크 유효 기한 {date}',
+  'people.joinRequests.sendLink': '링크 보내기',
+  'people.joinRequests.approveTitle': '{name} 님 승인',
+  'people.joinRequests.approveLede':
+    '{email}(으)로 독자 계정이 만들어집니다. 그다음 링크를 보내세요 - 이메일, 메시지로 보내거나 코드를 읽어 주면 됩니다.',
+  'people.joinRequests.languageHint':
+    '가입 페이지, 초대, ReadPort 자체가 이 언어로 표시됩니다. 처음에는 요청할 때 쓴 언어입니다.',
+  'people.joinRequests.approveConfirm': '승인하고 링크 받기',
   'people.joinRequests.declined': '요청이 거절됨',
   'people.joinRequests.failed': '전송되지 않았습니다. 연결을 확인하세요.',
 
@@ -1683,7 +1712,8 @@ const messages: Record<string, string> = {
   'share.join.failed': '요청을 보낼 수 없습니다. 서버에 연결할 수 있나요?',
   'share.join.tooMany': '이 위치에서 요청이 너무 많습니다. 나중에 다시 시도하세요.',
   'share.join.pendingTitle': '요청을 보냈습니다',
-  'share.join.pendingBody': '관리자가 승인해야 합니다. 이후 이 링크로 다시 돌아오세요.',
+  'share.join.pendingBody':
+    '관리자의 승인이 필요합니다. 링크를 받게 됩니다 - 또는 이 페이지를 열어 두면 여기서 이어집니다.',
   'share.join.pendingAs': '{email}(으)로 요청함',
   'share.join.notYou': '본인이 아니신가요? 다른 이메일 주소로 요청하세요',
   'share.join.declinedTitle': '이번에는 어렵습니다',

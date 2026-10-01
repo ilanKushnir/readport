@@ -12,7 +12,9 @@ import {
   IconList,
   ReadPortMark,
 } from '../components/icons';
-import { useT } from '../i18n';
+import { useI18n, useLocale, useT } from '../i18n';
+import { usernameFromEmail } from './JoinPage';
+import { uiLocale } from '@readport/shared';
 import {
   addSharedBook,
   askToJoin,
@@ -247,29 +249,55 @@ function SignedIn({ token, peek }: { token: string; peek: PeekState }) {
 
 type Mode = 'teaser' | 'login' | 'join';
 
+/** How often a page left open on a request still waiting asks again. */
+const PENDING_RECHECK_MS = 30_000;
+
 function Visitor({ token, peek }: { token: string; peek: PeekState }) {
   const t = useT();
+  const { setLocale } = useI18n();
   const [mode, setMode] = useState<Mode>('teaser');
   const [email, setEmail] = useState<string | null>(() => rememberedJoinEmail());
   const [status, setStatus] = useState<JoinStatusResponse | 'checking' | null>(null);
+  /** Bumped to ask again while the request waits. */
+  const [recheck, setRecheck] = useState(0);
 
   // Every visit checks on the request this browser left, so an approval
   // shows up as the account form without anyone having to be told.
   useEffect(() => {
     if (!email || typeof peek !== 'object') return;
     let alive = true;
-    setStatus('checking');
+    setStatus((s) => (s && s !== 'checking' ? s : 'checking'));
     joinStatusFor(token, email)
       .then((s) => {
         if (alive) setStatus(s.status === 'none' ? null : s);
       })
       .catch(() => {
-        if (alive) setStatus(null);
+        if (alive) setStatus((s) => (s === 'checking' ? null : s));
       });
     return () => {
       alive = false;
     };
-  }, [token, email, peek]);
+  }, [token, email, peek, recheck]);
+
+  // A page left open on a request still waiting keeps asking, now and then
+  // and only while it is on screen: the admin's yes turns it into the
+  // account form without anyone having to send anything.
+  const waiting = typeof status === 'object' && status?.status === 'pending';
+  useEffect(() => {
+    if (!waiting) return;
+    const id = setInterval(() => {
+      if (document.visibilityState === 'visible') setRecheck((n) => n + 1);
+    }, PENDING_RECHECK_MS);
+    return () => clearInterval(id);
+  }, [waiting]);
+
+  // Let in, in the language the admin chose for them: the account form, and
+  // the app after it, speak it from here on.
+  const approvedIn =
+    typeof status === 'object' && status?.status === 'approved' ? (status.language ?? null) : null;
+  useEffect(() => {
+    if (approvedIn && uiLocale(approvedIn)) void setLocale(approvedIn);
+  }, [approvedIn, setLocale]);
 
   const forget = () => {
     rememberJoinEmail(null);
@@ -321,7 +349,12 @@ function Visitor({ token, peek }: { token: string; peek: PeekState }) {
                 </span>
               </div>
             ) : status?.status === 'approved' && status.inviteToken ? (
-              <AccountForm token={token} inviteToken={status.inviteToken} bookId={peek.book.id} />
+              <AccountForm
+                token={token}
+                inviteToken={status.inviteToken}
+                bookId={peek.book.id}
+                email={email}
+              />
             ) : status?.status === 'approved' ? (
               <>
                 <div className="share-status" role="status">
@@ -413,7 +446,7 @@ function LoginForm({ onBack }: { onBack: () => void }) {
         </div>
       )}
       <div className="field">
-        <label htmlFor="sh-user">{t('auth.form.username')}</label>
+        <label htmlFor="sh-user">{t('auth.form.usernameOrEmail')}</label>
         <input
           id="sh-user"
           className="input"
@@ -459,6 +492,7 @@ function JoinForm({
   onSent: (email: string, result: JoinStatusResponse) => void;
 }) {
   const t = useT();
+  const locale = useLocale();
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
@@ -475,6 +509,8 @@ function JoinForm({
         email: address,
         name: name.trim() || undefined,
         message: message.trim() || undefined,
+        // The language this page is in: what the admin is offered for them.
+        language: locale,
       });
       onSent(address, { status: res.status });
     } catch (err) {
@@ -556,15 +592,18 @@ function AccountForm({
   token,
   inviteToken,
   bookId,
+  email,
 }: {
   token: string;
   inviteToken: string;
   bookId: string;
+  /** The address they asked with: the account carries it, and its name starts from it. */
+  email: string | null;
 }) {
   const t = useT();
   const navigate = useNavigate();
   const { setUser } = useSession();
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState(() => usernameFromEmail(email));
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [busy, setBusy] = useState(false);
@@ -609,6 +648,11 @@ function AccountForm({
       <div className="share-status">
         <h2>{t('share.join.approvedTitle')}</h2>
         <p>{t('share.join.approvedLede')}</p>
+        {email && (
+          <p className="hint">
+            <bdi>{t('auth.join.emailNote', { email })}</bdi>
+          </p>
+        )}
       </div>
       {error && (
         <div className="banner banner--error" role="alert">

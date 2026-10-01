@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { type FastifyInstance } from 'fastify';
 import {
   acceptInviteSchema,
+  approveJoinRequestSchema,
   changePasswordSchema,
   createInviteSchema,
   createUserSchema,
@@ -19,7 +20,7 @@ import { requireRole } from '../../auth/roles.js';
 import { resolveSettings } from '../../domain/settings.js';
 import { UNUSABLE_PASSWORD } from '../../auth/proxyAuth.js';
 import { newId } from '../../util/ids.js';
-import { stampWhatsNewSeen } from './prefs.js';
+import { setAccountLocale, stampWhatsNewSeen } from './prefs.js';
 import { nowIso } from '../../db/index.js';
 import { SESSION_COOKIE } from '../guards.js';
 import { sessionCookieOpts } from '../../auth/cookie.js';
@@ -43,11 +44,15 @@ interface UserRow {
   can_export: number;
   sessions: number;
   books_in_progress: number;
+  email: string | null;
+  locale: string | null;
 }
 
 const USER_SELECT = `
   SELECT u.id, u.username, u.password_hash, u.role, u.display_name, u.status, u.created_at,
-         u.last_login_at, u.last_seen_at, u.can_export,
+         u.last_login_at, u.last_seen_at, u.can_export, u.email,
+         (SELECT json_extract(value_json, '$.locale') FROM user_prefs
+           WHERE user_id = u.id AND key = 'locale') AS locale,
          (SELECT COUNT(*) FROM sessions s WHERE s.user_id = u.id AND s.expires_at > ?) AS sessions,
          (SELECT COUNT(*) FROM progress_state p WHERE p.user_id = u.id AND p.finished = 0)
            AS books_in_progress
@@ -68,6 +73,8 @@ export function toUserDto(r: UserRow): UserDto {
     proxyManaged: r.password_hash === UNUSABLE_PASSWORD,
     sessions: Number(r.sessions),
     booksInProgress: Number(r.books_in_progress),
+    email: r.email ?? null,
+    locale: r.locale ?? null,
   };
 }
 
@@ -115,7 +122,16 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
     createdAt: String(r.created_at),
     expiresAt: String(r.expires_at),
     usedAt: (r.used_at as string | null) ?? null,
+    email: (r.email as string | null) ?? null,
+    language: (r.language as string | null) ?? null,
   });
+  /** Whether another account already signs in with this address. */
+  const emailTaken = (email: string, exceptId?: string) =>
+    db
+      .prepare('SELECT 1 FROM users WHERE lower(email) = lower(?) AND id IS NOT ?')
+      .get(email, exceptId ?? null) !== undefined;
+  /** Where links to this server go: the public address it was told, if any. */
+  const linkBase = () => resolveSettings(db, config).values.publicUrl.replace(/\/+$/, '');
   const listInvites = (): InviteDto[] =>
     (
       db
@@ -142,10 +158,13 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
       .prepare('SELECT 1 FROM users WHERE lower(username) = lower(?)')
       .get(parsed.data.username);
     if (exists) return reply.code(409).send({ error: 'username-taken' });
+    if (parsed.data.email && emailTaken(parsed.data.email)) {
+      return reply.code(409).send({ error: 'email-taken' });
+    }
     const id = newId('user');
     db.prepare(
-      `INSERT INTO users (id, username, password_hash, role, can_export, display_name, status, created_by, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
+      `INSERT INTO users (id, username, password_hash, role, can_export, display_name, status, created_by, created_at, email)
+       VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)`,
     ).run(
       id,
       parsed.data.username,
@@ -155,8 +174,11 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
       parsed.data.displayName ?? null,
       req.user!.id,
       nowIso(),
+      parsed.data.email ?? null,
     );
     stampWhatsNewSeen(ctx, id);
+    // The language they will find the app in, from their very first sign-in.
+    if (parsed.data.locale) setAccountLocale(ctx, id, parsed.data.locale);
     ctx.log.info(
       `Admin ${req.user!.username} created ${parsed.data.role} "${parsed.data.username}"`,
     );
@@ -188,6 +210,7 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
     if (p.password !== undefined && target.password_hash === UNUSABLE_PASSWORD) {
       return reply.code(409).send({ error: 'proxy-managed' });
     }
+    if (p.email && emailTaken(p.email, id)) return reply.code(409).send({ error: 'email-taken' });
     const sets: string[] = [];
     const args: (string | null)[] = [];
     if (p.role) {
@@ -211,9 +234,15 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
       sets.push('password_hash = ?');
       args.push(await hashPassword(p.password));
     }
+    if (p.email !== undefined) {
+      sets.push('email = ?');
+      args.push(p.email);
+    }
     if (sets.length) {
       db.prepare(`UPDATE users SET ${sets.join(', ')} WHERE id = ?`).run(...args, id);
     }
+    // Takes effect the next time they open the app; they can change it back.
+    if (p.locale !== undefined) setAccountLocale(ctx, id, p.locale);
     // Role changes, disabling and password resets all invalidate old sessions.
     if (p.status === 'disabled' || p.password !== undefined || (p.role && p.role !== target.role)) {
       const keep =
@@ -277,12 +306,16 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
     username: string | null;
     createdBy: string;
     expiresInDays: number;
+    /** Who it is for: the account it opens carries the address. */
+    email: string | null;
+    /** The language its sign-up page opens in, and the account keeps. */
+    language: string | null;
   }): { id: string; expiresAt: string } => {
     const id = newId('inv');
     const expiresAt = new Date(Date.now() + opts.expiresInDays * 86_400_000).toISOString();
     db.prepare(
-      `INSERT INTO invites (id, token_hash, role, can_export, display_name, username, created_by, created_at, expires_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO invites (id, token_hash, role, can_export, display_name, username, created_by, created_at, expires_at, email, language)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       id,
       hashInvite(opts.token),
@@ -293,6 +326,8 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
       opts.createdBy,
       nowIso(),
       expiresAt,
+      opts.email,
+      opts.language,
     );
     return { id, expiresAt };
   };
@@ -319,15 +354,23 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
       username: parsed.data.username ?? null,
       createdBy: req.user!.id,
       expiresInDays: parsed.data.expiresInDays,
+      email: parsed.data.email ?? null,
+      language: parsed.data.language ?? null,
     });
     // Returned exactly once. The URL is built here rather than in the
     // browser, because the browser only knows the address the ADMIN is on -
     // often a LAN name the recipient cannot resolve. `publicUrl` is what the
     // server has been told it is called from outside; without it the client
     // falls back to its own origin, which is right for a local-only library.
-    const base = resolveSettings(db, config).values.publicUrl.replace(/\/+$/, '');
+    const base = linkBase();
     return reply.code(201).send({
-      invite: { id, role: parsed.data.role, expiresAt },
+      invite: {
+        id,
+        role: parsed.data.role,
+        expiresAt,
+        email: parsed.data.email ?? null,
+        language: parsed.data.language ?? null,
+      },
       // The code IS the credential; the link just carries it.
       code: token,
       token,
@@ -369,6 +412,11 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
       username: inv.username ?? null,
       invitedBy: by ? (by.display_name ?? by.username) : null,
       expiresAt: inv.expires_at,
+      // Whoever holds the link is who it was sent to: their own address,
+      // shown so they know which one the account will carry, and the
+      // language the admin chose for them, which the page switches to.
+      email: (inv.email as string | null) ?? null,
+      language: (inv.language as string | null) ?? null,
     };
   });
 
@@ -398,9 +446,12 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
         db.exec('ROLLBACK');
         return reply.code(409).send({ error: 'username-taken' });
       }
+      // The address the invitation was for, unless another account already
+      // signs in with it - the account is the point, not the address.
+      const inviteEmail = (again.email as string | null) ?? null;
       db.prepare(
-        `INSERT INTO users (id, username, password_hash, role, can_export, display_name, status, created_by, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
+        `INSERT INTO users (id, username, password_hash, role, can_export, display_name, status, created_by, created_at, email)
+         VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)`,
       ).run(
         id,
         parsed.data.username,
@@ -411,7 +462,11 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
         parsed.data.displayName ?? (inv.display_name as string | null) ?? null,
         (inv.created_by as string | null) ?? null,
         nowIso(),
+        inviteEmail && !emailTaken(inviteEmail) ? inviteEmail : null,
       );
+      // And the language the admin chose for them, from the first page on.
+      const language = (again.language as string | null) ?? null;
+      if (language) setAccountLocale(ctx, id, language);
       db.prepare('UPDATE invites SET used_at = ?, used_by = ? WHERE id = ?').run(
         nowIso(),
         id,
@@ -445,16 +500,21 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
    * share link then hands to that address - the code is derived, not
    * stored, and never returned here (see share/service.ts).
    */
+  // With each approved request's invitation, so the admin can send it on.
+  const joinRequests = () =>
+    listJoinRequests(db, { secret: config.sessionSecret, linkBase: linkBase() });
   app.get('/api/join-requests', async (req, reply) => {
     if (!requireRole(req, reply, 'admin')) return reply;
-    return { requests: listJoinRequests(db) };
+    return { requests: joinRequests() };
   });
 
-  const decided = (id: string) => listJoinRequests(db).find((r) => r.id === id) ?? null;
+  const decided = (id: string) => joinRequests().find((r) => r.id === id) ?? null;
 
   app.post('/api/join-requests/:id/approve', async (req, reply) => {
     if (!requireRole(req, reply, 'admin')) return reply;
     const { id } = req.params as { id: string };
+    const body = approveJoinRequestSchema.safeParse(req.body ?? {});
+    if (!body.success) return reply.code(400).send({ error: 'invalid' });
     db.exec('BEGIN IMMEDIATE');
     try {
       const row = getJoinRequest(db, id);
@@ -474,6 +534,10 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
         username: null,
         createdBy: req.user!.id,
         expiresInDays: 7,
+        // The account is for the address they asked with, and speaks the
+        // language the admin chose - by default, the one they asked in.
+        email: row.email,
+        language: body.data.language !== undefined ? body.data.language : (row.language ?? null),
       });
       decideJoinRequest(db, id, { status: 'approved', by: req.user!.id, inviteId: invite.id });
       db.exec('COMMIT');

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { bookKindSchema } from './api.js';
+import { uiLocaleSchema } from './locales.js';
 
 /**
  * Sharing a book, and letting the person it was shared with in.
@@ -60,6 +61,8 @@ export const joinRequestSchema = z.object({
   name: optionalLine(JOIN_REQUEST_NAME_MAX),
   /** A line to the admin: who they are, why they want in. */
   message: optionalLine(JOIN_REQUEST_MESSAGE_MAX),
+  /** The language the page was in: what an approval offers them first. */
+  language: uiLocaleSchema.optional(),
 });
 export type JoinRequestInput = z.infer<typeof joinRequestSchema>;
 
@@ -77,6 +80,8 @@ export type JoinStatus = z.infer<typeof joinStatusSchema>;
 export const joinStatusResponseSchema = z.object({
   status: joinStatusSchema,
   inviteToken: z.string().optional(),
+  /** The language the admin chose for them: the account form opens in it. */
+  language: z.string().nullable().optional(),
 });
 export type JoinStatusResponse = z.infer<typeof joinStatusResponseSchema>;
 
@@ -120,8 +125,32 @@ export const joinRequestDtoSchema = z.object({
   /** Null when the share was revoked or the book has left the library. */
   book: sharedBookSchema.nullable(),
   sharedBy: z.object({ displayName: z.string() }).nullable(),
+  /** The language the page was in when they asked. */
+  language: z.string().nullable().optional(),
+  /**
+   * An approved request's invitation, while it can still be used: the link
+   * to send them, the code it carries, and the language it opens in. Only
+   * ever in an admin's list.
+   */
+  invite: z
+    .object({
+      code: z.string(),
+      path: z.string(),
+      /** Null when the server has not been told its public address. */
+      url: z.string().nullable(),
+      expiresAt: z.string(),
+      language: z.string().nullable(),
+    })
+    .nullable()
+    .optional(),
 });
 export type JoinRequestDto = z.infer<typeof joinRequestDtoSchema>;
+
+/** `POST /api/join-requests/:id/approve` */
+export const approveJoinRequestSchema = z.object({
+  /** The language their sign-up page opens in and their account keeps; null follows their device. */
+  language: uiLocaleSchema.nullable().optional(),
+});
 
 /**
  * Who put a book on somebody's reading list, when it was not the reader

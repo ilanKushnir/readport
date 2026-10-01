@@ -47,7 +47,25 @@ export const people = {
   'people.link.copy': 'Copy',
   'people.link.copied': 'Link copied',
   'people.link.copyFailed': 'Select and copy the link',
+  'people.link.forEmail': 'For {email}',
+  'people.link.email': 'Email',
+  'people.link.share': 'Share',
+  // The message the link goes out in - written in the invitation's language
+  'people.link.mailSubject': 'Your invitation to ReadPort',
+  'people.link.mailBody':
+    '{name} has invited you to ReadPort.\n\nCreate your account here:\n{url}\n\nThe link works until {date}. If it doesn’t open, enter this code on the ReadPort sign-in page: {code}',
+  'people.link.mailBodyBook':
+    '{name} has let you in to read “{title}” on ReadPort.\n\nCreate your account here:\n{url}\n\nThe link works until {date}. If it doesn’t open, enter this code on the ReadPort sign-in page: {code}',
   // Fields the add, invite and manage sheets share
+  'people.form.email': 'Email',
+  'people.form.emailHint': 'Optional - they can sign in with it instead of their username.',
+  'people.form.language': 'Language',
+  'people.form.languageDevice': 'Their device’s language',
+  'people.form.languageHint':
+    'ReadPort opens in this language for them. They can change it any time.',
+  'people.invite.emailHint': 'Optional - the account will carry it, and Email fills it in for you.',
+  'people.manage.languageHint':
+    'ReadPort switches to it the next time they open it. They can change it any time.',
   'people.form.displayName': 'Display name',
   'people.form.role': 'Role',
   'people.form.letThemSave': 'Let them save copies',
@@ -103,6 +121,7 @@ export const people = {
   'people.manage.deleteFailed': 'Could not delete.',
   // The server's error codes, in words
   'people.error.usernameTaken': 'That username is already taken.',
+  'people.error.emailTaken': 'Another account already uses that email address.',
   'people.error.lastAdmin': 'This is the last active admin - promote someone else first.',
   'people.error.selfLockout': 'You cannot remove your own admin access.',
   'people.error.proxyManaged':
@@ -110,13 +129,22 @@ export const people = {
   // Join requests: people who followed a share link and asked to be let in
   'people.joinRequests.title': 'Join requests',
   'people.joinRequests.lede':
-    'People who followed a share link and asked to be let in. Approving creates a reader invitation, which the same link hands to them.',
+    'People who followed a share link and asked to be let in. Approving gives them a reader invitation: send them the link, or they find it on the share link.',
   'people.joinRequests.askedFor': 'asked for {title}, shared by {name}',
   'people.joinRequests.askedForUnknown': 'asked through a link that has since been withdrawn',
   'people.joinRequests.when': 'Asked {when}',
   'people.joinRequests.approve': 'Approve',
   'people.joinRequests.decline': 'Decline',
-  'people.joinRequests.approved': 'Approved - they can create their account from the share link',
+  'people.joinRequests.approved': 'Approved - now send them the link',
+  'people.joinRequests.waiting': 'Approved - not signed up yet',
+  'people.joinRequests.linkUntil': 'link works until {date}',
+  'people.joinRequests.sendLink': 'Send the link',
+  'people.joinRequests.approveTitle': 'Let {name} in',
+  'people.joinRequests.approveLede':
+    'They get a reader’s account under {email}. Then send them the link - by email, in a message, or read them the code.',
+  'people.joinRequests.languageHint':
+    'Their sign-up page, the invitation and ReadPort itself will be in this language. It starts as the one they asked in.',
+  'people.joinRequests.approveConfirm': 'Approve and get the link',
   'people.joinRequests.declined': 'Request declined',
   'people.joinRequests.failed': 'That did not go through - check the connection.',
 } as const;

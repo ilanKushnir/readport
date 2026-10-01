@@ -218,6 +218,7 @@ const messages: Record<string, string> = {
   'auth.login.wrongCredentials': 'Väärä käyttäjätunnus tai salasana.',
   'auth.login.failed': 'Kirjautuminen epäonnistui. Onko palvelin tavoitettavissa?',
   'auth.form.username': 'Käyttäjätunnus',
+  'auth.form.usernameOrEmail': 'Käyttäjänimi tai sähköposti',
   'auth.form.password': 'Salasana',
   'auth.form.confirmPassword': 'Vahvista salasana',
   'auth.form.displayName': 'Näyttönimi',
@@ -236,6 +237,8 @@ const messages: Record<string, string> = {
   'auth.join.expiredLede':
     'Kutsut ovat kertakäyttöisiä ja voimassa vain rajoitetun ajan. Pyydä kutsujaltasi uusi linkki.',
   'auth.join.title': 'Sinut on kutsuttu',
+  'auth.join.emailNote':
+    'Tilisi saa osoitteen {email} - voit kirjautua sillä tai käyttäjänimelläsi.',
   'auth.join.invitedBy':
     '{name} kutsui sinut liittymään {role, select, admin {ylläpitäjänä} curator {kuraattorina} reader {lukijana} other {jäsenenä}}.',
   'auth.join.invited':
@@ -1000,10 +1003,27 @@ const messages: Record<string, string> = {
   'people.link.copy': 'Kopioi',
   'people.link.copied': 'Linkki kopioitu',
   'people.link.copyFailed': 'Valitse ja kopioi linkki',
+  'people.link.forEmail': 'Osoitteelle {email}',
+  'people.link.email': 'Sähköposti',
+  'people.link.share': 'Jaa',
+  'people.link.mailSubject': 'Kutsusi ReadPortiin',
+  'people.link.mailBody':
+    '{name} kutsui sinut ReadPortiin.\n\nLuo tilisi täällä:\n{url}\n\nLinkki toimii {date} asti. Jos se ei aukea, kirjoita tämä koodi ReadPortin kirjautumissivulle: {code}',
+  'people.link.mailBodyBook':
+    '{name} päästi sinut lukemaan teosta ”{title}” ReadPortissa.\n\nLuo tilisi täällä:\n{url}\n\nLinkki toimii {date} asti. Jos se ei aukea, kirjoita tämä koodi ReadPortin kirjautumissivulle: {code}',
   'people.form.displayName': 'Näyttönimi',
   'people.form.role': 'Rooli',
   'people.form.letThemSave': 'Salli kopioiden tallentaminen',
   'people.form.adminsAlwaysDownload': 'Ylläpitäjät voivat aina ladata tiedostot.',
+  'people.form.email': 'Sähköposti',
+  'people.form.emailHint': 'Valinnainen - sillä voi kirjautua käyttäjänimen sijaan.',
+  'people.form.language': 'Kieli',
+  'people.form.languageDevice': 'Laitteen kieli',
+  'people.form.languageHint':
+    'ReadPort avautuu heille tällä kielellä. He voivat vaihtaa sen milloin tahansa.',
+  'people.invite.emailHint': 'Valinnainen - tili saa sen, ja Sähköposti täyttää sen puolestasi.',
+  'people.manage.languageHint':
+    'ReadPort vaihtaa siihen, kun he seuraavan kerran avaavat sen. He voivat vaihtaa sen milloin tahansa.',
   'people.add.title': 'Lisää henkilö',
   'people.add.optional': 'Valinnainen',
   'people.add.username': 'Käyttäjätunnus',
@@ -1052,6 +1072,7 @@ const messages: Record<string, string> = {
   'people.manage.accountDeleted': 'Tili poistettu',
   'people.manage.deleteFailed': 'Ei voitu poistaa.',
   'people.error.usernameTaken': 'Tuo käyttäjätunnus on jo varattu.',
+  'people.error.emailTaken': 'Toinen tili käyttää jo tätä sähköpostiosoitetta.',
   'people.error.lastAdmin': 'Tämä on viimeinen aktiivinen ylläpitäjä - ylennä joku muu ensin.',
   'people.error.selfLockout': 'Et voi poistaa omaa ylläpitäjän käyttöoikeuttasi.',
   'people.error.proxyManaged':
@@ -1646,13 +1667,22 @@ const messages: Record<string, string> = {
   // people
   'people.joinRequests.title': 'Liittymispyynnöt',
   'people.joinRequests.lede':
-    'Henkilöt, jotka seurasivat jakolinkkiä ja pyysivät päästä sisään. Hyväksyminen luo lukijakutsun, jonka sama linkki toimittaa heille.',
+    'Henkilöt, jotka seurasivat jakolinkkiä ja pyysivät päästä sisään. Hyväksyminen antaa heille lukijakutsun: lähetä heille linkki, tai he löytävät sen jakolinkin kautta.',
   'people.joinRequests.askedFor': 'pyysi kirjaa {title}, jonka {name} jakoi',
   'people.joinRequests.askedForUnknown': 'pyysi linkin kautta, joka on sittemmin peruutettu',
   'people.joinRequests.when': 'Pyysi {when}',
   'people.joinRequests.approve': 'Hyväksy',
   'people.joinRequests.decline': 'Hylkää',
-  'people.joinRequests.approved': 'Hyväksytty - he voivat luoda tilinsä jakolinkistä',
+  'people.joinRequests.approved': 'Hyväksytty - lähetä nyt linkki',
+  'people.joinRequests.waiting': 'Hyväksytty - ei vielä rekisteröitynyt',
+  'people.joinRequests.linkUntil': 'linkki toimii {date} asti',
+  'people.joinRequests.sendLink': 'Lähetä linkki',
+  'people.joinRequests.approveTitle': 'Päästä sisään: {name}',
+  'people.joinRequests.approveLede':
+    'He saavat lukijatilin osoitteella {email}. Lähetä sitten linkki - sähköpostilla, viestissä tai lue heille koodi.',
+  'people.joinRequests.languageHint':
+    'Rekisteröitymissivu, kutsu ja itse ReadPort ovat tällä kielellä. Aluksi se on kieli, jolla he pyysivät.',
+  'people.joinRequests.approveConfirm': 'Hyväksy ja hae linkki',
   'people.joinRequests.declined': 'Pyyntö hylätty',
   'people.joinRequests.failed': 'Se ei mennyt läpi - tarkista yhteys.',
 
@@ -1719,7 +1749,8 @@ const messages: Record<string, string> = {
   'share.join.failed': 'Pyyntöä ei voitu lähettää. Onko palvelin tavoitettavissa?',
   'share.join.tooMany': 'Liian monta pyyntöä täältä - yritä myöhemmin uudelleen.',
   'share.join.pendingTitle': 'Pyyntö lähetetty',
-  'share.join.pendingBody': 'Ylläpitäjän täytyy hyväksyä se; palaa tähän linkkiin myöhemmin.',
+  'share.join.pendingBody':
+    'Ylläpitäjän täytyy hyväksyä se. Saat linkin - tai pidä tämä sivu auki, niin se jatkuu tässä.',
   'share.join.pendingAs': 'Pyysit osoitteella {email}',
   'share.join.notYou': 'Etkö ollut sinä? Pyydä toisella osoitteella',
   'share.join.declinedTitle': 'Ei tällä kertaa',

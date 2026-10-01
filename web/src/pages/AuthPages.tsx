@@ -90,7 +90,7 @@ export function LoginPage() {
       error={error}
     >
       <div className="field">
-        <label htmlFor="li-user">{t('auth.form.username')}</label>
+        <label htmlFor="li-user">{t('auth.form.usernameOrEmail')}</label>
         <input
           id="li-user"
           className="input"

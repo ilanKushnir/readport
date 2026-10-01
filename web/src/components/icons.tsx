@@ -247,6 +247,13 @@ export const IconHighlighterOff = (p: P) => (
   </I>
 );
 
+/** Mail: an envelope, its flap folded to the middle. */
+export const IconMail = (p: P) => (
+  <I {...p}>
+    <rect x="3.5" y="5.5" width="17" height="13" rx="2" />
+    <path d="m4.2 7 7.8 6 7.8-6" />
+  </I>
+);
 /** Share: a box with an arrow leaving it, the way every phone draws it. */
 export const IconShare = (p: P) => (
   <I {...p}>

@@ -218,6 +218,7 @@ const messages: Record<string, string> = {
   'auth.login.wrongCredentials': 'Feil brukernavn eller passord.',
   'auth.login.failed': 'Innlogging mislyktes. Er serveren tilgjengelig?',
   'auth.form.username': 'Brukernavn',
+  'auth.form.usernameOrEmail': 'Brukernavn eller e-post',
   'auth.form.password': 'Passord',
   'auth.form.confirmPassword': 'Bekreft passord',
   'auth.form.displayName': 'Visningsnavn',
@@ -237,6 +238,8 @@ const messages: Record<string, string> = {
   'auth.join.expiredLede':
     'Invitasjoner er engangs og tidsbegrensede. Be den som inviterte deg om en ny lenke.',
   'auth.join.title': 'Du er invitert',
+  'auth.join.emailNote':
+    'Kontoen din får {email} - du kan logge inn med den eller med brukernavnet ditt.',
   'auth.join.invitedBy':
     '{name} inviterte deg til å bli med som {role, select, admin {administrator} curator {kurator} reader {leser} other {medlem}}.',
   'auth.join.invited':
@@ -995,10 +998,27 @@ const messages: Record<string, string> = {
   'people.link.copy': 'Kopier',
   'people.link.copied': 'Lenke kopiert',
   'people.link.copyFailed': 'Merk og kopier lenken',
+  'people.link.forEmail': 'Til {email}',
+  'people.link.email': 'E-post',
+  'people.link.share': 'Del',
+  'people.link.mailSubject': 'Invitasjonen din til ReadPort',
+  'people.link.mailBody':
+    '{name} har invitert deg til ReadPort.\n\nOpprett kontoen din her:\n{url}\n\nLenken virker til {date}. Hvis den ikke åpner seg, skriv inn denne koden på innloggingssiden til ReadPort: {code}',
+  'people.link.mailBodyBook':
+    '{name} har sluppet deg inn for å lese «{title}» på ReadPort.\n\nOpprett kontoen din her:\n{url}\n\nLenken virker til {date}. Hvis den ikke åpner seg, skriv inn denne koden på innloggingssiden til ReadPort: {code}',
   'people.form.displayName': 'Visningsnavn',
   'people.form.role': 'Rolle',
   'people.form.letThemSave': 'La dem lagre kopier',
   'people.form.adminsAlwaysDownload': 'Administratorer kan alltid laste ned filene.',
+  'people.form.email': 'E-post',
+  'people.form.emailHint': 'Valgfritt - de kan logge inn med den i stedet for brukernavnet.',
+  'people.form.language': 'Språk',
+  'people.form.languageDevice': 'Språket på enheten deres',
+  'people.form.languageHint':
+    'ReadPort åpnes på dette språket for dem. De kan endre det når som helst.',
+  'people.invite.emailHint': 'Valgfritt - kontoen får den, og E-post fyller den ut for deg.',
+  'people.manage.languageHint':
+    'ReadPort bytter til det neste gang de åpner det. De kan endre det når som helst.',
   'people.add.title': 'Legg til en person',
   'people.add.optional': 'Valgfritt',
   'people.add.username': 'Brukernavn',
@@ -1047,6 +1067,7 @@ const messages: Record<string, string> = {
   'people.manage.accountDeleted': 'Konto slettet',
   'people.manage.deleteFailed': 'Kunne ikke slette.',
   'people.error.usernameTaken': 'Det brukernavnet er allerede opptatt.',
+  'people.error.emailTaken': 'En annen konto bruker allerede den e-postadressen.',
   'people.error.lastAdmin': 'Dette er den siste aktive administratoren - forfrem noen andre først.',
   'people.error.selfLockout': 'Du kan ikke fjerne din egen administratortilgang.',
   'people.error.proxyManaged':
@@ -1631,13 +1652,22 @@ const messages: Record<string, string> = {
   // people
   'people.joinRequests.title': 'Forespørsler om å bli med',
   'people.joinRequests.lede':
-    'Personer som fulgte en delingslenke og ba om å bli sluppet inn. Å godkjenne oppretter en leserinvitasjon, som den samme lenken gir dem.',
+    'Personer som fulgte en delingslenke og ba om å bli sluppet inn. Å godkjenne gir dem en leserinvitasjon: send dem lenken, eller de finner den via delingslenken.',
   'people.joinRequests.askedFor': 'ba om {title}, delt av {name}',
   'people.joinRequests.askedForUnknown': 'spurte via en lenke som siden er trukket tilbake',
   'people.joinRequests.when': 'Spurte {when}',
   'people.joinRequests.approve': 'Godta',
   'people.joinRequests.decline': 'Avvis',
-  'people.joinRequests.approved': 'Godkjent - de kan opprette kontoen sin fra delingslenken',
+  'people.joinRequests.approved': 'Godkjent - send dem lenken nå',
+  'people.joinRequests.waiting': 'Godkjent - ikke registrert ennå',
+  'people.joinRequests.linkUntil': 'lenken virker til {date}',
+  'people.joinRequests.sendLink': 'Send lenken',
+  'people.joinRequests.approveTitle': 'Slipp inn {name}',
+  'people.joinRequests.approveLede':
+    'De får en leserkonto med {email}. Send dem så lenken - på e-post, i en melding, eller les opp koden for dem.',
+  'people.joinRequests.languageHint':
+    'Registreringssiden, invitasjonen og selve ReadPort blir på dette språket. I starten er det språket de spurte på.',
+  'people.joinRequests.approveConfirm': 'Godkjenn og få lenken',
   'people.joinRequests.declined': 'Forespørsel avvist',
   'people.joinRequests.failed': 'Det gikk ikke gjennom - sjekk tilkoblingen.',
 
@@ -1705,7 +1735,8 @@ const messages: Record<string, string> = {
   'share.join.failed': 'Kunne ikke sende forespørselen. Er serveren tilgjengelig?',
   'share.join.tooMany': 'For mange forespørsler herfra - prøv igjen senere.',
   'share.join.pendingTitle': 'Forespørsel sendt',
-  'share.join.pendingBody': 'En admin må godkjenne den; kom tilbake til denne lenken etterpå.',
+  'share.join.pendingBody':
+    'En admin må godkjenne den. Du får en lenke - eller la denne siden stå åpen, så fortsetter den her.',
   'share.join.pendingAs': 'Spurte som {email}',
   'share.join.notYou': 'Ikke deg? Spør med en annen adresse',
   'share.join.declinedTitle': 'Ikke denne gangen',

@@ -15,6 +15,7 @@ export const auth = {
 
   // Account fields shared by sign-in, join and the wizard's admin step
   'auth.form.username': 'Username',
+  'auth.form.usernameOrEmail': 'Username or email',
   'auth.form.password': 'Password',
   'auth.form.confirmPassword': 'Confirm password',
   'auth.form.displayName': 'Display name',
@@ -38,6 +39,8 @@ export const auth = {
   'auth.join.expiredLede':
     'Invitations are single-use and time-limited. Ask whoever invited you for a fresh link.',
   'auth.join.title': "You're invited",
+  'auth.join.emailNote':
+    'Your account will carry {email} - you can sign in with it, or with your username.',
   'auth.join.invitedBy':
     '{name} invited you to join as {role, select, admin {an admin} curator {a curator} reader {a reader} other {a member}}.',
   'auth.join.invited':

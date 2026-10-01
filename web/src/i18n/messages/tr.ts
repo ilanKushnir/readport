@@ -223,6 +223,7 @@ const messages: Record<string, string> = {
   'auth.login.wrongCredentials': 'Kullanıcı adı veya parola yanlış.',
   'auth.login.failed': 'Oturum açma başarısız. Sunucuya ulaşılabiliyor mu?',
   'auth.form.username': 'Kullanıcı adı',
+  'auth.form.usernameOrEmail': 'Kullanıcı adı veya e-posta',
   'auth.form.password': 'Parola',
   'auth.form.confirmPassword': 'Parolayı onaylayın',
   'auth.form.displayName': 'Görünen ad',
@@ -241,6 +242,8 @@ const messages: Record<string, string> = {
   'auth.join.expiredLede':
     'Davetler tek kullanımlıktır ve süreyle sınırlıdır. Sizi davet eden kişiden yeni bir bağlantı isteyin.',
   'auth.join.title': 'Davetlisiniz',
+  'auth.join.emailNote':
+    'Hesabınız {email} adresini taşıyacak - bununla ya da kullanıcı adınızla giriş yapabilirsiniz.',
   'auth.join.invitedBy':
     '{name} sizi {role, select, admin {yönetici} curator {küratör} reader {okuyucu} other {üye}} olarak katılmaya davet etti.',
   'auth.join.invited':
@@ -1001,10 +1004,28 @@ const messages: Record<string, string> = {
   'people.link.copy': 'Kopyala',
   'people.link.copied': 'Bağlantı kopyalandı',
   'people.link.copyFailed': 'Bağlantıyı seçip kopyalayın',
+  'people.link.forEmail': '{email} için',
+  'people.link.email': 'E-posta',
+  'people.link.share': 'Paylaş',
+  'people.link.mailSubject': 'ReadPort davetiniz',
+  'people.link.mailBody':
+    '{name} sizi ReadPort’a davet etti.\n\nHesabınızı buradan oluşturun:\n{url}\n\nBağlantı {date} tarihine kadar geçerli. Açılmazsa bu kodu ReadPort giriş sayfasına girin: {code}',
+  'people.link.mailBodyBook':
+    '{name}, ReadPort’ta “{title}” kitabını okumanıza izin verdi.\n\nHesabınızı buradan oluşturun:\n{url}\n\nBağlantı {date} tarihine kadar geçerli. Açılmazsa bu kodu ReadPort giriş sayfasına girin: {code}',
   'people.form.displayName': 'Görünen ad',
   'people.form.role': 'Rol',
   'people.form.letThemSave': 'Kopya kaydetmelerine izin ver',
   'people.form.adminsAlwaysDownload': 'Yöneticiler dosyaları her zaman indirebilir.',
+  'people.form.email': 'E-posta',
+  'people.form.emailHint': 'İsteğe bağlı - kullanıcı adı yerine bununla giriş yapabilirler.',
+  'people.form.language': 'Dil',
+  'people.form.languageDevice': 'Cihazlarının dili',
+  'people.form.languageHint':
+    'ReadPort onlar için bu dilde açılır. İstedikleri zaman değiştirebilirler.',
+  'people.invite.emailHint':
+    'İsteğe bağlı - hesap bu adresi taşır, E-posta da alıcıyı sizin için doldurur.',
+  'people.manage.languageHint':
+    'ReadPort bir sonraki açılışta bu dile geçer. İstedikleri zaman değiştirebilirler.',
   'people.add.title': 'Bir kişi ekle',
   'people.add.optional': 'İsteğe bağlı',
   'people.add.username': 'Kullanıcı adı',
@@ -1053,6 +1074,7 @@ const messages: Record<string, string> = {
   'people.manage.accountDeleted': 'Hesap silindi',
   'people.manage.deleteFailed': 'Silinemedi.',
   'people.error.usernameTaken': 'Bu kullanıcı adı zaten alınmış.',
+  'people.error.emailTaken': 'Bu e-posta adresini zaten başka bir hesap kullanıyor.',
   'people.error.lastAdmin': 'Bu, son etkin yönetici - önce başka birini yükseltin.',
   'people.error.selfLockout': 'Kendi yönetici erişiminizi kaldıramazsınız.',
   'people.error.proxyManaged':
@@ -1648,15 +1670,23 @@ const messages: Record<string, string> = {
   // people
   'people.joinRequests.title': 'Katılma istekleri',
   'people.joinRequests.lede':
-    'Bir paylaşım bağlantısını takip edip içeri alınmak isteyen kişiler. Onaylamak bir okuyucu daveti oluşturur; bunu onlara aynı bağlantı iletir.',
+    'Bir paylaşım bağlantısını takip edip içeri alınmak isteyen kişiler. Onaylamak onlara bir okuyucu daveti verir: bağlantıyı onlara gönderin ya da paylaşım bağlantısından bulsunlar.',
   'people.joinRequests.askedFor': '{name} tarafından paylaşılan {title} için istek gönderdi',
   'people.joinRequests.askedForUnknown':
     'o zamandan beri geri çekilmiş bir bağlantı üzerinden istek gönderdi',
   'people.joinRequests.when': '{when} istedi',
   'people.joinRequests.approve': 'Onayla',
   'people.joinRequests.decline': 'Reddet',
-  'people.joinRequests.approved':
-    'Onaylandı - hesaplarını paylaşım bağlantısından oluşturabilirler',
+  'people.joinRequests.approved': 'Onaylandı - şimdi bağlantıyı gönderin',
+  'people.joinRequests.waiting': 'Onaylandı - henüz kaydolmadı',
+  'people.joinRequests.linkUntil': 'bağlantı {date} tarihine kadar geçerli',
+  'people.joinRequests.sendLink': 'Bağlantıyı gönder',
+  'people.joinRequests.approveTitle': '{name} için onay',
+  'people.joinRequests.approveLede':
+    '{email} adresiyle bir okuyucu hesabı açılacak. Ardından bağlantıyı gönderin - e-postayla, mesajla ya da kodu okuyarak.',
+  'people.joinRequests.languageHint':
+    'Kayıt sayfası, davet ve ReadPort bu dilde olacak. Başlangıçta, istekte bulundukları dildir.',
+  'people.joinRequests.approveConfirm': 'Onayla ve bağlantıyı al',
   'people.joinRequests.declined': 'İstek reddedildi',
   'people.joinRequests.failed': 'Bu gerçekleşmedi - bağlantıyı kontrol edin.',
 
@@ -1724,7 +1754,7 @@ const messages: Record<string, string> = {
   'share.join.tooMany': 'Buradan çok fazla istek gönderildi - daha sonra tekrar deneyin.',
   'share.join.pendingTitle': 'İstek gönderildi',
   'share.join.pendingBody':
-    'Bir yöneticinin onaylaması gerekiyor; daha sonra bu bağlantıya geri dönün.',
+    'Bir yöneticinin onaylaması gerekiyor. Size bir bağlantı gelecek - ya da bu sayfayı açık bırakın, buradan devam eder.',
   'share.join.pendingAs': '{email} olarak istek gönderdiniz',
   'share.join.notYou': 'Siz değil misiniz? Farklı bir adresle istek gönderin',
   'share.join.declinedTitle': 'Bu sefer olmadı',

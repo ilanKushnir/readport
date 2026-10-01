@@ -236,6 +236,7 @@ const messages: Record<string, string> = {
   'auth.login.failed': 'فشل تسجيل الدخول. هل الخادم متاح؟',
 
   'auth.form.username': 'اسم المستخدم',
+  'auth.form.usernameOrEmail': 'اسم المستخدم أو البريد الإلكتروني',
   'auth.form.password': 'كلمة المرور',
   'auth.form.confirmPassword': 'تأكيد كلمة المرور',
   'auth.form.displayName': 'الاسم المعروض',
@@ -255,6 +256,7 @@ const messages: Record<string, string> = {
   'auth.join.expiredTitle': 'انتهت صلاحية هذا الرابط',
   'auth.join.expiredLede': 'الدعوات ذات استخدام واحد ومحدودة زمنيًا. يُرجى طلب رابط جديد ممن دعاك.',
   'auth.join.title': 'أنت مدعو',
+  'auth.join.emailNote': 'سيحمل حسابك {email} - يمكنك تسجيل الدخول به أو باسم المستخدم.',
   'auth.join.invitedBy':
     'دعاك {name} للانضمام بصفة {role, select, admin {مسؤول} curator {منسّق} reader {قارئ} other {عضو}}.',
   'auth.join.invited':
@@ -1049,10 +1051,26 @@ const messages: Record<string, string> = {
   'people.link.copy': 'نسخ',
   'people.link.copied': 'تم نسخ الرابط',
   'people.link.copyFailed': 'حدّد الرابط وانسخه',
+  'people.link.forEmail': 'إلى {email}',
+  'people.link.email': 'البريد',
+  'people.link.share': 'مشاركة',
+  'people.link.mailSubject': 'دعوتك إلى ReadPort',
+  'people.link.mailBody':
+    '{name} يدعوك إلى ReadPort.\n\nأنشئ حسابك من هنا:\n{url}\n\nالرابط صالح حتى {date}. إن لم يُفتح، أدخل هذا الرمز في صفحة تسجيل الدخول إلى ReadPort: {code}',
+  'people.link.mailBodyBook':
+    'سمح لك {name} بقراءة «{title}» على ReadPort.\n\nأنشئ حسابك من هنا:\n{url}\n\nالرابط صالح حتى {date}. إن لم يُفتح، أدخل هذا الرمز في صفحة تسجيل الدخول إلى ReadPort: {code}',
   'people.form.displayName': 'الاسم المعروض',
   'people.form.role': 'الدور',
   'people.form.letThemSave': 'السماح لهم بحفظ نسخ',
   'people.form.adminsAlwaysDownload': 'يمكن للمسؤولين دائمًا تنزيل الملفات.',
+  'people.form.email': 'البريد الإلكتروني',
+  'people.form.emailHint': 'اختياري - يمكنه تسجيل الدخول به بدلًا من اسم المستخدم.',
+  'people.form.language': 'اللغة',
+  'people.form.languageDevice': 'لغة جهازه',
+  'people.form.languageHint': 'سيُفتح ReadPort بهذه اللغة له، ويمكنه تغييرها في أي وقت.',
+  'people.invite.emailHint': 'اختياري - سيحمله الحساب، ويملؤه زر البريد عنك.',
+  'people.manage.languageHint':
+    'سيتحول ReadPort إليها في المرة القادمة التي يفتحه فيها، ويمكنه تغييرها في أي وقت.',
   'people.add.title': 'إضافة شخص',
   'people.add.optional': 'اختياري',
   'people.add.username': 'اسم المستخدم',
@@ -1101,6 +1119,7 @@ const messages: Record<string, string> = {
   'people.manage.accountDeleted': 'حُذف الحساب',
   'people.manage.deleteFailed': 'تعذّر الحذف.',
   'people.error.usernameTaken': 'اسم المستخدم هذا مُستخدَم بالفعل.',
+  'people.error.emailTaken': 'هناك حساب آخر يستخدم عنوان البريد الإلكتروني هذا.',
   'people.error.lastAdmin': 'هذا هو المسؤول النشط الأخير - رقِّ شخصًا آخر أولًا.',
   'people.error.selfLockout': 'لا يمكنك إزالة صلاحية الإدارة الخاصة بك.',
   'people.error.proxyManaged':
@@ -1708,13 +1727,22 @@ const messages: Record<string, string> = {
   // people
   'people.joinRequests.title': 'طلبات الانضمام',
   'people.joinRequests.lede':
-    'أشخاص فتحوا رابط مشاركة وطلبوا الانضمام. الموافقة تُنشئ دعوة قارئ، يُسلّمها لهم الرابط نفسه.',
+    'أشخاص فتحوا رابط مشاركة وطلبوا الانضمام. الموافقة تمنحهم دعوة قارئ: أرسل لهم الرابط، أو يجدونها عبر رابط المشاركة نفسه.',
   'people.joinRequests.askedFor': 'طلب كتاب {title}، شاركه {name}',
   'people.joinRequests.askedForUnknown': 'طلب الانضمام عبر رابط أُلغي لاحقًا',
   'people.joinRequests.when': 'طلب {when}',
   'people.joinRequests.approve': 'قبول',
   'people.joinRequests.decline': 'رفض',
-  'people.joinRequests.approved': 'تمت الموافقة على الطلب - يمكنهم إنشاء حسابهم من رابط المشاركة',
+  'people.joinRequests.approved': 'تمت الموافقة - أرسل له الرابط الآن',
+  'people.joinRequests.waiting': 'تمت الموافقة - لم ينشئ حسابه بعد',
+  'people.joinRequests.linkUntil': 'الرابط صالح حتى {date}',
+  'people.joinRequests.sendLink': 'إرسال الرابط',
+  'people.joinRequests.approveTitle': 'السماح بدخول {name}',
+  'people.joinRequests.approveLede':
+    'سيحصل على حساب قارئ باسم {email}. ثم أرسل له الرابط - بالبريد أو في رسالة، أو اقرأ له الرمز.',
+  'people.joinRequests.languageHint':
+    'ستكون صفحة التسجيل والدعوة وReadPort نفسه بهذه اللغة. تبدأ باللغة التي طلب بها.',
+  'people.joinRequests.approveConfirm': 'الموافقة والحصول على الرابط',
   'people.joinRequests.declined': 'تم رفض الطلب',
   'people.joinRequests.failed': 'لم ينجح ذلك - يُرجى التحقق من الاتصال.',
 
@@ -1780,7 +1808,8 @@ const messages: Record<string, string> = {
   'share.join.failed': 'تعذّر إرسال الطلب. هل الخادم متاح؟',
   'share.join.tooMany': 'عدد كبير جدًا من الطلبات من هذا المصدر - يُرجى المحاولة مرة أخرى لاحقًا.',
   'share.join.pendingTitle': 'تم إرسال الطلب',
-  'share.join.pendingBody': 'على أحد المسؤولين الموافقة عليه؛ عُد إلى هذا الرابط لاحقًا.',
+  'share.join.pendingBody':
+    'يجب أن يوافق عليه أحد المسؤولين. سيُرسل لك رابطًا - أو أبقِ هذه الصفحة مفتوحة وستكمل من هنا.',
   'share.join.pendingAs': 'طلبت بالبريد الإلكتروني {email}',
   'share.join.notYou': 'لست أنت؟ اطلب ببريد إلكتروني مختلف',
   'share.join.declinedTitle': 'ليس هذه المرة',

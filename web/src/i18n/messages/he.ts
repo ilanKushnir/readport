@@ -229,6 +229,7 @@ const messages: Record<string, string> = {
   'auth.login.failed': 'ההתחברות נכשלה. האם השרת זמין?',
 
   'auth.form.username': 'שם משתמש',
+  'auth.form.usernameOrEmail': 'שם משתמש או דוא״ל',
   'auth.form.password': 'סיסמה',
   'auth.form.confirmPassword': 'אימות סיסמה',
   'auth.form.displayName': 'שם תצוגה',
@@ -247,6 +248,7 @@ const messages: Record<string, string> = {
   'auth.join.expiredTitle': 'תוקף הקישור הזה פג',
   'auth.join.expiredLede': 'הזמנות הן חד-פעמיות ומוגבלות בזמן. יש לבקש ממי שהזמין אותך קישור חדש.',
   'auth.join.title': 'הוזמנת!',
+  'auth.join.emailNote': 'החשבון שלך יישא את {email} - אפשר להתחבר איתה או עם שם המשתמש.',
   'auth.join.invitedBy':
     '{name} הזמין/ה אותך להצטרף בתור {role, select, admin {מנהל} curator {אוצר} reader {קורא} other {חבר}}.',
   'auth.join.invited':
@@ -1024,10 +1026,26 @@ const messages: Record<string, string> = {
   'people.link.copy': 'העתקה',
   'people.link.copied': 'הקישור הועתק',
   'people.link.copyFailed': 'יש לבחור ולהעתיק את הקישור',
+  'people.link.forEmail': 'עבור {email}',
+  'people.link.email': 'דוא״ל',
+  'people.link.share': 'שיתוף',
+  'people.link.mailSubject': 'ההזמנה שלך ל-ReadPort',
+  'people.link.mailBody':
+    '{name} מזמין/ה אותך ל-ReadPort.\n\nאפשר ליצור חשבון כאן:\n{url}\n\nהקישור בתוקף עד {date}. אם הוא לא נפתח, יש להזין את הקוד הזה בדף הכניסה של ReadPort: {code}',
+  'people.link.mailBodyBook':
+    '{name} אישר/ה לך לקרוא את „{title}” ב-ReadPort.\n\nאפשר ליצור חשבון כאן:\n{url}\n\nהקישור בתוקף עד {date}. אם הוא לא נפתח, יש להזין את הקוד הזה בדף הכניסה של ReadPort: {code}',
   'people.form.displayName': 'שם תצוגה',
   'people.form.role': 'תפקיד',
   'people.form.letThemSave': 'לאפשר להם לשמור עותקים',
   'people.form.adminsAlwaysDownload': 'מנהלים יכולים תמיד להוריד את הקבצים.',
+  'people.form.email': 'דוא״ל',
+  'people.form.emailHint': 'רשות - אפשר יהיה להתחבר איתה במקום שם המשתמש.',
+  'people.form.language': 'שפה',
+  'people.form.languageDevice': 'השפה של המכשיר שלהם',
+  'people.form.languageHint': 'ReadPort ייפתח עבורם בשפה הזו. אפשר לשנות אותה בכל עת.',
+  'people.invite.emailHint': 'רשות - החשבון יישא אותה, וכפתור הדוא״ל ימלא אותה בשבילך.',
+  'people.manage.languageHint':
+    'ReadPort יעבור אליה בפעם הבאה שהם יפתחו אותו. אפשר לשנות אותה בכל עת.',
   'people.add.title': 'הוספת אדם',
   'people.add.optional': 'לא חובה',
   'people.add.username': 'שם משתמש',
@@ -1076,6 +1094,7 @@ const messages: Record<string, string> = {
   'people.manage.accountDeleted': 'החשבון נמחק',
   'people.manage.deleteFailed': 'לא ניתן היה למחוק.',
   'people.error.usernameTaken': 'שם המשתמש הזה כבר תפוס.',
+  'people.error.emailTaken': 'חשבון אחר כבר משתמש בכתובת הדוא״ל הזו.',
   'people.error.lastAdmin': 'זהו המנהל הפעיל האחרון - יש לקדם מישהו אחר קודם.',
   'people.error.selfLockout': 'אי אפשר להסיר את הרשאת הניהול של עצמך.',
   'people.error.proxyManaged': 'החשבון הזה מתחבר דרך הפרוקסי ההפוך; אין לו סיסמה מקומית.',
@@ -1669,13 +1688,22 @@ const messages: Record<string, string> = {
   // people
   'people.joinRequests.title': 'בקשות הצטרפות',
   'people.joinRequests.lede':
-    'אנשים שפתחו קישור שיתוף וביקשו להצטרף. אישור יוצר הזמנת קורא, שאותו קישור מעביר אליהם.',
+    'אנשים שפתחו קישור שיתוף וביקשו להצטרף. אישור נותן להם הזמנת קורא: אפשר לשלוח להם את הקישור, או שימצאו אותה בקישור השיתוף.',
   'people.joinRequests.askedFor': 'ביקש/ה את הספר {title}, שאותו שיתף/ה {name}',
   'people.joinRequests.askedForUnknown': 'ביקש/ה להצטרף דרך קישור שבוטל מאז',
   'people.joinRequests.when': 'ביקש/ה {when}',
   'people.joinRequests.approve': 'אישור',
   'people.joinRequests.decline': 'דחייה',
-  'people.joinRequests.approved': 'אושרה - הם יכולים ליצור את החשבון שלהם מקישור השיתוף',
+  'people.joinRequests.approved': 'אושר - עכשיו כדאי לשלוח להם את הקישור',
+  'people.joinRequests.waiting': 'אושר - עוד לא נרשמו',
+  'people.joinRequests.linkUntil': 'הקישור בתוקף עד {date}',
+  'people.joinRequests.sendLink': 'שליחת הקישור',
+  'people.joinRequests.approveTitle': 'אישור הכניסה של {name}',
+  'people.joinRequests.approveLede':
+    'ייפתח להם חשבון קורא עם {email}. אחר כך אפשר לשלוח להם את הקישור - בדוא״ל, בהודעה, או להקריא להם את הקוד.',
+  'people.joinRequests.languageHint':
+    'דף ההרשמה, ההזמנה ו-ReadPort עצמו יהיו בשפה הזו. בהתחלה זו השפה שבה הם ביקשו.',
+  'people.joinRequests.approveConfirm': 'אישור וקבלת הקישור',
   'people.joinRequests.declined': 'הבקשה נדחתה',
   'people.joinRequests.failed': 'זה לא עבר - יש לבדוק את החיבור.',
 
@@ -1741,7 +1769,8 @@ const messages: Record<string, string> = {
   'share.join.failed': 'לא ניתן היה לשלוח את הבקשה. האם השרת זמין?',
   'share.join.tooMany': 'יותר מדי בקשות ממקום זה - יש לנסות שוב מאוחר יותר.',
   'share.join.pendingTitle': 'הבקשה נשלחה',
-  'share.join.pendingBody': 'הבקשה ממתינה לאישור מנהל/ת; יש לחזור לקישור הזה אחר כך.',
+  'share.join.pendingBody':
+    'הבקשה ממתינה לאישור מנהל/ת. יישלח אליך קישור - או שאפשר להשאיר את הדף הזה פתוח והוא ימשיך מכאן.',
   'share.join.pendingAs': 'ביקשת עם כתובת האימייל {email}',
   'share.join.notYou': 'לא את/ה? אפשר לבקש עם כתובת אחרת',
   'share.join.declinedTitle': 'לא הפעם',

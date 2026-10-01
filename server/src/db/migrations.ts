@@ -850,4 +850,25 @@ JOIN (
 WHERE json_extract(p.locator_json, '$.medium') = 'ebook' AND r.ms >= 45000;
 `,
   },
+  {
+    version: 28,
+    sql: `
+-- Who an invitation is for, and in which language. One minted by approving
+-- a join request is for the address the request was left with, and the
+-- account it opens carries that address; any invitation may name the
+-- language its sign-up page opens in, which the new account then keeps.
+-- Null for either: whoever holds the link, in their own browser's language.
+ALTER TABLE invites ADD COLUMN email TEXT;
+ALTER TABLE invites ADD COLUMN language TEXT;
+
+-- The language the share page was in when someone asked to join: what an
+-- approval offers them first.
+ALTER TABLE join_requests ADD COLUMN language TEXT;
+
+-- An account's email address: a second name to sign in with, never a
+-- requirement. Unique however it is capitalised, and only when there is one.
+ALTER TABLE users ADD COLUMN email TEXT;
+CREATE UNIQUE INDEX idx_users_email ON users(lower(email)) WHERE email IS NOT NULL;
+`,
+  },
 ];

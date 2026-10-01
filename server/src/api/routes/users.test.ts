@@ -12,7 +12,9 @@ import { createSession } from '../../auth/sessions.js';
  * The admin's side of a join request: who may see and decide them, what a
  * decision does to the row, and that approval mints exactly the invitation
  * the share link will later hand over - a reader, named after the request,
- * open for a week, stored as a hash of a code nobody wrote down.
+ * open for a week, for the address it was asked with, in the language the
+ * admin chose, stored as a hash of a code only the server can say again.
+ * The admin is told the code, to send it on: ReadPort sends no mail.
  */
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'rp-users-'));
@@ -48,6 +50,14 @@ interface RequestDto {
   decidedAt: string | null;
   book: { id: string; title: string } | null;
   sharedBy: { displayName: string } | null;
+  language?: string | null;
+  invite?: {
+    code: string;
+    path: string;
+    url: string | null;
+    expiresAt: string;
+    language: string | null;
+  } | null;
 }
 const listed = async () =>
   ((await as('astra', '/api/join-requests')).json() as { requests: RequestDto[] }).requests;
@@ -120,8 +130,18 @@ describe('deciding', () => {
     const { request } = res.json() as { request: RequestDto };
     expect(request).toMatchObject({ id: ada!.id, status: 'approved' });
     expect(request.decidedAt).not.toBeNull();
-    // Never the code, never the hash.
-    expect(res.body).not.toMatch(/token/i);
+    // The way in, for the admin to send on - the code the share link will
+    // derive for this request, and the link that carries it - but never the
+    // hash it is kept as.
+    const derived = deriveInviteToken(SECRET, ada!.id);
+    expect(request.invite).toMatchObject({
+      code: derived,
+      path: `/join/${encodeURIComponent(derived)}`,
+      // No public address configured: the admin's browser supplies its own.
+      url: null,
+      language: null,
+    });
+    expect(res.body).not.toMatch(/token_hash|[0-9a-f]{64}/);
 
     const row = db
       .prepare('SELECT invite_id, decided_by FROM join_requests WHERE id = ?')
@@ -129,7 +149,7 @@ describe('deciding', () => {
     expect(row.decided_by).toBe(ids.astra);
     const invite = db
       .prepare(
-        'SELECT role, can_export, display_name, username, created_by, expires_at, token_hash FROM invites WHERE id = ?',
+        'SELECT role, can_export, display_name, username, created_by, expires_at, token_hash, email, language FROM invites WHERE id = ?',
       )
       .get(row.invite_id) as {
       role: string;
@@ -139,6 +159,8 @@ describe('deciding', () => {
       created_by: string;
       expires_at: string;
       token_hash: string;
+      email: string | null;
+      language: string | null;
     };
     expect(invite).toMatchObject({
       role: 'reader',
@@ -146,6 +168,9 @@ describe('deciding', () => {
       display_name: 'Ada',
       username: null,
       created_by: ids.astra,
+      // For the address they asked with; no language asked or chosen.
+      email: 'ada@example.org',
+      language: null,
     });
     const days = (Date.parse(invite.expires_at) - before) / 86_400_000;
     expect(days).toBeGreaterThan(6.99);
@@ -233,5 +258,160 @@ describe('last seen', () => {
 
   it('counts a request through the sign-in proxy too', async () => {
     expect(Date.now() - Date.parse((await seenOf(ids.bob!)).lastSeenAt!)).toBeLessThan(60_000);
+  });
+});
+
+describe('the language they are let in in, and what the account carries', () => {
+  const PASSWORD = 'a long enough password';
+  let dan: RequestDto;
+
+  it('remembers the language a request was asked in, and offers it', async () => {
+    createJoinRequest(db, {
+      email: 'dan@example.org',
+      name: 'Dan',
+      language: 'he',
+      shareToken: token,
+    });
+    dan = (await listed()).find((r) => r.email === 'dan@example.org')!;
+    expect(dan.language).toBe('he');
+  });
+
+  it('lets them in in the language the admin chose', async () => {
+    const res = await as('astra', `/api/join-requests/${dan.id}/approve`, 'POST', {
+      language: 'ru',
+    });
+    expect(res.statusCode).toBe(200);
+    const { request } = res.json() as { request: RequestDto };
+    expect(request.invite?.language).toBe('ru');
+    // ...and keeps the way in on the list until it is used.
+    expect((await listed()).find((r) => r.id === dan.id)?.invite?.code).toBe(
+      deriveInviteToken(SECRET, dan.id),
+    );
+  });
+
+  it('refuses a language the app does not speak', async () => {
+    createJoinRequest(db, { email: 'eve@example.org', shareToken: token });
+    const eve = (await listed()).find((r) => r.email === 'eve@example.org')!;
+    const res = await as('astra', `/api/join-requests/${eve.id}/approve`, 'POST', {
+      language: 'xx',
+    });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('tells whoever holds the link which address and language it is for', async () => {
+    const code = deriveInviteToken(SECRET, dan.id);
+    const peek = await app.inject({ url: `/api/invites/${code}`, remoteAddress: '203.0.113.2' });
+    expect(peek.json()).toMatchObject({ email: 'dan@example.org', language: 'ru' });
+    // The share page they asked on hears it too, with the code.
+    const status = await app.inject({
+      url: `/api/share/${token}/join?email=dan@example.org`,
+      remoteAddress: '203.0.113.2',
+    });
+    expect(status.json()).toMatchObject({ status: 'approved', inviteToken: code, language: 'ru' });
+  });
+
+  it('opens an account that carries the address and speaks the language', async () => {
+    const code = deriveInviteToken(SECRET, dan.id);
+    const res = await app.inject({
+      url: `/api/invites/${code}/accept`,
+      method: 'POST',
+      remoteAddress: '203.0.113.2',
+      headers: { 'x-rp-csrf': '1' },
+      payload: { username: 'dan', password: PASSWORD },
+    });
+    expect(res.statusCode).toBe(201);
+    const id = (res.json() as { user: { id: string } }).user.id;
+    expect(
+      (db.prepare('SELECT email FROM users WHERE id = ?').get(id) as { email: string }).email,
+    ).toBe('dan@example.org');
+    const cookie = res.cookies.find((c) => c.name === 'rp_session')!.value;
+    const me = await app.inject({ url: '/api/auth/me', cookies: { rp_session: cookie } });
+    expect((me.json() as { locale: string | null }).locale).toBe('ru');
+  });
+
+  it('signs them in by that address, however it is capitalised', async () => {
+    const login = (username: string, password = PASSWORD) =>
+      app.inject({
+        url: '/api/auth/login',
+        method: 'POST',
+        remoteAddress: '203.0.113.3',
+        headers: { 'x-rp-csrf': '1' },
+        payload: { username, password },
+      });
+    expect((await login('Dan@Example.org')).statusCode).toBe(200);
+    expect((await login('dan')).statusCode).toBe(200);
+    expect((await login('dan@example.org', 'not the password')).statusCode).toBe(401);
+    expect((await login('nobody@example.org')).statusCode).toBe(401);
+  });
+});
+
+describe('an admin choosing an account’s language and address', () => {
+  type U = { id: string; email: string | null; locale: string | null };
+  const send = (url: string, method: 'POST' | 'PATCH', payload: unknown) =>
+    app.inject({
+      url,
+      method,
+      remoteAddress: '10.0.0.5',
+      headers: { 'x-rp-test-user': 'astra', 'x-rp-csrf': '1' },
+      payload: payload as never,
+    });
+  let erin: U;
+
+  it('gives an account it creates a language and an address from the start', async () => {
+    const res = await send('/api/users', 'POST', {
+      username: 'erin',
+      password: 'a long enough password',
+      email: 'Erin@Example.org',
+      locale: 'fr',
+    });
+    expect(res.statusCode).toBe(201);
+    erin = (res.json() as { user: U }).user;
+    expect(erin).toMatchObject({ email: 'erin@example.org', locale: 'fr' });
+  });
+
+  it('changes either later, and hands the language back to their device', async () => {
+    let res = await send(`/api/users/${erin.id}`, 'PATCH', { locale: 'de' });
+    expect((res.json() as { user: U }).user.locale).toBe('de');
+    res = await send(`/api/users/${erin.id}`, 'PATCH', { locale: null, email: null });
+    expect((res.json() as { user: U }).user).toMatchObject({ locale: null, email: null });
+    res = await send(`/api/users/${erin.id}`, 'PATCH', { email: 'erin@example.net' });
+    expect((res.json() as { user: U }).user.email).toBe('erin@example.net');
+  });
+
+  it('never gives two accounts the same address', async () => {
+    const taken = await send('/api/users', 'POST', {
+      username: 'erin2',
+      password: 'a long enough password',
+      email: 'ERIN@example.net',
+    });
+    expect(taken.statusCode).toBe(409);
+    expect((taken.json() as { error: string }).error).toBe('email-taken');
+    const dan = db.prepare("SELECT id FROM users WHERE username = 'dan'").get() as { id: string };
+    const moved = await send(`/api/users/${dan.id}`, 'PATCH', { email: 'erin@example.net' });
+    expect(moved.statusCode).toBe(409);
+  });
+
+  it('refuses a language the app does not speak', async () => {
+    expect((await send(`/api/users/${erin.id}`, 'PATCH', { locale: 'xx' })).statusCode).toBe(400);
+  });
+
+  it('puts an invitation it writes in a language, for an address', async () => {
+    const res = await send('/api/invites', 'POST', {
+      role: 'reader',
+      email: 'fay@example.org',
+      language: 'ja',
+    });
+    expect(res.statusCode).toBe(201);
+    const { code } = res.json() as { code: string };
+    const peek = await app.inject({ url: `/api/invites/${code}`, remoteAddress: '203.0.113.4' });
+    expect(peek.json()).toMatchObject({ email: 'fay@example.org', language: 'ja' });
+    const list = (
+      (await as('astra', '/api/users')).json() as {
+        invites: { email: string | null; language: string | null }[];
+      }
+    ).invites;
+    expect(list).toContainEqual(
+      expect.objectContaining({ email: 'fay@example.org', language: 'ja' }),
+    );
   });
 });

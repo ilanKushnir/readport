@@ -222,6 +222,7 @@ const messages: Record<string, string> = {
   'auth.login.wrongCredentials': "Nom d'utilisateur ou mot de passe incorrect.",
   'auth.login.failed': 'Échec de la connexion. Le serveur est-il joignable ?',
   'auth.form.username': "Nom d'utilisateur",
+  'auth.form.usernameOrEmail': 'Nom d’utilisateur ou e-mail',
   'auth.form.password': 'Mot de passe',
   'auth.form.confirmPassword': 'Confirmer le mot de passe',
   'auth.form.displayName': "Nom d'affichage",
@@ -240,6 +241,8 @@ const messages: Record<string, string> = {
   'auth.join.expiredLede':
     'Les invitations sont à usage unique et limitées dans le temps. Demandez un nouveau lien à la personne qui vous a invité.',
   'auth.join.title': 'Vous êtes invité',
+  'auth.join.emailNote':
+    'Votre compte portera {email} - vous pourrez vous connecter avec, ou avec votre nom d’utilisateur.',
   'auth.join.invitedBy':
     '{name} vous a invité à rejoindre avec le rôle {role, select, admin {administrateur} curator {conservateur} reader {lecteur} other {membre}}.',
   'auth.join.invited':
@@ -1026,11 +1029,29 @@ const messages: Record<string, string> = {
   'people.link.copy': 'Copier',
   'people.link.copied': 'Lien copié',
   'people.link.copyFailed': 'Sélectionnez et copiez le lien',
+  'people.link.forEmail': 'Pour {email}',
+  'people.link.email': 'E-mail',
+  'people.link.share': 'Partager',
+  'people.link.mailSubject': 'Votre invitation à ReadPort',
+  'people.link.mailBody':
+    '{name} vous invite sur ReadPort.\n\nCréez votre compte ici :\n{url}\n\nLe lien est valable jusqu’au {date}. S’il ne s’ouvre pas, saisissez ce code sur la page de connexion de ReadPort : {code}',
+  'people.link.mailBodyBook':
+    '{name} vous a ouvert l’accès pour lire « {title} » sur ReadPort.\n\nCréez votre compte ici :\n{url}\n\nLe lien est valable jusqu’au {date}. S’il ne s’ouvre pas, saisissez ce code sur la page de connexion de ReadPort : {code}',
   'people.form.displayName': "Nom d'affichage",
   'people.form.role': 'Rôle',
   'people.form.letThemSave': 'Les autoriser à enregistrer des copies',
   'people.form.adminsAlwaysDownload':
     'Les administrateurs peuvent toujours télécharger les fichiers.',
+  'people.form.email': 'E-mail',
+  'people.form.emailHint':
+    'Facultatif - ils pourront se connecter avec, au lieu du nom d’utilisateur.',
+  'people.form.language': 'Langue',
+  'people.form.languageDevice': 'La langue de leur appareil',
+  'people.form.languageHint':
+    'ReadPort s’ouvrira dans cette langue pour eux. Ils peuvent la changer à tout moment.',
+  'people.invite.emailHint': 'Facultatif - le compte la portera, et E-mail la remplit pour vous.',
+  'people.manage.languageHint':
+    'ReadPort passera à cette langue la prochaine fois qu’ils l’ouvriront. Ils peuvent la changer à tout moment.',
   'people.add.title': 'Ajouter une personne',
   'people.add.optional': 'Facultatif',
   'people.add.username': "Nom d'utilisateur",
@@ -1079,6 +1100,7 @@ const messages: Record<string, string> = {
   'people.manage.accountDeleted': 'Compte supprimé',
   'people.manage.deleteFailed': 'Impossible de supprimer.',
   'people.error.usernameTaken': "Ce nom d'utilisateur est déjà pris.",
+  'people.error.emailTaken': 'Un autre compte utilise déjà cette adresse e-mail.',
   'people.error.lastAdmin':
     "C'est le dernier administrateur actif - promouvez quelqu'un d'autre d'abord.",
   'people.error.selfLockout': 'Vous ne pouvez pas retirer votre propre accès administrateur.',
@@ -1678,14 +1700,22 @@ const messages: Record<string, string> = {
   // people
   'people.joinRequests.title': 'Demandes pour rejoindre',
   'people.joinRequests.lede':
-    'Des personnes qui ont suivi un lien de partage et ont demandé à entrer. Approuver crée une invitation de lecteur, que ce même lien leur remet.',
+    'Des personnes qui ont suivi un lien de partage et ont demandé à entrer. Approuver leur donne une invitation de lecteur : envoyez-leur le lien, ou ils la trouveront sur le lien de partage.',
   'people.joinRequests.askedFor': 'a demandé {title}, partagé par {name}',
   'people.joinRequests.askedForUnknown': 'a demandé par un lien qui a depuis été retiré',
   'people.joinRequests.when': 'Demandé {when}',
   'people.joinRequests.approve': 'Approuver',
   'people.joinRequests.decline': 'Refuser',
-  'people.joinRequests.approved':
-    'Approuvée - la personne peut créer son compte depuis le lien de partage',
+  'people.joinRequests.approved': 'Approuvé - envoyez-leur maintenant le lien',
+  'people.joinRequests.waiting': 'Approuvé - pas encore inscrit',
+  'people.joinRequests.linkUntil': 'lien valable jusqu’au {date}',
+  'people.joinRequests.sendLink': 'Envoyer le lien',
+  'people.joinRequests.approveTitle': 'Laisser entrer {name}',
+  'people.joinRequests.approveLede':
+    'Un compte lecteur sera créé pour {email}. Envoyez-leur ensuite le lien - par e-mail, dans un message, ou lisez-leur le code.',
+  'people.joinRequests.languageHint':
+    'La page d’inscription, l’invitation et ReadPort lui-même seront dans cette langue. Au départ, c’est celle dans laquelle ils ont demandé.',
+  'people.joinRequests.approveConfirm': 'Approuver et obtenir le lien',
   'people.joinRequests.declined': 'Demande refusée',
   'people.joinRequests.failed': "Cela n'a pas abouti - vérifiez la connexion.",
 
@@ -1753,7 +1783,8 @@ const messages: Record<string, string> = {
   'share.join.failed': "Impossible d'envoyer la demande. Le serveur est-il joignable ?",
   'share.join.tooMany': 'Trop de demandes depuis cet endroit - réessayez plus tard.',
   'share.join.pendingTitle': 'Demande envoyée',
-  'share.join.pendingBody': "Un administrateur doit l'approuver ; revenez ensuite sur ce lien.",
+  'share.join.pendingBody':
+    'Un administrateur doit l’approuver. Il vous enverra un lien - ou gardez cette page ouverte et la suite viendra ici.',
   'share.join.pendingAs': 'Demandé en tant que {email}',
   'share.join.notYou': 'Pas vous ? Demandez avec une autre adresse',
   'share.join.declinedTitle': 'Pas cette fois',

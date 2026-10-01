@@ -225,6 +225,7 @@ const messages: Record<string, string> = {
   'auth.login.wrongCredentials': 'Nombre de usuario o contraseña incorrectos.',
   'auth.login.failed': 'No se pudo iniciar sesión. ¿Está accesible el servidor?',
   'auth.form.username': 'Nombre de usuario',
+  'auth.form.usernameOrEmail': 'Usuario o correo electrónico',
   'auth.form.password': 'Contraseña',
   'auth.form.confirmPassword': 'Confirmar contraseña',
   'auth.form.displayName': 'Nombre visible',
@@ -243,6 +244,8 @@ const messages: Record<string, string> = {
   'auth.join.expiredLede':
     'Las invitaciones son de un solo uso y tienen fecha límite. Pide un enlace nuevo a quien te invitó.',
   'auth.join.title': 'Tienes una invitación',
+  'auth.join.emailNote':
+    'Tu cuenta llevará {email}: podrás iniciar sesión con él o con tu nombre de usuario.',
   'auth.join.invitedBy':
     '{name} te invitó a unirte como {role, select, admin {admin} curator {curador} reader {lector} other {miembro}}.',
   'auth.join.invited':
@@ -1016,10 +1019,28 @@ const messages: Record<string, string> = {
   'people.link.copy': 'Copiar',
   'people.link.copied': 'Enlace copiado',
   'people.link.copyFailed': 'Selecciona y copia el enlace',
+  'people.link.forEmail': 'Para {email}',
+  'people.link.email': 'Correo',
+  'people.link.share': 'Compartir',
+  'people.link.mailSubject': 'Tu invitación a ReadPort',
+  'people.link.mailBody':
+    '{name} te ha invitado a ReadPort.\n\nCrea tu cuenta aquí:\n{url}\n\nEl enlace vale hasta el {date}. Si no se abre, escribe este código en la página de inicio de sesión de ReadPort: {code}',
+  'people.link.mailBodyBook':
+    '{name} te ha dado acceso para leer «{title}» en ReadPort.\n\nCrea tu cuenta aquí:\n{url}\n\nEl enlace vale hasta el {date}. Si no se abre, escribe este código en la página de inicio de sesión de ReadPort: {code}',
   'people.form.displayName': 'Nombre visible',
   'people.form.role': 'Rol',
   'people.form.letThemSave': 'Permitirle guardar copias',
   'people.form.adminsAlwaysDownload': 'Los administradores siempre pueden descargar los archivos.',
+  'people.form.email': 'Correo electrónico',
+  'people.form.emailHint':
+    'Opcional: podrá iniciar sesión con él en vez de con su nombre de usuario.',
+  'people.form.language': 'Idioma',
+  'people.form.languageDevice': 'El idioma de su dispositivo',
+  'people.form.languageHint':
+    'ReadPort se le abrirá en este idioma. Puede cambiarlo cuando quiera.',
+  'people.invite.emailHint': 'Opcional: la cuenta lo llevará, y Correo lo rellena por ti.',
+  'people.manage.languageHint':
+    'ReadPort cambiará a este idioma la próxima vez que lo abra. Puede cambiarlo cuando quiera.',
   'people.add.title': 'Añadir una persona',
   'people.add.optional': 'Opcional',
   'people.add.username': 'Nombre de usuario',
@@ -1068,6 +1089,7 @@ const messages: Record<string, string> = {
   'people.manage.accountDeleted': 'Cuenta eliminada',
   'people.manage.deleteFailed': 'No se pudo eliminar.',
   'people.error.usernameTaken': 'Ese nombre de usuario ya está ocupado.',
+  'people.error.emailTaken': 'Otra cuenta ya usa esa dirección de correo.',
   'people.error.lastAdmin':
     'Este es el último administrador activo: asciende a otra persona primero.',
   'people.error.selfLockout': 'No puedes quitarte tu propio acceso de administrador.',
@@ -1669,13 +1691,22 @@ const messages: Record<string, string> = {
   // people
   'people.joinRequests.title': 'Solicitudes para unirse',
   'people.joinRequests.lede':
-    'Personas que siguieron un enlace y pidieron que las dejaran entrar. Aprobar crea una invitación de lector, que el mismo enlace les entrega.',
+    'Personas que siguieron un enlace y pidieron que las dejaran entrar. Aprobar les da una invitación de lector: envíales el enlace, o la encontrarán en el enlace que les compartieron.',
   'people.joinRequests.askedFor': 'pidió {title}, compartido por {name}',
   'people.joinRequests.askedForUnknown': 'pidió a través de un enlace que ya se ha retirado',
   'people.joinRequests.when': 'Pedido {when}',
   'people.joinRequests.approve': 'Aprobar',
   'people.joinRequests.decline': 'Rechazar',
-  'people.joinRequests.approved': 'Aprobada - puede crear su cuenta desde el enlace compartido',
+  'people.joinRequests.approved': 'Aprobado: ahora envíale el enlace',
+  'people.joinRequests.waiting': 'Aprobado: aún no se ha registrado',
+  'people.joinRequests.linkUntil': 'el enlace vale hasta el {date}',
+  'people.joinRequests.sendLink': 'Enviar el enlace',
+  'people.joinRequests.approveTitle': 'Dejar entrar a {name}',
+  'people.joinRequests.approveLede':
+    'Tendrá una cuenta de lector con {email}. Luego envíale el enlace: por correo, en un mensaje, o léele el código.',
+  'people.joinRequests.languageHint':
+    'La página de registro, la invitación y el propio ReadPort estarán en este idioma. Empieza siendo el idioma en que lo pidió.',
+  'people.joinRequests.approveConfirm': 'Aprobar y obtener el enlace',
   'people.joinRequests.declined': 'Solicitud rechazada',
   'people.joinRequests.failed': 'Eso no llegó: comprueba la conexión.',
 
@@ -1743,7 +1774,8 @@ const messages: Record<string, string> = {
   'share.join.failed': 'No se pudo enviar la solicitud. ¿Está accesible el servidor?',
   'share.join.tooMany': 'Demasiadas solicitudes desde aquí - vuelve a intentarlo más tarde.',
   'share.join.pendingTitle': 'Solicitud enviada',
-  'share.join.pendingBody': 'Un administrador tiene que aprobarla; vuelve a este enlace después.',
+  'share.join.pendingBody':
+    'Un administrador tiene que aprobarla. Te enviará un enlace, o deja esta página abierta y seguirá aquí.',
   'share.join.pendingAs': 'Pedido como {email}',
   'share.join.notYou': '¿No eres tú? Pide con otra dirección',
   'share.join.declinedTitle': 'Esta vez no',

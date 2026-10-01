@@ -221,6 +221,7 @@ const messages: Record<string, string> = {
   'auth.login.wrongCredentials': 'Λανθασμένο όνομα χρήστη ή κωδικός πρόσβασης.',
   'auth.login.failed': 'Η σύνδεση απέτυχε. Είναι προσβάσιμος ο διακομιστής;',
   'auth.form.username': 'Όνομα χρήστη',
+  'auth.form.usernameOrEmail': 'Όνομα χρήστη ή email',
   'auth.form.password': 'Κωδικός πρόσβασης',
   'auth.form.confirmPassword': 'Επιβεβαίωση κωδικού πρόσβασης',
   'auth.form.displayName': 'Εμφανιζόμενο όνομα',
@@ -240,6 +241,8 @@ const messages: Record<string, string> = {
   'auth.join.expiredLede':
     'Οι προσκλήσεις είναι μίας χρήσης και χρονικά περιορισμένες. Ζήτησε από όποιον σε προσκάλεσε έναν νέο σύνδεσμο.',
   'auth.join.title': 'Έχεις προσκληθεί',
+  'auth.join.emailNote':
+    'Ο λογαριασμός σου θα έχει το {email} - μπορείς να συνδέεσαι με αυτό ή με το όνομα χρήστη.',
   'auth.join.invitedBy':
     'Ο/Η {name} σε προσκάλεσε να συμμετάσχεις ως {role, select, admin {διαχειριστής} curator {επιμελητής} reader {αναγνώστης} other {μέλος}}.',
   'auth.join.invited':
@@ -1028,10 +1031,28 @@ const messages: Record<string, string> = {
   'people.link.copy': 'Αντιγραφή',
   'people.link.copied': 'Ο σύνδεσμος αντιγράφηκε',
   'people.link.copyFailed': 'Επίλεξε και αντέγραψε τον σύνδεσμο',
+  'people.link.forEmail': 'Για {email}',
+  'people.link.email': 'Email',
+  'people.link.share': 'Κοινοποίηση',
+  'people.link.mailSubject': 'Η πρόσκλησή σου στο ReadPort',
+  'people.link.mailBody':
+    'Ο/Η {name} σε προσκαλεί στο ReadPort.\n\nΔημιούργησε τον λογαριασμό σου εδώ:\n{url}\n\nΟ σύνδεσμος ισχύει έως {date}. Αν δεν ανοίγει, γράψε αυτόν τον κωδικό στη σελίδα σύνδεσης του ReadPort: {code}',
+  'people.link.mailBodyBook':
+    'Ο/Η {name} σού επέτρεψε να διαβάσεις το «{title}» στο ReadPort.\n\nΔημιούργησε τον λογαριασμό σου εδώ:\n{url}\n\nΟ σύνδεσμος ισχύει έως {date}. Αν δεν ανοίγει, γράψε αυτόν τον κωδικό στη σελίδα σύνδεσης του ReadPort: {code}',
   'people.form.displayName': 'Εμφανιζόμενο όνομα',
   'people.form.role': 'Ρόλος',
   'people.form.letThemSave': 'Να μπορεί να αποθηκεύει αντίγραφα',
   'people.form.adminsAlwaysDownload': 'Οι διαχειριστές μπορούν πάντα να κατεβάζουν τα αρχεία.',
+  'people.form.email': 'Email',
+  'people.form.emailHint': 'Προαιρετικό - μπορεί να συνδέεται με αυτό αντί για το όνομα χρήστη.',
+  'people.form.language': 'Γλώσσα',
+  'people.form.languageDevice': 'Η γλώσσα της συσκευής του',
+  'people.form.languageHint':
+    'Το ReadPort θα ανοίγει σε αυτή τη γλώσσα. Μπορεί να την αλλάξει όποτε θέλει.',
+  'people.invite.emailHint':
+    'Προαιρετικό - θα το έχει ο λογαριασμός, και το «Email» το συμπληρώνει για σένα.',
+  'people.manage.languageHint':
+    'Το ReadPort θα αλλάξει σε αυτή την επόμενη φορά που θα το ανοίξει. Μπορεί να την αλλάξει όποτε θέλει.',
   'people.add.title': 'Προσθήκη ατόμου',
   'people.add.optional': 'Προαιρετικό',
   'people.add.username': 'Όνομα χρήστη',
@@ -1079,6 +1100,7 @@ const messages: Record<string, string> = {
   'people.manage.accountDeleted': 'Ο λογαριασμός διαγράφηκε',
   'people.manage.deleteFailed': 'Δεν ήταν δυνατή η διαγραφή.',
   'people.error.usernameTaken': 'Αυτό το όνομα χρήστη χρησιμοποιείται ήδη.',
+  'people.error.emailTaken': 'Άλλος λογαριασμός χρησιμοποιεί ήδη αυτό το email.',
   'people.error.lastAdmin':
     'Αυτός είναι ο τελευταίος ενεργός διαχειριστής - προήγαγε πρώτα κάποιον άλλον.',
   'people.error.selfLockout': 'Δεν μπορείς να αφαιρέσεις τη δική σου πρόσβαση διαχειριστή.',
@@ -1679,14 +1701,22 @@ const messages: Record<string, string> = {
   // people
   'people.joinRequests.title': 'Αιτήματα συμμετοχής',
   'people.joinRequests.lede':
-    'Άτομα που ακολούθησαν έναν σύνδεσμο κοινής χρήσης και ζήτησαν να μπουν. Η έγκριση δημιουργεί μια πρόσκληση αναγνώστη, την οποία ο ίδιος σύνδεσμος τους δίνει.',
+    'Άτομα που ακολούθησαν έναν σύνδεσμο κοινής χρήσης και ζήτησαν να μπουν. Η έγκριση τους δίνει μια πρόσκληση αναγνώστη: στείλε τους τον σύνδεσμο, ή θα τη βρουν στον σύνδεσμο κοινής χρήσης.',
   'people.joinRequests.askedFor': 'ζήτησε το {title}, που μοιράστηκε από {name}',
   'people.joinRequests.askedForUnknown': 'ζήτησε μέσω ενός συνδέσμου που έχει έκτοτε αποσυρθεί',
   'people.joinRequests.when': 'Ζήτησε {when}',
   'people.joinRequests.approve': 'Έγκριση',
   'people.joinRequests.decline': 'Απόρριψη',
-  'people.joinRequests.approved':
-    'Εγκρίθηκε - μπορούν να δημιουργήσουν τον λογαριασμό τους από τον σύνδεσμο κοινής χρήσης',
+  'people.joinRequests.approved': 'Εγκρίθηκε - τώρα στείλε τον σύνδεσμο',
+  'people.joinRequests.waiting': 'Εγκρίθηκε - δεν έχει γραφτεί ακόμη',
+  'people.joinRequests.linkUntil': 'ο σύνδεσμος ισχύει έως {date}',
+  'people.joinRequests.sendLink': 'Αποστολή συνδέσμου',
+  'people.joinRequests.approveTitle': 'Έγκριση για {name}',
+  'people.joinRequests.approveLede':
+    'Θα πάρει λογαριασμό αναγνώστη με το {email}. Μετά στείλε του τον σύνδεσμο - με email, σε μήνυμα, ή διάβασέ του τον κωδικό.',
+  'people.joinRequests.languageHint':
+    'Η σελίδα εγγραφής, η πρόσκληση και το ίδιο το ReadPort θα είναι σε αυτή τη γλώσσα. Αρχικά είναι αυτή στην οποία έκανε το αίτημα.',
+  'people.joinRequests.approveConfirm': 'Έγκριση και λήψη συνδέσμου',
   'people.joinRequests.declined': 'Το αίτημα απορρίφθηκε',
   'people.joinRequests.failed': 'Δεν ολοκληρώθηκε - έλεγξε τη σύνδεση.',
 
@@ -1753,7 +1783,7 @@ const messages: Record<string, string> = {
   'share.join.tooMany': 'Πάρα πολλά αιτήματα από εδώ - δοκίμασε ξανά αργότερα.',
   'share.join.pendingTitle': 'Το αίτημα στάλθηκε',
   'share.join.pendingBody':
-    'Ένας διαχειριστής πρέπει να το εγκρίνει· ξαναγύρισε σε αυτόν τον σύνδεσμο μετά.',
+    'Πρέπει να την εγκρίνει ένας διαχειριστής. Θα σου στείλει σύνδεσμο - ή άφησε αυτή τη σελίδα ανοιχτή και θα συνεχίσει εδώ.',
   'share.join.pendingAs': 'Ζήτησες ως {email}',
   'share.join.notYou': 'Δεν είσαι εσύ; Ζήτα με διαφορετική διεύθυνση',
   'share.join.declinedTitle': 'Όχι αυτή τη φορά',

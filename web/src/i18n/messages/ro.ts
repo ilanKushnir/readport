@@ -222,6 +222,7 @@ const messages: Record<string, string> = {
   'auth.login.wrongCredentials': 'Nume de utilizator sau parolă greșite.',
   'auth.login.failed': 'Conectarea a eșuat. Este serverul accesibil?',
   'auth.form.username': 'Nume de utilizator',
+  'auth.form.usernameOrEmail': 'Nume de utilizator sau e-mail',
   'auth.form.password': 'Parolă',
   'auth.form.confirmPassword': 'Confirmă parola',
   'auth.form.displayName': 'Nume afișat',
@@ -241,6 +242,8 @@ const messages: Record<string, string> = {
   'auth.join.expiredLede':
     'Invitațiile sunt de unică folosință și limitate în timp. Cere-i persoanei care te-a invitat un link nou.',
   'auth.join.title': 'Ai fost invitat',
+  'auth.join.emailNote':
+    'Contul tău va avea {email} - te poți autentifica cu ea sau cu numele de utilizator.',
   'auth.join.invitedBy':
     '{name} te-a invitat să te alături ca {role, select, admin {administrator} curator {curator} reader {cititor} other {membru}}.',
   'auth.join.invited':
@@ -1015,10 +1018,27 @@ const messages: Record<string, string> = {
   'people.link.copy': 'Copiază',
   'people.link.copied': 'Link copiat',
   'people.link.copyFailed': 'Selectează și copiază linkul',
+  'people.link.forEmail': 'Pentru {email}',
+  'people.link.email': 'E-mail',
+  'people.link.share': 'Distribuie',
+  'people.link.mailSubject': 'Invitația ta la ReadPort',
+  'people.link.mailBody':
+    '{name} te-a invitat pe ReadPort.\n\nCreează-ți contul aici:\n{url}\n\nLinkul e valabil până la {date}. Dacă nu se deschide, introdu acest cod pe pagina de autentificare ReadPort: {code}',
+  'people.link.mailBodyBook':
+    '{name} ți-a dat acces să citești „{title}” pe ReadPort.\n\nCreează-ți contul aici:\n{url}\n\nLinkul e valabil până la {date}. Dacă nu se deschide, introdu acest cod pe pagina de autentificare ReadPort: {code}',
   'people.form.displayName': 'Nume afișat',
   'people.form.role': 'Rol',
   'people.form.letThemSave': 'Permite-i să salveze copii',
   'people.form.adminsAlwaysDownload': 'Administratorii pot descărca întotdeauna fișierele.',
+  'people.form.email': 'E-mail',
+  'people.form.emailHint': 'Opțional - se pot autentifica cu ea în loc de numele de utilizator.',
+  'people.form.language': 'Limbă',
+  'people.form.languageDevice': 'Limba dispozitivului lor',
+  'people.form.languageHint':
+    'ReadPort se va deschide pentru ei în această limbă. O pot schimba oricând.',
+  'people.invite.emailHint': 'Opțional - contul o va avea, iar E-mail o completează pentru tine.',
+  'people.manage.languageHint':
+    'ReadPort va trece la ea data viitoare când îl deschid. O pot schimba oricând.',
   'people.add.title': 'Adaugă o persoană',
   'people.add.optional': 'Opțional',
   'people.add.username': 'Nume de utilizator',
@@ -1067,6 +1087,7 @@ const messages: Record<string, string> = {
   'people.manage.accountDeleted': 'Cont șters',
   'people.manage.deleteFailed': 'Nu a putut fi șters.',
   'people.error.usernameTaken': 'Acest nume de utilizator este deja folosit.',
+  'people.error.emailTaken': 'Un alt cont folosește deja această adresă de e-mail.',
   'people.error.lastAdmin':
     'Acesta este ultimul administrator activ - promovează pe altcineva mai întâi.',
   'people.error.selfLockout': 'Nu îți poți elimina propriul acces de administrator.',
@@ -1671,13 +1692,22 @@ const messages: Record<string, string> = {
   // people
   'people.joinRequests.title': 'Cereri de alăturare',
   'people.joinRequests.lede':
-    'Persoane care au deschis un link distribuit și au cerut să li se permită accesul. Aprobarea creează o invitație de cititor, pe care le-o dă tot acel link.',
+    'Persoane care au deschis un link distribuit și au cerut să li se permită accesul. Aprobarea le dă o invitație de cititor: trimite-le linkul, sau o găsesc la linkul distribuit.',
   'people.joinRequests.askedFor': 'a cerut {title}, prin linkul distribuit de {name}',
   'people.joinRequests.askedForUnknown': 'a cerut printr-un link revocat între timp',
   'people.joinRequests.when': 'Cerută {when}',
   'people.joinRequests.approve': 'Aprobă',
   'people.joinRequests.decline': 'Refuză',
-  'people.joinRequests.approved': 'Aprobat - contul poate fi creat din linkul distribuit',
+  'people.joinRequests.approved': 'Aprobat - acum trimite-le linkul',
+  'people.joinRequests.waiting': 'Aprobat - încă nu s-a înregistrat',
+  'people.joinRequests.linkUntil': 'linkul e valabil până la {date}',
+  'people.joinRequests.sendLink': 'Trimite linkul',
+  'people.joinRequests.approveTitle': 'Aprobă accesul pentru {name}',
+  'people.joinRequests.approveLede':
+    'Va primi un cont de cititor cu {email}. Apoi trimite-i linkul - prin e-mail, într-un mesaj, sau citește-i codul.',
+  'people.joinRequests.languageHint':
+    'Pagina de înregistrare, invitația și ReadPort însuși vor fi în această limbă. La început e cea în care a cerut.',
+  'people.joinRequests.approveConfirm': 'Aprobă și ia linkul',
   'people.joinRequests.declined': 'Cerere refuzată',
   'people.joinRequests.failed': 'Asta nu a trecut - verifică conexiunea.',
 
@@ -1745,7 +1775,7 @@ const messages: Record<string, string> = {
   'share.join.tooMany': 'Prea multe cereri de aici - încearcă din nou mai târziu.',
   'share.join.pendingTitle': 'Cerere trimisă',
   'share.join.pendingBody':
-    'Un administrator trebuie să o aprobe; revino la acest link după aceea.',
+    'Un administrator trebuie să o aprobe. Vei primi un link - sau lasă pagina deschisă și continuă aici.',
   'share.join.pendingAs': 'Ai trimis cererea ca {email}',
   'share.join.notYou': 'Nu tu? Cere cu o altă adresă',
   'share.join.declinedTitle': 'Nu de data aceasta',

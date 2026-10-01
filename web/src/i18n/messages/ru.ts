@@ -221,6 +221,7 @@ const messages: Record<string, string> = {
   'auth.login.wrongCredentials': 'Неверное имя пользователя или пароль.',
   'auth.login.failed': 'Не удалось войти. Сервер доступен?',
   'auth.form.username': 'Имя пользователя',
+  'auth.form.usernameOrEmail': 'Имя пользователя или почта',
   'auth.form.password': 'Пароль',
   'auth.form.confirmPassword': 'Подтвердите пароль',
   'auth.form.displayName': 'Отображаемое имя',
@@ -239,6 +240,8 @@ const messages: Record<string, string> = {
   'auth.join.expiredLede':
     'Приглашения одноразовые и ограничены по времени. Попросите пригласившего вас прислать новую ссылку.',
   'auth.join.title': 'Вас пригласили',
+  'auth.join.emailNote':
+    'К аккаунту будет привязан адрес {email} - входить можно по нему или по имени пользователя.',
   'auth.join.invitedBy':
     '{name} приглашает вас присоединиться {role, select, admin {как администратора} curator {как куратора} reader {как читателя} other {как участника}}.',
   'auth.join.invited':
@@ -1012,10 +1015,27 @@ const messages: Record<string, string> = {
   'people.link.copy': 'Скопировать',
   'people.link.copied': 'Ссылка скопирована',
   'people.link.copyFailed': 'Выделите и скопируйте ссылку',
+  'people.link.forEmail': 'Для {email}',
+  'people.link.email': 'Почта',
+  'people.link.share': 'Поделиться',
+  'people.link.mailSubject': 'Ваше приглашение в ReadPort',
+  'people.link.mailBody':
+    '{name} приглашает вас в ReadPort.\n\nСоздайте аккаунт здесь:\n{url}\n\nСсылка действует до {date}. Если она не открывается, введите этот код на странице входа в ReadPort: {code}',
+  'people.link.mailBodyBook':
+    '{name} открывает вам доступ к книге «{title}» в ReadPort.\n\nСоздайте аккаунт здесь:\n{url}\n\nСсылка действует до {date}. Если она не открывается, введите этот код на странице входа в ReadPort: {code}',
   'people.form.displayName': 'Отображаемое имя',
   'people.form.role': 'Роль',
   'people.form.letThemSave': 'Разрешить сохранять копии',
   'people.form.adminsAlwaysDownload': 'Администраторы всегда могут загружать файлы.',
+  'people.form.email': 'Почта',
+  'people.form.emailHint': 'Необязательно - можно входить по ней вместо имени пользователя.',
+  'people.form.language': 'Язык',
+  'people.form.languageDevice': 'Язык устройства',
+  'people.form.languageHint': 'ReadPort откроется на этом языке. Его всегда можно сменить.',
+  'people.invite.emailHint':
+    'Необязательно - адрес будет у аккаунта, а кнопка «Почта» подставит его сама.',
+  'people.manage.languageHint':
+    'ReadPort переключится на него при следующем открытии. Его всегда можно сменить.',
   'people.add.title': 'Добавить человека',
   'people.add.optional': 'Необязательно',
   'people.add.username': 'Имя пользователя',
@@ -1065,6 +1085,7 @@ const messages: Record<string, string> = {
   'people.manage.accountDeleted': 'Учётная запись удалена',
   'people.manage.deleteFailed': 'Не удалось удалить.',
   'people.error.usernameTaken': 'Это имя пользователя уже занято.',
+  'people.error.emailTaken': 'Этот адрес почты уже использует другой аккаунт.',
   'people.error.lastAdmin':
     'Это последний активный администратор — сначала назначьте кого-то другого.',
   'people.error.selfLockout': 'Вы не можете убрать собственные права администратора.',
@@ -1670,13 +1691,22 @@ const messages: Record<string, string> = {
   // people
   'people.joinRequests.title': 'Запросы на присоединение',
   'people.joinRequests.lede':
-    'Люди, которые перешли по ссылке и попросились присоединиться. Одобрение создаёт приглашение для читателя — та же ссылка передаст его им.',
+    'Люди, которые перешли по ссылке и попросились присоединиться. Одобрение даёт им приглашение для читателя: отправьте им ссылку, или они найдут его по той же ссылке.',
   'people.joinRequests.askedFor': 'Запрос пришёл по ссылке на «{title}» от {name}',
   'people.joinRequests.askedForUnknown': 'Запрос пришёл по ссылке, которая с тех пор отозвана',
   'people.joinRequests.when': 'Запрошено {when}',
   'people.joinRequests.approve': 'Одобрить',
   'people.joinRequests.decline': 'Отклонить',
-  'people.joinRequests.approved': 'Одобрено — они смогут создать учётную запись по той же ссылке',
+  'people.joinRequests.approved': 'Одобрено - теперь отправьте ссылку',
+  'people.joinRequests.waiting': 'Одобрено - ещё не зарегистрировались',
+  'people.joinRequests.linkUntil': 'ссылка действует до {date}',
+  'people.joinRequests.sendLink': 'Отправить ссылку',
+  'people.joinRequests.approveTitle': 'Впустить: {name}',
+  'people.joinRequests.approveLede':
+    'Будет создан аккаунт читателя с адресом {email}. Затем отправьте ссылку - письмом, сообщением или продиктуйте код.',
+  'people.joinRequests.languageHint':
+    'Страница регистрации, приглашение и сам ReadPort будут на этом языке. Сначала выбран тот, на котором была заявка.',
+  'people.joinRequests.approveConfirm': 'Одобрить и получить ссылку',
   'people.joinRequests.declined': 'Запрос отклонён',
   'people.joinRequests.failed': 'Не получилось — проверьте соединение.',
 
@@ -1743,7 +1773,8 @@ const messages: Record<string, string> = {
   'share.join.failed': 'Не удалось отправить запрос. Сервер доступен?',
   'share.join.tooMany': 'Слишком много запросов отсюда — попробуйте позже.',
   'share.join.pendingTitle': 'Запрос отправлен',
-  'share.join.pendingBody': 'Администратору нужно его одобрить — потом вернитесь по этой ссылке.',
+  'share.join.pendingBody':
+    'Её должен одобрить администратор. Вам пришлют ссылку - или оставьте эту страницу открытой, и всё продолжится здесь.',
   'share.join.pendingAs': 'Вы указали {email}',
   'share.join.notYou': 'Это не вы? Отправьте запрос с другого адреса',
   'share.join.declinedTitle': 'Не в этот раз',

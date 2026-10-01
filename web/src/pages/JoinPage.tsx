@@ -1,9 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import type { Role } from '@readport/shared';
+import { uiLocale, type Role } from '@readport/shared';
 import { api, ApiError } from '../api/client';
 import { useSession, type User } from '../state/session';
 import { ReadPortMark } from '../components/icons';
-import { useT } from '../i18n';
+import { useI18n, useT } from '../i18n';
 
 interface InvitePeek {
   role: Role;
@@ -11,12 +11,31 @@ interface InvitePeek {
   username: string | null;
   invitedBy: string | null;
   expiresAt: string;
+  /** Who it was sent to: the account carries the address. Absent from older servers. */
+  email?: string | null;
+  /** The language the admin chose for them. Absent from older servers. */
+  language?: string | null;
+}
+
+/**
+ * A username to start from, out of an email address: its local part, kept
+ * to the characters a username may have. Only ever a suggestion - the field
+ * stays theirs to change.
+ */
+export function usernameFromEmail(email: string | null | undefined): string {
+  const local = (email ?? '').split('@')[0] ?? '';
+  const name = local
+    .replace(/[^a-zA-Z0-9._-]+/g, '.')
+    .replace(/^[._-]+|[._-]+$/g, '')
+    .slice(0, 32);
+  return name.length >= 3 ? name : '';
 }
 
 /** Accept an invitation link: /join/<token>. The only self-service sign-up path. */
 export function JoinPage({ token }: { token: string }) {
   const { setUser } = useSession();
   const t = useT();
+  const { setLocale } = useI18n();
   const [peek, setPeek] = useState<InvitePeek | null | 'invalid' | 'unreachable'>(null);
   const [displayName, setDisplayName] = useState('');
   const [username, setUsername] = useState('');
@@ -30,7 +49,10 @@ export function JoinPage({ token }: { token: string }) {
       .then((p) => {
         setPeek(p);
         setDisplayName(p.displayName ?? '');
-        setUsername(p.username ?? '');
+        setUsername(p.username ?? usernameFromEmail(p.email));
+        // The language the admin chose for them: the page speaks it now, and
+        // the account it opens keeps it.
+        if (p.language && uiLocale(p.language)) void setLocale(p.language);
       })
       .catch((err) =>
         // A server that did not answer says nothing about the invitation, and
@@ -42,6 +64,7 @@ export function JoinPage({ token }: { token: string }) {
             : 'unreachable',
         ),
       );
+    // Once, for the link: switching language must not fetch it again.
   }, [token]);
 
   const submit = async (e: FormEvent) => {
@@ -108,6 +131,11 @@ export function JoinPage({ token }: { token: string }) {
                 : t('auth.join.invited', { role: peek.role })}{' '}
               {t(`auth.join.roleBlurb.${peek.role}` as const)}
             </p>
+            {peek.email && (
+              <p className="hint">
+                <bdi>{t('auth.join.emailNote', { email: peek.email })}</bdi>
+              </p>
+            )}
             {error && (
               <div className="banner banner--error" role="alert">
                 {error}
