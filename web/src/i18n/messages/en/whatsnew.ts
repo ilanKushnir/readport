@@ -24,6 +24,8 @@ export const whatsnew = {
   'whatsnew.update.later': 'Not now',
 
   // ---------------------------------------------------------------- 0.29.0
+  'whatsnew.release.readAlongWhileSyncing':
+    'A book you just paired is ready to read along with from the beginning in about half a minute - the rest of it syncs while you read.',
   'whatsnew.release.closerSync':
     'Syncing an ebook with its audiobook now follows the voice much more closely, and leaves out what the narrator skips, like a preface. Press Sync on a book again to get it.',
   'whatsnew.release.onlyInAudiobook':

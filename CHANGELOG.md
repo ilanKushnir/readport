@@ -4,6 +4,28 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.35.0 - 2026-10-01
+
+### Added
+
+- **Read along from the beginning while a book is still syncing.** A sync
+  now works through the book from the start forward and read along
+  follows whatever it has done, so a book paired a moment ago is ready to
+  read along with from the beginning about half a minute after its sync
+  starts - the sync runs some twenty times faster than the narration, so
+  someone starting at the beginning never catches up with it. Until it
+  has, the bar says so ("Getting read along ready", or "Syncing this part"
+  with roughly how long it will be) and the page waits instead of walking
+  on. Switching to the player at the same sentence still waits for the
+  finished sync, and a book that is already synced keeps its sync while it
+  is synced again.
+
+### Changed
+
+- **A sync picks up where it stopped.** What a sync has heard is kept as
+  it goes, so one interrupted by a restart or an update carries on from
+  there instead of starting again from the first second of the narration.
+
 ## 0.34.0 - 2026-10-01
 
 ### Changed
