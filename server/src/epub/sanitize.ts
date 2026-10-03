@@ -148,12 +148,56 @@ export interface SanitizeResult {
   anchorIds: string[];
 }
 
+/**
+ * The elements HTML knows to be empty: the only ones whose self-closing form
+ * (`<br/>`) an HTML parser honours.
+ */
+const VOID_TAGS = new Set([
+  'area',
+  'base',
+  'br',
+  'col',
+  'embed',
+  'hr',
+  'img',
+  'input',
+  'link',
+  'meta',
+  'param',
+  'source',
+  'track',
+  'wbr',
+]);
+
+/** A self-closing tag: its name, then its attributes - quoted values may hold `>` or `/`. */
+const SELF_CLOSING =
+  /<([A-Za-z][\w:.-]*)((?:\s+[^\s"'>/=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'>]+))?)*)\s*\/>/g;
+
+/**
+ * XHTML written the XML way, made safe to read with an HTML parser.
+ *
+ * An EPUB's chapters are XHTML, and XML lets any element close itself; HTML
+ * honours that only for the void elements and reads `<title/>` as a title
+ * that never ends. A title is raw text, so everything after it - the whole
+ * chapter - became the title, the body came out empty, and a book written
+ * this way (common in files that have been through a DRM-removal tool) was
+ * blank in the reader and had nothing to sync the narration to. `<a id/>`
+ * page markers fared less badly but still wrapped the rest of their
+ * paragraph in a link. Every self-closing element HTML does not know as
+ * empty is opened and closed explicitly instead.
+ */
+export function expandSelfClosing(xhtml: string): string {
+  return xhtml.replace(SELF_CLOSING, (whole, name: string, attrs: string) =>
+    VOID_TAGS.has(name.toLowerCase()) ? whole : `<${name}${attrs}></${name}>`,
+  );
+}
+
 export function sanitizeChapter(
   rawHtml: string,
   chapterZipPath: string,
   knownFiles: Set<string>,
 ): SanitizeResult {
-  const doc = parse(rawHtml) as unknown as P5Node;
+  const doc = parse(expandSelfClosing(rawHtml)) as unknown as P5Node;
   const chapterDir = path.dirname(chapterZipPath);
   const assets: string[] = [];
   const anchorIds: string[] = [];

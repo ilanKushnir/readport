@@ -231,7 +231,11 @@ Defense in depth for cookie-authenticated calls:
 ## Book content sandboxing
 
 EPUB chapters are untrusted input. The server sanitizes every chapter with a
-strict allowlist over a spec-compliant HTML parser (parse5):
+strict allowlist over a spec-compliant HTML parser (parse5). XML-style
+self-closing elements HTML does not know as empty (`<title/>`, `<a/>`) are
+first written out as explicit pairs, so the parser reads the document the
+way its author meant; the allowlist below then applies to the result as to
+anything else:
 
 - `script`, `style`, `iframe`, `object`, `embed`, `svg`, `form`, media and
   every unknown dangerous element are removed; unknown harmless containers

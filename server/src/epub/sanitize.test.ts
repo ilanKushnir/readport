@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sanitizeChapter } from './sanitize.js';
+import { expandSelfClosing, sanitizeChapter } from './sanitize.js';
 
 const known = new Set(['OEBPS/ch1.xhtml', 'OEBPS/ch2.xhtml', 'OEBPS/img/pic.png']);
 
@@ -64,5 +64,57 @@ describe('sanitizeChapter', () => {
     const r = clean(`<custom-widget><p>Kept text</p></custom-widget>`);
     expect(r.html).toContain('Kept text');
     expect(r.html).not.toContain('custom-widget');
+  });
+});
+
+describe('XHTML written the XML way', () => {
+  /** A chapter as a DRM-removal tool or an old editor writes it: XML through and through. */
+  const xhtml = (body: string) =>
+    `<?xml-stylesheet type="text/css" href="x.css"?>\r\n<html xmlns="http://www.w3.org/1999/xhtml">\r\n` +
+    `<head>\r\n  <title/>\r\n  <link href="s.css" rel="stylesheet" type="text/css"/>\r\n` +
+    `<meta content="urn:uuid:0000" name="Adept.expected.resource"/>\r\n</head>\r\n<body>${body}</body></html>`;
+
+  it('reads the chapter after an empty self-closing title, instead of nothing', () => {
+    // An HTML parser takes <title/> for a title that never ends and reads the
+    // whole chapter as its text, leaving the body empty: a blank book with
+    // nothing to sync the narration to.
+    const r = sanitizeChapter(
+      xhtml('<p>The ferry left at dawn.</p><p>Nobody waved.</p>'),
+      'OEBPS/ch1.xhtml',
+      known,
+    );
+    expect(r.text).toBe('The ferry left at dawn.\nNobody waved.\n');
+  });
+
+  it('keeps a self-closing page marker an empty anchor, not a link around the text after it', () => {
+    const r = sanitizeChapter(
+      xhtml('<p><a id="p12"/>The lantern swung.</p>'),
+      'OEBPS/ch1.xhtml',
+      known,
+    );
+    expect(r.anchorIds).toContain('p12');
+    expect(r.html).toContain('<a id="p12"></a>The lantern swung.');
+  });
+
+  it('leaves the elements HTML knows to be empty alone', () => {
+    expect(expandSelfClosing('<p>a<br/>b<img src="img/pic.png" alt="x"/><hr /></p>')).toBe(
+      '<p>a<br/>b<img src="img/pic.png" alt="x"/><hr /></p>',
+    );
+  });
+
+  it('opens and closes everything else, whatever its attributes hold', () => {
+    expect(expandSelfClosing('<div class="gap"/><span title="a/>b" data-x=\'1>2\'/>')).toBe(
+      '<div class="gap"></div><span title="a/>b" data-x=\'1>2\'></span>',
+    );
+    expect(expandSelfClosing('<epub:switch id="s1"/>')).toBe('<epub:switch id="s1"></epub:switch>');
+  });
+
+  it('does not let an empty division swallow the paragraph after it', () => {
+    const r = sanitizeChapter(
+      xhtml('<div class="break"/><p>After the break.</p>'),
+      'OEBPS/ch1.xhtml',
+      known,
+    );
+    expect(r.html).toContain('<div class="break"></div><p>After the break.</p>');
   });
 });

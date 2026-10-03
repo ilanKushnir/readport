@@ -270,6 +270,29 @@ function facetsStale(existing: { facets_rev?: unknown }): boolean {
 }
 
 /**
+ * The generation of how an ebook's text is read (epub/sanitize.ts).
+ *
+ * An ebook that an older generation read as no text at all - every page
+ * blank, nothing to sync the narration to - is read once more by this one.
+ * Only those: a book that read fine keeps the index its syncs, notes and
+ * places were made against, rather than being re-read for nothing.
+ */
+export const EBOOK_TEXT_REV = 1;
+
+/** Whether this ebook came out of an older reading with no text, and may fare better now. */
+function textlessStale(existing: { meta_json?: unknown }): boolean {
+  try {
+    const meta = JSON.parse(String(existing.meta_json ?? '{}')) as {
+      totalChars?: unknown;
+      textRev?: unknown;
+    };
+    return meta.totalChars === 0 && Number(meta.textRev ?? 0) < EBOOK_TEXT_REV;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * The generation of the rules that name an audiobook (library/audiobookNaming.ts).
  * An audiobook named by older rules - after its first file's own title - is
  * read again, and stays playable while it is.
@@ -385,7 +408,13 @@ export function applyScan(db: DB, report: ScanReport): UpsertResult {
     const id = stableId('ebook', e.rootDir, e.relPath);
     seenIds.add(id);
     const existing = getExisting.get('ebook', e.rootDir, e.relPath) as
-      | { id: string; content_hash: string | null; scan_state: string; facets_rev?: number }
+      | {
+          id: string;
+          content_hash: string | null;
+          scan_state: string;
+          facets_rev?: number;
+          meta_json?: string | null;
+        }
       | undefined;
     if (!existing) {
       const moved = relinkMoved(db, 'ebook', e.contentHash, e.rootDir, e.relPath, here);
@@ -412,7 +441,7 @@ export function applyScan(db: DB, report: ScanReport): UpsertResult {
         existing.scan_state === 'error' ||
         existing.scan_state === 'missing' ||
         existing.scan_state === 'discovered';
-      if (changed || facetsStale(existing)) {
+      if (changed || facetsStale(existing) || textlessStale(existing)) {
         // A re-index for facets alone must not take the book out of service:
         // only a real change or a broken state sends it back to 'discovered'.
         const nextState = changed

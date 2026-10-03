@@ -198,7 +198,16 @@ export async function alignWithCtc(req: CtcAlignRequest): Promise<CtcAlignResult
   }));
   const bookChars = book.reduce((a, s) => a + s.romanized.length, 0);
   if (bookChars === 0) {
-    throw new Error('The ebook produced no alignable text for this language.');
+    // Two different things, and the person reading this needs to know which:
+    // a book with no text at all has nothing to sync, whatever the language;
+    // one whose text has no letters in this language's alphabet may well be
+    // paired under the wrong language.
+    const anyText = req.sentenceText.some((t) => /[\p{L}\p{N}]/u.test(t));
+    throw new Error(
+      anyText
+        ? 'None of the ebook’s text can be matched in this language - check the language set for this pair.'
+        : 'This ebook has no text ReadPort can read - its pages may be pictures, as in a scanned book - so there is nothing to sync the narration to.',
+    );
   }
 
   req.onProgress?.(0, 'Listening to the narration');

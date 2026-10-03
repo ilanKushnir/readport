@@ -17,7 +17,7 @@ import { extractCover, probeAudio } from '../audio/probe.js';
 import { normaliseLanguage } from '@readport/shared';
 import { facetsForBook, writeFacets } from '../library/facets.js';
 import { formatBytes } from '../util/format.js';
-import { AUDIO_EXTS, AUDIO_NAMING_REV, FACETS_REV } from '../scanner/scan.js';
+import { AUDIO_EXTS, AUDIO_NAMING_REV, EBOOK_TEXT_REV, FACETS_REV } from '../scanner/scan.js';
 import { CANDIDATE_THRESHOLD, scorePair } from '../pairing/score.js';
 import {
   dropPartialAlignment,
@@ -715,6 +715,9 @@ export async function runIndexEbook(
           withDetectorRev({
             ...prevMeta,
             totalChars: result.manifest.totalChars,
+            // Read by the current way of reading text: a book that still has
+            // none is not read again for it (scanner/scan.ts textlessStale).
+            textRev: EBOOK_TEXT_REV,
             direction: result.manifest.direction,
             spineCount: result.manifest.chapters.length,
             publisher: result.meta.publisher,

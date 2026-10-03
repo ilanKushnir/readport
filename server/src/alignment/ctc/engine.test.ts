@@ -343,18 +343,29 @@ describe('alignWithCtc', () => {
     for (const r of reported) expect(r.detail.trim().length).toBeGreaterThan(0);
   });
 
-  it('refuses a book whose text romanizes to nothing rather than timing it', async () => {
+  it('refuses a book with no text at all, and says so plainly', async () => {
     const book = makeBook(6, 20);
     const empty: Book = {
       sentences: book.sentences,
-      // Punctuation and whitespace only: the aligner's alphabet has nothing to
-      // anchor on, and a "0 % coverage" alignment would be worse than an error.
+      // Punctuation and whitespace only - a book of pictures, or one whose
+      // pages could not be read: the aligner's alphabet has nothing to anchor
+      // on, and a "0 % coverage" alignment would be worse than an error.
       text: book.text.map(() => '- … !?'),
     };
     const heard = narrate(book.text);
 
-    await expect(alignWithCtc(request(empty, heard))).rejects.toThrow(
-      /no alignable text for this language/i,
+    await expect(alignWithCtc(request(empty, heard))).rejects.toThrow(/no text ReadPort can read/i);
+  });
+
+  it('points at the language when the text is there but none of it can be matched', async () => {
+    const book = makeBook(7, 20);
+    // Letters the romanizer has no mapping for: the text exists, but not in
+    // any alphabet this language's matching can read.
+    const unreadable: Book = { sentences: book.sentences, text: book.text.map(() => 'ꙮꙮꙮ ꙮꙮ.') };
+    const heard = narrate(book.text);
+
+    await expect(alignWithCtc(request(unreadable, heard))).rejects.toThrow(
+      /check the language set for this pair/i,
     );
   });
 });

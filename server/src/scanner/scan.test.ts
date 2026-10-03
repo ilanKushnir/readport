@@ -3,7 +3,13 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { openDatabase, type DB } from '../db/index.js';
-import { AUDIO_NAMING_REV, FACETS_REV, applyScan, type ScanReport } from './scan.js';
+import {
+  AUDIO_NAMING_REV,
+  EBOOK_TEXT_REV,
+  FACETS_REV,
+  applyScan,
+  type ScanReport,
+} from './scan.js';
 
 /**
  * What a rescan decides to re-index, and - just as important - what it leaves
@@ -199,5 +205,34 @@ describe('an audiobook named by older rules', () => {
       id,
     );
     expect(applyScan(db, r).needsIndex).toEqual([]);
+  });
+});
+
+describe('an ebook an older reading found no text in', () => {
+  /** Indexed and readable, with what that indexing recorded about its text. */
+  function seedIndexed(meta: Record<string, unknown>): string {
+    const id = seedReadyBook(FACETS_REV);
+    db.prepare('UPDATE books SET meta_json = ? WHERE id = ?').run(JSON.stringify(meta), id);
+    return id;
+  }
+
+  it('is read again once by the current way of reading, and stays in service meanwhile', () => {
+    // Blank pages and nothing to sync: an old reading tripped on the file
+    // (a self-closing <title/>), and the current one may well not.
+    const id = seedIndexed({ totalChars: 0 });
+    const out = applyScan(db, report('hash-1'));
+    expect(out.needsIndex.map((n) => n.bookId)).toEqual([id]);
+    expect(stateOf(id)).toBe('ready');
+  });
+
+  it('is not read again by the same way of reading - a book of pictures stays as it is', () => {
+    seedIndexed({ totalChars: 0, textRev: EBOOK_TEXT_REV });
+    expect(applyScan(db, report('hash-1')).needsIndex).toEqual([]);
+  });
+
+  it('leaves alone a book that read fine, whatever reading it came from', () => {
+    // Its syncs, notes and places were made against the index it has.
+    seedIndexed({ totalChars: 125_000 });
+    expect(applyScan(db, report('hash-1')).needsIndex).toEqual([]);
   });
 });

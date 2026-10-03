@@ -8,6 +8,17 @@ sentence index (content-derived sentence IDs + character offsets) that
 anchors progress, annotations, search, and alignment. The source file is
 never modified.
 
+Chapters are XHTML, and XML lets any element close itself - `<title/>`,
+`<a id="p12"/>` - where HTML honours that only for the elements it knows to
+be empty (`<br/>`, `<img/>`). So before a chapter is parsed, every other
+self-closing element is written out as an explicit pair. Without that, a
+chapter that opened with an empty `<title/>` - common in files that have
+been through a DRM-removal tool - was read as one long title: the page came
+out blank, and there was nothing to sync the narration to. An ebook an
+older reading found no text in at all is read once more, by itself, when a
+better way of reading ships (`EBOOK_TEXT_REV` in the scanner); a book that
+read fine keeps the index its syncs, notes and places were made against.
+
 Derived indexes are immutable versioned directories: each (re-)index
 attempt extracts into its own directory and a single atomic database
 pointer switch makes it active, so the book stays readable throughout a
