@@ -4,6 +4,19 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.36.1 - 2026-10-03
+
+### Fixed
+
+- **Some ebooks came out blank, and could not be synced.** A book whose
+  chapters open with an empty title written the XML way (`<title/>`), as
+  some editors and DRM-removal tools write it, had every chapter read as one
+  long title: the pages were empty, and a sync failed at once with "no
+  alignable text". Those chapters now read in full, and a book that came out
+  blank is read again by itself after the update - its sync can then run.
+  A book that genuinely has no text (pages that are pictures) now says so
+  when you try to sync it.
+
 ## 0.36.0 - 2026-10-01
 
 ### Added
