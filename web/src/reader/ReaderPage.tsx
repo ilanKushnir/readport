@@ -2930,8 +2930,9 @@ export function ReaderPage() {
       switch (action.kind) {
         case 'voice':
           // Not before the voice has found where to start: the element would
-          // play from the first second of the book.
-          if (k.narration.ready) k.narration.toggle();
+          // play from the first second of the book. And once a press: Space
+          // held a moment too long repeats, and played and paused by turns.
+          if (k.narration.ready && !e.repeat) k.narration.toggle();
           break;
         case 'sentence':
           k.narration.stepSentence(action.dir);

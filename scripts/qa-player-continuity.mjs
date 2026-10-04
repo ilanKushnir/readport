@@ -291,6 +291,26 @@ try {
           assert.equal(await play.getAttribute('aria-label'), before, 'Space toggled back once');
         },
       );
+      await check(
+        '820 keys: Space held down plays or pauses once, not on every repeat',
+        async () => {
+          const play = page.getByRole('button', { name: /^(Play|Pause)$/ });
+          const before = await play.getAttribute('aria-label');
+          // A key held down repeats: every keydown after the first says so.
+          for (let n = 0; n < 4; n++) await page.keyboard.down(' ');
+          await page.keyboard.up(' ');
+          await page.waitForTimeout(150);
+          assert.notEqual(await play.getAttribute('aria-label'), before);
+        },
+      );
+      await check('820 keys: arrows pressed in quick succession each count', async () => {
+        const p0 = await pos();
+        await page.keyboard.press('ArrowRight');
+        await page.keyboard.press('ArrowRight');
+        await page.keyboard.press('ArrowRight');
+        await page.waitForTimeout(150);
+        assert.equal(await pos(), p0 + 45000);
+      });
     }
     await context.close();
   }

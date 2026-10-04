@@ -1401,6 +1401,16 @@ try {
         assert.equal(await page.evaluate(() => window.__toggles), 2);
       },
     );
+    await check('keys: Space held down plays or pauses once, not on every repeat', async () => {
+      await page.evaluate(() => (window.__toggles = 0));
+      const p0 = await pageIndex();
+      // A key held down repeats: every keydown after the first says so.
+      for (let n = 0; n < 5; n++) await page.keyboard.down(' ');
+      await page.keyboard.up(' ');
+      await page.waitForTimeout(150);
+      assert.equal(await page.evaluate(() => window.__toggles), 1);
+      assert.equal(await pageIndex(), p0, 'the page stays where it was');
+    });
     await check('keys: Space on a control reached with Tab presses that control', async () => {
       await page.evaluate(() => (window.__toggles = 0));
       const speed = page.locator('.readalong__speed > button');

@@ -623,8 +623,13 @@ export function PlayerPage() {
       if (!action) return;
       e.preventDefault();
       if (e.key === ' ') spaceTakenRef.current = true;
-      if (action.kind === 'toggle') togglePlay();
-      else if (action.kind === 'seek') seekTo(Math.max(0, bookMs + action.byMs), 'progression');
+      // Once a press: Space held a moment too long repeats, and played and
+      // paused by turns. The arrows repeat on purpose - held, they wind on.
+      if (action.kind === 'toggle') {
+        if (!e.repeat) togglePlay();
+      } else if (action.kind === 'seek')
+        // From where the last press left it, which the screen may not show yet.
+        seekToRef.current(Math.max(0, bookMsRef.current + action.byMs), 'progression');
       else goChapterRef.current(action.dir);
     };
     // The button Space was taken from must not be pressed by its release.
@@ -639,7 +644,7 @@ export function PlayerPage() {
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('keyup', onKeyUp);
     };
-  }, [togglePlay, seekTo, bookMs, sheet, navigate, id, skip, uiDir]);
+  }, [togglePlay, sheet, navigate, id, skip, uiDir]);
 
   const switchToText = useCallback(async () => {
     if (!detail?.book.pair) return;
