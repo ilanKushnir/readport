@@ -32,6 +32,7 @@ import {
   hasArrived,
   locateInTracks,
   nearestChapter,
+  sentenceStep,
   syncEta,
   voiceAheadOfSync,
 } from './readalong';
@@ -118,6 +119,14 @@ export interface NarrationApi {
   toggle: () => void;
   setSpeed: (rate: number) => void;
   back: () => void;
+  /**
+   * The narration a sentence on, or back - to the start of this one when it
+   * is well into it (readalong.sentenceStep) - and across into the next
+   * chapter or the one before at the edges. Playing or paused, as it was.
+   */
+  stepSentence: (dir: 'next' | 'prev') => void;
+  /** The narration on (positive) or back by `ms`, playing or paused as it was. */
+  skipBy: (ms: number) => void;
   /** Start (or move) the narration at the sentence covering a char offset. */
   playFrom: (charOffset: number) => void;
   /** How far the back button goes, in seconds - the player's own setting. */
@@ -666,6 +675,73 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
   }, [seekTo, bookMs, playing, backSeconds]);
 
   /**
+   * Where the voice is this instant, between the element's own reports - or,
+   * while a seek into another file is still loading it, where it was sent: a
+   * second press of an arrow must step on from there, not from the file it
+   * is leaving.
+   */
+  const nowMs = useCallback(
+    () =>
+      audioRef.current && !pendingSeekRef.current
+        ? (tracks[trackIdx]?.startMsAbsolute ?? 0) + audioRef.current.currentTime * 1000
+        : bookMs,
+    [tracks, trackIdx, bookMs],
+  );
+
+  const skipBy = useCallback(
+    (ms: number) => {
+      setArriving(null);
+      seekTo(Math.max(0, Math.min(totalMs || Infinity, nowMs() + ms)), playing);
+    },
+    [seekTo, nowMs, playing, totalMs],
+  );
+
+  const stepSentence = useCallback(
+    (dir: 'next' | 'prev') => {
+      const now = nowMs();
+      const target = sentenceStep(cues, now, dir, arriving);
+      if (target) {
+        setArriving(target);
+        if (audioBookId) void recordCheckpoint(audioBookId, 'seek', audioLocatorAt(target.startMs));
+        seekTo(Math.max(0, target.startMs), playing);
+        return;
+      }
+      // Off the edge of this chapter's timings: into the next chapter, at its
+      // first timed sentence - the chapter bounds say when that is - or back
+      // to the last sentence of the one before, which takes asking for it.
+      const chapters = bounds ?? [];
+      if (dir === 'next') {
+        const next = chapters
+          .filter((b) => b.spineIdx > spineIdx && b.firstMs >= now)
+          .sort((a, b) => a.spineIdx - b.spineIdx)[0];
+        if (!next) return;
+        if (audioBookId) void recordCheckpoint(audioBookId, 'seek', audioLocatorAt(next.firstMs));
+        seekTo(next.firstMs, playing);
+        return;
+      }
+      const prev = chapters
+        .filter((b) => b.spineIdx < spineIdx && b.firstMs < now)
+        .sort((a, b) => b.spineIdx - a.spineIdx)[0];
+      if (!prev || !pairId) return;
+      const wasPlaying = playing;
+      void api<{ segments: AlignedSegment[] }>(`/api/pairs/${pairId}/segments/${prev.spineIdx}`)
+        .then((d) => {
+          const last = (d.segments ?? []).reduce<AlignedSegment | null>(
+            (m, seg) => (!m || seg.startMs > m.startMs ? seg : m),
+            null,
+          );
+          if (!last) return;
+          if (audioBookId) void recordCheckpoint(audioBookId, 'seek', audioLocatorAt(last.startMs));
+          seekTo(last.startMs, wasPlaying);
+        })
+        .catch(() => {
+          /* the step back is a nicety; the voice stays where it is */
+        });
+    },
+    [nowMs, cues, arriving, audioBookId, audioLocatorAt, seekTo, playing, bounds, spineIdx, pairId],
+  );
+
+  /**
    * The voice to the sentence at `charOffset`, from the very start of its
    * timing - never ahead of it, which played the end of the sentence before
    * and lit it too - with that sentence shown from the moment it is asked for.
@@ -746,6 +822,8 @@ export function useNarration(opts: NarrationOptions): NarrationApi {
     toggle,
     setSpeed,
     back,
+    stepSentence,
+    skipBy,
     playFrom,
     element,
   };

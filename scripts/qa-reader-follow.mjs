@@ -103,7 +103,7 @@ async function open(
     // chapter's timings.
     body += seeking
       ? `\nexport function useNarration() {
-      const [n, setN] = useState({ ready: true, playing: true, cue: null, cues: [], bookMs: 0, seekNonce: 0, state: 'gap', speed: 1, backSeconds: 15, element: null, chapterAt: () => null, beyond: null, skipBeyond() { window.__skips = (window.__skips || 0) + 1; }, toggle() {}, back() {}, setSpeed() {} });
+      const [n, setN] = useState({ ready: true, playing: true, cue: null, cues: [], bookMs: 0, seekNonce: 0, state: 'gap', speed: 1, backSeconds: 15, element: null, chapterAt: () => null, beyond: null, skipBeyond() { window.__skips = (window.__skips || 0) + 1; }, toggle() { window.__toggles = (window.__toggles || 0) + 1; }, stepSentence(d) { (window.__steps ||= []).push(d); }, skipBy(ms) { (window.__skipBy ||= []).push(ms); }, back() {}, setSpeed() {} });
       window.readerClock = patch => setN(prev => ({ ...prev, ...patch }));
       window.__plays = window.__plays || [];
       const playFrom = (offset) => {
@@ -116,7 +116,7 @@ async function open(
       return { ...n, playFrom };
     }\n`
       : `\nexport function useNarration() {
-      const [n, setN] = useState({ ready: true, playing: true, cue: null, cues: [], bookMs: 0, seekNonce: 0, state: 'gap', speed: 1, backSeconds: 15, element: null, chapterAt: () => null, beyond: null, skipBeyond() { window.__skips = (window.__skips || 0) + 1; }, toggle() {}, back() {}, setSpeed() {}, playFrom() {} });
+      const [n, setN] = useState({ ready: true, playing: true, cue: null, cues: [], bookMs: 0, seekNonce: 0, state: 'gap', speed: 1, backSeconds: 15, element: null, chapterAt: () => null, beyond: null, skipBeyond() { window.__skips = (window.__skips || 0) + 1; }, toggle() { window.__toggles = (window.__toggles || 0) + 1; }, stepSentence(d) { (window.__steps ||= []).push(d); }, skipBy(ms) { (window.__skipBy ||= []).push(ms); }, back() {}, setSpeed() {}, playFrom() {} });
       window.readerClock = patch => setN(prev => ({ ...prev, ...patch }));
       return n;
     }\n`;
@@ -1331,6 +1331,138 @@ try {
       await page.waitForTimeout(50);
       assert.equal((await status.innerText()).trim(), '2:05');
       assert.doesNotMatch(await status.getAttribute('class'), /is-syncing/);
+    });
+    await context.close();
+  }
+  // The keys on a desktop, in each way of reading: on its own the arrows,
+  // Space and the down arrow turn pages; reading along, Space plays and
+  // pauses and the arrows move the voice a sentence, while the page stays.
+  {
+    const { page, context } = await open('paginated');
+    const pageIndex = () =>
+      page.evaluate(() => {
+        const c = document.querySelector('.reader-content');
+        const stride = document.querySelector('.reader-pages').getBoundingClientRect().width;
+        const m = /matrix\(([^)]+)\)/.exec(getComputedStyle(c).transform);
+        const tx = m ? Number(m[1].split(',')[4]) : 0;
+        return Math.round(-tx / stride);
+      });
+    const press = async (k) => {
+      await page.keyboard.press(k);
+      await page.waitForTimeout(150);
+    };
+    await check(
+      'keys: reading on its own, the arrows, Space and the down arrow turn pages',
+      async () => {
+        const p0 = await pageIndex();
+        await press('ArrowRight');
+        assert.equal(await pageIndex(), p0 + 1, 'right arrow');
+        await press(' ');
+        assert.equal(await pageIndex(), p0 + 2, 'Space');
+        await press('ArrowDown');
+        assert.equal(await pageIndex(), p0 + 3, 'down arrow');
+        await press('Shift+Space');
+        assert.equal(await pageIndex(), p0 + 2, 'Shift and Space');
+        await press('ArrowLeft');
+        assert.equal(await pageIndex(), p0 + 1, 'left arrow');
+        // ⌘ and an arrow are the browser's (Back, in a Mac browser).
+        await press('Meta+ArrowRight');
+        assert.equal(await pageIndex(), p0 + 1, '⌘ and an arrow');
+      },
+    );
+    await page.getByRole('button', { name: 'Read along', exact: true }).click();
+    await page.waitForTimeout(200);
+    await check(
+      'keys: reading along, Space plays and pauses and the arrows step sentences',
+      async () => {
+        await page.evaluate(() => {
+          window.__toggles = 0;
+          window.__steps = [];
+          window.__skipBy = [];
+        });
+        const p0 = await pageIndex();
+        await press(' ');
+        await press('ArrowRight');
+        await press('ArrowLeft');
+        await press('Shift+ArrowLeft');
+        await press('Shift+ArrowRight');
+        assert.equal(await page.evaluate(() => window.__toggles), 1, 'one toggle');
+        assert.deepEqual(await page.evaluate(() => window.__steps), ['next', 'prev']);
+        assert.deepEqual(await page.evaluate(() => window.__skipBy), [-15000, 15000]);
+        assert.equal(await pageIndex(), p0, 'the page stays where it was');
+      },
+    );
+    await check(
+      'keys: Space after clicking the play button plays or pauses once, not twice',
+      async () => {
+        await page.evaluate(() => (window.__toggles = 0));
+        await page.locator('.readalong__play').click();
+        await press(' ');
+        assert.equal(await page.evaluate(() => window.__toggles), 2);
+      },
+    );
+    await check('keys: Space on a control reached with Tab presses that control', async () => {
+      await page.evaluate(() => (window.__toggles = 0));
+      const speed = page.locator('.readalong__speed > button');
+      // Reached the way someone without a mouse reaches it: Tab, Tab, Tab.
+      for (let n = 0; n < 60; n++) {
+        if (await speed.evaluate((b) => b === document.activeElement)) break;
+        await page.keyboard.press('Tab');
+      }
+      assert.equal(await speed.evaluate((b) => b === document.activeElement), true, 'tabbed to');
+      await press(' ');
+      assert.equal(await speed.getAttribute('aria-expanded'), 'true');
+      assert.equal(await page.evaluate(() => window.__toggles), 0);
+      await press('Escape');
+    });
+    await check(
+      'keys: Page Down still looks ahead without the voice while reading along',
+      async () => {
+        const p0 = await pageIndex();
+        await press('PageDown');
+        assert.equal(await pageIndex(), p0 + 1);
+        await page.getByRole('button', { name: 'Back to the voice', exact: true }).waitFor();
+      },
+    );
+    await context.close();
+  }
+  {
+    const { page, context } = await open('scroll');
+    const title = () => page.locator('.reader-title').innerText();
+    await check(
+      'keys: scroll view goes a screen at a time, and on into the next chapter',
+      async () => {
+        const top = () => page.evaluate(() => document.querySelector('.reader-scroller').scrollTop);
+        const t0 = await top();
+        await page.keyboard.press('ArrowRight');
+        await page.waitForTimeout(150);
+        assert.ok((await top()) > t0 + 300, 'a screen down');
+        await page.evaluate(() => {
+          const sc = document.querySelector('.reader-scroller');
+          sc.scrollTop = sc.scrollHeight;
+        });
+        await page.waitForTimeout(250);
+        await page.keyboard.press('ArrowRight');
+        await page.waitForFunction(
+          () => document.querySelector('.reader-title')?.textContent === 'Chapter 1',
+        );
+        assert.equal(await title(), 'Chapter 1');
+      },
+    );
+    await check('keys: above the top of a chapter, back to the end of the one before', async () => {
+      await page.waitForTimeout(400);
+      await page.evaluate(() => (document.querySelector('.reader-scroller').scrollTop = 0));
+      await page.waitForTimeout(250);
+      await page.keyboard.press('ArrowLeft');
+      await page.waitForFunction(
+        () => document.querySelector('.reader-title')?.textContent === 'Chapter 0',
+      );
+      await page.waitForTimeout(400);
+      const atEnd = await page.evaluate(() => {
+        const sc = document.querySelector('.reader-scroller');
+        return sc.scrollTop + sc.clientHeight >= sc.scrollHeight - sc.clientHeight;
+      });
+      assert.ok(atEnd, 'landed near the end of the chapter before');
     });
     await context.close();
   }

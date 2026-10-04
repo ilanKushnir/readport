@@ -69,6 +69,8 @@ import {
   type HighlightColor,
 } from './marks';
 import { NarrationBar, useNarration } from './Narration';
+import { readerKeyAction } from './keys';
+import { hasCommandModifier, isKeyboardFocusedControl, isTypingTarget } from '../lib/keys';
 import {
   cueForOffset,
   cueForTurn,
@@ -239,6 +241,9 @@ function recoverOffset(
     return { charOffset, moved: false };
   return { charOffset: found, moved: true };
 }
+
+/** How far Shift and an arrow move the voice while reading along. */
+const KEY_SKIP_MS = 15_000;
 
 export function ReaderPage() {
   const { id = '' } = useParams();
@@ -1788,17 +1793,24 @@ export function ReaderPage() {
     if (chapterLoadingRef.current) return;
     // Only an explicit successful relocation gives the voice control again.
     detachFollowing();
-    // The paginated fallback scrolls too: a chapter that would not divide
-    // into pages is turned a screen at a time, not into the next chapter.
+    // In scroll view - and the paginated fallback, a chapter that would not
+    // divide into pages - a page is a screen, with a line or two kept from
+    // the one before so the eye keeps its place. Only at the foot of the
+    // chapter does the next "page" become the next chapter, as it is in
+    // page view.
     if (prefs.mode === 'scroll' || paginationFailed) {
       const s = scrollBox();
-      if (s) s.scrollTop += s.clientHeight * 0.9;
-      return;
-    }
-    if (page < pageCount - 1) {
+      if (!s) return;
+      if (s.scrollTop + s.clientHeight < s.scrollHeight - 2) {
+        s.scrollTop += s.clientHeight * 0.9;
+        return;
+      }
+    } else if (page < pageCount - 1) {
       carrySelection('next');
       goToPage(page + 1);
-    } else if (manifest && spineIdx < manifest.chapters.length - 1)
+      return;
+    }
+    if (manifest && spineIdx < manifest.chapters.length - 1)
       gotoChapter(spineIdx + 1, 0, 'seek', undefined, 'progression');
     else if (manifest) finishBook();
   }, [
@@ -1820,15 +1832,21 @@ export function ReaderPage() {
   const prevPage = useCallback(() => {
     if (chapterLoadingRef.current) return;
     detachFollowing();
+    // A screen back in scroll view; above the top of the chapter, the end of
+    // the one before - as in page view.
     if (prefs.mode === 'scroll' || paginationFailed) {
       const s = scrollBox();
-      if (s) s.scrollTop -= s.clientHeight * 0.9;
-      return;
-    }
-    if (page > 0) {
+      if (!s) return;
+      if (s.scrollTop > 1) {
+        s.scrollTop -= s.clientHeight * 0.9;
+        return;
+      }
+    } else if (page > 0) {
       carrySelection('prev');
       goToPage(page - 1);
-    } else if (spineIdx > 0 && manifest) {
+      return;
+    }
+    if (spineIdx > 0 && manifest) {
       readingMoved({ spineIdx: spineIdx - 1, charOffset: 0 });
       // Land on the previous chapter's end.
       const back = Math.max(0, (manifest.chapters[spineIdx - 1]?.charCount ?? 1) - 2);
@@ -2849,34 +2867,96 @@ export function ReaderPage() {
     startReadAlong();
   }, [html, canReadAlong, readAlong, startReadAlong]);
 
-  // Keyboard.
+  // Keyboard: what Space, the arrows and Page Up/Down mean in each way of
+  // reading (keys.ts) - the pages on their own, the voice while reading
+  // along.
+  /** Space was taken for the page: the focused button must not be pressed by its release. */
+  const spaceTakenRef = useRef(false);
+  /**
+   * What the keys act on, as of this render. Read through a ref so the
+   * listeners are set up once: the narration changes with every tick of the
+   * voice, and re-subscribing on each would be busywork.
+   */
+  const keysRef = useRef({
+    sheet,
+    readAlong,
+    rtl,
+    scrolling: prefs.mode === 'scroll' || paginationFailed,
+    narration,
+    nextPage,
+    prevPage,
+    clearSelection,
+    leave: () => navigate(`/book/${id}`),
+  });
+  keysRef.current = {
+    sheet,
+    readAlong,
+    rtl,
+    scrolling: prefs.mode === 'scroll' || paginationFailed,
+    narration,
+    nextPage,
+    prevPage,
+    clearSelection,
+    leave: () => navigate(`/book/${id}`),
+  };
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (sheet !== 'none') return;
-      const fwd = rtl ? 'ArrowLeft' : 'ArrowRight';
-      const back = rtl ? 'ArrowRight' : 'ArrowLeft';
-      if (e.key === fwd || e.key === ' ' || e.key === 'PageDown') {
-        e.preventDefault();
-        nextPage();
-      } else if (e.key === back || e.key === 'PageUp') {
-        e.preventDefault();
-        prevPage();
-      } else if (e.key === 'Escape') {
+      const k = keysRef.current;
+      if (k.sheet !== 'none' || e.defaultPrevented) return;
+      if (e.key === 'Escape') {
         // A selection being carried, then a selection, then the reader.
         if (pendingSelRef.current) {
           setPendingSel(null);
           return;
         }
         if (selectionRef.current) {
-          clearSelection();
+          k.clearSelection();
           return;
         }
-        navigate(`/book/${id}`);
+        k.leave();
+        return;
+      }
+      if (hasCommandModifier(e) || isTypingTarget(e.target)) return;
+      // Someone moving through the controls with Tab presses them with Space.
+      if (e.key === ' ' && isKeyboardFocusedControl(e.target)) return;
+      const action = readerKeyAction(e, {
+        readAlong: k.readAlong,
+        rtl: k.rtl,
+        view: k.scrolling ? 'scroll' : 'paginated',
+      });
+      if (!action) return;
+      e.preventDefault();
+      if (e.key === ' ') spaceTakenRef.current = true;
+      switch (action.kind) {
+        case 'voice':
+          // Not before the voice has found where to start: the element would
+          // play from the first second of the book.
+          if (k.narration.ready) k.narration.toggle();
+          break;
+        case 'sentence':
+          k.narration.stepSentence(action.dir);
+          break;
+        case 'skip':
+          k.narration.skipBy(action.dir === 'next' ? KEY_SKIP_MS : -KEY_SKIP_MS);
+          break;
+        case 'page':
+          if (action.dir === 'next') k.nextPage();
+          else k.prevPage();
+          break;
       }
     };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key !== ' ' || !spaceTakenRef.current) return;
+      spaceTakenRef.current = false;
+      e.preventDefault();
+    };
     document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [nextPage, prevPage, sheet, navigate, id, rtl, clearSelection]);
+    document.addEventListener('keyup', onKeyUp);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('keyup', onKeyUp);
+    };
+  }, []);
 
   // Selection handling.
   useEffect(() => {

@@ -211,6 +211,41 @@ export function cueArriving(cues: Cue[], bookMs: number, arriving: Cue | null): 
 }
 
 /**
+ * Well into a sentence, a step back starts it again rather than going to the
+ * one before - as a player's back button restarts the track before it goes
+ * to the previous one.
+ */
+export const RESTART_SENTENCE_MS = 1_500;
+
+/**
+ * Where a step a sentence on or back takes the voice (the arrow keys while
+ * reading along): on, to the next sentence; back, to the start of the one it
+ * is in when it is well into it, and otherwise to the one before. The
+ * sentence the voice was just sent to counts as the one it is in, however
+ * short of it the clock has landed, so a run of presses walks a sentence at
+ * a time instead of stumbling on the first. Null when the step leaves this
+ * chapter's timings, for the caller to carry into the next chapter or the
+ * one before.
+ */
+export function sentenceStep(
+  cues: Cue[],
+  bookMs: number,
+  dir: 'next' | 'prev',
+  arriving: Cue | null = null,
+): Cue | null {
+  if (cues.length === 0) return null;
+  const sentTo =
+    arriving && bookMs >= arriving.startMs - ARRIVING_MS && bookMs < arriving.startMs + ARRIVED_MS
+      ? cues.indexOf(arriving)
+      : -1;
+  const i = sentTo >= 0 ? sentTo : lastStartingBefore(cues, bookMs);
+  if (dir === 'next') return cues[i + 1] ?? null;
+  const current = i >= 0 ? cues[i]! : null;
+  if (current && sentTo < 0 && bookMs - current.startMs > RESTART_SENTENCE_MS) return current;
+  return i > 0 ? cues[i - 1]! : null;
+}
+
+/**
  * Whether the page should follow the narration to `cue`.
  *
  * Auto-follow is given up the moment the reader moves the page themselves -

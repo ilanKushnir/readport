@@ -213,6 +213,85 @@ try {
       assert.equal(at.bookMs, 1044321);
       assert.equal(at.pct, 1044321 / 1800000);
     });
+    // The keys on a desktop: Space plays and pauses, the arrows move fifteen
+    // seconds either way and, with Shift, a chapter.
+    if (width === 820) {
+      await page.goto(`${base}/listen/audio?pos=120000`);
+      await page.getByRole('heading', { name: 'Listening test' }).waitFor();
+      await page.evaluate(() =>
+        document.querySelector('audio').dispatchEvent(new Event('loadedmetadata')),
+      );
+      const bar = page.getByRole('slider', { name: 'Position in audiobook' });
+      const pos = async () => Number(await bar.inputValue());
+      const press = async (k) => {
+        await page.keyboard.press(k);
+        await page.waitForTimeout(120);
+      };
+      await check(
+        '820 keys: the arrows move fifteen seconds either way, the same both ways',
+        async () => {
+          const p0 = await pos();
+          await press('ArrowRight');
+          assert.equal(await pos(), p0 + 15000);
+          await press('ArrowLeft');
+          await press('ArrowLeft');
+          assert.equal(await pos(), p0 - 15000);
+        },
+      );
+      await check('820 keys: Shift and an arrow move a chapter', async () => {
+        await press('Shift+ArrowRight');
+        assert.equal(await pos(), 600000);
+      });
+      await check('820 keys: ⌘ and an arrow are left to the browser', async () => {
+        const p0 = await pos();
+        await press('Meta+ArrowLeft');
+        assert.equal(await pos(), p0);
+      });
+      await check(
+        '820 keys: after dragging the position bar, the arrows still move fifteen seconds',
+        async () => {
+          await bar.click();
+          await page.waitForTimeout(150);
+          const p0 = await pos();
+          await press('ArrowRight');
+          assert.equal(await pos(), p0 + 15000);
+        },
+      );
+      // The stand-in element above plays and pauses without ever saying it
+      // has: the toggle below needs one that does.
+      await page.evaluate(() => {
+        const proto = HTMLMediaElement.prototype;
+        const on = new WeakMap();
+        const { play, pause } = proto;
+        Object.defineProperty(proto, 'paused', {
+          get() {
+            return !on.get(this);
+          },
+          configurable: true,
+        });
+        proto.play = async function () {
+          on.set(this, true);
+          return play.call(this);
+        };
+        proto.pause = function () {
+          on.set(this, false);
+          return pause.call(this);
+        };
+      });
+      await check(
+        '820 keys: Space after clicking play plays or pauses once, not twice',
+        async () => {
+          const play = page.getByRole('button', { name: /^(Play|Pause)$/ });
+          const before = await play.getAttribute('aria-label');
+          await play.click();
+          await page.waitForTimeout(120);
+          const clicked = await play.getAttribute('aria-label');
+          assert.notEqual(clicked, before, 'the click toggled');
+          await press(' ');
+          assert.equal(await play.getAttribute('aria-label'), before, 'Space toggled back once');
+        },
+      );
+    }
     await context.close();
   }
 } finally {

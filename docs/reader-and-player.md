@@ -123,8 +123,8 @@ Known limitations (deliberate for V1, documented rather than half-built):
 - Scrubber with chapter tick marks, elapsed/remaining, time left in the
   current chapter and a chapter progress line; previous/next chapter,
   configurable skip amounts (10, 15, 30, 45 or 60 s, set independently for
-  each direction), play/pause, keyboard controls (space/j/k/l/arrows). The
-  page takes an ambient tint from the cover.
+  each direction), play/pause, keyboard controls (see "Keys on a desktop"
+  below). The page takes an ambient tint from the cover.
 - The skip buttons are drawn around their number rather than beside it: a ring
   with a gap at the top, an arrowhead on the end the arc travels towards so
   back and forward are exact mirrors, and the digits centred in the ring with
@@ -148,6 +148,33 @@ Known limitations (deliberate for V1, documented rather than half-built):
 - Durable checkpoints: every heartbeat/pause/seek is written to IndexedDB
   before sync; a killed tab loses at most a few seconds and never regresses
   another device's explicit position (see docs/progress.md).
+
+## Keys on a desktop
+
+Space and the arrows mean what the way of reading in front of you needs:
+
+| Key            | Reading                                                  | Reading along                      | Listening                                            |
+| -------------- | -------------------------------------------------------- | ---------------------------------- | ---------------------------------------------------- |
+| Space          | Next page (Shift: back)                                  | Play / pause                       | Play / pause (also K)                                |
+| → / ←          | Next / previous page                                     | Next / previous sentence           | 15 s on / back                                       |
+| Shift + → / ←  | -                                                        | 15 s on / back                     | Next chapter / this one's start, then the one before |
+| ↓ / ↑          | Next / previous page in page view; scroll in scroll view | Scroll                             | -                                                    |
+| Page Down / Up | Next / previous page                                     | The page on its own, to look ahead | -                                                    |
+| J / L          | -                                                        | -                                  | Back / on by the skip buttons' lengths               |
+
+In scroll view a "page" is a screen, with a line or two kept from the one
+before; at the foot of a chapter it is the next chapter, and above the top
+of one, the end of the chapter before - as page view turns into them. Going
+back a sentence while reading along first starts the sentence the voice is
+in again, when it is well into it, as a player's back button restarts the
+track; at either end of a chapter the voice crosses into the next one or the
+one before. The arrows follow the book's direction in the reader (in a
+right-to-left book the left arrow goes on) and the timeline's in the
+player. None of them act while you type in a field, with ⌘, Ctrl or ⌥ held
+(⌘← is the browser's Back), or - for Space - on a control you reached with
+Tab, which Space presses as it always has; a button you clicked with the
+mouse keeps no claim on Space, so Space after clicking play still plays and
+pauses once.
 
 ## Marks: bookmarks, highlights, notes
 

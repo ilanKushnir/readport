@@ -20,6 +20,8 @@ import {
   syncEta,
   voiceAheadOfSync,
   type SyncingNow,
+  RESTART_SENTENCE_MS,
+  sentenceStep,
 } from './readalong';
 
 /**
@@ -381,5 +383,42 @@ describe('a book still syncing', () => {
     expect(syncEta({ ...syncing, rate: 0 }, 9_000_000, at)).toBeNull();
     expect(syncEta({ ...syncing, active: false }, 9_000_000, at)).toBeNull();
     expect(syncEta(null, 9_000_000, at)).toBeNull();
+  });
+});
+
+describe('a sentence on or back with the arrows', () => {
+  // Five sentences, four seconds each, a second's breath between.
+  const cues = buildCues(
+    [0, 1, 2, 3, 4].map((i) => sentence(`s${i}`, i * 50, i * 50 + 40, i)),
+    [0, 1, 2, 3, 4].map((i) => segment(`s${i}`, 10_000 + i * 5000, 14_000 + i * 5000)),
+  );
+  const at = (id: string) => cues.find((c) => c.id === id)!;
+
+  it('goes on to the next sentence from anywhere in this one', () => {
+    expect(sentenceStep(cues, 15_200, 'next')?.id).toBe('s2');
+    expect(sentenceStep(cues, 18_900, 'next')?.id).toBe('s2');
+  });
+
+  it('starts this sentence again when it is well into it, and only then goes back one', () => {
+    expect(sentenceStep(cues, 15_000 + RESTART_SENTENCE_MS + 100, 'prev')?.id).toBe('s1');
+    expect(sentenceStep(cues, 15_300, 'prev')?.id).toBe('s0');
+  });
+
+  it('walks a sentence a press, however short of the sentence the clock landed', () => {
+    // Just sent to s2; the element reports a few frames before it starts.
+    expect(sentenceStep(cues, 19_960, 'next', at('s2'))?.id).toBe('s3');
+    expect(sentenceStep(cues, 19_960, 'prev', at('s2'))?.id).toBe('s1');
+  });
+
+  it('starts the last sentence again from the pause after it', () => {
+    expect(sentenceStep(cues, 33_500, 'prev')?.id).toBe('s4');
+  });
+
+  it('leaves the chapter to the caller at either end', () => {
+    expect(sentenceStep(cues, 31_000, 'next')).toBeNull();
+    expect(sentenceStep(cues, 10_200, 'prev')).toBeNull();
+    expect(sentenceStep(cues, 5_000, 'prev')).toBeNull();
+    expect(sentenceStep(cues, 5_000, 'next')?.id).toBe('s0');
+    expect(sentenceStep([], 5_000, 'next')).toBeNull();
   });
 });

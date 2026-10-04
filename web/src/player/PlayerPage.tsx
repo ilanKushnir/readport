@@ -37,8 +37,10 @@ import {
 import { formatDuration } from '../lib/format';
 import { ambientColorFromImage } from '../lib/ambient';
 import { coverSrc } from '../lib/cover';
-import { useT } from '../i18n';
+import { useI18n, useT } from '../i18n';
 import { useFormat } from '../i18n/useFormat';
+import { playerKeyAction } from './keys';
+import { hasCommandModifier, isKeyboardFocusedControl, isTypingTarget } from '../lib/keys';
 import { type MessageKey } from '../i18n/messages/en';
 import { loadPlayback, savePlayback, setBookSpeed, speedFor, syncPlayback } from './prefs';
 
@@ -68,6 +70,7 @@ export function PlayerPage() {
   const navigate = useNavigate();
   const toast = useToast();
   const t = useT();
+  const { dir: uiDir } = useI18n();
   const f = useFormat();
 
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -598,24 +601,45 @@ export function PlayerPage() {
 
   useEffect(publishPositionState, [speed, trackIdx, publishPositionState]);
 
-  // Keyboard controls.
+  // Keyboard controls (keys.ts): Space plays and pauses, the arrows move
+  // fifteen seconds either way and, with Shift, a chapter. Never while typing,
+  // never with ⌘, Ctrl or ⌥ (⌘← is the browser's Back), and Space stays with
+  // a control someone reached with Tab.
+  const spaceTakenRef = useRef(false);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (sheet !== 'none') return;
-      if (e.key === ' ' || e.key === 'k') {
-        e.preventDefault();
-        togglePlay();
-      } else if (e.key === 'ArrowLeft' || e.key === 'j') {
-        seekTo(bookMs - skip.back * 1000, 'progression');
-      } else if (e.key === 'ArrowRight' || e.key === 'l') {
-        seekTo(bookMs + skip.fwd * 1000, 'progression');
-      } else if (e.key === 'Escape') {
+      if (sheet !== 'none' || e.defaultPrevented) return;
+      if (e.key === 'Escape') {
         navigate(`/book/${id}`);
+        return;
       }
+      if (hasCommandModifier(e) || isTypingTarget(e.target)) return;
+      if (e.key === ' ' && isKeyboardFocusedControl(e.target)) return;
+      const action = playerKeyAction(e, {
+        rtl: uiDir === 'rtl',
+        skipBackS: skip.back,
+        skipFwdS: skip.fwd,
+      });
+      if (!action) return;
+      e.preventDefault();
+      if (e.key === ' ') spaceTakenRef.current = true;
+      if (action.kind === 'toggle') togglePlay();
+      else if (action.kind === 'seek') seekTo(Math.max(0, bookMs + action.byMs), 'progression');
+      else goChapterRef.current(action.dir);
+    };
+    // The button Space was taken from must not be pressed by its release.
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key !== ' ' || !spaceTakenRef.current) return;
+      spaceTakenRef.current = false;
+      e.preventDefault();
     };
     document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [togglePlay, seekTo, bookMs, sheet, navigate, id, skip]);
+    document.addEventListener('keyup', onKeyUp);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('keyup', onKeyUp);
+    };
+  }, [togglePlay, seekTo, bookMs, sheet, navigate, id, skip, uiDir]);
 
   const switchToText = useCallback(async () => {
     if (!detail?.book.pair) return;
