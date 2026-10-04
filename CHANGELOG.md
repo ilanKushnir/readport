@@ -4,6 +4,27 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.37.0 - 2026-10-04
+
+### Changed
+
+- **Keys that fit each way of reading, on a computer.** Reading along,
+  Space plays and pauses the voice instead of turning the page, the arrows
+  move it a sentence on or back, and Shift with an arrow moves it fifteen
+  seconds; Page Up and Down still turn the page on their own, to look
+  ahead. Reading on its own, the arrows, Space and Page Down turn pages,
+  and in scroll view they now carry on into the next chapter at the end of
+  one. In the player the arrows move fifteen seconds either way, and a
+  chapter with Shift.
+
+### Fixed
+
+- **Space no longer presses the button you last clicked.** Space after
+  clicking play toggled twice and did nothing, and after clicking Read
+  along it switched reading along off; a control reached with Tab still
+  takes Space. No key acts while you type in a field or with ⌘, Ctrl or ⌥
+  held - ⌘← went Back and seeked the audio at once.
+
 ## 0.36.1 - 2026-10-03
 
 ### Fixed

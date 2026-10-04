@@ -24,6 +24,8 @@ export const whatsnew = {
   'whatsnew.update.later': 'Not now',
 
   // ---------------------------------------------------------------- 0.29.0
+  'whatsnew.release.desktopKeys':
+    'On a computer, Space now plays and pauses while you read along and the arrows move from sentence to sentence; in the player they move fifteen seconds, and in scroll view they carry on into the next chapter.',
   'whatsnew.release.invitesInLanguage':
     'Invite someone in their own language - the sign-up page, the message and the app all speak it - and approving a request to join now hands you the link to send them.',
   'whatsnew.release.signInWithEmail':
