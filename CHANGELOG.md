@@ -4,6 +4,14 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.37.1 - 2026-10-04
+
+### Fixed
+
+- **Space held down plays or pauses once.** Held a moment too long, Space
+  repeated, and played and paused by turns - a slow press could end where
+  it began. The arrows still repeat when held, winding on.
+
 ## 0.37.0 - 2026-10-04
 
 ### Changed
