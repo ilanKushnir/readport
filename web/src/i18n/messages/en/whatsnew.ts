@@ -24,6 +24,8 @@ export const whatsnew = {
   'whatsnew.update.later': 'Not now',
 
   // ---------------------------------------------------------------- 0.29.0
+  'whatsnew.release.offlineMarks':
+    'Highlights, notes and bookmarks now work without a connection: they are kept on your device and sync once you are back online, even after the app was closed.',
   'whatsnew.release.desktopKeys':
     'On a computer, Space now plays and pauses while you read along and the arrows move from sentence to sentence; in the player they move fifteen seconds, and in scroll view they carry on into the next chapter.',
   'whatsnew.release.invitesInLanguage':

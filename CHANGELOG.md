@@ -4,6 +4,26 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.38.0 - 2026-10-05
+
+### Changed
+
+- **Highlights, notes and bookmarks work without a connection.** Made,
+  recoloured, edited or removed offline, a mark changes on the page at once
+  and is kept on the device until the server can be reached - when the
+  connection comes back, or the next time the app is opened, even after the
+  browser was closed. A mark that arrives late keeps the time it was made,
+  and one sent twice is still one mark.
+
+### Fixed
+
+- **A click that lets a selection go does only that.** With words selected,
+  clicking other words moved the voice to them while reading along (and
+  otherwise opened a mark or toggled the controls); now it only clears the
+  selection, and the next click moves the voice.
+- **Removing a highlight on a poor connection works at the first tap,**
+  instead of seeming to do nothing until one of several tries got through.
+
 ## 0.37.1 - 2026-10-04
 
 ### Fixed
