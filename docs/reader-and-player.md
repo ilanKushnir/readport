@@ -285,7 +285,11 @@ there: you should never need two taps to stop a book that is talking.
 
 **Tap any line to move the voice to it.** A tap on a timed sentence seeks the
 narration; a tap on the margin, or on text the aligner never timed, falls
-through to the reader's own behaviour, so no existing gesture is lost.
+through to the reader's own behaviour, so no existing gesture is lost. With
+words selected, a tap elsewhere only lets the selection go: a mouse press
+drops the selection as it lands, so the click that followed found nothing
+selected and moved the voice to the words it landed on as well. The next tap
+moves the voice.
 
 **Looking ahead is free.** Turning a page, scrolling, or jumping from the
 contents hands the wheel back to you, and the page stops following. It starts

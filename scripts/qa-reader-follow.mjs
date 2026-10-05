@@ -639,6 +639,66 @@ try {
       },
     );
     await context.close();
+
+    // With words selected, a click on other words puts the selection down
+    // and does nothing else: the press lets the selection go as it lands, and
+    // the click used to go on to move the voice to the words it landed on.
+    for (const mode of ['paginated', 'scroll']) {
+      const { page, context } = await open(
+        mode,
+        false,
+        'no-preference',
+        { width: 1180, height: 820 },
+        { progressBar: 'compact' },
+        { seeking: true },
+      );
+      await page.getByRole('button', { name: 'Read along', exact: true }).click();
+      await page.evaluate((p) => window.readerClock(p), at(3000));
+      await page.waitForTimeout(500);
+      const visibleWords = () =>
+        page.evaluate(() => {
+          // Two paragraphs whose first lines are in view, clear of the chrome.
+          const shown = [...document.querySelectorAll('.reader-content p')].filter((p) => {
+            const r = p.getBoundingClientRect();
+            return r.top > 120 && r.top < innerHeight - 200 && r.right > 0 && r.left < innerWidth;
+          });
+          const point = (p) => {
+            const r = p.getClientRects()[0];
+            return { x: r.left + r.width / 2, y: r.top + 10 };
+          };
+          return { id: shown[0].id, first: point(shown[0]), other: point(shown[1]) };
+        });
+      const where = await visibleWords();
+      await page.evaluate((id) => {
+        const node = document.getElementById(id).firstChild;
+        const range = document.createRange();
+        range.setStart(node, 2);
+        range.setEnd(node, 30);
+        getSelection().removeAllRanges();
+        getSelection().addRange(range);
+      }, where.id);
+      await page.waitForTimeout(400);
+      const plays = await page.evaluate(() => window.__plays.length);
+      const chrome = await page.locator('.reader-page').getAttribute('class');
+      await page.mouse.click(where.other.x, where.other.y);
+      await page.waitForTimeout(400);
+      await check(`${mode}: a click that lets a selection go does only that`, async () => {
+        assert.equal(await page.evaluate(() => getSelection().toString()), '', 'still selected');
+        assert.equal(await page.evaluate(() => window.__plays.length), plays, 'the voice moved');
+        assert.equal(
+          await page.locator('.reader-page').getAttribute('class'),
+          chrome,
+          'the chrome changed',
+        );
+        assert.equal(await page.locator('.selection-menu').count(), 0, 'the toolbar stayed');
+      });
+      await page.mouse.click(where.first.x, where.first.y);
+      await page.waitForTimeout(400);
+      await check(`${mode}: the next click on the words moves the voice, as ever`, async () =>
+        assert.equal(await page.evaluate(() => window.__plays.length), plays + 1),
+      );
+      await context.close();
+    }
   }
   const reduced = await open('scroll', false, 'reduce');
   await reduced.page.getByRole('button', { name: 'Read along', exact: true }).click();

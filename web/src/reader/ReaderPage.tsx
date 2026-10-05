@@ -2835,6 +2835,39 @@ export function ReaderPage() {
     [prefs.mode, rtl, prevPage, nextPage],
   );
 
+  /**
+   * Whether words were selected as the press now ending began. A mouse
+   * press elsewhere lets a selection go as it lands, so by the time the tap
+   * is read nothing is selected - and the click that only meant to put the
+   * selection down moved the voice to the words it landed on.
+   */
+  const selectedAtPressRef = useRef(false);
+  useEffect(() => {
+    const onPress = () => {
+      const sel = document.getSelection();
+      selectedAtPressRef.current = !!sel && !sel.isCollapsed;
+    };
+    document.addEventListener('pointerdown', onPress, true);
+    return () => document.removeEventListener('pointerdown', onPress, true);
+  }, []);
+  /**
+   * A tap that began with words selected puts the selection down, and that
+   * is all: the voice stays where it is reading, no mark opens, the chrome
+   * stays as it was - the next tap does those. Only the page edge, outside
+   * reading along, still turns the page, carrying the selection over as a
+   * swipe does.
+   */
+  const dismissingTap = useCallback(
+    (clientX: number, edges: boolean): boolean => {
+      if (!selectedAtPressRef.current) return false;
+      selectedAtPressRef.current = false;
+      if (edges && !readAlong && edgeTap(clientX)) return true;
+      clearSelection();
+      return true;
+    },
+    [readAlong, edgeTap, clearSelection],
+  );
+
   const startReadAlong = useCallback(() => {
     followingRef.current = true;
     cueLeftSinceTakeoverRef.current = true;
@@ -4302,6 +4335,7 @@ export function ReaderPage() {
                   }
                   // Armed to continue a selection: this tap is where it ends.
                   if (extendSelectionTo(e.clientX, e.clientY)) return;
+                  if (dismissingTap(e.clientX, true)) return;
                   if (openMarkAt(e.clientX, e.clientY)) return;
                   if (seekVoiceAt(e.clientX, e.clientY)) return;
                   if (edgeTap(e.clientX)) return;
@@ -4345,6 +4379,7 @@ export function ReaderPage() {
                   if (tapInSelection(sel, e.clientX, e.clientY)) setToolbarHidden((h) => !h);
                   return;
                 }
+                if (dismissingTap(e.clientX, false)) return;
                 if (openMarkAt(e.clientX, e.clientY)) return;
                 if (seekVoiceAt(e.clientX, e.clientY)) return;
                 setChrome((c) => !c);
