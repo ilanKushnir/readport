@@ -137,7 +137,24 @@ export const annotationSchema = z.object({
 });
 export type Annotation = z.infer<typeof annotationSchema>;
 
+/** A mark's name: `ann_` and a random base64url string, whichever side chose it. */
+export const annotationIdSchema = z.string().regex(/^ann_[A-Za-z0-9_-]{12,64}$/);
+
 export const createAnnotationSchema = z.object({
+  /**
+   * The name the device gave the mark, for one made where the server could
+   * not be reached: whatever was done to it meanwhile - a colour, a note,
+   * removing it - follows it here by that name, and a delivery repeated
+   * because the answer to the first was lost finds the mark the first one
+   * made instead of making a second.
+   */
+  id: annotationIdSchema.optional(),
+  /**
+   * How long before this request the mark was made, for one delivered late.
+   * A duration, measured by the device's clock alone, so a device whose clock
+   * is off still dates the mark right.
+   */
+  ageMs: z.number().int().nonnegative().optional(),
   kind: annotationKindSchema,
   locator: locatorSchema,
   endLocator: locatorSchema.nullable().optional(),

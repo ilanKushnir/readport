@@ -31,6 +31,7 @@ import {
   IconShelf,
   ReadPortMark,
 } from './components/icons';
+import { startMarkDelivery } from './marks/outbox';
 import { startProgressLifecycle } from './progress/engine';
 import { LoginPage } from './pages/AuthPages';
 import { SetupWizard } from './pages/SetupWizard';
@@ -239,6 +240,7 @@ function Shell() {
   }, [immersive, phase, needsLibraries, setupSkipped]);
 
   useEffect(() => startProgressLifecycle(), []);
+  useEffect(() => startMarkDelivery(), []);
 
   // The tab bar's height, for the shelves sheet that stands on it.
   useLayoutEffect(() => {

@@ -2,10 +2,11 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { LanguagesSheet } from '../translations/LanguagesSheet';
 import { type AudioLocator, type EbookLocator } from '@readport/shared';
-import { api, ApiError, failureMessage, isOffline } from '../api/client';
+import { api, ApiError, isOffline } from '../api/client';
 import { cachedSwitch, removeDownload } from '../offline/downloads';
 import { type Annotation, type BookDetail, type ResolveResponse } from '../lib/types';
 import { recordCheckpoint, resumeLocator, setActiveLocatorProvider } from '../progress/engine';
+import { loadBookMarks, newMarkId, onMarkRenamed, recordMarkChange } from '../marks/outbox';
 import {
   audioReturnAfterJump,
   audioContinued,
@@ -239,10 +240,8 @@ export function PlayerPage() {
           total > 0
             ? Math.min(1, Math.max(0, ((d.tracks[t]?.startMsAbsolute ?? 0) + p) / total))
             : 0;
-        const anns = await api<{ annotations: Annotation[] }>(`/api/books/${id}/annotations`).catch(
-          () => ({ annotations: [] as Annotation[] }),
-        );
-        if (alive) setAnnotations(anns.annotations);
+        const anns = await loadBookMarks(id);
+        if (alive) setAnnotations(anns);
 
         const trackParam = searchParams.get('track');
         const resume = await resumeLocator(id);
@@ -702,40 +701,53 @@ export function PlayerPage() {
   const nearBookmark =
     audioBookmarks.find((a) => Math.abs(bookmarkAbsMs(a) - bookMs) < 20_000) ?? null;
 
-  const deleteBookmark = async (annId: string) => {
-    try {
-      await api(`/api/annotations/${annId}`, { method: 'DELETE' });
-      setAnnotations((a) => a.filter((x) => x.id !== annId));
-    } catch (err) {
-      toast.show(failureMessage(err, t('player.bookmarks.couldNotDelete'), t));
+  // Bookmarks are kept on this device and sent from there (marks/outbox.ts):
+  // one made or removed without a connection reaches the server when it can.
+  const deleteBookmark = async (annId: string): Promise<boolean> => {
+    if (!(await recordMarkChange({ type: 'delete', id: annId, bookId: id }))) {
+      toast.show(t('player.bookmarks.couldNotDelete'));
+      return false;
     }
+    setAnnotations((a) => a.filter((x) => x.id !== annId));
+    return true;
   };
 
   const toggleBookmark = async () => {
     if (nearBookmark) {
-      await deleteBookmark(nearBookmark.id);
-      toast.show(t('player.bookmarks.removed'));
+      if (await deleteBookmark(nearBookmark.id)) toast.show(t('player.bookmarks.removed'));
       return;
     }
-    try {
-      const chapterTitle = currentChapter?.title ?? null;
-      const res = await api<{ annotation: Annotation }>(`/api/books/${id}/annotations`, {
-        method: 'POST',
-        body: {
-          kind: 'bookmark',
-          locator: locatorNow(),
-          selectedText: chapterTitle ? `${chapterTitle} · ${formatDuration(bookMs)}` : null,
-        },
-      });
-      setAnnotations((a) => [...a, res.annotation]);
-      toast.show(t('player.bookmarks.addedAt', { time: formatDuration(bookMs) }), {
-        label: t('player.bookmarks.title'),
-        onClick: () => setSheet('bookmarks'),
-      });
-    } catch (err) {
-      toast.show(failureMessage(err, t('player.bookmarks.couldNotSave'), t));
+    const chapterTitle = currentChapter?.title ?? null;
+    const mark: Annotation = {
+      id: newMarkId(),
+      bookId: id,
+      kind: 'bookmark',
+      locator: locatorNow(),
+      endLocator: null,
+      color: null,
+      selectedText: chapterTitle ? `${chapterTitle} · ${formatDuration(bookMs)}` : null,
+      note: null,
+      createdAt: new Date().toISOString(),
+    };
+    if (!(await recordMarkChange({ type: 'create', mark }))) {
+      toast.show(t('player.bookmarks.couldNotSave'));
+      return;
     }
+    setAnnotations((a) => [...a, mark]);
+    toast.show(t('player.bookmarks.addedAt', { time: formatDuration(bookMs) }), {
+      label: t('player.bookmarks.title'),
+      onClick: () => setSheet('bookmarks'),
+    });
   };
+
+  // A bookmark the server keeps under another name than this device gave it.
+  useEffect(
+    () =>
+      onMarkRenamed((from, to) =>
+        setAnnotations((all) => all.map((x) => (x.id === from ? { ...x, id: to } : x))),
+      ),
+    [],
+  );
 
   /* -------------------------------------------------------------- render */
 

@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client';
+import {
+  pendingMarkChanges,
+  recordMarkChange,
+  settleMarkChanges,
+  withPendingEdits,
+} from '../marks/outbox';
 import { Cover, useToast } from '../components/ui';
 import { Art } from '../components/Art';
 import { IconSearch } from '../components/icons';
@@ -53,9 +59,12 @@ export function NotesPage() {
   const [query, setQuery] = useState('');
 
   const load = useCallback(async () => {
+    // Changes made on this device go first, if they can go quickly, so the
+    // list comes back with them; any still on their way are laid on top.
+    await settleMarkChanges();
     try {
       const res = await api<{ annotations: Marked[] }>('/api/annotations');
-      setAll(res.annotations);
+      setAll(withPendingEdits(res.annotations, await pendingMarkChanges()));
     } catch {
       setAll([]);
     }
@@ -76,12 +85,9 @@ export function NotesPage() {
   const searching = query.trim().length > 0;
 
   const remove = async (a: Marked) => {
-    try {
-      await api(`/api/annotations/${a.id}`, { method: 'DELETE' });
+    if (await recordMarkChange({ type: 'delete', id: a.id, bookId: a.bookId }))
       setAll((list) => (list ?? []).filter((x) => x.id !== a.id));
-    } catch {
-      toast.show(t('notes.deleteFailed'));
-    }
+    else toast.show(t('notes.deleteFailed'));
   };
 
   const pickKind = (k: KindFilter) => {

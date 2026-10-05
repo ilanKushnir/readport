@@ -20,6 +20,13 @@ import {
   type SentenceIndexEntry,
 } from '../lib/types';
 import { recordCheckpoint, resumeLocator, setActiveLocatorProvider } from '../progress/engine';
+import {
+  loadBookMarks,
+  newMarkId,
+  onMarkRenamed,
+  patchedMark,
+  recordMarkChange,
+} from '../marks/outbox';
 import { Sheet, useToast, useFocusTrap, useScrollLock } from '../components/ui';
 import { createPortal } from 'react-dom';
 import { useT } from '../i18n';
@@ -703,14 +710,13 @@ export function ReaderPage() {
         const [m, d, anns] = await Promise.all([
           api<ReaderManifest>(`/api/books/${id}/manifest`),
           api<BookDetail>(`/api/books/${id}`),
-          api<{ annotations: Annotation[] }>(`/api/books/${id}/annotations`).catch(() => ({
-            annotations: [] as Annotation[],
-          })),
+          // With the marks made here and not yet delivered on top.
+          loadBookMarks(id),
         ]);
         if (!alive) return;
         setManifest(m);
         setDetail(d);
-        setAnnotations(anns.annotations);
+        setAnnotations(anns);
 
         // Initial position: URL params > saved progress > beginning.
         const resume = await resumeLocator(id);
@@ -3168,7 +3174,9 @@ export function ReaderPage() {
       const start = sel?.start ?? currentOffsetRef.current;
       const end = sel?.end ?? start;
       const sent = sentences.find((s) => start >= s.start && start < s.end);
-      const body = {
+      const mark: Annotation = {
+        id: newMarkId(),
+        bookId: id,
         kind,
         locator: {
           medium: 'ebook',
@@ -3184,20 +3192,19 @@ export function ReaderPage() {
         color: kind === 'highlight' ? (color ?? DEFAULT_HIGHLIGHT) : null,
         selectedText: sel?.text ?? null,
         note: note ?? null,
+        createdAt: new Date().toISOString(),
       };
-      try {
-        const res = await api<{ annotation: Annotation }>(`/api/books/${id}/annotations`, {
-          method: 'POST',
-          body,
-        });
-        setAnnotations((a) => [...a, res.annotation]);
-        toast.show(t('reader.toast.saved', { kind }));
-        clearSelection();
-        return true;
-      } catch {
+      // Kept on this device and sent from there (marks/outbox.ts): made
+      // without a connection, the mark is made all the same, and reaches the
+      // server when it can.
+      if (!(await recordMarkChange({ type: 'create', mark }))) {
         toast.show(t('reader.toast.couldNotSave'));
         return false;
       }
+      setAnnotations((a) => [...a, mark]);
+      toast.show(t('reader.toast.saved', { kind }));
+      clearSelection();
+      return true;
     },
     [manifest, selection, sentences, spineIdx, id, toast, t, clearSelection],
   );
@@ -3730,20 +3737,15 @@ export function ReaderPage() {
 
   const patchAnnotation = useCallback(
     async (annId: string, body: { color?: HighlightColor; note?: string }): Promise<boolean> => {
-      try {
-        const res = await api<{ annotation: Annotation }>(`/api/annotations/${annId}`, {
-          method: 'PATCH',
-          body,
-        });
-        setAnnotations((all) => all.map((x) => (x.id === annId ? res.annotation : x)));
-        setMarkPop((m) => (m && m.a.id === annId ? { ...m, a: res.annotation } : m));
-        return true;
-      } catch {
+      if (!(await recordMarkChange({ type: 'patch', id: annId, bookId: id, patch: body }))) {
         toast.show(t('reader.toast.couldNotSaveChange'));
         return false;
       }
+      setAnnotations((all) => all.map((x) => (x.id === annId ? patchedMark(x, body) : x)));
+      setMarkPop((m) => (m && m.a.id === annId ? { ...m, a: patchedMark(m.a, body) } : m));
+      return true;
     },
-    [toast, t],
+    [id, toast, t],
   );
   const recolour = useCallback(
     (annId: string, color: HighlightColor) => patchAnnotation(annId, { color }),
@@ -3777,13 +3779,10 @@ export function ReaderPage() {
   const toggleBookmark = useCallback(async () => {
     if (!manifest) return;
     if (currentBookmark) {
-      try {
-        await api(`/api/annotations/${currentBookmark.id}`, { method: 'DELETE' });
+      if (await recordMarkChange({ type: 'delete', id: currentBookmark.id, bookId: id })) {
         setAnnotations((a) => a.filter((x) => x.id !== currentBookmark.id));
         toast.show(t('reader.toast.bookmarkRemoved'));
-      } catch {
-        toast.show(t('reader.toast.couldNotRemoveBookmark'));
-      }
+      } else toast.show(t('reader.toast.couldNotRemoveBookmark'));
       return;
     }
     // Capture live geometry, even before scroll tracking's debounce. The
@@ -3806,7 +3805,9 @@ export function ReaderPage() {
       sent && map
         ? (rangeForSpan(map, sent.start, sent.end)?.toString().trim().slice(0, 240) ?? null)
         : null;
-    const body = {
+    const mark: Annotation = {
+      id: newMarkId(),
+      bookId: id,
       kind: 'bookmark',
       locator: {
         medium: 'ebook',
@@ -3815,35 +3816,35 @@ export function ReaderPage() {
         sentenceId: sent?.id,
         pct: pctFor(manifest, spineIdx, start),
       },
+      endLocator: null,
+      color: null,
       selectedText: excerpt,
+      note: null,
+      createdAt: new Date().toISOString(),
     };
-    try {
-      const res = await api<{ annotation: Annotation }>(`/api/books/${id}/annotations`, {
-        method: 'POST',
-        body,
-      });
-      setAnnotations((a) => [...a, res.annotation]);
-      // Show WHICH line was marked: the sentence lights up for a moment, so
-      // the bookmark is never an invisible event.
-      if (sent && map) {
-        handoffCleanupRef.current?.();
-        handoffCleanupRef.current = paintHandoff(map, sent.start, sent.end);
-      }
-      toast.show(
-        prefs.mode === 'paginated'
-          ? t('reader.toast.bookmarkedPage', { n: page + 1 })
-          : t('reader.toast.bookmarkedPassage'),
-        {
-          label: t('reader.toast.openBookmarks'),
-          onClick: () => {
-            setContentsTab('marks');
-            setSheet('toc');
-          },
-        },
-      );
-    } catch {
+    if (!(await recordMarkChange({ type: 'create', mark }))) {
       toast.show(t('reader.toast.couldNotSave'));
+      return;
     }
+    setAnnotations((a) => [...a, mark]);
+    // Show WHICH line was marked: the sentence lights up for a moment, so
+    // the bookmark is never an invisible event.
+    if (sent && map) {
+      handoffCleanupRef.current?.();
+      handoffCleanupRef.current = paintHandoff(map, sent.start, sent.end);
+    }
+    toast.show(
+      prefs.mode === 'paginated'
+        ? t('reader.toast.bookmarkedPage', { n: page + 1 })
+        : t('reader.toast.bookmarkedPassage'),
+      {
+        label: t('reader.toast.openBookmarks'),
+        onClick: () => {
+          setContentsTab('marks');
+          setSheet('toc');
+        },
+      },
+    );
   }, [
     manifest,
     currentBookmark,
@@ -3860,14 +3861,22 @@ export function ReaderPage() {
 
   const deleteAnnotation = useCallback(
     async (annId: string) => {
-      try {
-        await api(`/api/annotations/${annId}`, { method: 'DELETE' });
+      if (await recordMarkChange({ type: 'delete', id: annId, bookId: id }))
         setAnnotations((a) => a.filter((x) => x.id !== annId));
-      } catch {
-        toast.show(t('reader.toast.couldNotDelete'));
-      }
+      else toast.show(t('reader.toast.couldNotDelete'));
     },
-    [toast, t],
+    [id, toast, t],
+  );
+
+  // A mark made here that the server keeps under another name - one already
+  // taken - goes on being shown, and changed, under that name.
+  useEffect(
+    () =>
+      onMarkRenamed((from, to) => {
+        setAnnotations((all) => all.map((x) => (x.id === from ? { ...x, id: to } : x)));
+        setMarkPop((m) => (m && m.a.id === from ? { ...m, a: { ...m.a, id: to } } : m));
+      }),
+    [],
   );
 
   const switchToAudio = useCallback(async () => {

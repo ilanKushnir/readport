@@ -1,14 +1,16 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import { type Annotation } from '@readport/shared';
 import { api } from '../api/client';
+import { loadBookMarks } from '../marks/outbox';
 import { type BookDetail } from '../lib/types';
 
 /**
  * One book and everything marked in it, for the per-book view and the
  * printed page alike. The book's detail carries the cover, the author and
  * the chapter list the marks are grouped by; the marks come from the
- * book's own annotations endpoint. A book that will not load is an error;
- * marks that will not load are simply none.
+ * book's own annotations endpoint, with any changes made on this device and
+ * not yet delivered on top. A book that will not load is an error; marks
+ * that will not load are simply none.
  */
 export function useBookMarks(bookId: string): {
   detail: BookDetail | null;
@@ -29,13 +31,11 @@ export function useBookMarks(bookId: string): {
       try {
         const [d, a] = await Promise.all([
           api<BookDetail>(`/api/books/${bookId}`),
-          api<{ annotations: Annotation[] }>(`/api/books/${bookId}/annotations`).catch(() => ({
-            annotations: [] as Annotation[],
-          })),
+          loadBookMarks(bookId),
         ]);
         if (!alive) return;
         setDetail(d);
-        setMarks(a.annotations);
+        setMarks(a);
         setState('ready');
       } catch {
         if (alive) setState('error');

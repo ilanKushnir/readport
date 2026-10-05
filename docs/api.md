@@ -260,9 +260,19 @@ the text - the same direction the resolver's own margin errs in.
 | GET          | `/api/progress/:bookId/history` | recent events incl. rejected + reasons                                                            |
 | DELETE       | `/api/progress/:bookId`         | reset this user's progress for one edition → `{generation}`; 404 for a book the library never had |
 | GET          | `/api/annotations?q&kind`       | every mark this reader has made, across every book                                                |
-| GET/POST     | `/api/books/:id/annotations`    | bookmarks/highlights/notes                                                                        |
-| PATCH/DELETE | `/api/annotations/:annId`       | own marks only; `PATCH` takes `{note?, color?}`                                                   |
+| GET/POST     | `/api/books/:id/annotations`    | bookmarks/highlights/notes; `POST` may name the mark (`id`) and say how old it is (`ageMs`)       |
+| PATCH/DELETE | `/api/annotations/:annId`       | own marks only; `PATCH` takes `{note?, color?}`; `DELETE` of a mark already removed is `200`      |
 | POST         | `/api/books/:id/notes/export`   | typeset a written-out export as a PDF → `{pageCount, pages, pdf}`                                 |
+
+A mark made where the server could not be reached arrives later from the
+device's queue (`web/src/marks/outbox.ts`), so creating one can be repeated
+safely. `POST` takes an optional `id` (`ann_` and 12 to 64 base64url
+characters) that the server keeps: sent again - the answer to the first
+delivery lost - it returns the mark the first one made, as it is now, and makes
+nothing. An `id` another mark already has is not taken; the mark gets a fresh
+one, and the answer carries it. `ageMs`, how long before the request the mark
+was made by the device's own clock, dates it (at most a year back), so a
+device whose clock is wrong still dates it right.
 
 A batch of progress events is a drained offline queue, not a form. Refusing all
 two hundred because one is malformed would lose the other hundred and

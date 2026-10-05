@@ -1,5 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { api, isUnauthorized, setUnauthorizedHandler } from '../api/client';
+import {
+  claimMarkChanges,
+  purgeMarkChanges,
+  scheduleMarkDelivery,
+  settleMarkChanges,
+} from '../marks/outbox';
 import { purgeOfflineData } from '../offline/downloads';
 import { idbClear, STORES } from '../progress/idb';
 import {
@@ -107,6 +113,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       // account that recorded them. The same person keeps a backlog written
       // while their session was expired; a different person starts empty.
       await claimProgressQueue(me.user.id).catch(() => {});
+      // Marks made on this device and not yet delivered go by the same rule.
+      await claimMarkChanges(me.user.id).catch(() => {});
+      scheduleMarkDelivery();
       setUser(me.user);
       setVia(me.via ?? 'session');
       // Default true: an older server does not send it, and offering to "add
@@ -192,8 +201,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      // Best-effort: deliver any queued progress before the session dies.
+      // Best-effort: deliver any queued progress and marks before the
+      // session dies.
       await flushPending().catch(() => {});
+      await settleMarkChanges().catch(() => {});
       await api('/api/auth/logout', { method: 'POST' });
     } finally {
       // Logout removes this browser's offline book content and per-user
@@ -202,6 +213,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       // chance, because signing out is a deliberate "leave nothing behind".
       await purgeOfflineData().catch(() => {});
       await purgeProgressQueue().catch(() => {});
+      await purgeMarkChanges().catch(() => {});
       setUser(null);
       setPhase('login');
     }
@@ -245,6 +257,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             // Claim before any flusher can run: a backlog left by whoever
             // used this browser last must never be posted to this account.
             void claimProgressQueue(u.id);
+            void claimMarkChanges(u.id)
+              .catch(() => {})
+              .then(() => scheduleMarkDelivery());
             setPhase('ready');
             // Pick up server-side setup state (needsLibraries) that only
             // /api/auth/me reports - otherwise a fresh sign-in lands on an

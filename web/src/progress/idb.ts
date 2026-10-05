@@ -1,7 +1,7 @@
-/** Minimal typed IndexedDB wrapper for the progress queue and offline state. */
+/** Minimal typed IndexedDB wrapper for the progress queue, marks on their way, and offline state. */
 
 const DB_NAME = 'readport';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 export const STORES = {
   pendingEvents: 'pending-events', // key: eventId
@@ -9,6 +9,7 @@ export const STORES = {
   progressMeta: 'progress-meta', // server reset generation, key: bookId
   downloads: 'downloads', // key: bookId
   prefs: 'prefs', // key: string
+  markChanges: 'mark-changes', // marks/outbox.ts, key: changeId
 } as const;
 
 let dbPromise: Promise<IDBDatabase> | null = null;

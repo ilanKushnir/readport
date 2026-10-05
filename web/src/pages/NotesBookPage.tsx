@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { type Annotation } from '@readport/shared';
-import { api } from '../api/client';
+import { recordMarkChange } from '../marks/outbox';
 import { Cover, EmptyState, useToast } from '../components/ui';
 import { IconAlert, IconBack, IconDownload } from '../components/icons';
 import { HIGHLIGHT_COLORS } from '../reader/marks';
@@ -90,13 +90,11 @@ export function NotesBookPage() {
       colors: view.colors.includes(c) ? view.colors.filter((x) => x !== c) : [...view.colors, c],
     });
 
+  // Kept on this device and sent from there (marks/outbox.ts).
   const remove = async (a: Annotation) => {
-    try {
-      await api(`/api/annotations/${a.id}`, { method: 'DELETE' });
+    if (await recordMarkChange({ type: 'delete', id: a.id, bookId: a.bookId }))
       setMarks((list) => list.filter((x) => x.id !== a.id));
-    } catch {
-      toast.show(t('notes.deleteFailed'));
-    }
+    else toast.show(t('notes.deleteFailed'));
   };
 
   const back = (

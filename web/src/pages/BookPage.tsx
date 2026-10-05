@@ -9,6 +9,7 @@ import {
 } from '@readport/shared';
 import { api, ApiError, failureMessage, isOffline } from '../api/client';
 import { type Annotation, type BookDetail, type ResolveResponse } from '../lib/types';
+import { loadBookMarks } from '../marks/outbox';
 import { EmptyState, Sheet, useToast } from '../components/ui';
 import { AddToSheet } from '../components/AddToSheet';
 import { HiddenMark } from '../components/HiddenMark';
@@ -118,10 +119,7 @@ export function BookPage() {
       const d = await api<BookDetail>(`/api/books/${id}`);
       setDetail(d);
       setError(null);
-      const anns = await api<{ annotations: Annotation[] }>(`/api/books/${id}/annotations`).catch(
-        () => ({ annotations: [] as Annotation[] }),
-      );
-      setAnnotations(anns.annotations);
+      setAnnotations(await loadBookMarks(id));
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) {
         // Gone from the library, or hidden from this reader by an admin:

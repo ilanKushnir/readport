@@ -231,6 +231,23 @@ filtering happens in the browser rather than on the server, because the whole
 set is a few hundred rows at most and typing that filters instantly is the
 entire point of a page like this.
 
+**Marks are made without a connection too.** A bookmark, highlight or note
+made, recoloured, edited or removed shows on the page at once and is written to
+the browser's own storage (IndexedDB) before anything is sent; it reaches the
+server in the order it was made, whenever the server can be reached - straight
+away, when the connection comes back, or the next time the app is opened, after
+the browser was closed (`web/src/marks/outbox.ts`). A highlight used to be a
+request and nothing more: offline it failed with "could not save", and on a
+connection that stalls rather than fails a tap on Remove seemed to do nothing
+until one of several got through. Every change can arrive twice without harm,
+which is what makes sending it again safe: a new mark carries a name made on
+the device, and the server keeps it, so a delivery repeated because its answer
+was lost finds the mark the first one made; a mark delivered late is dated when
+it was made; and removing a mark that is gone is done. The changes belong to
+the account that made them, by the progress queue's rules (docs/progress.md):
+delivered only while that account is signed in, and dropped when someone else
+signs in on the browser or its owner signs out.
+
 Any deliberate jump (bookmark, chapter, search result, slider) that moves more
 than a page away shows a **Back to where you were** pill naming the chapter you
 left; it stays until used or dismissed.
@@ -430,8 +447,7 @@ shelf built entirely from local storage, so airplane mode starts from
 something useful; the book detail JSON is served network-first so pairing
 and progress state never freeze at download time. Audio tracks download and store in bounded 8 MB chunks (no
 whole-book buffering on iPhone) and are served offline with correct HTTP
-Range (206/Content-Range) behavior. **Annotations are online-only in V1**:
-creating bookmarks/highlights/notes needs the server, as does recolouring a
-highlight or editing a note, and each fails with an honest message offline;
-existing annotations are not part of the offline package. Logout removes
-offline copies (see docs/security.md).
+Range (206/Content-Range) behavior. A downloaded book's marks are part of its
+package, renewed whenever they are fetched online, and open with it offline
+together with every mark made, changed or removed on the device since (see
+Marks above). Logout removes offline copies (see docs/security.md).

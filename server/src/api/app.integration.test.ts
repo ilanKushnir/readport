@@ -766,6 +766,94 @@ describe('ReadPort API', () => {
     expect(del.statusCode).toBe(200);
   });
 
+  it('marks made offline: named by the device, made once however often they arrive', async () => {
+    const id = 'ann_madeOnTheTrain-01';
+    const body = {
+      id,
+      ageMs: 3 * 3600_000,
+      kind: 'highlight',
+      locator: { medium: 'ebook', spineIdx: 0, charOffset: 10, pct: 0.01 },
+      endLocator: { medium: 'ebook', spineIdx: 0, charOffset: 40, pct: 0.011 },
+      color: 'amber',
+      selectedText: 'the lamps along the quay',
+    };
+    const url = `/api/books/${lanternEbookId}/annotations`;
+    const first = await authed({ method: 'POST', url, payload: body });
+    expect(first.statusCode).toBe(200);
+    const made = (first.json() as { annotation: { id: string; createdAt: string } }).annotation;
+    expect(made.id).toBe(id);
+    // Dated when it was made, three hours ago, not when it arrived.
+    const age = Date.now() - Date.parse(made.createdAt);
+    expect(Math.abs(age - 3 * 3600_000)).toBeLessThan(60_000);
+
+    // Recoloured, then the first delivery is repeated - its answer was lost:
+    // the one mark there is comes back, as it is now.
+    await authed({ method: 'PATCH', url: `/api/annotations/${id}`, payload: { color: 'rose' } });
+    const again = (await authed({ method: 'POST', url, payload: body })).json() as {
+      annotation: { id: string; color: string };
+    };
+    expect(again.annotation).toMatchObject({ id, color: 'rose' });
+    const listed = () =>
+      authed({ url }).then((r) => (r.json() as { annotations: { id: string }[] }).annotations);
+    expect((await listed()).filter((a) => a.id === id)).toHaveLength(1);
+
+    // Removed, and the removal delivered twice: done both times.
+    expect((await authed({ method: 'DELETE', url: `/api/annotations/${id}` })).statusCode).toBe(
+      200,
+    );
+    expect((await authed({ method: 'DELETE', url: `/api/annotations/${id}` })).statusCode).toBe(
+      200,
+    );
+    // A late copy of the first delivery does not bring it back.
+    await authed({ method: 'POST', url, payload: body });
+    expect((await listed()).some((a) => a.id === id)).toBe(false);
+    // A mark nobody made is still not found, and a name of the wrong shape is refused.
+    expect(
+      (await authed({ method: 'DELETE', url: '/api/annotations/ann_neverMadeAnywhere' }))
+        .statusCode,
+    ).toBe(404);
+    expect(
+      (await authed({ method: 'POST', url, payload: { ...body, id: 'my mark' } })).statusCode,
+    ).toBe(400);
+
+    // Somebody else's device chose the same name: their mark gets a fresh
+    // one, and nothing of this account's is touched or shown to them.
+    const twin = 'ann_chosenTwiceOver-7';
+    await authed({ method: 'POST', url, payload: { ...body, id: twin } });
+    const created = await authed({
+      method: 'POST',
+      url: '/api/users',
+      payload: { username: 'odile', password: 'odile-password-123', role: 'reader' },
+    });
+    expect(created.statusCode).toBe(201);
+    const login = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      headers: { 'x-rp-csrf': '1' },
+      payload: { username: 'odile', password: 'odile-password-123' },
+    });
+    const odile = await app.inject({
+      method: 'POST',
+      url,
+      payload: { ...body, id: twin, selectedText: 'a different line' },
+      headers: {
+        cookie: login.headers['set-cookie']!.toString().split(';')[0]!,
+        'x-rp-csrf': '1',
+        'content-type': 'application/json',
+      },
+    });
+    expect(odile.statusCode).toBe(200);
+    const theirs = (odile.json() as { annotation: { id: string; selectedText: string } })
+      .annotation;
+    expect(theirs.id).not.toBe(twin);
+    expect(theirs.selectedText).toBe('a different line');
+    expect((await listed()).find((a) => a.id === twin)).toMatchObject({
+      selectedText: 'the lamps along the quay',
+    });
+    const odileId = (created.json() as { user: { id: string } }).user.id;
+    expect((await authed({ method: 'DELETE', url: `/api/users/${odileId}` })).statusCode).toBe(200);
+  });
+
   it('shelves: named, ordered, idempotent, and countable in one request', async () => {
     const summer = (
       await authed({ method: 'POST', url: '/api/shelves', payload: { name: '  Summer   reads ' } })

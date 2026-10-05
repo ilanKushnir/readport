@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ReaderPage } from '../src/reader/ReaderPage';
 import { ToastProvider } from '../src/components/ui';
 import { claimProgressQueue } from '../src/progress/engine';
+import { startMarkDelivery } from '../src/marks/outbox';
 import '../src/styles/tokens.css';
 import '../src/styles/base.css';
 import '../src/styles/immersive.css';
@@ -21,6 +22,9 @@ import '../src/styles/immersive.css';
  * still reads, and every checkpoint it makes is dropped on the floor.
  */
 void claimProgressQueue('qa-fixture-user');
+// Marks made here are delivered as the app delivers them (App.tsx): on
+// start, when the connection comes back, and every half minute.
+startMarkDelivery();
 
 createRoot(document.getElementById('root')!).render(
   <BrowserRouter>

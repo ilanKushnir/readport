@@ -132,6 +132,15 @@ function deliveringFor(): string | null {
   return owner === null || owner === sessionUserId ? sessionUserId : null;
 }
 
+/**
+ * The account whose writing this page may keep and deliver, or null. Marks
+ * made on the way to the server (marks/outbox.ts) belong to it by the same
+ * rules as checkpoints.
+ */
+export function queueAccount(): string | null {
+  return deliveringFor();
+}
+
 /** Discard the un-synced queue. Deliberate logout and a change of account
  *  only - never session revocation. Seals the queue until the next claim. */
 export async function purgeProgressQueue(): Promise<void> {

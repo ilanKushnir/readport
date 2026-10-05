@@ -5,6 +5,9 @@ import { newId } from '../../util/ids.js';
 import { nowIso } from '../../db/index.js';
 import { seesHidden, visibleSql } from '../../library/visibility.js';
 
+/** The furthest back a mark delivered late is dated: a year, whatever its device claims. */
+const MAX_MARK_AGE_MS = 366 * 24 * 3600 * 1000;
+
 function rowToAnnotation(r: Record<string, unknown>): Annotation {
   return {
     id: String(r.id),
@@ -78,7 +81,20 @@ export function registerAnnotationRoutes(app: FastifyInstance, ctx: AppContext):
       return reply.code(400).send({ error: 'invalid', detail: parsed.error.issues[0]?.message });
     }
     const a = parsed.data;
-    const annId = newId('ann');
+    // A mark made on a device without a connection arrives with the name it
+    // was given there. Delivered again - the answer to the first delivery
+    // lost on the way back - it finds the mark that delivery made, as it is
+    // now, and makes nothing.
+    const named = a.id
+      ? (db.prepare('SELECT * FROM annotations WHERE id = ?').get(a.id) as
+          Record<string, unknown> | undefined)
+      : undefined;
+    if (named && named.user_id === req.user!.id && named.book_id === id)
+      return { annotation: rowToAnnotation(named) };
+    // A name another mark already has is not this one's to take: it gets a
+    // fresh one, and the device follows the rename by the answer.
+    const annId = a.id && !named ? a.id : newId('ann');
+    const createdAt = new Date(Date.now() - Math.min(a.ageMs ?? 0, MAX_MARK_AGE_MS)).toISOString();
     db.prepare(
       `INSERT INTO annotations (id, user_id, book_id, kind, locator_json, end_locator_json, color, selected_text, note, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -92,7 +108,7 @@ export function registerAnnotationRoutes(app: FastifyInstance, ctx: AppContext):
       a.color ?? null,
       a.selectedText ?? null,
       a.note ?? null,
-      nowIso(),
+      createdAt,
       nowIso(),
     );
     const row = db.prepare('SELECT * FROM annotations WHERE id = ?').get(annId) as Record<
@@ -130,14 +146,16 @@ export function registerAnnotationRoutes(app: FastifyInstance, ctx: AppContext):
     return { annotation: rowToAnnotation(row) };
   });
 
+  // Removing a mark that is already gone is done, not an error: a removal
+  // made offline is delivered again whenever the answer to it was lost.
   app.delete('/api/annotations/:annId', async (req, reply) => {
     const { annId } = req.params as { annId: string };
-    const res = db
-      .prepare(
-        'UPDATE annotations SET deleted_at = ? WHERE id = ? AND user_id = ? AND deleted_at IS NULL',
-      )
-      .run(nowIso(), annId, req.user!.id);
-    if (Number(res.changes) === 0) return reply.code(404).send({ error: 'not-found' });
+    const row = db
+      .prepare('SELECT deleted_at FROM annotations WHERE id = ? AND user_id = ?')
+      .get(annId, req.user!.id) as { deleted_at: string | null } | undefined;
+    if (!row) return reply.code(404).send({ error: 'not-found' });
+    if (row.deleted_at === null)
+      db.prepare('UPDATE annotations SET deleted_at = ? WHERE id = ?').run(nowIso(), annId);
     return { ok: true };
   });
 }
