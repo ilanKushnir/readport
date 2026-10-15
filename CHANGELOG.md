@@ -4,6 +4,27 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.39.0 - 2026-10-15
+
+### Added
+
+- **Connect an agent with one message.** Settings -> Agent access -> Connect
+  an agent makes a message to paste into an assistant's chat (Hermes, Claude
+  Code, anything that can make an HTTP request). It carries a one-time connect
+  code instead of an API key, so no working credential is left in the chat:
+  the agent trades the code for a read-only key of its own at
+  `POST /api/agent/v1/connect`, stores it, and installs the ReadPort skill.
+  Settings shows the agent connecting as it happens; an unused code can be
+  cancelled, and dies after 24 hours either way. A bare key by hand is still
+  there for scripts.
+- **An installable ReadPort skill** at `/api/agent/v1/skill.md`: setup, every
+  route, the shapes of books, positions and marks, paging, limits and errors,
+  written for this server. `GET /api/agent/v1/me` now names the server's
+  version, so an agent knows when to fetch it again.
+- **`RP_AGENT_URL`** (optional): a direct address returned to connecting
+  agents as `baseUrl`, for agents that run next to ReadPort and would
+  otherwise go through a CDN whose bot filter refuses plain HTTP clients.
+
 ## 0.38.0 - 2026-10-05
 
 ### Changed

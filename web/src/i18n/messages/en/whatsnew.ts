@@ -24,6 +24,8 @@ export const whatsnew = {
   'whatsnew.update.later': 'Not now',
 
   // ---------------------------------------------------------------- 0.29.0
+  'whatsnew.release.agentConnect':
+    'Connecting an assistant is one message now: Settings → Agent access → Connect an agent gives you a message to paste into its chat. It carries a one-time code instead of a key, so nothing secret stays in the chat, and the assistant sets itself up, ReadPort skill included.',
   'whatsnew.release.offlineMarks':
     'Highlights, notes and bookmarks now work without a connection: they are kept on your device and sync once you are back online, even after the app was closed.',
   'whatsnew.release.desktopKeys':
