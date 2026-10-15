@@ -221,6 +221,20 @@ export const settings = {
   'settings.keys.namePlaceholder': 'What is it for? e.g. Claude Code',
   'settings.keys.creating': 'Creating…',
   'settings.keys.newKey': 'New key',
+  'settings.keys.connect': 'Connect an agent',
+  'settings.keys.preparing': 'Preparing…',
+  'settings.keys.manualKey': 'Or create a bare key by hand, for a script',
+  'settings.keys.couldNotConnect': 'Could not make a connect code.',
+  'settings.keys.briefTitle': 'Send this message to {name}',
+  'settings.keys.briefHint':
+    'It holds a one-time code, not a key, so it is safe to send in any chat. The agent trades the code for a key of its own and installs the ReadPort skill. The code works once, until {time}.',
+  'settings.keys.copyBrief': 'Copy message',
+  'settings.keys.briefCopied': 'Message copied',
+  'settings.keys.waiting': 'Waiting for {name} to connect…',
+  'settings.keys.connected': '{name} is connected.',
+  'settings.keys.briefLapsed': 'This code can no longer be used. Make a new one.',
+  'settings.keys.pending': 'waiting to connect, until {time}',
+  'settings.keys.cancelled': 'Code cancelled',
 
   // Connected apps
   'settings.apps.title': 'Connected apps',

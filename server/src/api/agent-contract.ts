@@ -9,6 +9,8 @@ export const AGENT_REJECT_LIMIT = 300;
 export const AGENT_WINDOW_MS = 60_000;
 export const AGENT_MAX_OFFSET = 100_000;
 export const AGENT_RESPONSE_BYTES = 1024 * 1024;
+/** Redemptions of connect codes per minute per address, right or wrong. */
+export const AGENT_CONNECT_LIMIT = 10;
 
 /** Closed catalog: registering another route never grants a key access to it. */
 export const AGENT_ROUTES = [

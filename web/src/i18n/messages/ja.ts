@@ -1269,6 +1269,20 @@ const messages: Record<string, string> = {
   'settings.keys.namePlaceholder': '用途は? 例: Claude Code',
   'settings.keys.creating': '作成中…',
   'settings.keys.newKey': '新しいキー',
+  'settings.keys.connect': 'エージェントを接続',
+  'settings.keys.preparing': '準備中…',
+  'settings.keys.manualKey': 'またはスクリプト用にキーを手動で作成',
+  'settings.keys.couldNotConnect': '接続コードを作成できませんでした。',
+  'settings.keys.briefTitle': 'このメッセージを{name}に送ってください',
+  'settings.keys.briefHint':
+    '含まれているのはキーではなく使い捨てのコードなので、どのチャットで送っても安全です。エージェントはコードを自分専用のキーと交換し、ReadPortスキルをインストールします。コードは{time}まで、1回だけ使えます。',
+  'settings.keys.copyBrief': 'メッセージをコピー',
+  'settings.keys.briefCopied': 'メッセージをコピーしました',
+  'settings.keys.waiting': '{name}の接続を待っています…',
+  'settings.keys.connected': '{name}が接続されました。',
+  'settings.keys.briefLapsed': 'このコードはもう使えません。新しいコードを作成してください。',
+  'settings.keys.pending': '接続待ち、{time}まで',
+  'settings.keys.cancelled': 'コードを取り消しました',
 
   // notes
   'notes.title': 'ノートと印',

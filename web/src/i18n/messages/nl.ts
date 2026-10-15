@@ -1293,6 +1293,20 @@ const messages: Record<string, string> = {
   'settings.keys.namePlaceholder': 'Waarvoor is deze? bijv. Claude Code',
   'settings.keys.creating': 'Wordt aangemaakt…',
   'settings.keys.newKey': 'Nieuwe sleutel',
+  'settings.keys.connect': 'Een agent koppelen',
+  'settings.keys.preparing': 'Voorbereiden…',
+  'settings.keys.manualKey': 'Of maak met de hand een sleutel, voor een script',
+  'settings.keys.couldNotConnect': 'Kon geen koppelcode maken.',
+  'settings.keys.briefTitle': 'Stuur dit bericht naar {name}',
+  'settings.keys.briefHint':
+    'Er staat een eenmalige code in, geen sleutel, dus je kunt het veilig in elke chat sturen. De agent ruilt de code in voor een eigen sleutel en installeert de ReadPort-skill. De code werkt één keer, tot {time}.',
+  'settings.keys.copyBrief': 'Bericht kopiëren',
+  'settings.keys.briefCopied': 'Bericht gekopieerd',
+  'settings.keys.waiting': 'Wachten tot {name} koppelt…',
+  'settings.keys.connected': '{name} is gekoppeld.',
+  'settings.keys.briefLapsed': 'Deze code kan niet meer worden gebruikt. Maak een nieuwe.',
+  'settings.keys.pending': 'wacht op koppeling, tot {time}',
+  'settings.keys.cancelled': 'Code geannuleerd',
 
   // notes
   'notes.title': 'Notities & markeringen',

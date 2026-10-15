@@ -1300,6 +1300,21 @@ const messages: Record<string, string> = {
   'settings.keys.namePlaceholder': 'Wofür ist er? z. B. Claude Code',
   'settings.keys.creating': 'Wird erstellt…',
   'settings.keys.newKey': 'Neuer Schlüssel',
+  'settings.keys.connect': 'Agent verbinden',
+  'settings.keys.preparing': 'Wird vorbereitet…',
+  'settings.keys.manualKey': 'Oder einen Schlüssel von Hand erstellen, für ein Skript',
+  'settings.keys.couldNotConnect': 'Verbindungscode konnte nicht erstellt werden.',
+  'settings.keys.briefTitle': 'Sende diese Nachricht an {name}',
+  'settings.keys.briefHint':
+    'Sie enthält einen Einmalcode, keinen Schlüssel, und kann daher in jedem Chat verschickt werden. Der Agent tauscht den Code gegen einen eigenen Schlüssel und installiert den ReadPort-Skill. Der Code funktioniert einmal, bis {time}.',
+  'settings.keys.copyBrief': 'Nachricht kopieren',
+  'settings.keys.briefCopied': 'Nachricht kopiert',
+  'settings.keys.waiting': 'Warte, bis sich {name} verbindet…',
+  'settings.keys.connected': '{name} ist verbunden.',
+  'settings.keys.briefLapsed':
+    'Dieser Code kann nicht mehr verwendet werden. Erstelle einen neuen.',
+  'settings.keys.pending': 'wartet auf Verbindung, bis {time}',
+  'settings.keys.cancelled': 'Code widerrufen',
 
   // notes
   'notes.title': 'Notizen & Markierungen',

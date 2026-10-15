@@ -1293,6 +1293,21 @@ const messages: Record<string, string> = {
   'settings.keys.namePlaceholder': 'Για τι χρησιμεύει; π.χ. Claude Code',
   'settings.keys.creating': 'Δημιουργία…',
   'settings.keys.newKey': 'Νέο κλειδί',
+  'settings.keys.connect': 'Σύνδεση πράκτορα',
+  'settings.keys.preparing': 'Προετοιμασία…',
+  'settings.keys.manualKey': 'Ή δημιουργήστε ένα κλειδί με το χέρι, για ένα script',
+  'settings.keys.couldNotConnect': 'Δεν ήταν δυνατή η δημιουργία κωδικού σύνδεσης.',
+  'settings.keys.briefTitle': 'Στείλτε αυτό το μήνυμα στο {name}',
+  'settings.keys.briefHint':
+    'Περιέχει έναν κωδικό μίας χρήσης, όχι κλειδί, οπότε μπορεί να σταλεί με ασφάλεια σε οποιαδήποτε συνομιλία. Ο πράκτορας ανταλλάσσει τον κωδικό με δικό του κλειδί και εγκαθιστά την δεξιότητα ReadPort. Ο κωδικός λειτουργεί μία φορά, έως {time}.',
+  'settings.keys.copyBrief': 'Αντιγραφή μηνύματος',
+  'settings.keys.briefCopied': 'Το μήνυμα αντιγράφηκε',
+  'settings.keys.waiting': 'Αναμονή σύνδεσης του {name}…',
+  'settings.keys.connected': 'Το {name} συνδέθηκε.',
+  'settings.keys.briefLapsed':
+    'Αυτός ο κωδικός δεν μπορεί πλέον να χρησιμοποιηθεί. Δημιουργήστε νέο.',
+  'settings.keys.pending': 'αναμονή σύνδεσης, έως {time}',
+  'settings.keys.cancelled': 'Ο κωδικός ακυρώθηκε',
   'notes.title': 'Σημειώσεις και σημάδια',
   'notes.emptyLede': 'Τίποτα δεν έχει σημειωθεί ακόμα.',
   'notes.counts':

@@ -443,6 +443,15 @@ is:
   `agent-api` line with the verified key and user ids, the catalog route
   template and the outcome - never the credential, the query string or any
   content. Fastify's own request line omits query strings too.
+- Agents are usually connected with a one-time code rather than a pasted
+  key: the message a person sends the agent carries `rpc_<32 hex>`, which the
+  agent trades at `POST /api/agent/v1/connect` for a key minted there and
+  then, so no working credential sits in a chat history once the code is
+  used. Codes are stored as SHA-256 only, live 24 hours, work once (a 10
+  minute retry grace replaces, and revokes, the key the earlier attempt got),
+  can be cancelled from Settings, die with their owner's account, and are
+  limited to 10 redemption attempts per minute per address. The endpoint is
+  CSRF-exempt on purpose: it acts on the code alone, never on cookies.
 - Rotating a password or signing out everywhere does not revoke keys; they
   are listed in Settings with the time they were last used, and revoked there.
 

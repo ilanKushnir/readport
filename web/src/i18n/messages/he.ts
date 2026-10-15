@@ -1288,6 +1288,20 @@ const messages: Record<string, string> = {
   'settings.keys.namePlaceholder': 'למה זה משמש? למשל Claude Code',
   'settings.keys.creating': 'יוצר…',
   'settings.keys.newKey': 'מפתח חדש',
+  'settings.keys.connect': 'חיבור סוכן',
+  'settings.keys.preparing': 'מכין…',
+  'settings.keys.manualKey': 'או ליצור מפתח ידנית, בשביל סקריפט',
+  'settings.keys.couldNotConnect': 'לא ניתן היה ליצור קוד חיבור.',
+  'settings.keys.briefTitle': 'יש לשלוח את ההודעה הזו אל {name}',
+  'settings.keys.briefHint':
+    'יש בה קוד חד־פעמי ולא מפתח, כך שבטוח לשלוח אותה בכל צ׳אט. הסוכן מחליף את הקוד במפתח משלו ומתקין את הסקיל של ReadPort. הקוד עובד פעם אחת, עד {time}.',
+  'settings.keys.copyBrief': 'העתקת ההודעה',
+  'settings.keys.briefCopied': 'ההודעה הועתקה',
+  'settings.keys.waiting': 'ממתין ש־{name} יתחבר…',
+  'settings.keys.connected': '{name} מחובר.',
+  'settings.keys.briefLapsed': 'כבר אי אפשר להשתמש בקוד הזה. יש ליצור קוד חדש.',
+  'settings.keys.pending': 'ממתין לחיבור, עד {time}',
+  'settings.keys.cancelled': 'הקוד בוטל',
 
   // notes
   'notes.title': 'הערות וסימונים',

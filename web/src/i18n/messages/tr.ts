@@ -1266,6 +1266,20 @@ const messages: Record<string, string> = {
   'settings.keys.namePlaceholder': 'Ne için? örn. Claude Code',
   'settings.keys.creating': 'Oluşturuluyor…',
   'settings.keys.newKey': 'Yeni anahtar',
+  'settings.keys.connect': 'Bir ajan bağla',
+  'settings.keys.preparing': 'Hazırlanıyor…',
+  'settings.keys.manualKey': 'Ya da bir betik için elle anahtar oluştur',
+  'settings.keys.couldNotConnect': 'Bağlantı kodu oluşturulamadı.',
+  'settings.keys.briefTitle': 'Bu mesajı {name} ajanına gönder',
+  'settings.keys.briefHint':
+    'İçinde anahtar değil tek kullanımlık bir kod var, bu yüzden herhangi bir sohbette göndermek güvenli. Ajan kodu kendine ait bir anahtarla değiştirir ve ReadPort becerisini kurar. Kod {time} tarihine kadar bir kez çalışır.',
+  'settings.keys.copyBrief': 'Mesajı kopyala',
+  'settings.keys.briefCopied': 'Mesaj kopyalandı',
+  'settings.keys.waiting': '{name} bağlanması bekleniyor…',
+  'settings.keys.connected': '{name} bağlandı.',
+  'settings.keys.briefLapsed': 'Bu kod artık kullanılamaz. Yeni bir tane oluştur.',
+  'settings.keys.pending': 'bağlantı bekleniyor, {time} tarihine kadar',
+  'settings.keys.cancelled': 'Kod iptal edildi',
 
   // notes
   'notes.title': 'Notlar ve işaretler',

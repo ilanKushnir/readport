@@ -1318,6 +1318,20 @@ const messages: Record<string, string> = {
   'settings.keys.namePlaceholder': 'لماذا هذا المفتاح؟ مثلًا Claude Code',
   'settings.keys.creating': 'جارٍ الإنشاء…',
   'settings.keys.newKey': 'مفتاح جديد',
+  'settings.keys.connect': 'ربط وكيل',
+  'settings.keys.preparing': 'جارٍ التحضير…',
+  'settings.keys.manualKey': 'أو أنشئ مفتاحًا يدويًا، لبرنامج نصي',
+  'settings.keys.couldNotConnect': 'تعذّر إنشاء رمز الربط.',
+  'settings.keys.briefTitle': 'أرسل هذه الرسالة إلى {name}',
+  'settings.keys.briefHint':
+    'تحتوي على رمز لمرة واحدة وليس مفتاحًا، لذا يمكن إرسالها بأمان في أي محادثة. يستبدل الوكيل الرمز بمفتاح خاص به ويثبّت مهارة ReadPort. يعمل الرمز مرة واحدة، حتى {time}.',
+  'settings.keys.copyBrief': 'نسخ الرسالة',
+  'settings.keys.briefCopied': 'تم نسخ الرسالة',
+  'settings.keys.waiting': 'في انتظار اتصال {name}…',
+  'settings.keys.connected': '{name} متصل.',
+  'settings.keys.briefLapsed': 'لم يعد بالإمكان استخدام هذا الرمز. أنشئ رمزًا جديدًا.',
+  'settings.keys.pending': 'في انتظار الاتصال، حتى {time}',
+  'settings.keys.cancelled': 'تم إلغاء الرمز',
 
   // notes
   'notes.title': 'الملاحظات والعلامات',

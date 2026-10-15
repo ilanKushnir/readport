@@ -29,6 +29,8 @@ import { registerModelRoutes } from './routes/models.js';
 import { registerPreflightRoutes } from './routes/preflight.js';
 import { registerUserRoutes } from './routes/users.js';
 import { registerKeyRoutes } from './routes/keys.js';
+import { registerAgentConnectRoutes } from './routes/agent-connect.js';
+import { AGENT_SKILL_PATH } from './agent-skill.js';
 import { registerShareRoutes } from './routes/share.js';
 import { publicBase } from '../share/service.js';
 import { escapeHtml } from '../share/html.js';
@@ -45,6 +47,11 @@ declare module 'fastify' {
   interface FastifyContextConfig {
     /** Route is reachable without a session (still CSRF-checked). */
     public?: boolean;
+    /**
+     * Route takes no authority from cookies, so a cross-site request gains
+     * nothing from it (the agent connect redemption). Not for anything else.
+     */
+    csrfExempt?: boolean;
   }
 }
 
@@ -199,9 +206,13 @@ export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyIn
       // Use the unnormalized origin-form path. URL() normalizes dot segments;
       // decoding permits aliases. Neither is appropriate for a closed grant.
       const rawPath = req.url.split('?')[0]!;
+      // The skill is public; an agent that sends its key out of habit while
+      // fetching it is still answered.
+      const skill = req.method === 'GET' && rawPath === AGENT_SKILL_PATH;
       if (
-        !apiKeyAllows(req.method, rawPath, req.agentScopes) ||
-        agentRoute(rawPath) !== req.routeOptions.url
+        !skill &&
+        (!apiKeyAllows(req.method, rawPath, req.agentScopes) ||
+          agentRoute(rawPath) !== req.routeOptions.url)
       ) {
         return refuse(403, {
           error: 'read-only',
@@ -229,7 +240,9 @@ export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyIn
     const routeUrl = req.routeOptions?.url ?? '';
     const isApi = routeUrl.startsWith('/api/') || pathname.startsWith('/api/');
     if (!isApi) return;
-    if (!csrfCheck(req)) return reply.code(403).send({ error: 'csrf' });
+    if (req.routeOptions?.config?.csrfExempt !== true && !csrfCheck(req)) {
+      return reply.code(403).send({ error: 'csrf' });
+    }
     if (req.routeOptions?.config?.public === true) return;
     if (!requireUser(req, reply)) return reply;
     // A hidden book is not there for anyone who may not see it.
@@ -322,6 +335,7 @@ export function buildApp(ctx: AppContext, opts: BuildAppOptions = {}): FastifyIn
   registerJobRoutes(app, ctx);
   registerSettingsRoutes(app, ctx);
   registerKeyRoutes(app, ctx);
+  registerAgentConnectRoutes(app, ctx);
   registerAgentRoutes(app, ctx);
   registerOfflineRoutes(app, ctx);
   registerModelRoutes(app, ctx);

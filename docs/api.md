@@ -14,13 +14,47 @@ person's library, lists and progress without being able to change any of it.
 
     curl -H 'Authorization: Bearer rp_a1b2c3d4_...' https://readport.example/api/agent/v1/books
 
-Keys are created in Settings -> Agent access, or with a session:
+**Connecting an agent (the usual way).** Settings -> Agent access -> Connect
+an agent makes a message to paste into the agent's chat. It carries a
+one-time connect code (`rpc_<32 hex>`), never a key, so it is safe in any
+chat history. The agent trades the code for a key of its own and installs the
+ReadPort skill:
 
-| Method | Path            | Notes                                                  |
-| ------ | --------------- | ------------------------------------------------------ |
-| GET    | `/api/keys`     | the caller's own keys (never the secret)               |
-| POST   | `/api/keys`     | `{name}`; returns `{key}` ONCE - only a hash is stored |
-| DELETE | `/api/keys/:id` | revoke; takes effect on the next request               |
+    curl -fsS -X POST https://readport.example/api/agent/v1/connect \
+      -H 'content-type: application/json' -d '{"code":"rpc_..."}'
+
+    -> {apiKey, baseUrl, publicBaseUrl, skillUrl, service, user, readOnly, storeAs, next}
+
+- A code lives 24 hours and works once. The same code keeps working for 10
+  minutes after its first use, so an agent that crashed before storing its key
+  can retry; each retry revokes the key the previous attempt minted, so only
+  the last one works. After that it answers `401 code-expired`; an unknown or
+  cancelled code, or one whose owner was disabled, `401 invalid-code`.
+- `POST /api/agent/v1/connect` takes no session, no key and no CSRF header:
+  the code is the credential (128 random bits, stored only as a SHA-256).
+  Attempts are limited to 10 per minute per client address. Each success is
+  logged as an `agent-connect` line with the new key and user ids.
+- `baseUrl` is `RP_AGENT_URL` when the operator set one (a direct address for
+  agents next to the server, skipping a CDN whose bot filter refuses plain
+  HTTP clients), else the public address; `publicBaseUrl` is always the
+  public one.
+- `GET /api/agent/v1/skill.md` is the installable skill (YAML frontmatter +
+  Markdown: setup, routes, shapes, limits, errors). Public - it holds no
+  secret - and also answered to a request that carries a key. `GET /me`
+  returns `service.version`, so an agent can tell when to fetch it again.
+
+Keys and codes are managed in Settings -> Agent access, or with a session:
+
+| Method | Path                    | Notes                                                                       |
+| ------ | ----------------------- | --------------------------------------------------------------------------- |
+| GET    | `/api/keys`             | `{keys, pending}`: the caller's own keys (never the secret), unused codes   |
+| POST   | `/api/keys/connect`     | `{name}`; returns `{connect: {id, name, expiresAt, brief}}` - the message   |
+| GET    | `/api/keys/connect/:id` | `{status: pending\|connected\|expired\|cancelled, apiKeyId}`                |
+| DELETE | `/api/keys/connect/:id` | cancel an unused code                                                       |
+| POST   | `/api/keys`             | `{name}`; a bare key by hand, returned as `{key}` ONCE - only a hash stored |
+| DELETE | `/api/keys/:id`         | revoke; takes effect on the next request                                    |
+
+A person may hold 20 live keys and 5 unused codes at once.
 
 **What a key may do.** Only the explicitly listed `GET /api/agent/v1` routes
 below. Every key has the fixed `agent:read` scope; there are no configurable
@@ -32,7 +66,7 @@ API paths with keys must migrate to v1. Browser session APIs are unchanged.
 | Path relative to `/api/agent/v1` | Response                                                                                          |
 | -------------------------------- | ------------------------------------------------------------------------------------------------- |
 | (base path)                      | version, authentication, read-only capabilities, routes, limits and JSON schemas                  |
-| `/me`                            | `{user: {id, username, displayName}, scopes}`                                                     |
+| `/me`                            | `{user: {id, username, displayName}, scopes, service: {name, version}}`                           |
 | `/books`                         | paginated safe book metadata; optional literal `query` search across title/author/series          |
 | `/books/:id`                     | `{book}` including nullable aggregate `alignment: {coverage, meanConfidence}`                     |
 | `/shelves`                       | paginated own shelves                                                                             |

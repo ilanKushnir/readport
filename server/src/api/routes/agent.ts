@@ -8,6 +8,7 @@ import {
   AGENT_ROUTES,
   AGENT_MAX_OFFSET,
   AGENT_RATE_LIMIT,
+  AGENT_CONNECT_LIMIT,
   AGENT_REJECT_LIMIT,
   AGENT_WINDOW_MS,
   AGENT_RESPONSE_BYTES,
@@ -24,6 +25,8 @@ import {
   agentUserSchema,
   agentLocator,
 } from '../agent-contract.js';
+import { AGENT_SKILL_PATH } from '../agent-skill.js';
+import { APP_VERSION } from '../../util/version.js';
 
 type Row = Record<string, unknown>;
 
@@ -75,6 +78,15 @@ export function allowAgentRead(db: DB, userId: string): boolean {
  */
 export function allowAgentRejection(db: DB, clientIp: string): boolean {
   return allowAgentBucket(db, `agent:reject:${clientIp}`, AGENT_REJECT_LIMIT);
+}
+
+/**
+ * Connect-code redemptions, right or wrong, by address. A code is 128 random
+ * bits, so this is not what stands between a guesser and a key; it keeps a
+ * redemption - a transaction and a key minted - from being free to repeat.
+ */
+export function allowAgentConnect(db: DB, clientIp: string): boolean {
+  return allowAgentBucket(db, `agent:connect:${clientIp}`, AGENT_CONNECT_LIMIT);
 }
 
 /** Seconds until a bucket opens again, for the Retry-After header. */
@@ -169,6 +181,7 @@ export function registerAgentRoutes(app: FastifyInstance, ctx: AppContext): void
             basePath: AGENT_BASE,
             authentication: { scheme: 'Bearer', scopes: [AGENT_SCOPE] },
             readOnly: true,
+            skill: AGENT_SKILL_PATH,
             routes: AGENT_ROUTES.map((path) => ({ method: 'GET', path, scope: AGENT_SCOPE })),
             pagination: { defaultLimit: 50, maxLimit: 100, maxOffset: 100000 },
             limits: { requestsPerMinute: AGENT_RATE_LIMIT, responseBytes: AGENT_RESPONSE_BYTES },
@@ -182,6 +195,9 @@ export function registerAgentRoutes(app: FastifyInstance, ctx: AppContext): void
               displayName: boundedText(req.user!.displayName),
             }),
             scopes: [AGENT_SCOPE],
+            // The installed skill names the version it was written for; a
+            // different one here is the agent's cue to fetch it again.
+            service: { name: 'readport', version: APP_VERSION },
           };
         case `${AGENT_BASE}/books`: {
           // instr implements literal substring search: % and _ are not wildcards.

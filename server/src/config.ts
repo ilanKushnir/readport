@@ -78,6 +78,17 @@ const envSchema = z.object({
    * and author too. Kept out of the settings, which every reader can see.
    */
   googleBooksKey: z.string().trim().min(10).max(200).optional(),
+  /**
+   * A direct address for agents running next to ReadPort (RP_AGENT_URL), e.g.
+   * `http://192.168.1.120:7323`. Optional: when set, connecting agents are
+   * told to call it instead of the public address, skipping a CDN or tunnel
+   * whose bot filters refuse plain HTTP clients.
+   */
+  agentUrl: z
+    .string()
+    .trim()
+    .regex(/^https?:\/\/[^\s/]+\/?$/, 'RP_AGENT_URL must be an origin, e.g. http://host:7323')
+    .optional(),
 });
 
 export type EnvConfig = z.infer<typeof envSchema> & {
@@ -144,6 +155,7 @@ export function loadConfig(overrides: Partial<Record<string, unknown>> = {}): En
     proxyAuthAdmins: splitDirs(readEnv('RP_PROXY_AUTH_ADMINS')),
     logLevel: readEnv('RP_LOG_LEVEL'),
     googleBooksKey: readEnv('RP_GOOGLE_BOOKS_KEY'),
+    agentUrl: readEnv('RP_AGENT_URL'),
   };
   const envPinned = Object.entries(raw)
     .filter(([, v]) => v !== undefined)

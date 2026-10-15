@@ -1283,6 +1283,20 @@ const messages: Record<string, string> = {
   'settings.keys.namePlaceholder': '¿Para qué es? p. ej. Claude Code',
   'settings.keys.creating': 'Creando…',
   'settings.keys.newKey': 'Nueva clave',
+  'settings.keys.connect': 'Conectar un agente',
+  'settings.keys.preparing': 'Preparando…',
+  'settings.keys.manualKey': 'O crea una clave a mano, para un script',
+  'settings.keys.couldNotConnect': 'No se pudo crear el código de conexión.',
+  'settings.keys.briefTitle': 'Envía este mensaje a {name}',
+  'settings.keys.briefHint':
+    'Contiene un código de un solo uso, no una clave, así que es seguro enviarlo por cualquier chat. El agente cambia el código por una clave propia e instala la habilidad de ReadPort. El código funciona una vez, hasta {time}.',
+  'settings.keys.copyBrief': 'Copiar mensaje',
+  'settings.keys.briefCopied': 'Mensaje copiado',
+  'settings.keys.waiting': 'Esperando a que {name} se conecte…',
+  'settings.keys.connected': '{name} está conectado.',
+  'settings.keys.briefLapsed': 'Este código ya no se puede usar. Crea uno nuevo.',
+  'settings.keys.pending': 'esperando conexión, hasta {time}',
+  'settings.keys.cancelled': 'Código cancelado',
 
   // notes
   'notes.title': 'Notas y marcas',

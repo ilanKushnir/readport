@@ -588,21 +588,30 @@ function PublicAddressSection({
  *
  * The distinction the copy has to carry: a key lets something SEE your
  * library, and can never change it or take the files. That is what makes it
- * safe to paste into an assistant, and it is the first thing someone will
- * want to know before they do.
+ * safe to give an assistant, and it is the first thing someone will want to
+ * know before they do.
+ *
+ * The usual way in is "Connect an agent": a message to paste into the
+ * agent's chat that carries a one-time code rather than a key. The agent
+ * trades the code for its own key and installs the ReadPort skill, so the key
+ * never sits in a chat history. A bare key by hand stays for scripts.
  */
 function ApiKeysSection() {
   const t = useT();
   const f = useFormat();
   const toast = useToast();
   const [keys, setKeys] = useState<ApiKeyDto[] | null>(null);
+  const [pending, setPending] = useState<PendingConnectDto[]>([]);
   const [name, setName] = useState('');
   const [fresh, setFresh] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [brief, setBrief] = useState<ConnectBrief | null>(null);
+  const [busy, setBusy] = useState<'connect' | 'key' | null>(null);
 
   const load = useCallback(async () => {
     try {
-      setKeys((await api<{ keys: ApiKeyDto[] }>('/api/keys')).keys);
+      const res = await api<{ keys: ApiKeyDto[]; pending?: PendingConnectDto[] }>('/api/keys');
+      setKeys(res.keys);
+      setPending(res.pending ?? []);
     } catch {
       setKeys([]);
     }
@@ -611,27 +620,122 @@ function ApiKeysSection() {
     void load();
   }, [load]);
 
+  // While a message is out, watch for the agent to use it, so the person sees
+  // it land without reloading.
+  const briefId = brief?.status === 'pending' ? brief.id : null;
+  useEffect(() => {
+    if (!briefId) return;
+    const timer = window.setInterval(() => {
+      if (document.hidden) return;
+      void api<{ status: ConnectBrief['status'] }>(`/api/keys/connect/${briefId}`)
+        .then(({ status }) => {
+          if (status === 'pending') return;
+          setBrief((b) => (b && b.id === briefId ? { ...b, status } : b));
+          void load();
+        })
+        .catch(() => {});
+    }, 3000);
+    return () => window.clearInterval(timer);
+  }, [briefId, load]);
+
+  const label = () => name.trim() || t('settings.keys.defaultName');
+
+  const connect = async () => {
+    setBusy('connect');
+    try {
+      const res = await api<{ connect: Omit<ConnectBrief, 'status'> }>('/api/keys/connect', {
+        method: 'POST',
+        body: { name: label() },
+      });
+      setBrief({ ...res.connect, status: 'pending' });
+      setFresh(null);
+      setName('');
+      await load();
+    } catch (err) {
+      toast.show(failureMessage(err, t('settings.keys.couldNotConnect'), t));
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const create = async () => {
-    setBusy(true);
+    setBusy('key');
     try {
       const res = await api<{ key: string }>('/api/keys', {
         method: 'POST',
-        body: { name: name.trim() || t('settings.keys.defaultName') },
+        body: { name: label() },
       });
       setFresh(res.key);
+      setBrief(null);
       setName('');
       await load();
     } catch (err) {
       toast.show(failureMessage(err, t('settings.keys.couldNotCreate'), t));
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   };
+
+  const copy = (text: string, done: MessageKey) => {
+    void navigator.clipboard?.writeText(text).then(
+      () => toast.show(t(done)),
+      () => toast.show(t('settings.keys.copyFailed')),
+    );
+  };
+
+  const cancel = (id: string) => {
+    void api(`/api/keys/connect/${id}`, { method: 'DELETE' })
+      .then(() => {
+        toast.show(t('settings.keys.cancelled'));
+        setBrief((b) => (b && b.id === id ? null : b));
+        return load();
+      })
+      .catch((err) => toast.show(failureMessage(err, t('settings.keys.couldNotRevoke'), t)));
+  };
+
+  const waiting = pending.filter((p) => p.id !== brief?.id);
 
   return (
     <section className="settings-section" aria-label={t('settings.keys.title')} id="keys">
       <h2>{t('settings.keys.title')}</h2>
       <p className="settings-section__lede">{t('settings.keys.lede')}</p>
+
+      {brief && (
+        <div className="agent-brief" role="status">
+          <strong>{t('settings.keys.briefTitle', { name: brief.name })}</strong>
+          <p className="hint">
+            {t('settings.keys.briefHint', { time: f.dateTime(brief.expiresAt) })}
+          </p>
+          <pre className="agent-brief__text" dir="ltr" tabIndex={0}>
+            {brief.brief}
+          </pre>
+          <p className={`agent-brief__status agent-brief__status--${brief.status}`}>
+            {brief.status === 'pending'
+              ? t('settings.keys.waiting', { name: brief.name })
+              : brief.status === 'connected'
+                ? t('settings.keys.connected', { name: brief.name })
+                : t('settings.keys.briefLapsed')}
+          </p>
+          <div className="agent-brief__actions">
+            {brief.status === 'pending' && (
+              <button
+                className="btn"
+                onClick={() => copy(brief.brief, 'settings.keys.briefCopied')}
+              >
+                {t('settings.keys.copyBrief')}
+              </button>
+            )}
+            {brief.status === 'pending' && (
+              <button className="btn btn--ghost" onClick={() => cancel(brief.id)}>
+                {t('common.cancel')}
+              </button>
+            )}
+            <button className="btn btn--ghost" onClick={() => setBrief(null)}>
+              {t('common.done')}
+            </button>
+          </div>
+        </div>
+      )}
 
       {fresh && (
         <div className="banner" role="status">
@@ -643,12 +747,7 @@ function ApiKeysSection() {
           </div>
           <button
             className="btn btn--secondary"
-            onClick={() => {
-              void navigator.clipboard?.writeText(fresh).then(
-                () => toast.show(t('settings.keys.copied')),
-                () => toast.show(t('settings.keys.copyFailed')),
-              );
-            }}
+            onClick={() => copy(fresh, 'settings.keys.copied')}
           >
             {t('settings.keys.copy')}
           </button>
@@ -658,9 +757,22 @@ function ApiKeysSection() {
         </div>
       )}
 
-      {keys && keys.length > 0 && (
+      {((keys && keys.length > 0) || waiting.length > 0) && (
         <ul className="keylist">
-          {keys.map((k) => (
+          {waiting.map((p) => (
+            <li key={p.id} className="keylist__row">
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <strong>{p.name}</strong>
+                <span className="hint" style={{ display: 'block' }}>
+                  {t('settings.keys.pending', { time: f.dateTime(p.expiresAt) })}
+                </span>
+              </span>
+              <button className="btn btn--ghost" onClick={() => cancel(p.id)}>
+                {t('common.cancel')}
+              </button>
+            </li>
+          ))}
+          {keys?.map((k) => (
             <li key={k.id} className="keylist__row">
               <span style={{ flex: 1, minWidth: 0 }}>
                 <strong>{k.name}</strong>
@@ -699,15 +811,37 @@ function ApiKeysSection() {
           maxLength={60}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') void create();
+            if (e.key === 'Enter') void connect();
           }}
         />
-        <button className="btn btn--secondary" disabled={busy} onClick={() => void create()}>
-          {busy ? t('settings.keys.creating') : t('settings.keys.newKey')}
+        <button className="btn" disabled={busy !== null} onClick={() => void connect()}>
+          {busy === 'connect' ? t('settings.keys.preparing') : t('settings.keys.connect')}
         </button>
       </div>
+      <button
+        className="agent-brief__manual"
+        disabled={busy !== null}
+        onClick={() => void create()}
+      >
+        {busy === 'key' ? t('settings.keys.creating') : t('settings.keys.manualKey')}
+      </button>
     </section>
   );
+}
+
+interface ConnectBrief {
+  id: string;
+  name: string;
+  expiresAt: string;
+  brief: string;
+  status: 'pending' | 'connected' | 'expired' | 'cancelled';
+}
+
+interface PendingConnectDto {
+  id: string;
+  name: string;
+  createdAt: string;
+  expiresAt: string;
 }
 
 interface ApiKeyDto {

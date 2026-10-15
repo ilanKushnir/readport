@@ -5343,6 +5343,90 @@ body[data-rp-dragging] * {
   overflow-wrap: anywhere;
   user-select: all;
 }
+/* The connect message: what to paste into an agent's chat, and whether the
+   agent has used it yet. */
+.agent-brief {
+  display: grid;
+  gap: var(--sp-2);
+  margin-block: var(--sp-3);
+  padding: var(--sp-3);
+  border: 1px solid var(--rp-border);
+  border-radius: var(--radius-control);
+  background: var(--rp-surface-raised);
+}
+.agent-brief .hint {
+  margin: 0;
+}
+.agent-brief__text {
+  margin: 0;
+  max-height: 14rem;
+  overflow: auto;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-control);
+  background: var(--rp-surface);
+  border: 1px solid var(--rp-border);
+  font-family: var(--rp-font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  text-align: start;
+}
+.agent-brief__status {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0;
+  font-size: 14px;
+}
+.agent-brief__status::before {
+  content: '';
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--rp-border-strong);
+}
+.agent-brief__status--pending::before {
+  background: var(--rp-text-soft);
+  animation: agent-brief-pulse 1.6s var(--rp-ease) infinite;
+}
+.agent-brief__status--connected {
+  font-weight: 600;
+}
+.agent-brief__status--connected::before {
+  background: var(--rp-primary);
+}
+@keyframes agent-brief-pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .agent-brief__status--pending::before {
+    animation: none;
+  }
+}
+.agent-brief__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+.agent-brief__manual {
+  min-height: 44px;
+  margin-block-start: var(--sp-1);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--rp-interactive);
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+.agent-brief__manual:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 .keylist {
   list-style: none;
   margin: var(--sp-3) 0;

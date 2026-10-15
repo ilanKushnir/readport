@@ -871,4 +871,27 @@ ALTER TABLE users ADD COLUMN email TEXT;
 CREATE UNIQUE INDEX idx_users_email ON users(lower(email)) WHERE email IS NOT NULL;
 `,
   },
+  {
+    version: 29,
+    sql: `
+-- One-time connect codes for agents. The message a person pastes into an
+-- agent's chat carries one of these instead of an API key, so the key itself
+-- never passes through a chat: the agent trades the code for a key of its own
+-- at POST /api/agent/v1/connect. Only the code's hash is kept, as for keys.
+-- api_key_id is the key the code last minted (a retry within the grace
+-- window replaces it), so a person can see which key came from which code.
+CREATE TABLE agent_connect_codes (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  code_hash TEXT NOT NULL UNIQUE,
+  created_at TEXT NOT NULL,
+  expires_at TEXT NOT NULL,
+  redeemed_at TEXT,
+  cancelled_at TEXT,
+  api_key_id TEXT REFERENCES api_keys(id) ON DELETE SET NULL
+);
+CREATE INDEX idx_agent_connect_user ON agent_connect_codes(user_id);
+`,
+  },
 ];

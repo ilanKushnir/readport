@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { type AppContext } from '../../context.js';
 import { createApiKey, type ApiKeyRow } from '../../auth/apikeys.js';
 import { newId } from '../../util/ids.js';
+import { pendingCodes } from '../../auth/connect.js';
 import { nowIso } from '../../db/index.js';
 
 /**
@@ -47,7 +48,17 @@ export function registerKeyRoutes(app: FastifyInstance, ctx: AppContext): void {
         .all(userId) as unknown as ApiKeyRow[]
     ).map(toDto);
 
-  app.get('/api/keys', async (req) => ({ keys: listFor(req.user!.id) }));
+  // With the connect codes still waiting for their agent, so a person can see
+  // (and cancel) a message they sent that has not been used yet.
+  app.get('/api/keys', async (req) => ({
+    keys: listFor(req.user!.id),
+    pending: pendingCodes(db, req.user!.id, nowIso()).map((c) => ({
+      id: c.id,
+      name: c.name,
+      createdAt: c.created_at,
+      expiresAt: c.expires_at,
+    })),
+  }));
 
   app.post('/api/keys', async (req, reply) => {
     const parsed = createSchema.safeParse(req.body);
