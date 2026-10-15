@@ -4,6 +4,15 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.39.1 - 2026-10-15
+
+Republishes 0.39.0, whose image was not published: the release check found
+`RP_AGENT_URL` missing from `.env.example`.
+
+### Fixed
+
+- `.env.example` documents `RP_AGENT_URL`.
+
 ## 0.39.0 - 2026-10-15
 
 ### Added
