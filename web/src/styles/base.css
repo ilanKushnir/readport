@@ -3265,6 +3265,15 @@ body:has(.app-body) {
 .band__edit {
   align-self: center;
 }
+/* Turns while the library is being read, so the button says why it rests. */
+.band__rescan[aria-busy='true'] svg {
+  animation: rp-spin 0.9s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .band__rescan[aria-busy='true'] svg {
+    animation: none;
+  }
+}
 .band--library .toolbar {
   margin-block-end: var(--sp-4);
 }

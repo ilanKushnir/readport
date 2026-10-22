@@ -14,6 +14,7 @@ import { api, ApiError } from '../api/client';
 import { useShelves } from '../state/shelves';
 import { StatsStrip } from '../stats/StatsStrip';
 import { useFacets } from '../state/facets';
+import { useSession } from '../state/session';
 import { useT } from '../i18n';
 import { useFormat } from '../i18n/useFormat';
 import { type MessageKey } from '../i18n/messages/en';
@@ -29,7 +30,7 @@ import {
   restorePlace,
 } from './libraryMemory';
 import { AddToSheet } from '../components/AddToSheet';
-import { Cover, EmptyState } from '../components/ui';
+import { Cover, EmptyState, useToast } from '../components/ui';
 import { LanguagePicker } from '../components/LanguagePicker';
 import { EditBar, type EditChange } from '../components/EditBar';
 import { HiddenMark } from '../components/HiddenMark';
@@ -48,6 +49,7 @@ import {
   IconOffline,
   IconPlay,
   IconPlus,
+  IconRefresh,
   IconSearch,
   IconShelf,
 } from '../components/icons';
@@ -176,6 +178,8 @@ export function LibraryPage() {
   const params = useParams();
   const { overview, refresh, refreshDownloads } = useShelves();
   const { setScope, groups, scopedCounts, refresh: refreshFacets } = useFacets();
+  const { user } = useSession();
+  const toast = useToast();
   // The language lives in the address - `?lang=he` - so it survives a
   // reload and Back undoes a choice, like any other move. One language at a
   // time: an older address that names several keeps only the first.
@@ -613,6 +617,24 @@ export function LibraryPage() {
   useEffect(() => {
     if (!canEdit && editing) stopEditing();
   }, [canEdit, editing, stopEditing]);
+  // A book just added to Calibre should not wait for the hourly rescan, nor
+  // send the admin to Settings to ask for it. The scan reports itself through
+  // scanActive, so reloading once is enough to start the banner and the poll.
+  const canRescan =
+    user?.role === 'admin' && showing.kind === 'library' && !!data && !offlineBooks && !editing;
+  const [rescanning, setRescanning] = useState(false);
+  const rescan = async () => {
+    setRescanning(true);
+    try {
+      await api('/api/library/rescan', { method: 'POST' });
+      toast.show(t('settings.libraries.rescanQueued'));
+      await load();
+    } catch {
+      toast.show(t('settings.libraries.rescanFailed'));
+    } finally {
+      setRescanning(false);
+    }
+  };
   useEffect(() => {
     if (!editing) return;
     const onKey = (e: KeyboardEvent) => {
@@ -829,6 +851,19 @@ export function LibraryPage() {
                   paired: Math.round(stats.paired),
                 })}
               </span>
+            )}
+            {canRescan && (
+              <button
+                type="button"
+                className="btn btn--sm btn--ghost btn--icon band__edit band__rescan"
+                aria-label={t('settings.libraries.rescanNow')}
+                title={t('settings.libraries.rescanNow')}
+                aria-busy={rescanning || data.scanActive}
+                disabled={rescanning || data.scanActive}
+                onClick={() => void rescan()}
+              >
+                <IconRefresh size={17} />
+              </button>
             )}
             {canEdit && (
               <button
