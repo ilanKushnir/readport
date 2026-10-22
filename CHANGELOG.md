@@ -4,6 +4,17 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.40.0 - 2026-10-22
+
+### Added
+
+- **Rescan from the library.** Admins get a refresh button next to Edit on
+  the library view: it queues the same scan as Settings -> Libraries -> Rescan
+  libraries now, spins while the scan runs, and new titles appear as they are
+  indexed - no need to wait for the periodic rescan
+  (`RP_SCAN_INTERVAL_MINUTES`, hourly by default) after adding a book to
+  Calibre.
+
 ## 0.39.1 - 2026-10-15
 
 Republishes 0.39.0, whose image was not published: the release check found
