@@ -176,7 +176,8 @@ const queued = (page) =>
           }
           const req = db.transaction('mark-changes').objectStore('mark-changes').getAll();
           req.onsuccess = () => {
-            resolve(req.result.map((c) => c.change.type));
+            // In the order they were made: the store keeps them by name.
+            resolve(req.result.sort((a, b) => a.order - b.order).map((c) => c.change.type));
             db.close();
           };
         };

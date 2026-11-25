@@ -3,6 +3,7 @@ import { idbAll, idbClear, idbDelete, idbGet, idbPut, STORES } from '../progress
 import { type BookSummary, type Locator, type SwitchResolution } from '@readport/shared';
 import { type MessageKey } from '../i18n/messages/en';
 import { holdAwake } from '../lib/wakeLock';
+import { OFFLINE_CACHE } from './names';
 
 /**
  * Explicit per-title offline packages. Downloads go into a dedicated Cache
@@ -17,7 +18,7 @@ import { holdAwake } from '../lib/wakeLock';
  * with correct 206/Content-Range behavior.
  */
 
-export const OFFLINE_CACHE = 'rp-offline-v1';
+export { OFFLINE_CACHE };
 /** Per-chunk audio buffer bound (max bytes in memory at once per download). */
 export const AUDIO_CHUNK_BYTES = 8 * 1024 * 1024;
 

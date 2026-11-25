@@ -248,6 +248,17 @@ the account that made them, by the progress queue's rules (docs/progress.md):
 delivered only while that account is signed in, and dropped when someone else
 signs in on the browser or its owner signs out.
 
+The mark does not wait for that storage. A phone's database can stop
+answering after the app has spent a while in the background - no error, no
+event - and a tap on Highlight that waited for it did nothing at all. The
+page shows the mark as it is made; the write goes on behind, is given two
+seconds, and failing that the change is kept in localStorage (and failing
+that, by the page) and sent from there. And once the server has taken a
+change, it is made to a downloaded book's own copy of its marks on the device,
+rather than left to the fetch that follows: on a connection that comes and
+goes the change got through and the fetch did not, and a highlight made on a
+train was gone from the page the next time the book opened offline.
+
 Any deliberate jump (bookmark, chapter, search result, slider) that moves more
 than a page away shows a **Back to where you were** pill naming the chapter you
 left; it stays until used or dismissed.

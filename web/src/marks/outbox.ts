@@ -2,6 +2,7 @@ import { type Annotation } from '@readport/shared';
 import { api, ApiError, isOffline } from '../api/client';
 import { backoffMs, queueAccount } from '../progress/engine';
 import { openIdb, STORES } from '../progress/idb';
+import { OFFLINE_CACHE } from '../offline/names';
 
 /**
  * Marks made, changed and removed on this device, on their way to the server.
@@ -67,18 +68,91 @@ export function newMarkId(): string {
 /* ---------------------------------------------------------------- storage */
 
 /**
- * Where changes wait when IndexedDB will not open - a private window in an
- * older browser, site data blocked. They are delivered from here while the
- * page lasts, which is less than a promise to outlive it, but still more
- * than refusing to make the mark.
+ * Where changes wait when IndexedDB will not take them - a private window
+ * in an older browser, site data blocked, or a phone whose database stopped
+ * answering after the app spent a while in the background. They are kept in
+ * localStorage, which outlives the page as the database does, and failing
+ * that in memory, which is less than a promise to outlive the page but
+ * still more than refusing to make the mark.
  */
+const STASH_KEY = 'rp-mark-changes';
 const memory = new Map<string, QueuedMarkChange>();
 /** The furthest place in the queue this page has seen, in either tier. */
 let lastOrder = 0;
 
-async function db(): Promise<IDBDatabase | null> {
+function isQueued(c: unknown): c is QueuedMarkChange {
+  const q = c as Partial<QueuedMarkChange> | null;
+  return (
+    !!q &&
+    typeof q.changeId === 'string' &&
+    typeof q.ownerId === 'string' &&
+    typeof q.order === 'number' &&
+    typeof q.change === 'object' &&
+    q.change !== null
+  );
+}
+
+/** Everything in the stash: what localStorage holds, and what only this page does. */
+function stashed(): QueuedMarkChange[] {
+  const all = new Map(memory);
   try {
-    return await openIdb();
+    const parsed: unknown = JSON.parse(localStorage.getItem(STASH_KEY) ?? '[]');
+    if (Array.isArray(parsed)) {
+      for (const c of parsed) if (isQueued(c) && !all.has(c.changeId)) all.set(c.changeId, c);
+    }
+  } catch {
+    /* no localStorage, or not ours: what this page holds */
+  }
+  return [...all.values()];
+}
+
+function writeStash(list: QueuedMarkChange[]): void {
+  memory.clear();
+  try {
+    if (list.length === 0) localStorage.removeItem(STASH_KEY);
+    else localStorage.setItem(STASH_KEY, JSON.stringify(list));
+  } catch {
+    // Full, or refused: held by this page, and by nothing else.
+    for (const c of list) memory.set(c.changeId, c);
+  }
+}
+
+/**
+ * How long the database is given to answer. One that has not by then is
+ * taken for one that will not: on a phone, a database can stop answering
+ * without ever failing - no error, no event - and a tap on Highlight that
+ * waited for it did nothing at all.
+ */
+const STORAGE_TIMEOUT_MS = 2000;
+/** After the database kept this page waiting, it is not asked again for a while. */
+const STORAGE_REST_MS = 30_000;
+let storageRestUntil = 0;
+
+class StorageTimeout extends Error {}
+
+function bounded<T>(work: Promise<T>, ms = STORAGE_TIMEOUT_MS): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      storageRestUntil = Date.now() + STORAGE_REST_MS;
+      reject(new StorageTimeout('Storage did not answer'));
+    }, ms);
+    work.then(
+      (v) => {
+        clearTimeout(timer);
+        resolve(v);
+      },
+      (err: unknown) => {
+        clearTimeout(timer);
+        reject(err instanceof Error ? err : new Error('Storage failed'));
+      },
+    );
+  });
+}
+
+async function db(): Promise<IDBDatabase | null> {
+  if (Date.now() < storageRestUntil) return null;
+  try {
+    return await bounded(openIdb());
   } catch {
     return null;
   }
@@ -88,9 +162,11 @@ function byOrder(a: QueuedMarkChange, b: QueuedMarkChange): number {
   return a.order - b.order || a.at - b.at || (a.changeId < b.changeId ? -1 : 1);
 }
 
-function keepInMemory(entry: Omit<QueuedMarkChange, 'order'>): void {
-  const queued = { ...entry, order: ++lastOrder };
-  memory.set(queued.changeId, queued);
+function keepInStash(entry: Omit<QueuedMarkChange, 'order'>): void {
+  const held = stashed();
+  if (held.some((c) => c.changeId === entry.changeId)) return;
+  for (const c of held) lastOrder = Math.max(lastOrder, c.order);
+  writeStash([...held, { ...entry, order: ++lastOrder }]);
 }
 
 /**
@@ -101,53 +177,67 @@ function keepInMemory(entry: Omit<QueuedMarkChange, 'order'>): void {
 async function append(entry: Omit<QueuedMarkChange, 'order'>): Promise<void> {
   const database = await db();
   if (!database) {
-    keepInMemory(entry);
+    keepInStash(entry);
     return;
   }
-  await new Promise<void>((resolve, reject) => {
-    const tx = database.transaction(STORES.markChanges, 'readwrite');
-    const store = tx.objectStore(STORES.markChanges);
-    const all = store.getAll();
-    all.onsuccess = () => {
-      for (const c of all.result as QueuedMarkChange[]) lastOrder = Math.max(lastOrder, c.order);
-      const queued = { ...entry, order: ++lastOrder };
-      store.put(queued, queued.changeId);
-    };
-    tx.oncomplete = () => resolve();
-    tx.onabort = tx.onerror = () => reject(tx.error ?? new Error('Mark change not stored'));
-  });
+  await bounded(
+    new Promise<void>((resolve, reject) => {
+      const tx = database.transaction(STORES.markChanges, 'readwrite');
+      const store = tx.objectStore(STORES.markChanges);
+      const all = store.getAll();
+      all.onsuccess = () => {
+        for (const c of all.result as QueuedMarkChange[]) lastOrder = Math.max(lastOrder, c.order);
+        const queued = { ...entry, order: ++lastOrder };
+        store.put(queued, queued.changeId);
+      };
+      tx.oncomplete = () => resolve();
+      tx.onabort = tx.onerror = () => reject(tx.error ?? new Error('Mark change not stored'));
+    }),
+  );
 }
 
 async function readQueue(): Promise<QueuedMarkChange[]> {
+  // A change still being written is in the queue as far as anyone reading
+  // it is concerned: it has been shown, and it must not be overtaken.
+  if (writing.size > 0) await Promise.allSettled([...writing]);
   let stored: QueuedMarkChange[] = [];
   const database = await db();
   if (database) {
     try {
-      stored = await new Promise((resolve, reject) => {
-        const tx = database.transaction(STORES.markChanges, 'readonly');
-        const req = tx.objectStore(STORES.markChanges).getAll();
-        tx.oncomplete = () => resolve(req.result as QueuedMarkChange[]);
-        tx.onabort = tx.onerror = () => reject(tx.error ?? new Error('Mark changes unreadable'));
-      });
+      stored = await bounded(
+        new Promise<QueuedMarkChange[]>((resolve, reject) => {
+          const tx = database.transaction(STORES.markChanges, 'readonly');
+          const req = tx.objectStore(STORES.markChanges).getAll();
+          tx.oncomplete = () => resolve(req.result as QueuedMarkChange[]);
+          tx.onabort = tx.onerror = () => reject(tx.error ?? new Error('Mark changes unreadable'));
+        }),
+      );
     } catch {
-      /* unreadable for now: what memory holds is still this page's */
+      /* unreadable for now: what the stash holds is still to be sent */
     }
   }
-  for (const c of stored) lastOrder = Math.max(lastOrder, c.order);
-  return [...stored, ...memory.values()].sort(byOrder);
+  // A change the database was slow to take is in the stash as well: once.
+  const seen = new Set(stored.map((c) => c.changeId));
+  const all = [...stored, ...stashed().filter((c) => !seen.has(c.changeId))];
+  for (const c of all) lastOrder = Math.max(lastOrder, c.order);
+  return all.sort(byOrder);
 }
 
 async function remove(changeIds: string[]): Promise<void> {
-  for (const id of changeIds) memory.delete(id);
+  const gone = new Set(changeIds);
+  const held = stashed();
+  if (held.some((c) => gone.has(c.changeId))) writeStash(held.filter((c) => !gone.has(c.changeId)));
   const database = await db();
   if (!database) return;
-  await new Promise<void>((resolve, reject) => {
-    const tx = database.transaction(STORES.markChanges, 'readwrite');
-    const store = tx.objectStore(STORES.markChanges);
-    for (const id of changeIds) store.delete(id);
-    tx.oncomplete = () => resolve();
-    tx.onabort = tx.onerror = () => reject(tx.error ?? new Error('Mark changes not removed'));
-  });
+  await bounded(
+    new Promise<void>((resolve, reject) => {
+      const tx = database.transaction(STORES.markChanges, 'readwrite');
+      const store = tx.objectStore(STORES.markChanges);
+      for (const id of changeIds) store.delete(id);
+      tx.oncomplete = () => resolve();
+      tx.onabort = tx.onerror = () => reject(tx.error ?? new Error('Mark changes not removed'));
+    }),
+  );
 }
 
 /** Whatever is still queued for a mark the server named differently follows it to its name. */
@@ -159,38 +249,40 @@ async function renameQueued(from: string, to: string): Promise<void> {
     }
     return ch.id === from ? { ...c, change: { ...ch, id: to } } : null;
   };
-  for (const [key, c] of memory) {
-    const r = renamed(c);
-    if (r) memory.set(key, r);
-  }
+  const held = stashed();
+  if (held.some((c) => renamed(c))) writeStash(held.map((c) => renamed(c) ?? c));
   const database = await db();
   if (!database) return;
-  await new Promise<void>((resolve, reject) => {
-    const tx = database.transaction(STORES.markChanges, 'readwrite');
-    const store = tx.objectStore(STORES.markChanges);
-    const all = store.getAll();
-    all.onsuccess = () => {
-      for (const c of all.result as QueuedMarkChange[]) {
-        const r = renamed(c);
-        if (r) store.put(r, r.changeId);
-      }
-    };
-    tx.oncomplete = () => resolve();
-    tx.onabort = tx.onerror = () => reject(tx.error ?? new Error('Mark changes not renamed'));
-  });
+  await bounded(
+    new Promise<void>((resolve, reject) => {
+      const tx = database.transaction(STORES.markChanges, 'readwrite');
+      const store = tx.objectStore(STORES.markChanges);
+      const all = store.getAll();
+      all.onsuccess = () => {
+        for (const c of all.result as QueuedMarkChange[]) {
+          const r = renamed(c);
+          if (r) store.put(r, r.changeId);
+        }
+      };
+      tx.oncomplete = () => resolve();
+      tx.onabort = tx.onerror = () => reject(tx.error ?? new Error('Mark changes not renamed'));
+    }),
+  );
 }
 
 /** Everything queued, gone: signing out leaves nothing of the account behind. */
 export async function purgeMarkChanges(): Promise<void> {
-  memory.clear();
+  writeStash([]);
   const database = await db();
   if (!database) return;
-  await new Promise<void>((resolve, reject) => {
-    const tx = database.transaction(STORES.markChanges, 'readwrite');
-    tx.objectStore(STORES.markChanges).clear();
-    tx.oncomplete = () => resolve();
-    tx.onabort = tx.onerror = () => reject(tx.error ?? new Error('Mark changes not cleared'));
-  });
+  await bounded(
+    new Promise<void>((resolve, reject) => {
+      const tx = database.transaction(STORES.markChanges, 'readwrite');
+      tx.objectStore(STORES.markChanges).clear();
+      tx.oncomplete = () => resolve();
+      tx.onabort = tx.onerror = () => reject(tx.error ?? new Error('Mark changes not cleared'));
+    }),
+  );
 }
 
 /**
@@ -228,23 +320,34 @@ export function onMarkRenamed(fn: RenameListener): () => void {
   return () => renameListeners.delete(fn);
 }
 
+/** Changes on their way into storage: the queue is not read past them. */
+const writing = new Set<Promise<void>>();
+
 /**
  * Make a change to a mark: kept on this device, then sent from there. False
  * only when it could not be kept at all - nobody is signed in to keep it
  * for - and the page should say it was not saved.
+ *
+ * The answer does not wait for storage. The page shows the mark on it, and a
+ * database that takes its time - or never answers - used to hold the mark
+ * back for as long: the tap did nothing. The write goes on behind, and
+ * whoever reads the queue next waits for it.
  */
 export async function recordMarkChange(change: MarkChange): Promise<boolean> {
   const ownerId = queueAccount();
   if (ownerId === null) return false;
   const entry = { changeId: randomName(12), ownerId, at: Date.now(), change };
-  try {
-    await append(entry);
-  } catch {
-    // Storage that opened and then refused - full, or gone mid-write: the
-    // change still goes, from this page.
-    keepInMemory(entry);
-  }
-  scheduleMarkDelivery();
+  const write = append(entry)
+    .catch(() => {
+      // Storage that opened and then refused - full, gone mid-write, or not
+      // answering: the change still goes, from the stash.
+      keepInStash(entry);
+    })
+    .finally(() => {
+      writing.delete(write);
+      scheduleMarkDelivery();
+    });
+  writing.add(write);
   return true;
 }
 
@@ -352,11 +455,54 @@ async function deliverQueued(): Promise<void> {
   }
 }
 
+/**
+ * A downloaded book keeps a copy of its list of marks, to open with
+ * offline. A change the server has just taken is made to that copy here, on
+ * the device, before it leaves the queue. Fetching the list again is not
+ * enough on its own: on a connection that comes and goes, the change gets
+ * through and the fetch after it does not, and the next time the book opened
+ * offline the mark was in neither the queue nor the copy - a highlight made
+ * on a train was gone from the page until the book was next opened online.
+ */
+async function amendKeptCopy(c: QueuedMarkChange, made: Annotation | null): Promise<void> {
+  if (typeof caches === 'undefined') return;
+  const bookId = bookOf(c.change);
+  const change: MarkChange =
+    c.change.type === 'create' && made ? { ...c.change, mark: made } : c.change;
+  try {
+    await bounded(
+      (async () => {
+        const url = `/api/books/${bookId}/annotations`;
+        const cache = await caches.open(OFFLINE_CACHE);
+        const kept = await cache.match(url, { ignoreVary: true });
+        if (!kept) return; // not a downloaded book
+        const data = (await kept.json()) as { annotations?: Annotation[] };
+        if (!Array.isArray(data.annotations)) return;
+        const annotations = withPendingChanges(data.annotations, [{ ...c, change }], bookId);
+        await cache.put(
+          url,
+          new Response(JSON.stringify({ ...data, annotations }), {
+            headers: { 'content-type': 'application/json; charset=utf-8' },
+          }),
+        );
+      })(),
+      4000,
+    );
+  } catch {
+    /* no cache here, or it would not be written: the fetch after delivery is the other chance */
+  }
+}
+
 /** True when the change has left the queue; false to stop, keeping it, and try again later. */
 async function deliverOne(c: QueuedMarkChange): Promise<boolean> {
   let renamed: { from: string; to: string } | null = null;
+  let made: Annotation | null = null;
+  let taken = false;
   try {
-    renamed = await send(c);
+    made = await send(c);
+    taken = true;
+    if (made && c.change.type === 'create' && made.id !== c.change.mark.id)
+      renamed = { from: c.change.mark.id, to: made.id };
   } catch (err) {
     const refused = err instanceof ApiError && REFUSED.has(err.status);
     if (!refused) {
@@ -375,6 +521,7 @@ async function deliverOne(c: QueuedMarkChange): Promise<boolean> {
     // never take: done with, either way.
     if (!(err instanceof ApiError && err.status === 404)) console.warn('mark change refused', err);
   }
+  if (taken) await amendKeptCopy(c, made);
   await remove([c.changeId]);
   if (renamed) {
     const { from, to } = renamed;
@@ -384,8 +531,8 @@ async function deliverOne(c: QueuedMarkChange): Promise<boolean> {
   return true;
 }
 
-/** Deliver one change - and for a new mark the server named otherwise, both its names. */
-async function send(c: QueuedMarkChange): Promise<{ from: string; to: string } | null> {
+/** Deliver one change - and for a new mark, the mark as the server keeps it. */
+async function send(c: QueuedMarkChange): Promise<Annotation | null> {
   const ch = c.change;
   const signal = timeoutSignal();
   if (ch.type === 'create') {
@@ -407,7 +554,7 @@ async function send(c: QueuedMarkChange): Promise<{ from: string; to: string } |
         signal,
       },
     );
-    return res.annotation.id === mark.id ? null : { from: mark.id, to: res.annotation.id };
+    return res.annotation;
   }
   const url = `/api/annotations/${encodeURIComponent(ch.id)}`;
   if (ch.type === 'patch') await api(url, { method: 'PATCH', body: ch.patch, signal });
