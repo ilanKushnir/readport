@@ -24,6 +24,8 @@ export const whatsnew = {
   'whatsnew.update.later': 'Not now',
 
   // ---------------------------------------------------------------- 0.29.0
+  'whatsnew.release.highlightIphone':
+    'Highlighting works on an iPhone: a tap on Highlight, a colour, Note or Share in the menu over selected words now does what it says, in Safari and in Chrome.',
   'whatsnew.release.highlightAlways':
     'Highlights work on a patchy connection: a tap on a colour always highlights, even when the phone has been in your pocket for a while, and a highlight made offline in a saved book stays on the page.',
   'whatsnew.release.rescanButton':

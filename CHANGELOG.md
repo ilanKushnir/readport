@@ -4,6 +4,16 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.40.2 - 2026-11-25
+
+### Fixed
+
+- **Highlighting works on an iPhone.** In Safari, and in Chrome or any other
+  browser on an iPhone, the menu over selected words came up but a tap on
+  Highlight, a colour, Note, Bookmark or Share did nothing, online or off. The
+  menu keeps the selection by cancelling the press that lands on it, and
+  WebKit then sends no click at all; its buttons now act as the finger lifts.
+
 ## 0.40.1 - 2026-11-25
 
 ### Fixed
