@@ -3105,7 +3105,15 @@ export function ReaderPage() {
       // A press released on the toolbar itself - opening the colours, say -
       // is not the selection settling, and must not hide the toolbar for
       // the length of a settle.
-      if (event.type === 'pointerup' && selMenuRef.current?.contains(event.target as Node)) return;
+      // Read from the path the event took, not from where its target is now:
+      // the toolbar's own press (see selMenuPressRef) may already have
+      // swapped the button for the colours by the time this hears of it.
+      if (
+        event.type === 'pointerup' &&
+        selMenuRef.current &&
+        event.composedPath().includes(selMenuRef.current)
+      )
+        return;
       // The change our own re-setting of the selection raises is not a
       // selection being made: the toolbar would hide and settle again for
       // nothing. Told apart by the range itself, not by the clock - a handle
@@ -3280,6 +3288,23 @@ export function ReaderPage() {
    * keep it on screen.
    */
   const selMenuRef = useRef<HTMLDivElement>(null);
+  /**
+   * A tap on the toolbar, carried out as the finger lifts.
+   *
+   * The toolbar cancels its pointerdown so the selection survives the touch
+   * (below). Chromium still sends the click after that; WebKit - Safari, and
+   * every browser on an iPhone, Chrome included - sends no click at all after
+   * a cancelled touch pointerdown, so on a phone a tap on Highlight, on a
+   * colour, on Note did nothing. The button is pressed here instead, on
+   * pointerup, and the click a browser may still send after it is dropped -
+   * whichever button it lands on, since the press may have changed the
+   * toolbar under the finger (Highlight turns into the colours).
+   */
+  const selMenuPressRef = useRef<{ pointerId: number; button: HTMLButtonElement | null } | null>(
+    null,
+  );
+  const selMenuTappedAtRef = useRef(-Infinity);
+  const selMenuPressingRef = useRef(false);
   const selMenuModeRef = useRef<PlacementMode | null>(null);
   const selMenuSettlingRef = useRef(false);
   /** The span the toolbar was placed for; a new span forgets a dock. */
@@ -4534,7 +4559,37 @@ export function ReaderPage() {
           // before the click arrives, and the toolbar unmounts under the
           // finger. Keeping the default from happening keeps the selection;
           // it touches neither the selectable text nor the native menu.
-          onPointerDown={(e) => e.preventDefault()}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            selMenuPressRef.current = {
+              pointerId: e.pointerId,
+              button: (e.target as Element).closest('button'),
+            };
+          }}
+          onPointerCancel={() => {
+            selMenuPressRef.current = null;
+          }}
+          onPointerUp={(e) => {
+            const press = selMenuPressRef.current;
+            selMenuPressRef.current = null;
+            if (e.pointerType === 'mouse' || !press || press.pointerId !== e.pointerId) return;
+            const button = (e.target as Element).closest('button');
+            if (!button || button !== press.button || button.disabled) return;
+            selMenuTappedAtRef.current = performance.now();
+            selMenuPressingRef.current = true;
+            try {
+              button.click();
+            } finally {
+              selMenuPressingRef.current = false;
+            }
+          }}
+          onClickCapture={(e) => {
+            if (selMenuPressingRef.current) return;
+            if (performance.now() - selMenuTappedAtRef.current < 700) {
+              e.preventDefault();
+              e.stopPropagation();
+            }
+          }}
         >
           {palette ? (
             // The colours, in place of the icons: picking one is the act.

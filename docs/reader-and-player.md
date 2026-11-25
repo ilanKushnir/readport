@@ -80,6 +80,10 @@ Implemented:
   a note, sharing and removal the same way. On a phone the platform's own
   edit menu is taken down once a selection settles; a tap on the selected
   words brings it back and ours steps aside, so one menu shows at a time.
+  The menu keeps the selection by cancelling the press that lands on it,
+  and on a touch screen its buttons act as the finger lifts: WebKit - Safari
+  and every browser on an iPhone - sends no click after a cancelled touch
+  press, and before 0.40.2 a tap on Highlight there did nothing.
   Only the text is selectable: a drag cannot run into the chrome.
 - Progress with revision-checked sync, percent, page-within-chapter.
 - RTL books (`page-progression-direction`, or inferred from a Hebrew /
