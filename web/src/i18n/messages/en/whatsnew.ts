@@ -24,6 +24,8 @@ export const whatsnew = {
   'whatsnew.update.later': 'Not now',
 
   // ---------------------------------------------------------------- 0.29.0
+  'whatsnew.release.highlightAlways':
+    'Highlights work on a patchy connection: a tap on a colour always highlights, even when the phone has been in your pocket for a while, and a highlight made offline in a saved book stays on the page.',
   'whatsnew.release.rescanButton':
     'Added a book to your library folders? The refresh button next to Edit in the library looks for new titles right away, instead of waiting for the hourly check.',
   'whatsnew.release.agentConnect':

@@ -4,6 +4,24 @@ Notable changes, newest first. Versions follow [semver](https://semver.org);
 while ReadPort is pre-1.0 a minor bump may still change a contract, and
 anything that does is called out under **Upgrading**.
 
+## 0.40.1 - 2026-11-25
+
+### Fixed
+
+- **A tap on Highlight always highlights.** On a phone whose storage had
+  stopped answering - which happens after the app has been in the background
+  for a while - choosing a colour did nothing: no highlight, no message, and
+  nothing sent. The mark now shows as it is made, whatever the storage is
+  doing, and is kept another way (and still sent) when the usual one does not
+  answer within two seconds. The same goes for notes, bookmarks, recolouring
+  and removing.
+- **A highlight made offline in a downloaded book stays on the page.** On a
+  connection that comes and goes, the highlight reached the server but the
+  book's offline copy of its marks was not renewed, so the next time the book
+  opened without a connection the highlight was missing until it was opened
+  online again. The offline copy is now updated on the device the moment the
+  server takes the change.
+
 ## 0.40.0 - 2026-10-22
 
 ### Added
